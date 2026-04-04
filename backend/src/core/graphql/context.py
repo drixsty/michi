@@ -1,0 +1,22 @@
+"""
+GraphQL Context
+Injecté dans chaque resolver via info.context
+"""
+from dataclasses import dataclass
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
+
+
+@dataclass
+class GraphQLContext:
+    """
+    Context GraphQL injecté dans chaque resolver.
+    
+    Contient:
+    - db: Session SQLAlchemy async
+    - user_id: ID de l'utilisateur connecté (None si non authentifié)
+    - shop_id: ID du shop de l'utilisateur (None si non authentifié)
+    """
+    db: AsyncSession
+    user_id: Optional[str] = None
+    shop_id: Optional[str] = None

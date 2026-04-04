@@ -1,0 +1,115 @@
+"""
+Point d'entrée FastAPI - Michi Backend
+"""
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from strawberry.fastapi import GraphQLRouter
+from contextlib import asynccontextmanager
+
+from src.core.config import settings
+from src.core.graphql.schema import schema
+from src.core.graphql.context import GraphQLContext
+from src.core.database import get_db
+from src.core.middleware.auth import get_current_user_from_token
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan events (startup/shutdown)"""
+    # Startup
+    print("🚀 Michi API starting...")
+    print(f"📍 Environment: {settings.ENVIRONMENT}")
+    print(f"🔐 CORS Origins: {settings.cors_origins_list}")
+    
+    yield
+    
+    # Shutdown
+    print("👋 Michi API shutting down...")
+
+
+# Créer l'app FastAPI
+app = FastAPI(
+    title="Michi API 道",
+    description="Inventory Forecasting Platform",
+    version="1.0.0",
+    docs_url="/docs" if settings.ENVIRONMENT == "development" else None,
+    redoc_url="/redoc" if settings.ENVIRONMENT == "development" else None,
+    lifespan=lifespan,
+)
+
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=["POST", "GET"],
+    allow_headers=["Authorization", "Content-Type"],
+)
+
+
+# Context factory pour GraphQL
+async def get_context(request: Request) -> GraphQLContext:
+    """
+    Crée le context GraphQL pour chaque requête.
+    Extrait user_id et shop_id du token JWT.
+    """
+    # Récupérer DB session
+    db_gen = get_db()
+    db = await db_gen.__anext__()
+    
+    # Extraire user_id/shop_id du token JWT
+    user_id, shop_id = await get_current_user_from_token(request)
+    
+    return GraphQLContext(
+        db=db,
+        user_id=user_id,
+        shop_id=shop_id,
+    )
+
+
+# GraphQL Router
+graphql_app = GraphQLRouter(
+    schema,
+    graphiql=settings.ENVIRONMENT == "development",
+    context_getter=get_context,
+)
+
+app.include_router(graphql_app, prefix="/graphql")
+
+
+# Health Check
+@app.get("/health")
+async def health():
+    """
+    Health check endpoint.
+    Utilisé par les load balancers et monitoring.
+    """
+    return {
+        "status": "ok",
+        "version": "1.0.0",
+        "environment": settings.ENVIRONMENT,
+    }
+
+
+# Root endpoint
+@app.get("/")
+async def root():
+    """Root endpoint avec liens utiles"""
+    return {
+        "message": "Michi API 道",
+        "docs": "/docs" if settings.ENVIRONMENT == "development" else None,
+        "graphql": "/graphql",
+        "health": "/health",
+    }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=settings.ENVIRONMENT == "development",
+    )
