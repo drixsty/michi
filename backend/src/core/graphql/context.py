@@ -7,8 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 
 
+from strawberry.fastapi import BaseContext
+
+
 @dataclass
-class GraphQLContext:
+class GraphQLContext(BaseContext):
     """
     Context GraphQL injecté dans chaque resolver.
     

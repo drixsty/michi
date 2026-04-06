@@ -50,7 +50,7 @@ switch ($Command) {
 
     "dev-backend" {
         Write-Host "[RUN] Demarrage backend..." -ForegroundColor Cyan
-        Set-Location backend; uvicorn src.main:app --reload --host 0.0.0.0 --port 8000; Set-Location ..
+        Set-Location backend; python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000; Set-Location ..
     }
 
     "dev-frontend" {
