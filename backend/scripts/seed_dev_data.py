@@ -20,8 +20,8 @@ from src.core.config import settings
 from src.core.security import hash_password
 from src.core.database import Base
 from src.modules.auth.models import User
-from src.modules.shopify.models import Product, SalesLog
-from src.modules.forecasting.models import CleanedDemand
+from src.modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder
+from src.modules.forecasting.models import CleanedDemand, Prediction
 
 
 async def create_tables():
@@ -69,11 +69,28 @@ async def seed_dev_user():
         await session.commit()
         await session.refresh(user)
         
-        print("✅ User de développement créé !")
-        print(f"   Email: dev@michi.com")
-        print(f"   Password: password123")
-        print(f"   User ID: {user.id}")
-        print(f"   Shop ID: {user.shop_id}")
+        # 1. Créer deux fournisseurs de démonstration
+        s1 = Supplier(
+            shop_id=shop_id,
+            name="Fournisseur Premium Co.",
+            contact_email="premium@example.com",
+            reliability_score=1.0,
+            average_delay_days=0.0
+        )
+        s2 = Supplier(
+            shop_id=shop_id,
+            name="Late Supply Logistics",
+            contact_email="late@example.com",
+            reliability_score=0.6,
+            average_delay_days=5.5  # 5.5 jours de retard en moyenne
+        )
+        session.add_all([s1, s2])
+        await session.flush()
+
+        print(f"✅ Fournisseurs créés: {s1.name}, {s2.name}")
+        
+        await session.commit()
+        await session.refresh(user)
     
     await engine.dispose()
 

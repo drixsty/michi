@@ -16,6 +16,7 @@ from src.modules.forecasting.resolvers import (
     _prediction_to_type, 
     CleanedDemandType
 )
+from src.modules.inventory.resolvers import SupplierType
 
 
 # ── Strawberry Types ──────────────────────────────────────────────────────────
@@ -31,6 +32,8 @@ class ProductType:
     moq: int
     created_at: datetime
     prediction: Optional[PredictionType] = None
+    supplier: Optional[SupplierType] = None
+    warning_threshold: float = 0.0
     cleaned_demand: List[CleanedDemandType] = strawberry.field(default_factory=list)
 
 
@@ -92,8 +95,18 @@ class ShopifyQuery:
                 lead_time=p.lead_time,
                 moq=p.moq,
                 created_at=p.created_at,
-                 prediction=_prediction_to_type(p.__dict__['prediction']) if 'prediction' in p.__dict__ and p.__dict__['prediction'] else None,
-                 cleaned_demand=[
+                prediction=_prediction_to_type(p.__dict__['prediction']) if 'prediction' in p.__dict__ and p.__dict__['prediction'] else None,
+                supplier=SupplierType(
+                    id=strawberry.ID(str(p.supplier.id)),
+                    name=p.supplier.name,
+                    contact_email=p.supplier.contact_email,
+                    reliability_score=p.supplier.reliability_score,
+                    average_delay_days=p.supplier.average_delay_days
+                ) if p.supplier else None,
+                warning_threshold=(
+                    p.__dict__['prediction'].run_rate * (p.lead_time + (p.supplier.average_delay_days if p.supplier else 0)) * 1.5
+                ) if 'prediction' in p.__dict__ and p.__dict__['prediction'] else 0.0,
+                cleaned_demand=[
                      CleanedDemandType(
                          id=strawberry.ID(str(r.id)),
                          product_id=strawberry.ID(str(r.product_id)),

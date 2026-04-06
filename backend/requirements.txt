@@ -35,3 +35,6 @@ faker==22.0.0
 
 # Redis (optionnel MVP)
 redis[hiredis]==5.0.1
+
+# Email (Sprint 10)
+aiosmtplib==3.0.1

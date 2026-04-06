@@ -14,14 +14,19 @@ import { INGEST_CSV_DATA } from '@/graphql/mutations/ingestCSV';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import SalesChart from '@/components/dashboard/SalesChart';
+import OmnichannelView from '@/components/dashboard/OmnichannelView';
+import OnboardingWizard from '@/components/dashboard/OnboardingWizard';
 import type { Product, SyncResult, CleanedDemand } from '@/types/product';
-import { ChevronDown, ChevronUp, BarChart2, Download, Upload, Bell, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, BarChart2, Download, Upload, Bell, CheckCircle2, AlertCircle, Layers, Zap } from 'lucide-react';
 
 type FilterTab = 'all' | 'urgent' | 'warning' | 'healthy';
+type DashboardTab = 'products' | 'channels';
 
-function getStockStatus(stock: number): 'urgent' | 'warning' | 'healthy' {
-  if (stock === 0) return 'urgent';
-  if (stock < 20) return 'warning';
+function getStockStatus(product: Product): 'urgent' | 'warning' | 'healthy' {
+  if (product.currentStock === 0) return 'urgent';
+  
+  if (product.currentStock <= product.warningThreshold) return 'warning';
+  
   return 'healthy';
 }
 
@@ -60,12 +65,33 @@ function KpiCard({ label, value, sub, accent }: { label: string; value: number |
   );
 }
 
-function StockBadge({ stock } : { stock: number }) {
-  const status = getStockStatus(stock);
+function StockBadge({ product } : { product: Product }) {
+  const status = getStockStatus(product);
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold tracking-tight shadow-sm ${STATUS_CONFIG[status].badge}`}>
-      {stock} u.
+      {product.currentStock} u.
     </span>
+  );
+}
+
+function SupplierBadge({ supplier }: { supplier?: any }) {
+  if (!supplier) return <span className="text-gray-300 text-[10px] italic">Non assigné</span>;
+  
+  const isReliable = supplier.reliabilityScore >= 0.9;
+  const hasDelay = supplier.averageDelayDays > 0;
+
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${isReliable ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' : 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'}`}>
+        {supplier.name}
+      </span>
+      {hasDelay && (
+        <span className="text-[9px] font-bold text-amber-600 flex items-center gap-0.5">
+          <AlertCircle className="h-2 w-2" />
+          +{supplier.averageDelayDays.toFixed(1)}j retard
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -94,9 +120,17 @@ export default function DashboardPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterTab>('all');
+  const [dashTab, setDashTab] = useState<DashboardTab>('products');
 
   const [editing, setEditing] = useState<{ id: string; field: 'leadTime' | 'moq' } | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [leadTimeDelta, setLeadTimeDelta] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    const onboarded = localStorage.getItem('michi_onboarded');
+    if (!onboarded) setShowOnboarding(true);
+  }, []);
 
   const { data: meData, loading: meLoading, error: meError } = useQuery(GET_ME);
   const { data: productsData, loading: productsLoading, refetch: refetchProducts } = useQuery(GET_PRODUCTS);
@@ -179,7 +213,7 @@ export default function DashboardPage() {
 
   const handleExport = () => {
     try {
-      const urgentProducts = allProducts.filter(p => getStockStatus(p.currentStock) === 'urgent' || getStockStatus(p.currentStock) === 'warning');
+      const urgentProducts = allProducts.filter(p => getStockStatus(p) === 'urgent' || getStockStatus(p) === 'warning');
       
       const headers = ['Produit', 'SKU', 'Stock Actuel', 'Prévision Rupture', 'Run Rate', 'Lead Time', 'MOQ', 'Commande Suggérée'];
       const rows = urgentProducts.map(p => [
@@ -225,22 +259,32 @@ export default function DashboardPage() {
       const s = statsData.dashboardKpis;
       return { 
         total: s.totalProducts, 
-        urgent: s.urgentAlerts, 
-        warning: s.actualStockouts, // Ruptures réelles
+        urgent: s.actualStockouts, // Ruptures réelles
+        warning: s.urgentAlerts,   // Alertes prédictives (Urgent dans le backend)
         healthy: s.totalProducts - s.urgentAlerts - s.actualStockouts 
       };
     }
-    const urgent = allProducts.filter((p) => p.currentStock === 0).length;
-    const warning = allProducts.filter((p) => p.currentStock > 0 && p.currentStock < 20).length;
-    const healthy = allProducts.filter((p) => p.currentStock >= 20).length;
+    
+    // Fallback local
+    let urgent = 0;
+    let warning = 0;
+    let healthy = 0;
+    
+    allProducts.forEach(p => {
+      const status = getStockStatus(p);
+      if (status === 'urgent') urgent++;
+      else if (status === 'warning') warning++;
+      else healthy++;
+    });
+    
     return { total: allProducts.length, urgent, warning, healthy };
   }, [allProducts, statsData]);
 
   const filtered = useMemo(() => {
     let list = allProducts;
-    if (filter === 'urgent') list = list.filter((p) => p.currentStock === 0);
-    else if (filter === 'warning') list = list.filter((p) => p.currentStock > 0 && p.currentStock < 20);
-    else if (filter === 'healthy') list = list.filter((p) => p.currentStock >= 20);
+    if (filter === 'urgent') list = list.filter((p) => getStockStatus(p) === 'urgent');
+    else if (filter === 'warning') list = list.filter((p) => getStockStatus(p) === 'warning');
+    else if (filter === 'healthy') list = list.filter((p) => getStockStatus(p) === 'healthy');
 
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -289,6 +333,16 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Onboarding Wizard (Sprint 10) */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingWizard 
+            onSync={() => triggerSync() as any} 
+            onComplete={() => setShowOnboarding(false)} 
+          />
+        )}
+      </AnimatePresence>
+
       {/* Toast */}
       {toast && (
         <div
@@ -393,8 +447,30 @@ export default function DashboardPage() {
             </div>
         </div>
 
+        {/* Dashboard tab switcher — Sprint 9 */}
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+          <button
+            onClick={() => setDashTab('products')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              dashTab === 'products' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <BarChart2 size={13} />
+            Produits
+          </button>
+          <button
+            onClick={() => setDashTab('channels')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              dashTab === 'channels' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Layers size={13} />
+            Canaux
+          </button>
+        </div>
+
         {/* KPI cards */}
-        {allProducts.length > 0 && (
+        {dashTab === 'products' && allProducts.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <KpiCard label="Total produits" value={kpis.total} sub="dans le catalogue" accent="text-gray-900" />
             <KpiCard label="Ruptures" value={kpis.urgent} sub="stock = 0" accent="text-red-600" />
@@ -403,8 +479,11 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Filters + Search */}
-        {allProducts.length > 0 && (
+        {/* ── Vue Canaux (Sprint 9) ─────────────────────────────────────── */}
+        {dashTab === 'channels' && <OmnichannelView />}
+
+        {/* Filters + Search — only shown on Products tab */}
+        {dashTab === 'products' && allProducts.length > 0 && (
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             {/* Tabs */}
             <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
@@ -446,8 +525,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Table / Empty states */}
-        {productsLoading && allProducts.length === 0 ? (
+        {/* Table / Empty states — Products tab only */}
+        {dashTab === 'products' && productsLoading && allProducts.length === 0 ? (
           <div className="bg-white rounded-2xl p-16 text-center shadow-sm border border-gray-100">
             <div className="animate-spin rounded-full h-8 w-8 border-2 border-purple-200 border-t-purple-600 mx-auto" />
           </div>
@@ -484,6 +563,7 @@ export default function DashboardPage() {
                 <tr className="border-b border-gray-100">
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Produit</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">SKU</th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Fournisseur</th>
                   <th className="px-6 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Stock</th>
                   <th className="px-6 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Prévision Rupture</th>
                   <th className="px-6 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Commande Suggérée</th>
@@ -493,7 +573,7 @@ export default function DashboardPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((product) => {
-                  const status = getStockStatus(product.currentStock);
+                  const status = getStockStatus(product);
                   return (
                     <React.Fragment key={product.id}>
                       <tr
@@ -525,7 +605,10 @@ export default function DashboardPage() {
                           <span className="text-xs font-mono text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{product.sku}</span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <StockBadge stock={product.currentStock} />
+                          <SupplierBadge supplier={product.supplier} />
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <StockBadge product={product} />
                         </td>
                         <td className="px-6 py-4 text-center whitespace-nowrap">
                           {product.prediction?.predictedStockoutDate ? (
@@ -665,10 +748,104 @@ export default function DashboardPage() {
                                       <div className="bg-purple-600 p-6 rounded-2xl text-white shadow-xl shadow-purple-200 relative overflow-hidden">
                                         <div className="absolute -right-4 -bottom-4 h-24 w-24 bg-purple-500 rounded-full opacity-20" />
                                         <h4 className="text-xs font-medium uppercase tracking-widest opacity-80 mb-1">Recommandation</h4>
-                                        <p className="text-2xl font-bold">Commander {Math.round(product.prediction?.reorderQuantity || 0)} u.</p>
-                                        <p className="text-[10px] mt-2 opacity-70 leading-relaxed italic">
-                                          Basé sur un lead time de {product.leadTime} jours et un MOQ de {product.moq} unités.
+                                        <div className="text-2xl font-black mb-2">{product.prediction?.reorderQuantity.toFixed(0)} u.</div>
+                                        <p className="text-[10px] leading-relaxed opacity-90">
+                                          Commandez dès aujourd'hui pour couvrir un délai de {product.leadTime} jours avec un stock de sécurité de 50%.
                                         </p>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* What-if Simulator (US 10.7) */}
+                                    <div className="lg:col-span-3 mt-6 p-8 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 rounded-[2.5rem] border border-indigo-100/50 backdrop-blur-sm shadow-inner relative overflow-hidden group">
+                                      <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                                        <Zap size={120} className="text-indigo-900" />
+                                      </div>
+                                      
+                                      <div className="flex items-center justify-between mb-8 relative z-10">
+                                        <div className="flex items-center gap-3">
+                                          <div className="p-2.5 bg-white rounded-2xl shadow-sm border border-indigo-50">
+                                            <Zap size={20} className="text-indigo-600 animate-pulse" />
+                                          </div>
+                                          <div>
+                                            <h4 className="text-base font-black text-gray-900 tracking-tight">Simulateur de Rupture What-if</h4>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Ajustez les délais fournisseur pour voir l'impact</p>
+                                          </div>
+                                        </div>
+                                        <button 
+                                          onClick={() => setLeadTimeDelta(0)}
+                                          className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 bg-white px-4 py-2 rounded-xl shadow-sm border border-indigo-50 transition-all uppercase tracking-widest active:scale-95"
+                                        >
+                                          Réinitialiser
+                                        </button>
+                                      </div>
+                                      
+                                      <div className="grid md:grid-cols-5 gap-12 items-center relative z-10">
+                                        <div className="md:col-span-3 space-y-6">
+                                          <div className="flex justify-between items-end">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Variation de Lead Time (jours)</label>
+                                            <div className="flex items-center gap-2">
+                                              <span className={`${leadTimeDelta >= 0 ? 'text-amber-600' : 'text-emerald-600'} text-lg font-black bg-white px-4 py-1.5 rounded-2xl shadow-sm border border-indigo-50 min-w-[70px] text-center`}>
+                                                {leadTimeDelta > 0 ? `+${leadTimeDelta}` : leadTimeDelta}j
+                                              </span>
+                                            </div>
+                                          </div>
+                                          <div className="relative pt-2">
+                                            <input 
+                                              type="range" 
+                                              min="-7" 
+                                              max="30" 
+                                              value={leadTimeDelta} 
+                                              onChange={(e) => setLeadTimeDelta(parseInt(e.target.value))}
+                                              className="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer accent-indigo-600 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                                            />
+                                            <div className="flex justify-between mt-3 text-[9px] font-black text-gray-400 uppercase tracking-tighter">
+                                              <span className="flex flex-col"><span>Optimiste</span><span className="text-emerald-500">-7j</span></span>
+                                              <span className="flex flex-col text-center italic"><span>Standard</span><span>{product.leadTime}j</span></span>
+                                              <span className="flex flex-col text-right"><span>Retard Critique</span><span className="text-red-500">+30j</span></span>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="md:col-span-2 grid grid-cols-1 gap-4">
+                                          <div className="bg-white/80 backdrop-blur-md rounded-3xl p-6 border border-white shadow-xl shadow-indigo-100/50 relative overflow-hidden">
+                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Nouvel objectif de stock</p>
+                                            <div className="flex items-baseline gap-2">
+                                              <span className="text-4xl font-black text-gray-900 tracking-tighter">
+                                                {Math.ceil(
+                                                  (product.prediction?.runRate || 0) * 
+                                                  (product.leadTime + leadTimeDelta + (product.supplier?.averageDelayDays || 0)) * 
+                                                  1.5
+                                                )}
+                                              </span>
+                                              <span className="text-xs font-bold text-gray-400 uppercase">unités</span>
+                                            </div>
+                                          </div>
+
+                                          <div className="bg-indigo-600 rounded-3xl p-6 border border-indigo-500 shadow-xl shadow-indigo-200 relative overflow-hidden">
+                                            <div className="absolute right-0 top-0 p-3 opacity-20">
+                                              <Download size={16} className="text-white" />
+                                            </div>
+                                            <p className="text-[9px] font-black text-indigo-100 uppercase tracking-widest mb-2">Réapprovisionnement Simulée</p>
+                                            <div className="flex items-baseline gap-2 text-white">
+                                              <span className="text-4xl font-black tracking-tighter">
+                                                {Math.max(0, Math.ceil(
+                                                  (Math.ceil(
+                                                    (product.prediction?.runRate || 0) * 
+                                                    (product.leadTime + leadTimeDelta + (product.supplier?.averageDelayDays || 0)) * 
+                                                    1.5
+                                                  ) - product.currentStock) / (product.moq || 1)
+                                                ) * (product.moq || 1))}
+                                              </span>
+                                              <span className="text-xs font-bold opacity-80 uppercase">unités</span>
+                                            </div>
+                                            {leadTimeDelta > 5 && (
+                                              <div className="mt-4 flex items-center gap-2 bg-red-400/20 px-3 py-1.5 rounded-xl border border-red-400/30">
+                                                <AlertCircle size={12} className="text-red-100" />
+                                                <span className="text-[9px] font-black text-red-50 uppercase tracking-widest">Risque Rupture Accentué</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>

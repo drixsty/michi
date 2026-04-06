@@ -14,10 +14,11 @@ from src.core.middleware.auth import get_current_user_from_token
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     """Lifespan events (startup/shutdown)"""
     # Startup
     print("🚀 Michi API starting...")
+    print("✨ Sprint 9: Omnichannel Aggregation active (WooCommerce + CSV export).")
     print(f"📍 Environment: {settings.ENVIRONMENT}")
     print(f"🔐 CORS Origins: {settings.cors_origins_list}")
     

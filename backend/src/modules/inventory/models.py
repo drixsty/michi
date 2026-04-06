@@ -38,6 +38,9 @@ class Product(Base):
     source_platform = Column(Enum(PlatformSource), nullable=False, default=PlatformSource.CUSTOM)
     external_id = Column(String(255), nullable=True) # ID in the source platform (Shopify Product ID, etc.)
 
+    # Supplier link (Sprint 8)
+    supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id", ondelete="SET NULL"), nullable=True)
+
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -46,6 +49,7 @@ class Product(Base):
     prediction = relationship("Prediction", back_populates="product", uselist=False, cascade="all, delete-orphan")
     cleaned_demands = relationship("CleanedDemand", back_populates="product", cascade="all, delete-orphan")
     alerts = relationship("Alert", back_populates="product", cascade="all, delete-orphan")
+    supplier = relationship("Supplier", back_populates="products")
 
     def __repr__(self):
         return f"<Product {self.sku} ({self.source_platform.value}) — {self.title}>"
@@ -84,3 +88,58 @@ class SalesLog(Base):
 
     def __repr__(self):
         return f"<SalesLog product={self.product_id} date={self.date} sold={self.units_sold}>"
+
+
+class Supplier(Base):
+    __tablename__ = "suppliers"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    shop_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    contact_email = Column(String(255), nullable=True)
+
+    # Performance metrics
+    reliability_score = Column(Float, default=1.0) # 1.0 = 100% on-time
+    average_delay_days = Column(Float, default=0.0) # avg days late
+
+    products = relationship("Product", back_populates="supplier")
+    purchase_orders = relationship("PurchaseOrder", back_populates="supplier")
+
+    def __repr__(self):
+        return f"<Supplier {self.name} reliability={self.reliability_score:.2%}>"
+
+
+class AlertEmail(Base):
+    """
+    Suivi des alertes email envoyées pour éviter le spam (US 10.4).
+    """
+    __tablename__ = "alert_emails"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False)
+    sent_at = Column(DateTime, default=datetime.utcnow)
+    alert_type = Column(String, default="stockout_imminent")
+
+    product = relationship("Product")
+
+
+class PurchaseOrder(Base):
+    __tablename__ = "purchase_orders"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    shop_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id", ondelete="CASCADE"), nullable=False)
+
+    quantity = Column(Integer, nullable=False)
+    order_date = Column(Date, nullable=False, default=datetime.utcnow().date)
+    expected_arrival_date = Column(Date, nullable=False)
+    actual_arrival_date = Column(Date, nullable=True)
+
+    # PENDING, RECEIVED, CANCELLED
+    status = Column(String(50), default="PENDING")
+
+    supplier = relationship("Supplier", back_populates="purchase_orders")
+
+    def __repr__(self):
+        return f"<PurchaseOrder {self.id} status={self.status}>"

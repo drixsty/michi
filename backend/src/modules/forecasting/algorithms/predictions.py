@@ -81,6 +81,7 @@ def calculate_reorder_quantity(
     moq: int,
     current_stock: float,
     safety_factor: float = 1.5,
+    average_delay: float = 0.0,
 ) -> int:
     """
     Calcule la quantité de commande recommandée.
@@ -112,7 +113,9 @@ def calculate_reorder_quantity(
         return 0
 
     moq = max(1, moq)
-    target_stock = run_rate * lead_time * safety_factor
+    # Lead time effectif = délai théorique + retard moyen constaté (Sprint 8)
+    effective_lead_time = lead_time + average_delay
+    target_stock = run_rate * effective_lead_time * safety_factor
     raw_qty = max(0.0, target_stock - current_stock)
 
     if raw_qty == 0.0:

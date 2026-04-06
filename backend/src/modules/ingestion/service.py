@@ -37,18 +37,32 @@ class IngestionService:
 
         # 1. Fetch data (Products + Sales)
         from .connectors.shopify import ShopifyConnector
+        from .connectors.woocommerce import WooCommerceConnector
         if isinstance(connector, ShopifyConnector):
             data = await connector.fetch_all_data(shop_id)
             products_data = data["products"]
             sales_data = data["sales"]
+        elif isinstance(connector, WooCommerceConnector):
+            # WooCommerce a des fichiers séparés pour produits et commandes
+            products_data = await connector.fetch_products(
+                kwargs.get("csv_content", ""), kwargs.get("mapping")
+            )
+            orders_csv = kwargs.get("orders_csv")
+            sales_data = (
+                await connector.fetch_sales_history(orders_csv, kwargs.get("mapping"))
+                if orders_csv
+                else []
+            )
         else:
             # Mode standard (ex: CSV)
             products_data = await connector.fetch_products(kwargs.get("csv_content"), kwargs.get("mapping"))
             sales_data = await connector.fetch_sales_history(kwargs.get("csv_content"), kwargs.get("mapping"))
 
         # 2. Convertir la plateforme en Enum
+        # source_platform peut être passé explicitement pour forcer la valeur
+        platform_str = kwargs.get("source_platform", platform).lower()
         try:
-            p_enum = PlatformSource(platform.lower())
+            p_enum = PlatformSource(platform_str)
         except ValueError:
             p_enum = PlatformSource.CUSTOM
 

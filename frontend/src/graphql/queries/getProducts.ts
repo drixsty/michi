@@ -10,12 +10,18 @@ export const GET_PRODUCTS = gql`
       currentStock
       leadTime
       moq
-      createdAt
+      warningThreshold
       prediction {
         runRate
         daysOfStock
         predictedStockoutDate
         reorderQuantity
+      }
+      supplier {
+        id
+        name
+        reliabilityScore
+        averageDelayDays
       }
     }
   }

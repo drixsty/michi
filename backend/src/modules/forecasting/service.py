@@ -17,13 +17,13 @@ from datetime import date
 
 import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy.orm import selectinload
+from sqlalchemy import select, delete, func, case
 from loguru import logger
 
 from src.modules.inventory.models import Product, SalesLog
 from .models import CleanedDemand, Prediction
 from .schemas import PipelineResultSchema, CleanedDemandSchema, PredictionRunResultSchema, DashboardKPISchema
-from sqlalchemy import select, delete, func, case
 from .algorithms.out_of_stock_correction import correct_out_of_stock_batch
 from .algorithms.outlier_detection import detect_outliers_batch
 from .algorithms.run_rate import calculate_run_rate_batch
@@ -168,7 +168,9 @@ class ForecastingService:
 
         # ── 1. Charger les produits du shop ───────────────────────────────────
         products_result = await self.db.execute(
-            select(Product).where(Product.shop_id == shop_id)
+            select(Product)
+            .options(selectinload(Product.supplier))
+            .where(Product.shop_id == shop_id)
         )
         products = list(products_result.scalars().all())
 
@@ -249,11 +251,15 @@ class ForecastingService:
             )
 
             # Quantité de commande recommandée
+            # On injecte le retard fournisseur moyen (Sprint 8)
+            avg_delay = product.supplier.average_delay_days if product.supplier else 0.0
+            
             reorder_qty = calculate_reorder_quantity(
                 run_rate=run_rate,
                 lead_time=lead_time,
                 moq=moq,
                 current_stock=current_stock,
+                average_delay=avg_delay
             )
 
             predictions.append(Prediction(
@@ -387,6 +393,7 @@ class ForecastingService:
     async def get_dashboard_kpis(self, shop_id: str) -> DashboardKPISchema:
         """
         Calcule les KPIs globaux pour le shop (US 3.5).
+        Unification de la logique avec le Sprint 8 (Performance Fournisseurs).
         """
         # 1. Total produits & Ruptures réelles
         res = await self.db.execute(
@@ -399,28 +406,39 @@ class ForecastingService:
         total_products = total_products or 0
         actual_stockouts = actual_stockouts or 0
 
-        # 2. Prédictions (Alertes de réapprovisionnement)
-        # On définit une alerte si la rupture est prévue dans moins de 7 jours 
-        # OU si le stock est déjà à 0.
-        from datetime import date, timedelta
-        warning_date = date.today() + timedelta(days=7)
-
+        # 2. Alertes de réapprovisionnement (Urgence)
+        # Définition : Rupture prédite dans un délai (LeadTime + Delay + Buffer 2j)
+        today = date.today()
+        
+        # On charge toutes les prédictions et les produits liés pour calculer les urgences
+        # (Pour le MVP, on fait le calcul en Python car le LeadTime est dynamique par produit)
         pred_res = await self.db.execute(
-            select(
-                func.count(Prediction.id),
-                func.sum(case((Prediction.predicted_stockout_date <= warning_date, 1), else_=0))
-            ).join(Product).where(Product.shop_id == shop_id)
+            select(Prediction, Product)
+            .join(Product)
+            .options(selectinload(Product.supplier))
+            .where(Product.shop_id == shop_id)
         )
-        total_predictions, urgent_alerts = pred_res.one()
-        total_predictions = total_predictions or 0
-        urgent_alerts = urgent_alerts or 0
+        data = pred_res.all()
+        
+        urgent_alerts = 0
+        for pred, prod in data:
+            if prod.current_stock == 0:
+                continue # Déjà compté dans Ruptures réelles
+            
+            if pred.predicted_stockout_date:
+                effective_lead_time = prod.lead_time + (prod.supplier.average_delay_days if prod.supplier else 0)
+                days_to_stockout = (pred.predicted_stockout_date - today).days
+                
+                # Seuil d'urgence : Si on dépasse le délai de réappro (avec buffer 2j)
+                if days_to_stockout <= (effective_lead_time + 2):
+                    urgent_alerts += 1
 
         return DashboardKPISchema(
             total_products=total_products,
             actual_stockouts=actual_stockouts,
             urgent_alerts=urgent_alerts,
-            predicted_stockouts_30d=total_predictions, # Simplification pour MVP
-            message="KPIs calculés avec succès"
+            predicted_stockouts_30d=total_products, # Nombre de produits suivis
+            message="KPIs unifiés avec succès"
         )
 
     async def get_replenishment_alerts(self, shop_id: str) -> list[Prediction]:

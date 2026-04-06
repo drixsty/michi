@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
     
+    # SMTP (Sprint 10)
+    SMTP_HOST: str = "sandbox.smtp.mailtrap.io"
+    SMTP_PORT: int = 2525
+    SMTP_USER: str = "your_user"
+    SMTP_PASSWORD: str = "your_password"
+    EMAIL_FROM: str = "notifications@michi-app.io"
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

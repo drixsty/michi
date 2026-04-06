@@ -9,6 +9,7 @@ from loguru import logger
 from src.modules.inventory.models import Product, SalesLog
 from .schemas import SyncResultSchema
 from .mock_generator import generate_full_mock_dataset
+import random
 
 
 class ShopifyService:
@@ -29,7 +30,14 @@ class ShopifyService:
         )
         existing_products = {p.sku: p for p in existing_result.scalars().all()}
 
-        # 2. Générer le nouveau dataset mock
+        # 2. Charger les fournisseurs pour l'assignation
+        from src.modules.inventory.models import Supplier
+        supplier_result = await self.db.execute(
+            select(Supplier).where(Supplier.shop_id == shop_id)
+        )
+        suppliers = list(supplier_result.scalars().all())
+
+        # 3. Générer le nouveau dataset mock
         products_data, sales_data = generate_full_mock_dataset(count=50, shop_id=shop_id)
 
         # 3. Traiter les produits (Update ou Create)
@@ -41,11 +49,16 @@ class ShopifyService:
                 p = existing_products[sku]
                 p.title = p_data["title"]
                 p.current_stock = p_data["current_stock"]
-                # On ne touche PAS à lead_time/moq pour respecter les réglages utilisateur
+                # Assigner un fournisseur s'il n'en a pas
+                if not p.supplier_id and suppliers:
+                    p.supplier_id = random.choice(suppliers).id
                 processed_products.append(p)
             else:
                 # CREATE
                 new_p = Product(**p_data)
+                # Assigner un fournisseur aléatoire
+                if suppliers:
+                    new_p.supplier_id = random.choice(suppliers).id
                 self.db.add(new_p)
                 processed_products.append(new_p)
         
@@ -132,14 +145,18 @@ class ShopifyService:
                 select(Product)
                 .options(
                     selectinload(Product.prediction),
-                    selectinload(Product.cleaned_demands)
+                    selectinload(Product.cleaned_demands),
+                    selectinload(Product.supplier)
                 )
                 .where(Product.id == p_uuid, Product.shop_id == s_uuid)
             )
         else:
             stmt = (
                 select(Product)
-                .options(selectinload(Product.prediction))
+                .options(
+                    selectinload(Product.prediction),
+                    selectinload(Product.supplier)
+                )
                 .where(Product.shop_id == s_uuid)
                 .order_by(Product.sku)
             )

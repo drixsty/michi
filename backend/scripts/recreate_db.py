@@ -16,7 +16,8 @@ from src.core.database import Base
 
 # Imports requis pour que SQLAlchemy découvre les modèles lors du drop/create
 from src.modules.auth.models import User
-from src.modules.inventory.models import Product, SalesLog, Alert
+from src.modules.shopify.models import Product, SalesLog
+from src.modules.inventory.models import Supplier, PurchaseOrder, AlertEmail
 from src.modules.forecasting.models import CleanedDemand, Prediction
 
 async def recreate_all():
