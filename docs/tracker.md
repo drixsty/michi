@@ -1,10 +1,10 @@
 # 📊 Michi - Progress Tracker
 
 **Dernière mise à jour :** 8 Avril 2026  
-**Version :** 6.1 (Sprint 6 Lancé 🚀)  
+**Version :** 7.0 (Hardening Phase - Omnichannel)  
 **Date :** 8 Avril 2026  
-**Agent IA :** Claude Code (Sonnet 4.7)  
-**Objectif :** MVP Production-Ready en 6 sprints (12 semaines) — **Avancement : 82% (5/6 sprints livrés + Polish)**
+**Agent IA :** Claude Code (Sonnet 3.5)  
+**Objectif :** Solution OMNICANAL Robuste — **Avancement : 75% (6/10 sprints)**
 
 ---
 
@@ -25,12 +25,16 @@
 
 ```
 Sprint 0  ✅ [■■■■■■■■■■] 100%  Infrastructure & Auth
-Sprint 1  ✅ [■■■■■■■■■■] 100%  Epic 1: Mock Shopify (Part 1)
-Sprint 2  ✅ [■■■■■■■■■■] 100%  Epic 1: Mock Shopify (Part 2)
-Sprint 3  ✅ [■■■■■■■■■■] 100%  Epic 2: Algorithmes Data Science (Part 1)
-Sprint 4  ✅ [■■■■■■■■■■] 100%  Epic 2: Algorithmes Data Science (Part 2) — Run Rate + Prédictions
-Sprint 5  ✅ [■■■■■■■■■■] 100%  Epic 3: Prédictions (Paramétrage & Alertes)
-Sprint 6  🚀 [■■■■■■■■■■]  20%  Epic 4: Dashboard UI
+Sprint 1  ✅ [■■■■■■■■■■] 100%  Epic 1: Mock Data & Ingestion
+Sprint 2  ✅ [■■■■■■■■■■] 100%  Epic 1: Data Validation
+Sprint 3  ✅ [■■■■■■■■■■] 100%  Epic 2: Algos Step 1 (OOS/IQR)
+Sprint 4  ✅ [■■■■■■■■■■] 100%  Epic 2: Algos Step 2 (Run Rate)
+Sprint 5  ✅ [■■■■■■■■■■] 100%  Epic 3: Predictions Engine
+Sprint 6  ✅ [■■■■■■■■■■] 100%  Epic 4: Premium Dashboard UI
+Sprint 7  🚀 [■■■■■■■■■■]   0%  Epic 5: Universal Ingestion & Alerting
+Sprint 8  ⏳ [□□□□□□□□□□]   0%  Epic 6: Supplier Performance
+Sprint 9  ⏳ [□□□□□□□□□□]   0%  Epic 7: Omnichannel Aggregation
+Sprint 10 ⏳ [□□□□□□□□□□]   0%  Epic 8: What-if Simulations
 ```
 
 ---
@@ -432,13 +436,11 @@ Problème identifié : un produit à forte saisonnalité (×5 en été) verra se
 
 | Sprint | Planifié | Réalisé | % |
 |--------|----------|---------|---|
-| Sprint 0 | 5 pts | 5 pts | 100% |
-| Sprint 1 | 13 pts | 13 pts | 100% ✅ |
-| Sprint 2 | 7 pts | 7 pts | 100% ✅ |
-| Sprint 3 | 21 pts | 21 pts | 100% ✅ |
-| Sprint 4 | 21 pts | 21 pts | 100% ✅ |
-| Sprint 5 | 19 pts | 19 pts | 100% ✅ |
-| Sprint 6 | 23 pts | - | ⏳ À faire |
+| Sprint 0-6| 109 pts | 109 pts | 100% ✅ |
+| Sprint 7  | 25 pts  | -       | ⏳ En cours |
+| Sprint 8  | 20 pts  | -       | ⏳ À faire |
+| Sprint 9  | 30 pts  | -       | ⏳ À faire |
+| Sprint 10 | 25 pts  | -       | ⏳ À faire |
 
 **Total MVP :** 109 story points (incluant US 4.7) — **86 livrés (79%)** — **23 restants**
 

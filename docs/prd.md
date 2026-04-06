@@ -1,8 +1,8 @@
-# Product Requirements Document (PRD) - MVP Michi 道
+# Product Requirements Document (PRD) - Michi 道 OMNICANAL
 
-**Version:** 2.0  
-**Date:** Mars 2026  
-**Statut:** En développement - Phase MVP  
+**Version:** 5.0 (Sprint 6 Polish + Roadmap V2)  
+**Date:** Avril 2026  
+**Statut:** En développement - Phase Blindage MVP  
 **Propriétaire Produit:** [Votre Nom]  
 **Équipe:** Full-Stack + Data Science
 
@@ -28,9 +28,9 @@
 ### 1.1 Vision Produit
 **"Michi est le GPS des stocks e-commerce : anticiper, commander juste, ne jamais être en rupture."**
 
-Michi transforme la gestion de stock d'une tâche complexe Excel en un tableau de bord simple qui dit :
+Michi transforme la gestion de stock d'une tâche complexe Excel en un tableau de bord simple et OMNICANAL qui dit :
 - ⚠️ **"Tu vas être en rupture dans 12 jours"**
-- 📦 **"Commande 150 unités maintenant"**
+- 📦 **"Commande 150 unités maintenant (Source: Shopify + Amazon)"**
 - 💰 **"Tu perds 2 400€/mois en ruptures"**
 
 ### 1.2 Objectifs du MVP
@@ -718,19 +718,48 @@ Voir section 4.1 ci-dessus.
 ✅ 3 POC gratuits  
 🎯 1er client payant
 
-### Phase MVP (3 mois - Q2 2026)
-**Sprint 1 (2 semaines) :** Epic 0 + Epic 1  
-**Sprint 2 (2 semaines) :** Epic 2 (Algorithmes)  
-**Sprint 3 (2 semaines) :** Epic 3 (Prédictions)  
-**Sprint 4 (2 semaines) :** Epic 4 (Dashboard)  
-**Sprint 5 (2 semaines) :** Bug fixes + Tests  
-**Sprint 6 (2 semaines) :** Onboarding 5 clients pilotes
+### Epic 5 : Alerting & Safety Stock (Sprint 7)
+**Priorité :** P0 (Hardening)  
 
-### Post-MVP (Q3 2026)
-- Intégration Shopify API réelle
-- Multi-utilisateurs / Permissions
-- Alertes email automatiques
-- Mobile app native
+#### US 5.1 : Système d'Alertes "Anti-Rupture"
+**Fonctionnalité :** Notification proactive quand `Stock < (Sales * LeadTime) + SafetyBuffer`.
+
+### Epic 6 : Gestion Fournisseurs (Sprint 8)
+**Priorité :** P1 (Robustesse)
+
+#### US 6.1 : Fiabilité Lead Times
+**Fonctionnalité :** Calcul de l'écart entre délai annoncé et réel.
+
+### Epic 7 : Connecteurs Omnicanaux (Sprint 9)
+**Priorité :** P1 (Expansion)
+
+#### US 7.1 : Ingestion Universelle
+**Fonctionnalité :** Connecteurs pour Shopify, WooCommerce, Amazon et Import CSV.
+
+### Epic 8 : Simulations & Trust (Sprint 10)
+**Priorité :** P2 (Scale)
+
+#### US 8.1 : Simulateur de Promotions
+**Fonctionnalité :** "What-if" scenario pour les pics de demande futurs.
+
+---
+
+## 7. Priorités & Roadmap
+
+### Phase 0 : Validation Problème (Terminé)
+✅ 10 interviews  
+✅ 3 POC gratuits  
+🎯 1er client payant
+
+### Phase MVP (Sprints 1-6 - Terminé/Polish)
+✅ Sprint 1-5 : Infrastructure, Algos, Prédictions  
+🚀 Sprint 6 : Dashboard Premium & Polish Final
+
+### Phase Blindage Omnicanal (Nouveau - Q3 2026)
+**Sprint 7 :** Alerting Proactif & Safety Stock  
+**Sprint 8 :** Gestion Fournisseurs & Lead Times  
+**Sprint 9 :** Connecteurs Omnicanaux (Aggregator)  
+**Sprint 10 :** Simulateur de Croissance & Trust Widgets
 
 ---
 

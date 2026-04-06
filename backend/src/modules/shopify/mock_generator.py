@@ -127,17 +127,18 @@ def generate_mock_products(count: int = 50, shop_id: Optional[str] = None) -> li
     return products
 
 
-def generate_mock_sales(product_id: str, days: int = 365, has_stockout: bool = False) -> list[dict]:
+def generate_mock_sales(product_id: str, sku: Optional[str] = None, days: int = 365, has_stockout: bool = False) -> list[dict]:
     """
     Génère l'historique de ventes quotidiennes pour un produit.
 
     Args:
-        product_id: UUID du produit.
+        product_id: UUID ou SKU du produit.
+        sku: SKU optionnel pour lier les logs lors de la sync intelligente.
         days: Nombre de jours d'historique (défaut: 365).
-        has_stockout: Si True, simule 1-3 périodes de rupture de stock.
+        has_stockout: Si True, génère 1-3 ruptures aléatoires.
 
     Returns:
-        Liste de dicts compatibles avec le modèle SalesLog.
+        Liste de dicts compatibles avec le modèle SalesLog (incluant le SKU).
 
     Notes:
         - Ventes journalières de base : distribution normale (μ=5, σ=2).
@@ -186,12 +187,15 @@ def generate_mock_sales(product_id: str, days: int = 365, has_stockout: bool = F
             units_sold = units
             stock = max(0, stock - int(units))
 
-        sales_logs.append({
+        log = {
             "product_id": product_id,
             "date": current_date,
             "units_sold": units_sold,
-            "end_of_day_stock": stock,
-        })
+            "end_of_day_stock": int(stock),
+        }
+        if sku:
+            log["sku"] = sku
+        sales_logs.append(log)
 
     return sales_logs
 
@@ -220,7 +224,8 @@ def generate_full_mock_dataset(count: int = 50, shop_id: Optional[str] = None) -
     all_sales: list[dict] = []
     for product in products:
         has_stockout = product["id"] in stockout_ids
-        logs = generate_mock_sales(product["id"], days=365, has_stockout=has_stockout)
+        sku = product["sku"]  # Nouveau : on récupère le SKU
+        logs = generate_mock_sales(product["id"], sku=sku, days=365, has_stockout=has_stockout)
         all_sales.extend(logs)
 
     return products, all_sales

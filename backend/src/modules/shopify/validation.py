@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from loguru import logger
 
-from .models import Product, SalesLog
+from src.modules.inventory.models import Product, SalesLog
 from .schemas import ValidationReportSchema, ValidationIssue
 from .mock_generator import RANDOM_SEED
 

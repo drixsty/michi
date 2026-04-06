@@ -7,11 +7,12 @@ from .types import User, LoginInput, AuthPayload
 from src.modules.auth.service import AuthService
 from src.modules.shopify.resolvers import ShopifyQuery, ShopifyMutation
 from src.modules.forecasting.resolvers import ForecastingQuery, ForecastingMutation
+from src.modules.inventory.resolvers import InventoryQuery, InventoryMutation
 from src.core.exceptions import UnauthenticatedException
 
 
 @strawberry.type
-class Query(ShopifyQuery, ForecastingQuery):
+class Query(ShopifyQuery, ForecastingQuery, InventoryQuery):
     """Queries GraphQL"""
 
     @strawberry.field
@@ -38,7 +39,7 @@ class Query(ShopifyQuery, ForecastingQuery):
 
 
 @strawberry.type
-class Mutation(ShopifyMutation, ForecastingMutation):
+class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation):
     """Mutations GraphQL"""
 
     @strawberry.mutation

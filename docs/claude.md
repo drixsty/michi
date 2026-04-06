@@ -1,9 +1,9 @@
 # Instructions Système pour Claude Code - Projet Michi 道
 
-**Version:** 4.3 (Sprint 5 Terminé ✅)  
+**Version:** 5.0 (Sprint 6 Terminé ✅ - Roadmap Agile V2)  
 **Date:** Avril 2026  
-**Agent IA:** Claude Code (Sonnet 4)  
-**Objectif:** MVP Production-Ready en 6 sprints (12 semaines) — **Avancement : 79% (5/6 sprints livrés)**
+**Agent IA:** Claude Code (Sonnet 3.5)  
+**Objectif:** Solution de prévision OMNICANAL (Shopify, WooCommerce, Amazon, CSV) — **Focus Sprints 7-10**
 
 ---
 
@@ -118,9 +118,10 @@ Le projet suit une structure modulaire stricte pour éviter les couplages forts.
 │   │   ├── core/              # Infrastructure (Auth, DB, GraphQL Config)
 │   │   ├── modules/
 │   │   │   ├── auth/          # Authentification
-│   │   │   ├── shopify/       # Mock & Sync Shopify
-│   │   │   ├── inventory/     # Produits & Stocks
-│   │   │   └── forecasting/   # Prédictions (Algorithms)
+│   │   │   ├── ingestion/     # Connecteurs Génériques (CSV, Shopify, API)
+│   │   │   ├── suppliers/     # Gestion Fournisseurs (Nouveau)
+│   │   │   ├── inventory/     # Produits & Stocks (Unified Model)
+│   │   │   └── forecasting/   # Prédictions & Simulations
 │   │   └── main.py
 ├── frontend/
 │   ├── src/

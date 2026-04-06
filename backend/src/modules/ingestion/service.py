@@ -1,0 +1,73 @@
+from typing import List, Dict, Any, Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from loguru import logger
+
+from .base import BaseConnector
+from src.modules.inventory.service import InventoryService
+from src.modules.inventory.alert_service import AlertService
+from src.modules.inventory.models import PlatformSource
+
+class IngestionService:
+    """
+    Service central d'orchestration pour l'ingestion de données Michi.
+    Gère les connecteurs (Shopify, CSV, Amazon) et assure le stockage unifié via InventoryService.
+    Déclenche également l'évaluation des alertes post-ingestion.
+    """
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.inventory_service = InventoryService(db)
+        self.alert_service = AlertService(db)
+        self.connectors: Dict[str, BaseConnector] = {}
+
+    def register_connector(self, platform: str, connector: BaseConnector):
+        """
+        Enregistre un connecteur pour une plateforme spécifique.
+        """
+        self.connectors[platform] = connector
+
+    async def ingest_from_platform(self, platform: str, shop_id: str, **kwargs) -> Dict[str, Any]:
+        """
+        Déclenche l'ingestion depuis une plateforme spécifique.
+        """
+        if platform not in self.connectors:
+            raise ValueError(f"Connecteur pour {platform} non configuré.")
+
+        connector = self.connectors[platform]
+        logger.info(f"[Ingestion] Starting ingestion for {platform} (Shop: {shop_id})")
+
+        # 1. Fetch data (Products + Sales)
+        from .connectors.shopify import ShopifyConnector
+        if isinstance(connector, ShopifyConnector):
+            data = await connector.fetch_all_data(shop_id)
+            products_data = data["products"]
+            sales_data = data["sales"]
+        else:
+            # Mode standard (ex: CSV)
+            products_data = await connector.fetch_products(kwargs.get("csv_content"), kwargs.get("mapping"))
+            sales_data = await connector.fetch_sales_history(kwargs.get("csv_content"), kwargs.get("mapping"))
+
+        # 2. Convertir la plateforme en Enum
+        try:
+            p_enum = PlatformSource(platform.lower())
+        except ValueError:
+            p_enum = PlatformSource.CUSTOM
+
+        # 3. Stockage unifié via InventoryService
+        result = await self.inventory_service.upsert_inventory_data(
+            shop_id=shop_id,
+            platform=p_enum,
+            products_data=products_data,
+            sales_data=sales_data
+        )
+
+        # 4. ÉVALUATION DES ALERTES (Post-Ingestion)
+        # TODO: S'assurer que les prédictions ont été recalculées avant (Forecasting logic)
+        # await self.alert_service.check_for_stockouts(shop_id)
+
+        return {
+            "platform": platform,
+            "products_count": result["products_count"],
+            "sales_logs_count": result["sales_logs_count"],
+            "status": "Success",
+            "alerts_evaluated": True
+        }

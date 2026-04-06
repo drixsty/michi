@@ -6,7 +6,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 from loguru import logger
 
-from .models import Product, SalesLog
+from src.modules.inventory.models import Product, SalesLog
 from .schemas import SyncResultSchema
 from .mock_generator import generate_full_mock_dataset
 

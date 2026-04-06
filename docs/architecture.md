@@ -45,17 +45,22 @@
          ▼                      ▼                 ▼
 ┌─────────────────┐  ┌─────────────────┐  ┌──────────────────┐
 │  AUTH MODULE    │  │ INVENTORY MODULE│  │ FORECAST MODULE  │
-│  (JWT, Users)   │  │ (Products, SKU) │  │ (Algorithms,     │
-│                 │  │                 │  │  Predictions)    │
-└────────┬────────┘  └────────┬────────┘  └────────┬─────────┘
-         │                    │                     │
-         └────────────────────┴─────────────────────┘
+│  (JWT, Users)   │  │ (Unified model) │  │ (Algorithms,     │
+└────────┬────────┘  └────────┬────────┘  │  Simulations)    │
+         │                    │           └────────┬─────────┘
+         │          ┌─────────┴─────────┐          │
+         │          ▼                   ▼          │
+         │  ┌────────────────┐  ┌────────────────┐ │
+         │  │ INGESTION MOD. │  │ SUPPLIERS MOD. │ │
+         │  │ (Connectors)   │  │ (Lead Times)   │ │
+         │  └────────────────┘  └────────────────┘ │
+         └────────────────────┬─────────────────────┘
                               │
                               ▼
          ┌──────────────────────────────────────────┐
          │      PostgreSQL 15+ (Primary DB)         │
          │  Tables: users, products, daily_sales,   │
-         │          cleaned_demand, alerts          │
+         │          cleaned_demand, suppliers       │
          └──────────────────────────────────────────┘
 ```
 
@@ -578,40 +583,19 @@ backend/
 │   │
 │   ├── modules/                 # Domaines métier
 │   │   ├── auth/
+│   │   ├── ingestion/           # Connecteurs (CSV, Shopify, Amazon)
 │   │   │   ├── __init__.py
-│   │   │   ├── models.py        # SQLAlchemy User model
-│   │   │   ├── service.py       # AuthService (login, register)
-│   │   │   ├── resolvers.py     # GraphQL resolvers Auth
-│   │   │   └── tests/
-│   │   │       └── test_auth_service.py
+│   │   │   ├── base.py          # Connector Interface
+│   │   │   ├── shopify.py       # Shopify Logic
+│   │   │   ├── csv.py           # Universal CSV Logic
+│   │   │   └── service.py       # Ingestion Orchestrator
 │   │   │
-│   │   ├── shopify/             # Mock Shopify + Future API
-│   │   │   ├── __init__.py
-│   │   │   ├── mock_generator.py  # Génération données de test
-│   │   │   ├── service.py
-│   │   │   └── tests/
+│   │   ├── suppliers/           # Gestion Fournisseurs
+│   │   │   ├── models.py        # Supplier Table
+│   │   │   └── service.py       # Delay tracking
 │   │   │
-│   │   ├── inventory/           # Gestion produits, SKU
-│   │   │   ├── __init__.py
-│   │   │   ├── models.py        # Product, DailySalesLog
-│   │   │   ├── service.py       # ProductService
-│   │   │   ├── resolvers.py
-│   │   │   └── tests/
-│   │   │
-│   │   └── forecasting/         # Algorithmes Data Science
-│   │       ├── __init__.py
-│   │       ├── models.py        # CleanedDemand
-│   │       ├── service.py       # ForecastService (orchestration)
-│   │       ├── algorithms/
-│   │       │   ├── __init__.py
-│   │       │   ├── out_of_stock_correction.py
-│   │       │   ├── outlier_detection.py
-│   │       │   ├── run_rate_calculator.py
-│   │       │   └── stockout_predictor.py
-│   │       ├── resolvers.py
-│   │       └── tests/
-│   │           ├── test_out_of_stock_correction.py
-│   │           └── test_stockout_predictor.py
+│   │   ├── inventory/           # Gestion produits Agnostique
+│   │   └── forecasting/         # Prédictions & Simulations
 │   │
 │   ├── main.py                  # FastAPI app entry point
 │   └── alembic/                 # Migrations DB

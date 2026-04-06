@@ -9,11 +9,13 @@ import { TRIGGER_MOCK_DATA_SYNC } from '@/graphql/mutations/syncShopify';
 import { GET_DASHBOARD_STATS } from '@/graphql/queries/getDashboardStats';
 import { UPDATE_PRODUCT_SETTINGS } from '@/graphql/mutations/updateProduct';
 import { GET_PRODUCT_DETAIL } from '@/graphql/queries/getProductDetail';
+import { GET_UNREAD_ALERTS, MARK_ALERT_AS_READ } from '@/graphql/queries/getUnreadAlerts';
+import { INGEST_CSV_DATA } from '@/graphql/mutations/ingestCSV';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import SalesChart from '@/components/dashboard/SalesChart';
 import type { Product, SyncResult, CleanedDemand } from '@/types/product';
-import { ChevronDown, ChevronUp, BarChart2, Download } from 'lucide-react';
+import { ChevronDown, ChevronUp, BarChart2, Download, Upload, Bell, CheckCircle2, AlertCircle } from 'lucide-react';
 
 type FilterTab = 'all' | 'urgent' | 'warning' | 'healthy';
 
@@ -99,6 +101,7 @@ export default function DashboardPage() {
   const { data: meData, loading: meLoading, error: meError } = useQuery(GET_ME);
   const { data: productsData, loading: productsLoading, refetch: refetchProducts } = useQuery(GET_PRODUCTS);
   const { data: statsData, refetch: refetchStats } = useQuery(GET_DASHBOARD_STATS);
+  const { data: alertsData, refetch: refetchAlerts } = useQuery(GET_UNREAD_ALERTS, { pollInterval: 30000 });
 
   const [fetchDetail, { data: detailData, loading: detailLoading }] = useLazyQuery(GET_PRODUCT_DETAIL);
 
@@ -107,6 +110,7 @@ export default function DashboardPage() {
       setToast({ message: data.triggerMockDataSync.message, type: 'success' });
       refetchProducts();
       refetchStats();
+      refetchAlerts();
       setTimeout(() => setToast(null), 5000);
     },
     onError: (err) => {
@@ -114,6 +118,50 @@ export default function DashboardPage() {
       setTimeout(() => setToast(null), 5000);
     },
   });
+
+  const [ingestCSV, { loading: importing }] = useMutation(INGEST_CSV_DATA, {
+    onCompleted: (data) => {
+      setToast({ 
+        message: `Import réussi : ${data.ingestCsvData.productsCount} produits synchronisés.`, 
+        type: 'success' 
+      });
+      refetchProducts();
+      refetchStats();
+      refetchAlerts();
+      setTimeout(() => setToast(null), 5000);
+    },
+    onError: (err) => {
+      setToast({ message: err.message, type: 'error' });
+      setTimeout(() => setToast(null), 5000);
+    }
+  });
+
+  const [markAsRead] = useMutation(MARK_ALERT_AS_READ, {
+    onCompleted: () => refetchAlerts()
+  });
+
+  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        await ingestCSV({
+          variables: {
+            csvContent: content,
+            skuCol: 'sku',
+            dateCol: 'date',
+            salesCol: 'sales',
+            stockCol: 'stock',
+            titleCol: 'title'
+          }
+        });
+      }
+    };
+    reader.readAsText(file);
+  };
 
   const [updateSettings] = useMutation(UPDATE_PRODUCT_SETTINGS, {
     onCompleted: () => {
@@ -263,11 +311,41 @@ export default function DashboardPage() {
               <span className="text-xl font-serif text-purple-600">道</span>
               <span className="text-sm font-semibold text-gray-900 tracking-wide">MICHI</span>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="hidden sm:block text-xs text-gray-400">{user?.email}</span>
+            <div className="flex items-center gap-5">
+              <div className="relative cursor-pointer group">
+                <Bell className="h-5 w-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
+                {alertsData?.unreadAlerts?.length > 0 && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white ring-red-200 group-hover:ring-4 transition-all">
+                    {alertsData.unreadAlerts.length}
+                  </span>
+                )}
+                
+                {/* Alert Dropdown (Simple) */}
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all py-2 z-50">
+                  <p className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50">Alertes Récentes</p>
+                  <div className="max-h-64 overflow-y-auto">
+                    {alertsData?.unreadAlerts?.length === 0 ? (
+                      <p className="px-4 py-4 text-xs text-center text-gray-400">Aucune alerte</p>
+                    ) : (
+                      alertsData?.unreadAlerts?.map((a: any) => (
+                        <div key={a.id} className="px-4 py-3 hover:bg-gray-50 border-b border-gray-50 last:border-0 transition-colors">
+                          <div className="flex gap-3">
+                            <AlertCircle className={`h-4 w-4 mt-0.5 ${a.severity === 3 ? 'text-red-500' : 'text-amber-500'}`} />
+                            <div>
+                              <p className="text-xs font-semibold text-gray-800 leading-tight">{a.message}</p>
+                              <p className="text-[10px] text-gray-400 mt-1">{format(new Date(a.createdAt), 'dd MMMM HH:mm', { locale: undefined })}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+              <span className="hidden sm:block text-xs text-gray-400 font-medium">{user?.email}</span>
               <button
                 onClick={() => { localStorage.removeItem('michi_token'); router.push('/login'); }}
-                className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
               >
                 Déconnexion
               </button>
@@ -284,17 +362,35 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-gray-900">Catalogue produits</h1>
             <p className="text-sm text-gray-400 mt-0.5">Vue d&apos;ensemble de votre inventaire</p>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm font-medium transition-colors shadow-sm"
-              title="Exporter les alertes en CSV"
-            >
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Exporter</span>
-            </button>
-            <SyncButton syncing={syncing} onClick={() => triggerSync()} />
-          </div>
+            <div className="flex items-center gap-3">
+            <input 
+                type="file" 
+                id="csv-upload" 
+                className="hidden" 
+                accept=".csv" 
+                onChange={handleCSVUpload} 
+              />
+              <label
+                htmlFor="csv-upload"
+                className={`
+                  flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm font-medium transition-all shadow-sm cursor-pointer
+                  ${importing ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+                title="Importer des données via CSV"
+              >
+                <Upload className={`h-4 w-4 ${importing ? 'animate-bounce' : ''}`} />
+                <span className="hidden sm:inline">{importing ? 'Import…' : 'Importer CSV'}</span>
+              </label>
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm font-medium transition-colors shadow-sm"
+                title="Exporter les alertes en CSV"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Exporter</span>
+              </button>
+              <SyncButton syncing={syncing} onClick={() => triggerSync()} />
+            </div>
         </div>
 
         {/* KPI cards */}

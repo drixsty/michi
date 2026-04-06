@@ -20,10 +20,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from loguru import logger
 
-from src.modules.shopify.models import Product, SalesLog
+from src.modules.inventory.models import Product, SalesLog
 from .models import CleanedDemand, Prediction
 from .schemas import PipelineResultSchema, CleanedDemandSchema, PredictionRunResultSchema, DashboardKPISchema
-from sqlalchemy import select, delete, func
+from sqlalchemy import select, delete, func, case
 from .algorithms.out_of_stock_correction import correct_out_of_stock_batch
 from .algorithms.outlier_detection import detect_outliers_batch
 from .algorithms.run_rate import calculate_run_rate_batch
@@ -389,7 +389,6 @@ class ForecastingService:
         Calcule les KPIs globaux pour le shop (US 3.5).
         """
         # 1. Total produits & Ruptures réelles
-        from sqlalchemy import case
         res = await self.db.execute(
             select(
                 func.count(Product.id),
@@ -409,7 +408,7 @@ class ForecastingService:
         pred_res = await self.db.execute(
             select(
                 func.count(Prediction.id),
-                func.sum(func.case((Prediction.predicted_stockout_date <= warning_date, 1), else_=0))
+                func.sum(case((Prediction.predicted_stockout_date <= warning_date, 1), else_=0))
             ).join(Product).where(Product.shop_id == shop_id)
         )
         total_predictions, urgent_alerts = pred_res.one()

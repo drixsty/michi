@@ -11,6 +11,7 @@ from datetime import datetime
 import uuid
 
 from src.core.database import Base
+from src.modules.inventory.models import Product  # Import requis pour les relations
 
 
 class CleanedDemand(Base):
