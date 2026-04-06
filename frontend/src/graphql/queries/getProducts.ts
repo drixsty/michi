@@ -11,6 +11,12 @@ export const GET_PRODUCTS = gql`
       leadTime
       moq
       createdAt
+      prediction {
+        runRate
+        daysOfStock
+        predictedStockoutDate
+        reorderQuantity
+      }
     }
   }
 `;

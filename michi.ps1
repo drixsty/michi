@@ -45,7 +45,7 @@ switch ($Command) {
 
     "seed" {
         Write-Host "[SEED] Seeding database..." -ForegroundColor Yellow
-        Set-Location backend; python scripts/seed_dev_data.py; Set-Location ..
+        Set-Location backend; python -m alembic upgrade head; python scripts/seed_dev_data.py; Set-Location ..
     }
 
     "dev-backend" {

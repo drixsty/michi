@@ -11,15 +11,17 @@ import uuid
 from pathlib import Path
 
 # Ajouter src au path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 from src.core.config import settings
 from src.core.security import hash_password
-from src.modules.auth.models import User
 from src.core.database import Base
+from src.modules.auth.models import User
+from src.modules.shopify.models import Product, SalesLog
+from src.modules.forecasting.models import CleanedDemand
 
 
 async def create_tables():

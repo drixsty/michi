@@ -1,30 +1,32 @@
 """
-Out-of-Stock Correction Algorithm — US 2.1
+Out-of-Stock Correction Algorithm — US 2.1 (révisé Sprint 4 — DS-1)
 
 Objectif :
     Corriger les jours de rupture de stock (end_of_day_stock = 0) en estimant
-    la demande théorique non satisfaite via une moyenne mobile glissante de 14 jours
+    la demande théorique non satisfaite via une médiane mobile glissante de 14 jours
     calculée sur les jours non-rupture précédents.
 
 Formule :
     Pour chaque jour j où end_of_day_stock[j] == 0 :
-        theoretical_units_sold[j] = mean(units_sold[k] pour k dans [j-14..j-1] où stock[k] > 0)
+        theoretical_units_sold[j] = median(units_sold[k] pour k dans [j-14..j-1] où stock[k] > 0)
 
     Si aucun jour non-rupture n'existe dans la fenêtre de 14 jours :
         theoretical_units_sold[j] = median(units_sold sur toute la série non-rupture)
 
+Changement Sprint 4 (DS-1) :
+    Remplacement de rolling().mean() par rolling().median() pour la robustesse aux outliers.
+    Justification : si un pic (Black Friday ×10) tombe dans la fenêtre pré-rupture,
+    la moyenne sur-estime la demande corrigée. La médiane est insensible aux valeurs extrêmes.
+
 Hypothèses :
-    - La demande est stable sur 14 jours (distribution normale)
-    - Les jours de pic (Black Friday, soldes) ne sont PAS exclus car ils font
-      partie de la demande réelle
+    - La demande est stable sur 14 jours
+    - Les jours de pic (Black Friday, soldes) sont gérés par l'IQR en aval
     - Un stock = 0 en fin de journée indique une rupture (pas une vente nulle)
 
 Performance :
     O(n) avec vectorisation Pandas — interdit les boucles for sur les lignes.
 """
 import pandas as pd
-import numpy as np
-from typing import Optional
 
 ROLLING_WINDOW = 14   # jours de fenêtre glissante
 
@@ -41,7 +43,7 @@ def correct_out_of_stock(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         DataFrame original enrichi avec :
         - ``is_stockout`` (bool) : True si le jour est une rupture
-        - ``theoretical_units_sold`` (float) : ventes corrigées
+        - ``theoretical_units_sold`` (float) : ventes corrigées via médiane mobile 14j
 
     Raises:
         ValueError: Si les colonnes requises sont manquantes.
@@ -72,11 +74,12 @@ def correct_out_of_stock(df: pd.DataFrame) -> pd.DataFrame:
     # Ventes non-rupture pour la fenêtre glissante
     non_stockout_sales = df["units_sold"].where(~df["is_stockout"])
 
-    # Moyenne mobile 14j (min_periods=1 pour éviter les NaN en début de série)
-    rolling_mean = (
+    # Médiane mobile 14j — robuste aux pics (Black Friday, soldes) dans la fenêtre
+    # (remplace rolling().mean() — DS-1 Sprint 4)
+    rolling_median = (
         non_stockout_sales
         .rolling(window=ROLLING_WINDOW, min_periods=1)
-        .mean()
+        .median()
     )
 
     # Fallback : médiane globale des jours non-rupture
@@ -86,7 +89,7 @@ def correct_out_of_stock(df: pd.DataFrame) -> pd.DataFrame:
 
     # Appliquer la correction sur les jours de rupture
     stockout_mask = df["is_stockout"]
-    correction = rolling_mean.where(stockout_mask).fillna(global_median)
+    correction = rolling_median.where(stockout_mask).fillna(global_median)
     df.loc[stockout_mask, "theoretical_units_sold"] = correction[stockout_mask]
 
     # Garantir non-négatif

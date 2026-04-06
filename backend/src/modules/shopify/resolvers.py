@@ -4,11 +4,18 @@ Types Strawberry + Query/Mutation pour produits, sync mock et validation.
 """
 import strawberry
 from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from src.core.exceptions import UnauthenticatedException
 from .service import ShopifyService
 from .validation import DataValidationService
+from src.modules.forecasting.service import ForecastingService
+from src.modules.forecasting.resolvers import (
+    PredictionType, 
+    _prediction_to_type, 
+    CleanedDemandType
+)
 
 
 # ── Strawberry Types ──────────────────────────────────────────────────────────
@@ -23,6 +30,8 @@ class ProductType:
     lead_time: int
     moq: int
     created_at: datetime
+    prediction: Optional[PredictionType] = None
+    cleaned_demand: List[CleanedDemandType] = strawberry.field(default_factory=list)
 
 
 @strawberry.type
@@ -55,7 +64,7 @@ class ValidationReportType:
 @strawberry.type
 class ShopifyQuery:
     @strawberry.field
-    async def products(self, info) -> List[ProductType]:
+    async def products(self, info, id: Optional[strawberry.ID] = None) -> List[ProductType]:
         """
         Retourne tous les produits du shop connecté.
         Nécessite authentication (JWT).
@@ -71,7 +80,7 @@ class ShopifyQuery:
             raise UnauthenticatedException()
 
         service = ShopifyService(info.context.db)
-        items = await service.get_products(info.context.shop_id)
+        items = await service.get_products(info.context.shop_id, product_id=str(id) if id else None)
 
         return [
             ProductType(
@@ -83,7 +92,22 @@ class ShopifyQuery:
                 lead_time=p.lead_time,
                 moq=p.moq,
                 created_at=p.created_at,
-            )
+                 prediction=_prediction_to_type(p.__dict__['prediction']) if 'prediction' in p.__dict__ and p.__dict__['prediction'] else None,
+                 cleaned_demand=[
+                     CleanedDemandType(
+                         id=strawberry.ID(str(r.id)),
+                         product_id=strawberry.ID(str(r.product_id)),
+                         date=r.date,
+                         raw_units_sold=r.raw_units_sold,
+                         corrected_units_sold=r.corrected_units_sold,
+                         is_stockout=r.is_stockout,
+                         is_outlier=r.is_outlier,
+                         correction_type=r.correction_type,
+                         computed_at=r.computed_at,
+                     )
+                     for r in p.__dict__['cleaned_demands']
+                 ] if 'cleaned_demands' in p.__dict__ and p.__dict__['cleaned_demands'] else [],
+             )
             for p in items
         ]
 
@@ -142,10 +166,59 @@ class ShopifyMutation:
 
         service = ShopifyService(info.context.db)
         result = await service.trigger_mock_sync(info.context.shop_id)
+        
+        # ── Déclenchement automatique des prédictions (US 2.8) ────────────────
+        # On relance le nettoyage et le calcul pour que le dashboard soit à jour
+        forecasting = ForecastingService(info.context.db)
+        await forecasting.run_cleaning_pipeline(info.context.shop_id)
+        await forecasting.run_prediction_pipeline(info.context.shop_id)
+
+        # Persistance globale
+        await info.context.db.commit()
 
         return SyncResultType(
             success=result.success,
             products_created=result.products_created,
             sales_logs_created=result.sales_logs_created,
-            message=result.message,
+            message=result.message + " Prédictions recalculées.",
+        )
+    @strawberry.mutation
+    async def update_product_settings(
+        self, 
+        info, 
+        id: strawberry.ID, 
+        lead_time: int = None, 
+        moq: int = None
+    ) -> ProductType:
+        """
+        Met à jour les paramètres logistiques d'un produit (Lead Time, MOQ).
+        Nécessite authentication (JWT).
+        """
+        if not info.context.shop_id:
+            raise UnauthenticatedException()
+
+        service = ShopifyService(info.context.db)
+        product = await service.update_product_settings(
+            shop_id=info.context.shop_id,
+            product_id=str(id),
+            lead_time=lead_time,
+            moq=moq
+        )
+
+        # Recalculer la prédiction en temps réel
+        forecasting_service = ForecastingService(info.context.db)
+        await forecasting_service.recalculate_prediction_for_product(str(product.id))
+
+        # Persistance des paramètres et prédictions
+        await info.context.db.commit()
+
+        return ProductType(
+            id=strawberry.ID(str(product.id)),
+            shop_id=strawberry.ID(str(product.shop_id)),
+            sku=product.sku,
+            title=product.title,
+            current_stock=product.current_stock,
+            lead_time=product.lead_time,
+            moq=product.moq,
+            created_at=product.created_at,
         )

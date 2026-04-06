@@ -26,6 +26,8 @@ class Product(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     sales_logs = relationship("SalesLog", back_populates="product", cascade="all, delete-orphan")
+    prediction = relationship("Prediction", back_populates="product", uselist=False, cascade="all, delete-orphan")
+    cleaned_demands = relationship("CleanedDemand", back_populates="product", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Product {self.sku} — {self.title}>"

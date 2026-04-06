@@ -4,7 +4,6 @@ Couverture : correction OOS, fenêtre 14j, fallback médiane, edge cases.
 """
 import pytest
 import pandas as pd
-import numpy as np
 from datetime import date, timedelta
 
 from src.modules.forecasting.algorithms.out_of_stock_correction import (
@@ -41,16 +40,27 @@ class TestCorrectOutOfStock:
         result = correct_out_of_stock(df)
         assert result["is_stockout"].tolist() == [False, False, True, True, False]
 
-    def test_stockout_replaced_by_rolling_mean(self):
-        """Un jour de rupture est corrigé par la moyenne des 14j précédents."""
+    def test_stockout_replaced_by_rolling_median(self):
+        """Un jour de rupture est corrigé par la médiane des 14j précédents (DS-1)."""
         # 20 jours à 10 unités puis 5 jours de rupture
         units = [10.0] * 20 + [0.0] * 5
         stocks = [100] * 20 + [0] * 5
         df = make_df(units, stocks)
         result = correct_out_of_stock(df)
         corrected = result.loc[result["is_stockout"], "theoretical_units_sold"]
-        # La moyenne de 14 jours à 10 unités = 10
+        # La médiane de 14 jours à 10 unités = 10
         assert all(abs(v - 10.0) < 1.0 for v in corrected)
+
+    def test_stockout_robust_to_outlier_in_window(self):
+        """DS-1 : un pic dans la fenêtre 14j ne biaise pas la correction (médiane robuste)."""
+        # 13 jours à 5 unités, 1 pic à 500 (outlier), puis rupture
+        units = [5.0] * 13 + [500.0] + [0.0] * 5
+        stocks = [100] * 14 + [0] * 5
+        df = make_df(units, stocks)
+        result = correct_out_of_stock(df)
+        corrected = result.loc[result["is_stockout"], "theoretical_units_sold"]
+        # La médiane de la fenêtre = 5.0, pas ~42 comme avec la moyenne
+        assert all(v < 20.0 for v in corrected), f"Correction biaisée : {list(corrected)}"
 
     def test_theoretical_always_non_negative(self):
         """Les valeurs corrigées ne doivent jamais être négatives."""

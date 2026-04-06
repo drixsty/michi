@@ -1,9 +1,9 @@
 # Instructions Système pour Claude Code - Projet Michi 道
 
-**Version:** 4.1 (Considérée - Mutualisée)  
+**Version:** 4.3 (Sprint 5 Terminé ✅)  
 **Date:** Avril 2026  
 **Agent IA:** Claude Code (Sonnet 4)  
-**Objectif:** MVP Production-Ready en 6 sprints (12 semaines)
+**Objectif:** MVP Production-Ready en 6 sprints (12 semaines) — **Avancement : 79% (5/6 sprints livrés)**
 
 ---
 

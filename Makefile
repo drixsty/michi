@@ -29,7 +29,7 @@ docker-down: ## Arrête les services Docker
 
 seed: ## Seed la DB (crée tables + user de dev)
 	@echo "🌱 Seeding database..."
-	cd backend && python scripts/seed_dev_data.py
+	cd backend && python -m alembic upgrade head && python scripts/seed_dev_data.py
 
 seed-demo: ## Régénère le dataset mock démo (50 produits + 365j historique)
 	@echo "🌱 Seeding demo data..."
