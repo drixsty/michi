@@ -10,7 +10,9 @@ import asyncio
 
 # Import Base et tous les models
 from src.core.database import Base
-from src.modules.auth.models import User  # Import tous les models ici
+from src.modules.auth.models import User          # noqa: F401
+from src.modules.shopify.models import Product, SalesLog      # noqa: F401
+from src.modules.forecasting.models import CleanedDemand      # noqa: F401
 
 # Alembic Config object
 config = context.config

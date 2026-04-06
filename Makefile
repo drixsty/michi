@@ -31,6 +31,14 @@ seed: ## Seed la DB (crée tables + user de dev)
 	@echo "🌱 Seeding database..."
 	cd backend && python scripts/seed_dev_data.py
 
+seed-demo: ## Régénère le dataset mock démo (50 produits + 365j historique)
+	@echo "🌱 Seeding demo data..."
+	cd backend && python scripts/seed_demo.py
+
+seed-demo-small: ## Régénère un dataset mock réduit (10 produits — tests rapides)
+	@echo "🌱 Seeding small demo data..."
+	cd backend && python scripts/seed_demo.py --count 10
+
 dev-backend: ## Lance le backend (port 8000)
 	@echo "🚀 Démarrage backend..."
 	cd backend && uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
