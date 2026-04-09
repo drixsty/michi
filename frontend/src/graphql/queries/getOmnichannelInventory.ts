@@ -3,6 +3,7 @@ import { gql } from '@apollo/client';
 export const GET_OMNICHANNEL_INVENTORY = gql`
   query GetOmnichannelInventory {
     omnichannelInventory {
+      id
       sku
       title
       totalStock

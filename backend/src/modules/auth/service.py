@@ -68,3 +68,36 @@ class AuthService:
             select(User).where(User.id == user_id)
         )
         return result.scalar_one_or_none()
+
+    async def update_user(self, user_id: str, email: str | None = None, preferences: Dict | None = None) -> User | None:
+        """Met à jour un utilisateur"""
+        user = await self.get_user_by_id(user_id)
+        if not user:
+            return None
+        
+        if email:
+            user.email = email
+        if preferences is not None:
+            # Fusionner les préférences existantes avec les nouvelles (US 11.2)
+            current_prefs = user.preferences or {}
+            user.preferences = {**current_prefs, **preferences}
+        
+        await self.db.flush()
+        return user
+
+    async def change_password(self, user_id: str, current_password: str, new_password: str) -> bool:
+        """Change le mot de passe d'un utilisateur après vérification"""
+        user = await self.get_user_by_id(user_id)
+        if not user:
+            return False
+        
+        # Vérifier l'ancien mot de passe
+        if not verify_password(current_password, user.hashed_password):
+            return False
+            
+        # Hasher et mettre à jour le nouveau mot de passe
+        from src.core.security import hash_password
+        user.hashed_password = hash_password(new_password)
+        
+        await self.db.flush()
+        return True

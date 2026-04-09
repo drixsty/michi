@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const GET_PRODUCTS = gql`
-  query GetProducts {
-    products {
+  query GetProducts($id: ID) {
+    products(id: $id) {
       id
       shopId
       sku
@@ -16,6 +16,11 @@ export const GET_PRODUCTS = gql`
         daysOfStock
         predictedStockoutDate
         reorderQuantity
+      }
+      cleanedDemand {
+        date
+        correctedUnitsSold
+        inventoryLevel
       }
       supplier {
         id

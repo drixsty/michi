@@ -32,7 +32,7 @@ async def create_tables():
         await conn.run_sync(Base.metadata.create_all)
     
     await engine.dispose()
-    print("✅ Tables créées")
+    print("Tables creees")
 
 
 async def seed_dev_user():
@@ -87,7 +87,7 @@ async def seed_dev_user():
         session.add_all([s1, s2])
         await session.flush()
 
-        print(f"✅ Fournisseurs créés: {s1.name}, {s2.name}")
+        print(f"Fournisseurs crees: {s1.name}, {s2.name}")
         
         await session.commit()
         await session.refresh(user)
@@ -97,8 +97,8 @@ async def seed_dev_user():
 
 async def main():
     """Main function"""
-    print("🌱 Seeding database...")
-    print(f"📍 Database: {settings.DATABASE_URL}")
+    print("Seeding database...")
+    print(f"Database: {settings.DATABASE_URL}")
     print()
     
     # Créer tables
@@ -109,9 +109,9 @@ async def main():
     await seed_dev_user()
     print()
     
-    print("✨ Seed terminé !")
+    print("Seed termine !")
     print()
-    print("🔗 Vous pouvez maintenant :")
+    print("Vous pouvez maintenant :")
     print("   1. Lancer le backend : cd backend && uvicorn src.main:app --reload")
     print("   2. Lancer le frontend : cd frontend && npm run dev")
     print("   3. Se connecter sur http://localhost:3000/login")

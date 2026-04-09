@@ -54,16 +54,12 @@ async def get_context(request: Request) -> GraphQLContext:
     """
     Crée le context GraphQL pour chaque requête.
     Extrait user_id et shop_id du token JWT.
+    La session DB est gérée par SQLAlchemySessionExtension.
     """
-    # Récupérer DB session
-    db_gen = get_db()
-    db = await db_gen.__anext__()
-    
     # Extraire user_id/shop_id du token JWT
     user_id, shop_id = await get_current_user_from_token(request)
     
     return GraphQLContext(
-        db=db,
         user_id=user_id,
         shop_id=shop_id,
     )

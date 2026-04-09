@@ -20,5 +20,9 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
+    # Notification & User preferences (US 11.2)
+    from sqlalchemy.dialects.postgresql import JSONB
+    preferences = Column(JSONB, default={}, nullable=False)
+    
     def __repr__(self):
         return f"<User {self.email}>"

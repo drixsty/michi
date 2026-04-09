@@ -3,7 +3,6 @@ Resolvers GraphQL — Shopify
 Types Strawberry + Query/Mutation pour produits, sync mock et validation.
 """
 import strawberry
-from typing import List
 from typing import List, Optional
 from datetime import datetime
 
@@ -113,6 +112,7 @@ class ShopifyQuery:
                          date=r.date,
                          raw_units_sold=r.raw_units_sold,
                          corrected_units_sold=r.corrected_units_sold,
+                         inventory_level=next((log.end_of_day_stock for log in p.sales_logs if log.date == r.date), None),
                          is_stockout=r.is_stockout,
                          is_outlier=r.is_outlier,
                          correction_type=r.correction_type,
@@ -186,6 +186,11 @@ class ShopifyMutation:
         await forecasting.run_cleaning_pipeline(info.context.shop_id)
         await forecasting.run_prediction_pipeline(info.context.shop_id)
 
+        # ── Déclenchement des alertes et emails (US 10.4) ─────────────────────
+        from src.modules.inventory.alert_service import AlertService
+        alerts = AlertService(info.context.db)
+        await alerts.check_for_stockouts(info.context.shop_id)
+
         # Persistance globale
         await info.context.db.commit()
 
@@ -193,8 +198,9 @@ class ShopifyMutation:
             success=result.success,
             products_created=result.products_created,
             sales_logs_created=result.sales_logs_created,
-            message=result.message + " Prédictions recalculées.",
+            message=result.message + " Prédictions et alertes mises à jour.",
         )
+
     @strawberry.mutation
     async def update_product_settings(
         self, 

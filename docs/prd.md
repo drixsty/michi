@@ -1,10 +1,10 @@
 # Product Requirements Document (PRD) - Michi 道 OMNICANAL
 
-**Version:** 5.0 (Sprint 6 Polish + Roadmap V2)  
-**Date:** Avril 2026  
-**Statut:** En développement - Phase Blindage MVP  
+**Version:** 7.1 (Sprint 11 Clôturé ✅)  
+**Date:** 10 Avril 2026  
+**Statut:** MVP Prêt / Phase Optimisation Terminée  
 **Propriétaire Produit:** [Votre Nom]  
-**Équipe:** Full-Stack + Data Science
+**Équipe:** Full-Stack + Data Science (Michi AI Team)
 
 ---
 
@@ -202,7 +202,12 @@ async def auth_middleware(info, **kwargs):
 **Priorité :** P0 (Bloquant)  
 **Effort estimé :** 5 jours
 
-#### US 1.1 : Générateur de Fausses Données (Seeding)
+### ✅ 1.4 Stratégie de Saisonnalité (Phasage)
+Pour garantir la fiabilité immédiate avec peu de données :
+- **Palier 1 (MVP/Sprint 11)** : Multiplicateur Manuel ("Boost Factor"). Le marchand saisit un coefficient (ex: 2.5 pour Noël).
+- **Palier 2 (Scale/Post-MVP)** : Automatisation via Meta Prophet une fois > 12 mois de données accumulés.
+
+### US 1.1 : Générateur de Fausses Données (Seeding)
 **En tant que** Data Scientist (Marc)  
 **Je veux** un script de seeding qui génère des produits et un historique de ventes réaliste sur 365 jours  
 **Afin de** tester les algorithmes de nettoyage et de prédiction sur des cas complexes
@@ -755,11 +760,19 @@ Voir section 4.1 ci-dessus.
 ✅ Sprint 1-5 : Infrastructure, Algos, Prédictions  
 🚀 Sprint 6 : Dashboard Premium & Polish Final
 
-### Phase Blindage Omnicanal (Nouveau - Q3 2026)
-**Sprint 7 :** Alerting Proactif & Safety Stock  
-**Sprint 8 :** Gestion Fournisseurs & Lead Times  
-**Sprint 9 :** Connecteurs Omnicanaux (Aggregator)  
-**Sprint 10 :** Simulateur de Croissance & Trust Widgets
+### Phase Blindage Omnicanal & Go-Live (TERMINÉ)
+✅ **Sprint 7 :** Alerting Proactif & Safety Stock  
+✅ **Sprint 8 :** Gestion Fournisseurs & Lead Times  
+✅ **Sprint 9 :** Connecteurs Omnicanaux (Aggregator)  
+✅ **Sprint 10 :** Go-Live Readiness (MAPE réel, Onboarding)
+
+### Phase Optimisation Pilote (Sprint 11-12)
+🚀 **Sprint 11 :** Refonte UI 2.0 & Unification Elite (Grille interactive, Persistance, Anti-Scroll).  
+🚀 **Sprint 12 :** Coefficient de Boost (Saisonnalité).
+
+### Phase Scale & Intelligence (Sprint 13+)
+⏳ **Sprint 13 :** Centre de Décision Stratégique & Mutualisation cross-canal.
+⏳ **Sprint 14+ :** Feedback clients pilotes & Multi-utilisateurs.
 
 ---
 
@@ -777,7 +790,7 @@ Voir section 4.1 ci-dessus.
 
 ### 8.3 Métriques Techniques
 - **Précision prédictions :** MAPE < 15% sur 80% des SKU
-- **Uptime :** > 99.5%
+- **Ergonomie Elite :** 100% du contenu critique (Stats/Graph/Form) sans scroll vertical sur 1080p.
 - **Latence API :** p95 < 200ms
 
 ---

@@ -2,17 +2,19 @@
 Types GraphQL avec Strawberry
 """
 import strawberry
+from typing import Optional
 from datetime import datetime
 from uuid import UUID
 
 
 @strawberry.type
-class User:
+class UserType:
     """Type User GraphQL"""
     id: strawberry.ID
     email: str
     shop_id: strawberry.ID
     created_at: datetime
+    preferences: str  # On retourne le JSON en string pour la simplicité MVP ou un type spécifique
 
 
 @strawberry.input
@@ -26,4 +28,24 @@ class LoginInput:
 class AuthPayload:
     """Payload retourné par login"""
     token: str
-    user: User
+    user: UserType
+
+@strawberry.input
+class UpdateProfileInput:
+    """Input pour modification profil (US 11.2)"""
+    email: Optional[str] = None
+    email_alerts_enabled: Optional[bool] = None
+    min_severity: Optional[int] = None
+
+@strawberry.input
+class ChangePasswordInput:
+    """Input pour modification de mot de passe"""
+    current_password: str
+    new_password: str
+
+@strawberry.type
+class SourceType:
+    id: strawberry.ID
+    name: str
+    platform: str
+    connected: bool

@@ -4,6 +4,7 @@ Pydantic schemas pour Auth
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
 from datetime import datetime
+from typing import Optional
 
 
 class LoginInput(BaseModel):
@@ -18,6 +19,7 @@ class UserSchema(BaseModel):
     email: str
     shop_id: UUID
     created_at: datetime
+    preferences: Optional[dict] = None
     
     class Config:
         from_attributes = True

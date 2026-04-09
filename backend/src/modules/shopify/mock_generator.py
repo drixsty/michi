@@ -122,6 +122,7 @@ def generate_mock_products(count: int = 50, shop_id: Optional[str] = None) -> li
             "current_stock": rng.randint(0, 200),
             "lead_time": rng.choice([7, 14, 21, 30, 45]),
             "moq": rng.choice([5, 10, 20, 50]),
+            "source_platform": "shopify",
         })
 
     return products

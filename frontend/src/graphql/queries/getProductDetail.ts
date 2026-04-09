@@ -6,6 +6,19 @@ export const GET_PRODUCT_DETAIL = gql`
       id
       sku
       title
+      currentStock
+      leadTime
+      moq
+      warningThreshold
+      supplier {
+        name
+        reliabilityScore
+      }
+      prediction {
+        runRate
+        predictedStockoutDate
+        reorderQuantity
+      }
       cleanedDemand {
         date
         rawUnitsSold

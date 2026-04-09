@@ -20,6 +20,6 @@ class GraphQLContext(BaseContext):
     - user_id: ID de l'utilisateur connecté (None si non authentifié)
     - shop_id: ID du shop de l'utilisateur (None si non authentifié)
     """
-    db: AsyncSession
+    db: Optional[AsyncSession] = None
     user_id: Optional[str] = None
     shop_id: Optional[str] = None

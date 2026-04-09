@@ -78,7 +78,10 @@ class Prediction(Base):
     # Snapshot des paramètres produit au moment du calcul
     current_stock_snapshot = Column(Float, nullable=False)
     lead_time_snapshot = Column(Integer, nullable=False)
-    moq_snapshot = Column(Integer, nullable=False)
+    moq_snapshot = Column(Integer, nullable=False, default=1)
+    # Précision de l'IA (Sprint 10) — Mean Absolute Percentage Error
+    # Exprimé en % (ex: 15.5 pour 15.5% d'erreur)
+    mape_score = Column(Float, nullable=True)
 
     computed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 

@@ -18,6 +18,7 @@ class CleanedDemandType:
     date: date
     raw_units_sold: float
     corrected_units_sold: float
+    inventory_level: Optional[int] = None
     is_stockout: bool
     is_outlier: bool
     correction_type: str
@@ -45,6 +46,7 @@ class PredictionType:
     current_stock_snapshot: float
     lead_time_snapshot: int
     moq_snapshot: int
+    mape_score: Optional[float]
     computed_at: datetime
 
 
@@ -249,5 +251,6 @@ def _prediction_to_type(r) -> PredictionType:
         current_stock_snapshot=r.current_stock_snapshot,
         lead_time_snapshot=r.lead_time_snapshot,
         moq_snapshot=r.moq_snapshot,
+        mape_score=r.mape_score,
         computed_at=r.computed_at,
     )

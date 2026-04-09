@@ -49,6 +49,7 @@ class ShopifyService:
                 p = existing_products[sku]
                 p.title = p_data["title"]
                 p.current_stock = p_data["current_stock"]
+                p.source_platform = "shopify"  # Crucial for icons display
                 # Assigner un fournisseur s'il n'en a pas
                 if not p.supplier_id and suppliers:
                     p.supplier_id = random.choice(suppliers).id
@@ -146,7 +147,8 @@ class ShopifyService:
                 .options(
                     selectinload(Product.prediction),
                     selectinload(Product.cleaned_demands),
-                    selectinload(Product.supplier)
+                    selectinload(Product.supplier),
+                    selectinload(Product.sales_logs)
                 )
                 .where(Product.id == p_uuid, Product.shop_id == s_uuid)
             )
@@ -155,7 +157,8 @@ class ShopifyService:
                 select(Product)
                 .options(
                     selectinload(Product.prediction),
-                    selectinload(Product.supplier)
+                    selectinload(Product.supplier),
+                    selectinload(Product.sales_logs)
                 )
                 .where(Product.shop_id == s_uuid)
                 .order_by(Product.sku)

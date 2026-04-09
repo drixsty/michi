@@ -69,6 +69,7 @@ class TestDataValidationServiceRules:
 
         service = DataValidationService(db)
 
+        from src.modules.shopify.schemas import ValidationIssue
         # On mock validate() directement pour tester uniquement R2
         with patch.object(service, "validate", new_callable=AsyncMock) as mock_validate:
             mock_validate.return_value = ValidationReportSchema(
@@ -77,8 +78,7 @@ class TestDataValidationServiceRules:
                 sales_log_count=365,
                 stockout_ratio=0.0,
                 issues=[
-                    type("Issue", (), {"rule": "R2", "severity": "error",
-                                       "detail": "current_stock négatif"})()
+                    ValidationIssue(rule="R2", severity="error", detail="current_stock négatif")
                 ],
                 summary="Dataset invalide",
             )

@@ -251,6 +251,7 @@ class ForecastingService:
             )
 
             # Quantité de commande recommandée
+            # Quantité de commande recommandée
             # On injecte le retard fournisseur moyen (Sprint 8)
             avg_delay = product.supplier.average_delay_days if product.supplier else 0.0
             
@@ -262,6 +263,11 @@ class ForecastingService:
                 average_delay=avg_delay
             )
 
+            # --- US 10.1 MAPE Backtesting (Sprint 10) ---
+            # On mesure la précision en comparant le run rate calculé sur H-7
+            # avec les ventes réelles constatées sur les 7 derniers jours.
+            mape_score = self._calculate_mape_backtest(df[df["product_id"] == pid])
+
             predictions.append(Prediction(
                 product_id=pid,
                 run_rate=run_rate,
@@ -271,6 +277,7 @@ class ForecastingService:
                 current_stock_snapshot=current_stock,
                 lead_time_snapshot=lead_time,
                 moq_snapshot=moq,
+                mape_score=mape_score,
             ))
 
         self.db.add_all(predictions)
@@ -392,8 +399,9 @@ class ForecastingService:
 
     async def get_dashboard_kpis(self, shop_id: str) -> DashboardKPISchema:
         """
-        Calcule les KPIs globaux pour le shop (US 3.5).
-        Unification de la logique avec le Sprint 8 (Performance Fournisseurs).
+        Calcule les KPIs globaux pour le shop (US 3.5 + Sprint 10).
+        Unification de la logique avec le Sprint 8 (Performance Fournisseurs) 
+        et US 10.2 (Seuils Dynamiques).
         """
         # 1. Total produits & Ruptures réelles
         res = await self.db.execute(
@@ -406,12 +414,9 @@ class ForecastingService:
         total_products = total_products or 0
         actual_stockouts = actual_stockouts or 0
 
-        # 2. Alertes de réapprovisionnement (Urgence)
-        # Définition : Rupture prédite dans un délai (LeadTime + Delay + Buffer 2j)
+        # 2. Alertes de réapprovisionnement (Urgence & Warning)
         today = date.today()
         
-        # On charge toutes les prédictions et les produits liés pour calculer les urgences
-        # (Pour le MVP, on fait le calcul en Python car le LeadTime est dynamique par produit)
         pred_res = await self.db.execute(
             select(Prediction, Product)
             .join(Product)
@@ -421,6 +426,8 @@ class ForecastingService:
         data = pred_res.all()
         
         urgent_alerts = 0
+        warning_alerts = 0
+
         for pred, prod in data:
             if prod.current_stock == 0:
                 continue # Déjà compté dans Ruptures réelles
@@ -429,17 +436,50 @@ class ForecastingService:
                 effective_lead_time = prod.lead_time + (prod.supplier.average_delay_days if prod.supplier else 0)
                 days_to_stockout = (pred.predicted_stockout_date - today).days
                 
-                # Seuil d'urgence : Si on dépasse le délai de réappro (avec buffer 2j)
-                if days_to_stockout <= (effective_lead_time + 2):
+                # US 10.2 : Seuils dynamiques
+                # Urgent : Le stock expire AVANT ou PENDANT le délai de livraison
+                if days_to_stockout <= effective_lead_time:
                     urgent_alerts += 1
+                # Warning : Le stock expire dans le délai de livraison + 7 jours de sécurité
+                elif days_to_stockout <= (effective_lead_time + 7):
+                    warning_alerts += 1
 
         return DashboardKPISchema(
             total_products=total_products,
             actual_stockouts=actual_stockouts,
             urgent_alerts=urgent_alerts,
-            predicted_stockouts_30d=total_products, # Nombre de produits suivis
-            message="KPIs unifiés avec succès"
+            predicted_stockouts_30d=warning_alerts, # On réutilise ce champ pour les warnings (Dashboard UI)
+            message="KPIs Sprint 10 calculés avec succès"
         )
+
+    def _calculate_mape_backtest(self, product_df: pd.DataFrame, test_days: int = 7) -> float | None:
+        """
+        Calcule le MAPE par backtesting sur les N derniers jours.
+        Training sur [H-60 à H-test_days], Evaluation sur [H-test_days à H].
+        """
+        if len(product_df) < (test_days + 5):
+            return None
+
+        df = product_df.sort_values("date")
+        
+        # Split train/test
+        train_df = df.iloc[:-test_days].copy()
+        test_df = df.iloc[-test_days:].copy()
+        
+        # Run rate "passé" sur le training set
+        train_df = calculate_run_rate_batch(train_df)
+        past_run_rate = float(train_df["run_rate"].iloc[-1])
+        
+        if past_run_rate <= 0:
+            return 0.0 # On ne peut pas prédire 0 ventes avec erreur relative
+
+        # Ventes attendues vs réelles sur les 7 derniers jours
+        expected_total = past_run_rate * test_days
+        actual_total = float(test_df["corrected_units_sold"].sum())
+        
+        # MAPE simple sur le volume total de la période
+        mape = abs(actual_total - expected_total) / max(actual_total, 1.0) * 100
+        return min(mape, 100.0) # Capé à 100% pour la lisibilité
 
     async def get_replenishment_alerts(self, shop_id: str) -> list[Prediction]:
         """

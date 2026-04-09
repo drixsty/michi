@@ -65,6 +65,7 @@ class ChannelBreakdownType:
 @strawberry.type
 class OmnichannelProductType:
     """Vue agrégée d'un SKU sur toutes les plateformes (US 9.1)."""
+    id: strawberry.ID
     sku: str
     title: str
     total_stock: int
@@ -157,6 +158,7 @@ class InventoryQuery:
 
         return [
             OmnichannelProductType(
+                id=strawberry.ID(item.channels[0].product_id) if item.channels else strawberry.ID(item.sku),
                 sku=item.sku,
                 title=item.title,
                 total_stock=item.total_stock,
@@ -300,6 +302,21 @@ class InventoryMutation:
         return True
 
     @strawberry.mutation
+    async def delete_alert(self, info, alert_id: strawberry.ID) -> bool:
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+        
+        from sqlalchemy import delete
+        from .models import Alert
+        
+        await info.context.db.execute(
+            delete(Alert)
+            .where(Alert.id == uuid.UUID(str(alert_id)))
+        )
+        await info.context.db.flush()
+        return True
+
+    @strawberry.mutation
     async def create_purchase_order(
         self, 
         info, 
@@ -410,6 +427,7 @@ class InventoryMutation:
             raise UnauthenticatedException()
         
         from .models import PurchaseOrder
+        from sqlalchemy import select
         from datetime import date
         
         # 1. Marquer comme reçu

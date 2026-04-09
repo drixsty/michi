@@ -11,6 +11,8 @@ from src.core.database import Base
 from src.core.config import settings
 from src.main import app
 from src.modules.auth.models import User
+from src.modules.inventory.models import Product, SalesLog, Supplier, Alert, AlertEmail, PurchaseOrder
+from src.modules.forecasting.models import CleanedDemand, Prediction
 from src.core.security import hash_password
 
 

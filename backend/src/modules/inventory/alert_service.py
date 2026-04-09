@@ -2,7 +2,7 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from loguru import logger
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 import uuid
 
 from .models import Product, Alert, PlatformSource
