@@ -17,6 +17,7 @@ import {
 import SalesChart from '@/components/dashboard/SalesChart';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
