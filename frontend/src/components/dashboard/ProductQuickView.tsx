@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -11,7 +11,10 @@ import {
   Box, 
   Calendar,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Settings,
+  Save,
+  Check
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { 
@@ -27,6 +30,7 @@ import {
   Legend
 } from 'recharts';
 import { GET_PRODUCTS } from '@/graphql/queries/getProducts';
+import { UPDATE_PRODUCT_SETTINGS } from '@/graphql/mutations/updateProduct';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { LoadingState } from '../ui/LoadingState';
@@ -59,6 +63,37 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
 
   // Client-side portal target check
   const [mounted, setMounted] = React.useState(false);
+  const [leadTime, setLeadTime] = React.useState<number>(0);
+  const [moq, setMoq] = React.useState<number>(0);
+  const [saveStatus, setSaveStatus] = React.useState<'idle' | 'saving' | 'success'>('idle');
+
+  const [updateSettings] = useMutation(UPDATE_PRODUCT_SETTINGS, {
+    onCompleted: () => {
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+    },
+    onError: () => setSaveStatus('idle')
+  });
+
+  const handleQuickSave = async () => {
+    if (!productId) return;
+    setSaveStatus('saving');
+    try {
+      await updateSettings({
+        variables: { id: productId, leadTime, moq }
+      });
+    } catch (e) {
+      setSaveStatus('idle');
+    }
+  };
+
+  React.useEffect(() => {
+    if (product) {
+      setLeadTime(product.leadTime || 14);
+      setMoq(product.moq || 0);
+    }
+  }, [product]);
+
   React.useEffect(() => setMounted(true), []);
 
   if (!mounted) return null;
@@ -123,6 +158,52 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                           ? new Date(product.prediction.predictedStockoutDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
                           : "N/A"}
                       </p>
+                    </div>
+                  </div>
+                  
+                  {/* Quick Edit Section (US 11.4) */}
+                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-3 w-3 text-slate-400" />
+                        <h3 className="text-[10px] font-bold text-slate-400 tracking-widest">Paramètres d'inventaire</h3>
+                      </div>
+                      <button 
+                        onClick={handleQuickSave}
+                        disabled={saveStatus === 'saving'}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-bold transition-all",
+                          saveStatus === 'success' ? "bg-emerald-500 text-white shadow-sm" : 
+                          saveStatus === 'saving' ? "bg-slate-100 text-slate-400" :
+                          "bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm"
+                        )}
+                      >
+                        {saveStatus === 'saving' ? "..." : saveStatus === 'success' ? (
+                          <><Check className="h-2.5 w-2.5" /> Enregistré</>
+                        ) : (
+                          <><Save className="h-2.5 w-2.5" /> Sauver</>
+                        )}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <p className="text-[9px] font-bold text-slate-400 ml-0.5">Délai (jours)</p>
+                        <input 
+                          type="number"
+                          value={leadTime}
+                          onChange={(e) => setLeadTime(parseInt(e.target.value) || 0)}
+                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all font-medium text-slate-900"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <p className="text-[9px] font-bold text-slate-400 ml-0.5">MOQ (unités)</p>
+                        <input 
+                          type="number"
+                          value={moq}
+                          onChange={(e) => setMoq(parseInt(e.target.value) || 0)}
+                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all font-medium text-slate-900"
+                        />
+                      </div>
                     </div>
                   </div>
 

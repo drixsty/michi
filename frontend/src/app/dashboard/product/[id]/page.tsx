@@ -81,7 +81,7 @@ export default function ProductDetailPage() {
   const impactOnStockout = leadTimeDelta > 0 ? "Risque accru" : "Sécurité améliorée";
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header Navigation */}
       <div className="flex items-center gap-4">
         <button 
@@ -112,7 +112,7 @@ export default function ProductDetailPage() {
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white rounded-lg border p-4">
           <div className="flex items-center gap-2 mb-4 text-muted-foreground">
             <Box className="h-4 w-4" />
             <span className="text-xs font-medium text-sentence">Stock actuel</span>
@@ -121,7 +121,7 @@ export default function ProductDetailPage() {
           <p className="text-[11px] text-muted-foreground mt-2 text-sentence">Seuil d'alerte : {product.warningThreshold} u.</p>
         </div>
 
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white rounded-lg border p-4">
           <div className="flex items-center gap-2 mb-4 text-muted-foreground">
             <Calendar className="h-4 w-4" />
             <span className="text-xs font-medium text-sentence">Rupture prévue</span>
@@ -143,18 +143,18 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Analytics Chart */}
-      <div className="bg-white rounded-lg border p-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="bg-white rounded-lg border p-6">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-sm font-semibold text-sentence italic">Demande Historique & Prévisions IA</h3>
             <p className="text-xs text-muted-foreground text-sentence">Cycle de 365 jours analysé</p>
           </div>
-          <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest">
+          <div className="flex items-center gap-4 text-[10px] font-bold">
             <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-indigo-500" /> Historique</div>
             <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-indigo-200" /> Prédiction</div>
           </div>
         </div>
-        <div className="h-[400px]">
+        <div className="h-[320px]">
           <SalesChart 
             data={product.cleanedDemand || []} 
             title="" 
@@ -163,8 +163,8 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Simulator (US 11.4) */}
-      <div className="bg-accent/30 rounded-lg border border-indigo-100 p-8">
-        <div className="flex items-center gap-3 mb-8">
+      <div className="bg-accent/30 rounded-lg border border-indigo-100 p-6">
+        <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-indigo-100 rounded-lg">
             <Zap className="h-5 w-5 text-indigo-600" />
           </div>
@@ -174,10 +174,10 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="space-y-4">
             <div className="flex justify-between items-end">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Retard fournisseur estimé</label>
+              <label className="text-[10px] font-bold text-muted-foreground">Retard fournisseur estimé</label>
               <span className="text-lg font-bold bg-white px-3 py-1 rounded-md border shadow-sm">
                 {leadTimeDelta > 0 ? `+${leadTimeDelta}` : leadTimeDelta} jours
               </span>
@@ -209,8 +209,8 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Persistent Settings (US 11.4) */}
-      <div className="bg-white rounded-lg border p-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="bg-white rounded-lg border p-6">
+        <div className="flex items-center justify-between mb-4">
            <div className="flex items-center gap-3">
               <div className="p-2 bg-slate-100 rounded-lg">
                 <Box className="h-5 w-5 text-slate-600" />
@@ -221,9 +221,9 @@ export default function ProductDetailPage() {
            {saveStatus === 'error' && <span className="text-[10px] font-bold text-red-600 bg-red-50 px-3 py-1 rounded-full animate-in fade-in zoom-in">⚠️ Erreur</span>}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Délai fournisseur (jours)</label>
+            <label className="text-[10px] font-bold text-muted-foreground">Délai fournisseur (jours)</label>
             <input 
               type="number" 
               value={leadTime} 
@@ -233,7 +233,7 @@ export default function ProductDetailPage() {
             <p className="text-[10px] text-muted-foreground italic">Délai de livraison annoncé par le fournisseur (Lead Time).</p>
           </div>
           <div className="space-y-4">
-            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Quantité minimale (MOQ)</label>
+            <label className="text-[10px] font-bold text-muted-foreground">Quantité minimale (MOQ)</label>
             <input 
               type="number" 
               value={moq} 
@@ -244,12 +244,12 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t flex justify-end">
+        <div className="mt-6 pt-6 border-t flex justify-end">
            <button
              onClick={handleSave}
              disabled={isSaving}
              className={cn(
-               "px-6 py-2.5 bg-slate-900 text-white rounded-md text-xs font-bold tracking-widest hover:bg-slate-800 transition-all shadow-sm",
+               "px-6 py-2.5 bg-slate-900 text-white rounded-md text-xs font-bold hover:bg-slate-800 transition-all shadow-sm",
                isSaving && "opacity-70 cursor-not-allowed"
              )}
            >
