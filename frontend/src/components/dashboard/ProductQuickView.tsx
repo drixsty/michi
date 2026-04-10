@@ -237,7 +237,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                            min="0.1"
                            value={boostFactor.toFixed(2)}
                            onChange={(e) => setBoostFactor(parseFloat(e.target.value) || 1.0)}
-                           className="w-14 h-8 border-2 border-indigo-200 rounded-lg text-[10px] font-black text-indigo-700 text-center focus:outline-none focus:border-indigo-500 bg-white transition-colors"
+                           className="w-14 h-8 border-2 border-indigo-200 rounded-lg text-[10px] font-black text-indigo-700 text-center focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 bg-white transition-all duration-300"
                          />
                       </div>
                       <p className="text-[8px] text-slate-400 font-medium italic px-1">
@@ -278,7 +278,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                           type="number"
                           value={leadTime}
                           onChange={(e) => setLeadTime(parseInt(e.target.value) || 0)}
-                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-primary transition-colors font-medium text-slate-900"
+                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -287,7 +287,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                           type="number"
                           value={moq}
                           onChange={(e) => setMoq(parseInt(e.target.value) || 0)}
-                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-primary transition-colors font-medium text-slate-900"
+                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900"
                         />
                       </div>
                       <div className="col-span-2 space-y-1.5">
@@ -299,7 +299,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                             min="0.1"
                             value={stockWeight.toFixed(2)}
                             onChange={(e) => setStockWeight(parseFloat(e.target.value) || 1.0)}
-                            className="flex-1 h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-primary transition-colors font-medium text-slate-900"
+                            className="flex-1 h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900"
                           />
                           <p className="text-[8px] text-slate-400 leading-tight italic">Détermine l'allocation du stock en cas de rupture multicanale.</p>
                         </div>

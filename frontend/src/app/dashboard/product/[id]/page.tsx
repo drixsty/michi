@@ -285,7 +285,7 @@ export default function ProductDetailPage() {
                    min="0.1"
                    value={boostFactor.toFixed(2)}
                    onChange={(e) => setBoostFactor(parseFloat(e.target.value) || 1.0)}
-                   className="w-20 h-10 border-2 border-indigo-200 rounded-lg text-sm font-black text-indigo-700 text-center focus:outline-none focus:border-indigo-500 bg-white transition-colors"
+                   className="w-20 h-10 border-2 border-indigo-200 rounded-lg text-sm font-black text-indigo-700 text-center focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 bg-white transition-all duration-300"
                  />
               </div>
               
@@ -317,7 +317,7 @@ export default function ProductDetailPage() {
                   step="0.1"
                   value={stockWeight.toFixed(2)}
                   onChange={(e) => setStockWeight(parseFloat(e.target.value) || 1.0)}
-                  className="w-20 h-10 border rounded-lg text-sm font-bold text-center focus:outline-none focus:border-amber-500"
+                  className="w-20 h-10 border rounded-lg text-sm font-bold text-center focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20"
                 />
               </div>
               <p className="text-[11px] text-muted-foreground text-sentence leading-relaxed">
@@ -508,7 +508,7 @@ export default function ProductDetailPage() {
               type="number" 
               value={leadTime} 
               onChange={(e) => setLeadTime(Math.max(1, parseInt(e.target.value) || 0))}
-              className="w-full h-11 px-4 rounded-md border text-sm focus:outline-none focus:border-primary transition-colors"
+              className="w-full h-11 px-4 rounded-md border text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all"
             />
             <p className="text-[10px] text-muted-foreground italic">Délai de livraison annoncé par le fournisseur (Lead Time).</p>
           </div>
@@ -518,7 +518,7 @@ export default function ProductDetailPage() {
               type="number" 
               value={moq} 
               onChange={(e) => setMoq(Math.max(1, parseInt(e.target.value) || 0))}
-              className="w-full h-11 px-4 rounded-md border text-sm focus:outline-none focus:border-primary transition-colors"
+              className="w-full h-11 px-4 rounded-md border text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all"
             />
             <p className="text-[10px] text-muted-foreground italic">Commande par multiples de cette valeur.</p>
           </div>

@@ -107,7 +107,7 @@ export function Navbar() {
                 value={searchValue}
                 onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Rechercher un produit..."
-                className="w-full h-10 pl-10 pr-4 rounded-lg bg-slate-100/50 border-none text-xs transition-all focus:bg-white focus:ring-4 focus:ring-primary/5 outline-none placeholder:text-muted-foreground/50"
+                className="w-full h-10 pl-10 pr-4 rounded-lg bg-slate-100/50 border border-transparent text-xs transition-all focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none placeholder:text-muted-foreground/50"
               />
             </div>
             
