@@ -5,9 +5,11 @@ Types Strawberry + Query/Mutation pour produits, sync mock et validation.
 import strawberry
 from typing import List, Optional
 from datetime import datetime
+from sqlalchemy import select
 
 from src.core.exceptions import UnauthenticatedException
 from .service import ShopifyService
+from src.modules.inventory.service import InventoryService
 from .validation import DataValidationService
 from src.modules.forecasting.service import ForecastingService
 from src.modules.forecasting.resolvers import (
@@ -31,6 +33,8 @@ class ProductType:
     moq: int
     boost_factor: float
     stock_weight: float
+    cost_price: Optional[float] = None
+    sale_price: Optional[float] = None
     created_at: datetime
     prediction: Optional[PredictionType] = None
     supplier: Optional[SupplierType] = None
@@ -87,11 +91,21 @@ class ShopifyQuery:
               }
             }
         """
-        if not info.context.shop_id:
+        from src.modules.auth.models import User
+        user_res = await info.context.db.execute(select(User).where(User.id == info.context.user_id))
+        user = user_res.scalars().first()
+        if not user:
             raise UnauthenticatedException()
 
-        service = ShopifyService(info.context.db)
-        items = await service.get_products(info.context.shop_id, product_id=str(id) if id else None)
+        shop_ids = [user.shop_id]
+        if user.organization_id:
+            org_shops_res = await info.context.db.execute(
+                select(User.shop_id).where(User.organization_id == user.organization_id)
+            )
+            shop_ids = org_shops_res.scalars().all()
+
+        service = InventoryService(info.context.db)
+        items = await service.get_products(shop_ids, product_id=str(id) if id else None)
 
         return [
             ProductType(
@@ -104,6 +118,8 @@ class ShopifyQuery:
                 moq=p.moq,
                 boost_factor=p.boost_factor if p.boost_factor is not None else 1.0,
                 stock_weight=p.stock_weight if p.stock_weight is not None else 1.0,
+                cost_price=p.cost_price,
+                sale_price=p.sale_price,
                 created_at=p.created_at,
                 prediction=_prediction_to_type(p.__dict__['prediction']) if 'prediction' in p.__dict__ and p.__dict__['prediction'] else None,
                 supplier=SupplierType(
@@ -227,9 +243,8 @@ class ShopifyMutation:
         if not info.context.shop_id:
             raise UnauthenticatedException()
 
-        service = ShopifyService(info.context.db)
+        service = InventoryService(info.context.db)
         product = await service.update_product_settings(
-            shop_id=info.context.shop_id,
             product_id=str(id),
             lead_time=lead_time,
             moq=moq

@@ -11,7 +11,8 @@ import {
   Bell,
   LogOut,
   Settings,
-  Database
+  Database,
+  BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NotificationPanel } from '../dashboard/NotificationPanel';
@@ -20,6 +21,7 @@ const navItems = [
   { id: 'overview', label: 'Aperçu', icon: LayoutDashboard, href: '/dashboard' },
   { id: 'inventory', label: 'Inventaire', icon: Package, href: '/dashboard?tab=inventory' },
   { id: 'sources', label: 'Sources', icon: Database, href: '/dashboard?tab=sources' },
+  { id: 'decisions', label: 'Décisions', icon: BarChart3, href: '/dashboard?tab=decisions' },
 ];
 
 function NavLinks() {
@@ -31,8 +33,9 @@ function NavLinks() {
     <div className="hidden md:flex items-center gap-1 flex-1">
       {navItems.map((item) => {
         const isActive = (item.id === 'inventory' && pathname.startsWith('/dashboard/product')) ||
+                        (item.id === 'decisions' && activeTab === 'decisions') ||
                         (item.id === 'overview' && activeTab === 'overview' && !pathname.startsWith('/dashboard/product')) || 
-                        (searchParams.get('tab') === item.id);
+                        (activeTab === item.id);
         const Icon = item.icon;
         
         return (
@@ -77,7 +80,10 @@ export function Navbar() {
     } else {
       params.delete('q');
     }
-    router.replace(`${pathname}?${params.toString()}`);
+    
+    // Always navigate to /dashboard if we are searching (ensures redirection from /dashboard/decisions or others)
+    const targetPath = '/dashboard';
+    router.replace(`${targetPath}?${params.toString()}`);
   };
 
   return (

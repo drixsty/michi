@@ -16,6 +16,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     shop_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    organization_id = Column(UUID(as_uuid=True), nullable=True, index=True) # Sprint 13
     
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

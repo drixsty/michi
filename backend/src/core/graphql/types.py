@@ -36,6 +36,8 @@ class UpdateProfileInput:
     email: Optional[str] = None
     email_alerts_enabled: Optional[bool] = None
     min_severity: Optional[int] = None
+    currency: Optional[str] = None # Sprint 13
+    is_mutualized: Optional[bool] = None # Sprint 13
 
 @strawberry.input
 class ChangePasswordInput:

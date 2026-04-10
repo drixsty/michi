@@ -9,11 +9,12 @@ from src.modules.auth.service import AuthService
 from src.modules.shopify.resolvers import ShopifyQuery, ShopifyMutation
 from src.modules.forecasting.resolvers import ForecastingQuery, ForecastingMutation
 from src.modules.inventory.resolvers import InventoryQuery, InventoryMutation
+from src.modules.decisions.resolvers import DecisionQuery, DecisionMutation
 from src.core.exceptions import UnauthenticatedException
 
 
 @strawberry.type
-class Query(ShopifyQuery, ForecastingQuery, InventoryQuery):
+class Query(ShopifyQuery, ForecastingQuery, InventoryQuery, DecisionQuery):
     """Queries GraphQL"""
 
     @strawberry.field
@@ -51,7 +52,7 @@ class Query(ShopifyQuery, ForecastingQuery, InventoryQuery):
 
 
 @strawberry.type
-class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation):
+class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, DecisionMutation):
     """Mutations GraphQL"""
 
     @strawberry.mutation
@@ -102,6 +103,10 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation):
             prefs["email_alerts_enabled"] = input.email_alerts_enabled
         if input.min_severity is not None:
             prefs["min_severity"] = input.min_severity
+        if input.currency is not None:
+            prefs["currency"] = input.currency
+        if input.is_mutualized is not None:
+            prefs["is_mutualized"] = input.is_mutualized
             
         user = await auth_service.update_user(
             user_id=info.context.user_id,

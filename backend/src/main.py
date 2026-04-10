@@ -1,10 +1,11 @@
 """
 Point d'entrée FastAPI - Michi Backend
 """
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
 from contextlib import asynccontextmanager
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
 from src.core.graphql.schema import schema
@@ -17,20 +18,20 @@ from src.core.middleware.auth import get_current_user_from_token
 async def lifespan(_app: FastAPI):
     """Lifespan events (startup/shutdown)"""
     # Startup
-    print("🚀 Michi API starting...")
-    print("✨ Sprint 9: Omnichannel Aggregation active (WooCommerce + CSV export).")
-    print(f"📍 Environment: {settings.ENVIRONMENT}")
-    print(f"🔐 CORS Origins: {settings.cors_origins_list}")
+    print("[INFO] Michi API starting...")
+    print("[INFO] Sprint 13: Strategic BI active.")
+    print(f"[INFO] Environment: {settings.ENVIRONMENT}")
+    print(f"[INFO] CORS Origins: {settings.cors_origins_list}")
     
     yield
     
     # Shutdown
-    print("👋 Michi API shutting down...")
+    print("[INFO] Michi API shutting down...")
 
 
 # Créer l'app FastAPI
 app = FastAPI(
-    title="Michi API 道",
+    title="Michi API",
     description="Inventory Forecasting Platform",
     version="1.0.0",
     docs_url="/docs" if settings.ENVIRONMENT == "development" else None,
@@ -50,16 +51,19 @@ app.add_middleware(
 
 
 # Context factory pour GraphQL
-async def get_context(request: Request) -> GraphQLContext:
+async def get_context(
+    request: Request, 
+    db: AsyncSession = Depends(get_db)
+) -> GraphQLContext:
     """
     Crée le context GraphQL pour chaque requête.
     Extrait user_id et shop_id du token JWT.
-    La session DB est gérée par SQLAlchemySessionExtension.
     """
     # Extraire user_id/shop_id du token JWT
     user_id, shop_id = await get_current_user_from_token(request)
     
     return GraphQLContext(
+        db=db,
         user_id=user_id,
         shop_id=shop_id,
     )

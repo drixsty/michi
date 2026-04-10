@@ -40,7 +40,11 @@ async def get_or_create_demo_shop(session: AsyncSession) -> tuple[str, str]:
         result = await session.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
         if user:
-            return email, str(user.shop_id)
+            # Assigner une organization_id si absente (Sprint 13)
+            if not user.organization_id:
+                user.organization_id = uuid.uuid4()
+                await session.flush()
+            return email, str(user.shop_id), str(user.organization_id)
     raise RuntimeError(
         "Aucun utilisateur de démo trouvé. Lancez d'abord : make seed"
     )
@@ -110,8 +114,9 @@ async def main(shop_id: str | None, count: int) -> None:
     async with AsyncSessionLocal() as session:
         # Résoudre le shop_id si non fourni
         if not shop_id:
-            email, shop_id = await get_or_create_demo_shop(session)
+            email, shop_id, org_id = await get_or_create_demo_shop(session)
             print(f"   Shop     : {email} -> {shop_id}")
+            print(f"   Org ID   : {org_id}")
         else:
             print(f"   Shop     : {shop_id}")
 
@@ -121,15 +126,24 @@ async def main(shop_id: str | None, count: int) -> None:
 
         stats = await reset_and_seed(shop_id=shop_id, count=count, session=session)
 
-        # TRIGGER AI PIPELINE (Sprint 12)
-        print("Calcul des predictions IA...")
+        # SEED BOUTIQUE LYON (Sprint 13 QA)
+        print("Scénario Multi-boutique (Lyon)...")
+        shop_lyon_id = str(uuid.uuid4())
+        # On génère moins de produits pour Lyon, certains partagent le même SKU
+        await reset_and_seed(shop_id=shop_lyon_id, count=10, session=session)
+
+        # Calculer les prédictions pour les deux shops
+        print("Calcul des predictions IA (Paris & Lyon)...")
         forecasting_service = ForecastingService(session)
         await forecasting_service.run_cleaning_pipeline(shop_id)
         await forecasting_service.run_prediction_pipeline(shop_id)
+        await forecasting_service.run_cleaning_pipeline(shop_lyon_id)
+        await forecasting_service.run_prediction_pipeline(shop_lyon_id)
         
         print("Generation des alertes...")
         alert_service = AlertService(session)
         await alert_service.check_for_stockouts(shop_id)
+        await alert_service.check_for_stockouts(shop_lyon_id)
 
     await engine.dispose()
 

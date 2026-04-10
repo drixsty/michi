@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoadingState } from '@/components/ui/LoadingState';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useRouter } from 'next/navigation';
 
 const GET_ME = gql`
@@ -60,6 +61,8 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('');
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [minSeverity, setMinSeverity] = useState(1);
+  const [currency, setCurrency] = useState('€');
+  const [isMutualized, setIsMutualized] = useState(false);
   const [showSuccess, setShowSuccess] = useState<string | null>(null);
   const [showError, setShowError] = useState<string | null>(null);
 
@@ -75,6 +78,8 @@ export default function ProfilePage() {
       const prefs = JSON.parse(data.me.preferences || '{}');
       setEmailAlerts(prefs.email_alerts_enabled ?? true);
       setMinSeverity(prefs.min_severity ?? 1);
+      setCurrency(prefs.currency ?? '€');
+      setIsMutualized(prefs.is_mutualized ?? false);
     }
   }, [data]);
 
@@ -86,7 +91,9 @@ export default function ProfilePage() {
           input: {
             email,
             emailAlertsEnabled: emailAlerts,
-            minSeverity: parseInt(minSeverity.toString())
+            minSeverity: parseInt(minSeverity.toString()),
+            currency,
+            isMutualized
           }
         }
       });
@@ -258,6 +265,65 @@ export default function ProfilePage() {
                 </div>
               </section>
             </div>
+
+            {/* Section 3: Paramètres Stratégiques (Sprint 13) */}
+            <section className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+              <div className="p-5 border-b border-slate-50 bg-slate-50/30 flex justify-between items-center">
+                <h2 className="text-[10px] font-extrabold text-slate-900 tracking-widest flex items-center gap-2">
+                  <Shield className="h-3 w-3 text-indigo-600" />
+                  Paramètres Stratégiques
+                </h2>
+              </div>
+              <div className="p-6 space-y-8">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-slate-900">Devise d'affichage</p>
+                    <p className="text-[10px] text-slate-500 font-medium italic">Utilisée pour tous les calculs financiers (BI et Revenue at Risk).</p>
+                  </div>
+                  <CustomSelect 
+                    options={[
+                      { value: '€', label: 'Euro (€)' },
+                      { value: '$', label: 'US Dollar ($)' },
+                      { value: '£', label: 'British Pound (£)' },
+                      { value: 'CHF', label: 'Swiss Franc (CHF)' }
+                    ]}
+                    value={currency}
+                    onChange={setCurrency}
+                    className="w-36"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-slate-900">Mutualisation Intelligente</p>
+                    <p className="text-[10px] text-slate-500 font-medium italic">Sommer les stocks de tous les produits partageant le même SKU dans l'organisation.</p>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setIsMutualized(!isMutualized)}
+                    className={cn(
+                      "w-12 h-6 rounded-full transition-all relative flex items-center px-1",
+                      isMutualized ? "bg-indigo-600" : "bg-slate-200"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-4 h-4 bg-white rounded-full transition-transform duration-300",
+                      isMutualized ? "translate-x-6" : "translate-x-0"
+                    )} />
+                  </button>
+                </div>
+
+                <div className="pt-4 flex justify-end">
+                  <button 
+                    onClick={handleUpdateProfile}
+                    className="px-6 h-10 bg-slate-900 text-white rounded-lg text-[10px] font-bold tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2"
+                  >
+                    <Save className="h-3 w-3" />
+                    Enregistrer les paramètres
+                  </button>
+                </div>
+              </div>
+            </section>
 
             {/* Security Section (Password Modification) */}
             <section className="bg-white rounded-2xl border border-slate-100 overflow-hidden">

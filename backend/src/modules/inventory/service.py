@@ -79,22 +79,87 @@ class InventoryService:
             "sales_logs_count": len(new_sales_logs)
         }
 
-    async def get_products(self, shop_id: str, product_id: str = None) -> List[Product]:
+    async def get_products(self, shop_ids: List[str], product_id: str = None) -> List[Product]:
         """
         Lecture unifiée (Agnostique).
+        Supporte la recherche multi-boutiques (Organisation) et par ID unique.
         """
         from sqlalchemy.orm import selectinload
-        s_uuid = uuid.UUID(str(shop_id))
+        import uuid
         
-        stmt = select(Product).where(Product.shop_id == s_uuid)
-        if product_id:
-            p_uuid = uuid.UUID(str(product_id))
-            stmt = stmt.where(Product.id == p_uuid).options(
-                selectinload(Product.prediction),
-                selectinload(Product.cleaned_demands)
+        # Conversion UUIDs
+        s_uuids = [uuid.UUID(str(sid)) for sid in shop_ids]
+        p_uuid = uuid.UUID(str(product_id)) if product_id else None
+ 
+        if p_uuid:
+            stmt = (
+                select(Product)
+                .options(
+                    selectinload(Product.prediction),
+                    selectinload(Product.cleaned_demands),
+                    selectinload(Product.supplier),
+                    selectinload(Product.sales_logs)
+                )
+                .where(Product.id == p_uuid)
             )
         else:
-            stmt = stmt.options(selectinload(Product.prediction)).order_by(Product.sku)
-
+            stmt = (
+                select(Product)
+                .options(
+                    selectinload(Product.prediction),
+                    selectinload(Product.supplier),
+                    selectinload(Product.sales_logs)
+                )
+                .where(Product.shop_id.in_(s_uuids))
+                .order_by(Product.sku)
+            )
+            
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
+
+    async def update_product_settings(
+        self, 
+        product_id: str, 
+        lead_time: Optional[int] = None, 
+        moq: Optional[int] = None,
+        boost_factor: Optional[float] = None,
+        stock_weight: Optional[float] = None,
+        cost_price: Optional[float] = None,
+        sale_price: Optional[float] = None
+    ) -> Product:
+        """
+        Met à jour les paramètres logistiques d'un produit (Agnostique).
+        """
+        from sqlalchemy import select
+        import uuid
+        
+        p_uuid = uuid.UUID(str(product_id))
+        result = await self.db.execute(
+            select(Product).where(Product.id == p_uuid)
+        )
+        product = result.scalar_one_or_none()
+        
+        if not product:
+            raise Exception("Produit non trouvé")
+            
+        if lead_time is not None:
+            product.lead_time = lead_time
+        if moq is not None:
+            product.moq = moq
+        if boost_factor is not None:
+            product.boost_factor = boost_factor
+        if stock_weight is not None:
+            product.stock_weight = stock_weight
+        if cost_price is not None:
+            product.cost_price = cost_price
+        if sale_price is not None:
+            product.sale_price = sale_price
+            
+        await self.db.flush()
+        
+        # Déclenchement du recalcul des prédictions (IA)
+        from src.modules.forecasting.service import ForecastingService
+        forecasting_service = ForecastingService(self.db)
+        await forecasting_service.run_prediction_pipeline(str(product.shop_id))
+
+        return product

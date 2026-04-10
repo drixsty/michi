@@ -38,6 +38,10 @@ class Product(Base):
     boost_factor = Column(Float, nullable=False, default=1.0) # seasonality multiplier
     stock_weight = Column(Float, nullable=False, default=1.0) # channel priority weighting
 
+    # Financial Data (Sprint 13)
+    cost_price = Column(Float, nullable=True) # purchase cost unit
+    sale_price = Column(Float, nullable=True) # selling price unit
+
     # Traceability
     source_platform = Column(Enum(PlatformSource), nullable=False, default=PlatformSource.CUSTOM)
     external_id = Column(String(255), nullable=True) # ID in the source platform (Shopify Product ID, etc.)

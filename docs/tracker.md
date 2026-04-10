@@ -1,10 +1,10 @@
 # 📊 Michi - Progress Tracker
 
 **Dernière mise à jour :** 10 Avril 2026  
-**Version :** 9.1 (Elite UI Modernized)  
+**Version :** 9.2 (Elite BI Ready)  
 **Date :** 10 Avril 2026  
 **Agent IA :** Claude Sonnet 4.6  
-**Objectif :** Solution OMNICANAL Robuste — **Avancement : 92% (11/13 sprints)**
+**Objectif :** Solution OMNICANAL Robuste — **Avancement : 100% (13/13 sprints)**
 
 ---
 
@@ -37,7 +37,7 @@ Sprint 9  ✅ [■■■■■■■■■■] 100%  Epic 7: Omnichannel Aggrega
 Sprint 10 ✅ [■■■■■■■■■■] 100%  Go-Live Readiness (Alertes, MAPE, Onboarding)
 Sprint 11 ✅ [■■■■■■■■■■] 100%  Michi UI 2.0 Overhaul (Ultra-Light, Sidebar/Tabs, Unification Elite)
 Sprint 12 ✅ [■■■■■■■■■■] 100%  Optimisation Algorithmique (Boost Manuel & Pondération Omnicanale)
-Sprint 13 ⏳ [□□□□□□□□□□]   0%  Intelligence Stratégique (BI, Mutualisation, Centre Décisionnel)
+Sprint 13 ✅ [■■■■■■■■■■] 100%  Intelligence Stratégique (BI, Mutualisation, Centre Décisionnel)
 ```
 
 ---
@@ -677,22 +677,72 @@ Supporte les exports natifs wp-admin. Gère les alias de colonnes (`Item SKU`, `
 
 ---
 
-## ⏳ Sprint 13 : Intelligence Stratégique — À VENIR
-
+## ✅ Sprint 13 : Intelligence Stratégique — TERMINÉ
 **Dates :** 5-18 Juin 2026 (2 semaines)  
 **Objectif :** Centre de décision stratégique (BI financier), mutualisation des stocks multi-boutiques  
-**Statut :** ⏳ **Non commencé**  
-**Vélocité planifiée :** 25 pts
+**Statut :** ✅ **100%**
+**Vélocité réalisée :** 25 pts
 
 ### User Stories — Sprint 13
 
 | ID | User Story | Points | Priorité |
 |----|-----------|--------|----------|
-| US 13.1 | **Centre de Décision** — KPIs financiers (Valeur stock €, Revenue at Risk €, Taux couverture) + graphiques prédictifs 30/60/90j | 10 | P0 |
-| US 13.2 | **Mutualisation Inventaire** — Page multi-boutiques avec switch "Partager le stock entre boutiques" | 8 | P1 |
-| US 13.3 | **UI Elite** — Raffinement glassmorphism, micro-animations, polish final | 7 | P2 |
+| US 13.1 | ✅ **Centre de Décision** — KPIs financiers (Valeur stock €, Revenue at Risk €, Taux couverture) + graphiques prédictifs 30/60/90j | 10 | P0 |
+| US 13.2 | ✅ **Mutualisation Inventaire** — Page multi-boutiques avec switch "Partager le stock entre boutiques" | 8 | P1 |
+| US 13.3 | ✅ **UI Elite** — Raffinement glassmorphism, micro-animations, polish final | 7 | P2 |
 
 **Total Sprint 13 :** 25 pts
+
+---
+
+## ✅ Sprint 14 : Cockpit de Pilotage — ACTION & SIMULATION
+
+**Dates :** 19 Juin - 2 Juillet 2026 (2 semaines)  
+**Objectif :** Transformer le Centre de Décision en outil de pilotage actionnable. Passer de la visualisation passive à la prise de décision assistée (simulation, commande automatique, scoring).  
+**Statut :** ✅ **100%**
+**Vélocité planifiée :** 36 pts (stretch goal — US 14.6 reportable si tension)
+
+### User Stories — Sprint 14
+
+| ID | User Story | Points | Priorité |
+|----|-----------|--------|----------|
+| US 14.1 | ✅ **Projection Réelle du Stock** — Remplacer le graphique hardcodé par une courbe basée sur le `run_rate` IA réel + seuil de réapprovisionnement | 5 | P0 |
+| US 14.2 | ✅ **Quantité Recommandée Visible** — Afficher `reorder_quantity` et `days_of_stock` dans le rapport des risques (champs déjà calculés par le backend) | 3 | P0 |
+| US 14.3 | ✅ **One-Click Purchase Order** — Bouton "Commander" dans le rapport de risque → mutation `createPurchaseOrder` existante (`inventory/resolvers.py:336`) | 8 | P0 |
+| US 14.7 | ✅ **Barre de Filtres** — Filtres compacts Période (7j/30j/90j) + Canal (All/Shopify/Woo/Amazon) + Statut (Critique/Tendu/Sain) côté frontend | 5 | P0 |
+| US 14.4 | ✅ **Simulateur What-If (Side Panel)** — Sliders interactifs "Délai fournisseur" & "Pic de ventes" avec recalcul client-side en temps réel du graphique stock | 10 | P1 |
+| US 14.5 | ✅ **Health Score Inventaire** — Jauge circulaire animée (0-100) basée sur `efficiency × 0.6 + coverage × 0.4` affichée en remplacement de "Analyse de l'Architecte" | 6 | P1 |
+| US 14.8 | ✅ **Graphiques ABC Pareto + Capital par Canal** — Répartition ABC (A/B/C) et Donut capital par plateforme. Calcul 100% frontend | 5 | P1 |
+
+**Total Sprint 14 :** 42 pts
+
+---
+
+## ⏳ Sprint 15 : Connectivité & Précision — EN COURS
+
+**Dates :** 3 - 16 Juillet 2026 (2 semaines)  
+**Objectif :** Sortir du mode simulation. Implémenter les connecteurs réels (OAuth) et augmenter la précision analytique (Marges & Saisonnalité).  
+**Statut :** 🚧 **En cours**  
+**Vélocité planifiée :** 30 pts
+
+### User Stories — Sprint 15
+
+| ID | User Story | Points | Priorité |
+|----|-----------|--------|----------|
+| US 15.1 | **Connecteurs Réels (Shopify OAuth)** — Mise en place du flux d'authentification complet (Install / Callback / Token) | 10 | P0 |
+| US 15.2 | **ABC par la Marge** — Refonte du classement ABC basé sur la Marge Brute Annualisée (vs CA) | 8 | P0 |
+| US 15.3 | **Algorithme de Saisonnalité** — Détection automatique des cycles et ajustement du Run Rate | 7 | P1 |
+| US 15.4 | **UI Sources Actionnable** — Intégration des boutons de connexion directs dans `ConnectorsGrid` | 5 | P1 |
+
+**Total Sprint 15 :** 30 pts
+
+### Contexte Technique (Audit Architecte)
+
+> **Atout majeur :** Le modèle `PurchaseOrder` (PENDING/RECEIVED), la mutation `createPurchaseOrder`, le `run_rate`, le `reorder_quantity` et le `boost_factor` existent tous déjà dans le backend. L'effort est principalement Frontend (simulation client-side, refonte graphique, bouton PO).
+
+> **Dette identifiée :** Le graphique de projection du Centre de Décision (`decisions/page.tsx` L193-201) utilise des coefficients statiques (×0.8, ×0.65...) au lieu du run rate réel. US 14.1 corrige cette dette critique pour la crédibilité du produit.
+
+> **Filtres :** Les données `source_platform`, `days_of_stock`, `lead_time` sont déjà disponibles dans les modèles. Le filtrage est 100% côté frontend, aucune modification backend nécessaire.
 
 ---
 
@@ -711,7 +761,6 @@ Ces features sont hors scope MVP mais peuvent être ajoutées après validation 
 - [ ] Intégration Shopify API réelle (remplacer le mock)
 - [ ] Multi-utilisateurs (permissions par rôle : admin / viewer)
 - [ ] Export Excel prédictions (format `.xlsx` avec mise en forme)
-- [ ] Simulation What-if Ventes (+X%) → impact date rupture *(sorti de Sprint 10 — trop complexe UX)*
 
 ### P2 (Medium Priority)
 - [ ] Mobile app native (React Native) ou PWA

@@ -11,6 +11,10 @@ export const GET_PRODUCTS = gql`
       leadTime
       moq
       warningThreshold
+      boostFactor
+      stockWeight
+      costPrice
+      salePrice
       prediction {
         runRate
         daysOfStock

@@ -129,6 +129,8 @@ def generate_mock_products(count: int = 50, shop_id: Optional[str] = None) -> li
                 "source_platform": platform,
                 "boost_factor": rng.uniform(0.8, 2.5),
                 "stock_weight": rng.uniform(0.5, 2.0),
+                "cost_price": round(rng.uniform(10.0, 150.0), 2),
+                "sale_price": round(rng.uniform(25.0, 400.0), 2),
             })
 
     return products
@@ -196,7 +198,6 @@ def generate_mock_sales(product_id: str, sku: Optional[str] = None, days: int = 
 
         log = {
             "product_id": product_id,
-            "sku": sku,
             "date": current_date,
             "units_sold": units_sold,
             "end_of_day_stock": int(stock),

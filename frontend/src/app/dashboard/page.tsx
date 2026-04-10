@@ -23,6 +23,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { StatsOverview } from '@/components/dashboard/StatsOverview';
 import { ProductTable } from '@/components/dashboard/ProductTable';
 import { ConnectorsGrid } from '@/components/dashboard/ConnectorsGrid';
+import { DecisionsView } from '@/components/dashboard/DecisionsView';
 
 import OnboardingWizard from '@/components/dashboard/OnboardingWizard';
 
@@ -164,6 +165,10 @@ function DashboardContent() {
       title: "Navigation des sources", 
       subtitle: "Gérez vos connexions de données et flux api" 
     },
+    decisions: {
+      title: "Centre de Décision",
+      subtitle: "Pilotez l'impact financier de votre inventaire en temps réel"
+    },
     profile: { 
       title: "Mon Profil", 
       subtitle: "Gérez vos préférences de notification et sécurité" 
@@ -197,8 +202,8 @@ function DashboardContent() {
         subtitle={subtitle}
         syncing={syncing}
         onSync={() => triggerSync()}
-        onExport={handleExport}
-        showActions={activeTab === 'inventory'}
+        onExport={activeTab === 'decisions' ? () => {} : handleExport}
+        showActions={activeTab === 'inventory' || activeTab === 'decisions'}
       />
 
       {/* View Content (Routed by tab search param) */}
@@ -400,6 +405,10 @@ function DashboardContent() {
                 </div>
              </div>
           </div>
+        )}
+
+        {activeTab === 'decisions' && (
+          <DecisionsView />
         )}
       </div>
 

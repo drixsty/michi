@@ -50,6 +50,8 @@ class ProductType:
     current_stock: int
     boost_factor: float
     stock_weight: float
+    cost_price: Optional[float]
+    sale_price: Optional[float]
 
 @strawberry.type
 class IngestionResult:
@@ -476,38 +478,25 @@ class InventoryMutation:
         lead_time: Optional[int] = None,
         moq: Optional[int] = None,
         boost_factor: Optional[float] = None,
-        stock_weight: Optional[float] = None
+        stock_weight: Optional[float] = None,
+        cost_price: Optional[float] = None,
+        sale_price: Optional[float] = None
     ) -> ProductType:
         if not info.context.user_id:
             raise UnauthenticatedException()
 
-        from .models import Product
-        from sqlalchemy import select
+        from .service import InventoryService
+        service = InventoryService(info.context.db)
         
-        product_id = uuid.UUID(str(id))
-        result = await info.context.db.execute(
-            select(Product).where(Product.id == product_id)
+        product = await service.update_product_settings(
+            product_id=str(id),
+            lead_time=lead_time,
+            moq=moq,
+            boost_factor=boost_factor,
+            stock_weight=stock_weight,
+            cost_price=cost_price,
+            sale_price=sale_price
         )
-        product = result.scalar_one_or_none()
-        
-        if not product:
-            raise Exception("Produit non trouvé")
-            
-        if lead_time is not None:
-            product.lead_time = lead_time
-        if moq is not None:
-            product.moq = moq
-        if boost_factor is not None:
-            product.boost_factor = boost_factor
-        if stock_weight is not None:
-            product.stock_weight = stock_weight
-            
-        await info.context.db.flush()
-        
-        # Trigger prediction update after settings change
-        from src.modules.forecasting.service import ForecastingService
-        forecasting_service = ForecastingService(info.context.db)
-        await forecasting_service.run_prediction_pipeline(str(product.shop_id))
 
         return ProductType(
             id=strawberry.ID(str(product.id)),
@@ -517,7 +506,9 @@ class InventoryMutation:
             moq=product.moq,
             current_stock=product.current_stock,
             boost_factor=product.boost_factor if product.boost_factor is not None else 1.0,
-            stock_weight=product.stock_weight if product.stock_weight is not None else 1.0
+            stock_weight=product.stock_weight if product.stock_weight is not None else 1.0,
+            cost_price=product.cost_price,
+            sale_price=product.sale_price
         )
 
     @strawberry.mutation
