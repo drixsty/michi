@@ -23,7 +23,10 @@ from sqlalchemy import select, delete
 
 from src.core.config import settings
 from src.modules.auth.models import User
-from src.modules.shopify.models import Product, SalesLog
+from src.modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder
+from src.modules.forecasting.models import CleanedDemand, Prediction
+from src.modules.forecasting.service import ForecastingService
+from src.modules.inventory.alert_service import AlertService
 from src.modules.shopify.mock_generator import generate_full_mock_dataset
 from src.core.database import Base
 
@@ -45,8 +48,23 @@ async def get_or_create_demo_shop(session: AsyncSession) -> tuple[str, str]:
 
 async def reset_and_seed(shop_id: str, count: int, session: AsyncSession) -> dict:
     """Supprime les données existantes et régénère le dataset mock."""
-    # Supprimer les produits existants (cascade → sales_logs)
-    await session.execute(delete(Product).where(Product.shop_id == shop_id))
+    # Supprimer les données existantes (ordres importants pour FKs)
+    from src.modules.inventory.models import Alert, AlertEmail, SalesLog
+    from src.modules.forecasting.models import CleanedDemand, Prediction
+    
+    # On supprime tout ce qui est lié aux produits de ce shop
+    p_ids_query = select(Product.id).where(Product.shop_id == shop_id)
+    p_ids_res = await session.execute(p_ids_query)
+    p_ids = p_ids_res.scalars().all()
+    
+    if p_ids:
+        await session.execute(delete(AlertEmail).where(AlertEmail.product_id.in_(p_ids)))
+        await session.execute(delete(Alert).where(Alert.product_id.in_(p_ids)))
+        await session.execute(delete(Prediction).where(Prediction.product_id.in_(p_ids)))
+        await session.execute(delete(CleanedDemand).where(CleanedDemand.product_id.in_(p_ids)))
+        await session.execute(delete(SalesLog).where(SalesLog.product_id.in_(p_ids)))
+        await session.execute(delete(Product).where(Product.id.in_(p_ids)))
+    
     await session.flush()
 
     # Générer le nouveau dataset
@@ -77,7 +95,7 @@ async def reset_and_seed(shop_id: str, count: int, session: AsyncSession) -> dic
 
 async def main(shop_id: str | None, count: int) -> None:
     print()
-    print("🌱 Michi — Seed Démo")
+    print("Michi - Seed Demo")
     print(f"   Database : {settings.DATABASE_URL}")
     print()
 
@@ -93,29 +111,39 @@ async def main(shop_id: str | None, count: int) -> None:
         # Résoudre le shop_id si non fourni
         if not shop_id:
             email, shop_id = await get_or_create_demo_shop(session)
-            print(f"   Shop     : {email} → {shop_id}")
+            print(f"   Shop     : {email} -> {shop_id}")
         else:
             print(f"   Shop     : {shop_id}")
 
         print(f"   Produits : {count}")
         print()
-        print("⏳ Génération en cours...")
+        print("Generation en cours...")
 
         stats = await reset_and_seed(shop_id=shop_id, count=count, session=session)
+
+        # TRIGGER AI PIPELINE (Sprint 12)
+        print("Calcul des predictions IA...")
+        forecasting_service = ForecastingService(session)
+        await forecasting_service.run_cleaning_pipeline(shop_id)
+        await forecasting_service.run_prediction_pipeline(shop_id)
+        
+        print("Generation des alertes...")
+        alert_service = AlertService(session)
+        await alert_service.check_for_stockouts(shop_id)
 
     await engine.dispose()
 
     print()
-    print("✅ Dataset démo prêt !")
+    print("Dataset demo pret !")
     print()
     print(f"   Produits créés    : {stats['products']}")
     print(f"   Sales logs créés  : {stats['sales_logs']:,}")
     print(f"   Ruptures simulées : {stats['stockout_count']} produits ({stats['stockout_ratio']:.1%})")
     print()
-    print("🔗 Prochaines étapes :")
+    print("Prochaines etapes :")
     print("   1. make dev-backend")
     print("   2. make dev-frontend")
-    print("   3. http://localhost:3000 → Synchroniser (charge les données)")
+    print("   3. http://localhost:3000 -> Synchroniser (charge les donnees)")
     print()
 
 

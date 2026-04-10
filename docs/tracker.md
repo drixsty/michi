@@ -36,7 +36,7 @@ Sprint 8  ✅ [■■■■■■■■■■] 100%  Epic 6: Supplier Performanc
 Sprint 9  ✅ [■■■■■■■■■■] 100%  Epic 7: Omnichannel Aggregation
 Sprint 10 ✅ [■■■■■■■■■■] 100%  Go-Live Readiness (Alertes, MAPE, Onboarding)
 Sprint 11 ✅ [■■■■■■■■■■] 100%  Michi UI 2.0 Overhaul (Ultra-Light, Sidebar/Tabs, Unification Elite)
-Sprint 12 ⏳ [□□□□□□□□□□]   0%  Optimisation Algorithmique (Boost Manuel & Pondération Omnicanale)
+Sprint 12 ✅ [■■■■■■■■■■] 100%  Optimisation Algorithmique (Boost Manuel & Pondération Omnicanale)
 Sprint 13 ⏳ [□□□□□□□□□□]   0%  Intelligence Stratégique (BI, Mutualisation, Centre Décisionnel)
 ```
 
@@ -664,10 +664,10 @@ Supporte les exports natifs wp-admin. Gère les alias de colonnes (`Item SKU`, `
 
 | ID | User Story | Points | Priorité |
 |----|-----------|--------|----------|
-| US 12.1 | **Boost Manuel Saisonnalité** — Slider coefficient saison (×0.5 à ×3) par produit → recalcul run rate pondéré | 8 | P0 |
-| US 12.2 | **Run Rate par Canal** — Calcul du run rate indépendant par plateforme (vs. "canal dominant" actuel) | 8 | P0 |
-| US 12.3 | **Pondération Stock Omnichannel** — Priorité de vente configurable (ex : Shopify 60% / Amazon 40%) | 5 | P1 |
-| US 12.4 | **Tests algorithmiques Boost** — MAPE avec coefficient saisonnalité appliqué < 15% | 4 | P1 |
+| US 12.1 | ✅ **Boost Manuel Saisonnalité** — Slider coefficient saison (×0.5 à ×3) par produit → recalcul run rate pondéré | 8 | P0 |
+| US 12.2 | ✅ **Run Rate par Canal** — Calcul du run rate indépendant par plateforme (vs. "canal dominant" actuel) | 8 | P0 |
+| US 12.3 | ✅ **Pondération Stock Omnichannel** — Priorité de vente configurable (ex : Shopify 60% / Amazon 40%) | 5 | P1 |
+| US 12.4 | ✅ **Tests algorithmiques Boost** — MAPE avec coefficient saisonnalité appliqué < 15% | 4 | P1 |
 
 **Total Sprint 12 :** 25 pts
 

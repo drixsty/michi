@@ -9,6 +9,8 @@ export const GET_PRODUCT_DETAIL = gql`
       currentStock
       leadTime
       moq
+      boostFactor
+      stockWeight
       warningThreshold
       supplier {
         name
@@ -26,6 +28,15 @@ export const GET_PRODUCT_DETAIL = gql`
         isStockout
         isOutlier
         correctionType
+      }
+      channels {
+        platform
+        productId
+        currentStock
+        runRate
+        leadTime
+        moq
+        stockWeight
       }
     }
   }

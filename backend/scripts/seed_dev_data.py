@@ -87,8 +87,54 @@ async def seed_dev_user():
         session.add_all([s1, s2])
         await session.flush()
 
-        print(f"Fournisseurs crees: {s1.name}, {s2.name}")
-        
+        await session.commit()
+        await session.refresh(user)
+
+        # 3. Créer des produits "Golden Test Cases" (Sprint 12)
+        p1 = Product(
+            id=uuid.uuid4(),
+            shop_id=shop_id,
+            sku="GOLD-001",
+            title="Manteau Laine [DEMO BOOST 2.2x]",
+            current_stock=15,
+            lead_time=14,
+            moq=5,
+            source_platform="shopify",
+            boost_factor=2.2,
+            stock_weight=1.0,
+            supplier_id=s1.id
+        )
+        p2 = Product(
+            id=uuid.uuid4(),
+            shop_id=shop_id,
+            sku="GOLD-002",
+            title="Sneakers [AMAZON PRIORITY]",
+            current_stock=120,
+            lead_time=30,
+            moq=20,
+            source_platform="amazon",
+            boost_factor=1.0,
+            stock_weight=2.0,
+            supplier_id=s1.id
+        )
+        p3 = Product(
+            id=uuid.uuid4(),
+            shop_id=shop_id,
+            sku="GOLD-003",
+            title="Eau Micellaire [OUT OF STOCK TEST]",
+            current_stock=0,
+            lead_time=7,
+            moq=50,
+            source_platform="woocommerce",
+            boost_factor=1.0,
+            stock_weight=1.5,
+            supplier_id=s2.id
+        )
+        session.add_all([p1, p2, p3])
+        await session.flush()
+
+        print(f"Produits Golden crees: {p1.title}, {p2.title}")
+
         await session.commit()
         await session.refresh(user)
     

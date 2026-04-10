@@ -5,14 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { GET_ME } from '@/graphql/queries/getMe';
 import { GET_PRODUCTS } from '@/graphql/queries/getProducts';
-import { TRIGGER_MOCK_DATA_SYNC } from '@/graphql/mutations/syncShopify';
+import { TRIGGER_MOCK_DATA_SYNC } from '@/graphql/mutations/syncInventory';
 import { GET_DASHBOARD_STATS } from '@/graphql/queries/getDashboardStats';
 import { GET_UNREAD_ALERTS } from '@/graphql/queries/getUnreadAlerts';
 import { INGEST_CSV_DATA } from '@/graphql/mutations/ingestCSV';
 import { AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { LayoutDashboard, Package, Layers, Bell, AlertCircle, Trash2, ExternalLink, Eye, CheckCircle2, Database } from 'lucide-react';
+import { LayoutDashboard, Package, Layers, Bell, AlertCircle, AlertTriangle, Trash2, ExternalLink, Eye, CheckCircle2, Database } from 'lucide-react';
 import Link from 'next/link';
 import { gql } from '@apollo/client';
 import { cn } from '@/lib/utils';
@@ -60,7 +60,7 @@ function DashboardContent() {
   // -- Mutations --
   const [triggerSync, { loading: syncing }] = useMutation(TRIGGER_MOCK_DATA_SYNC, {
     onCompleted: (data) => {
-      setToast({ message: data.triggerMockDataSync.message, type: 'success' });
+      setToast({ message: data.triggerOmnichannelSync.message, type: 'success' });
       refetchProducts();
       refetchStats();
       refetchAlerts();
@@ -217,27 +217,29 @@ function DashboardContent() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  {alertsData?.unreadAlerts?.length === 0 ? (
-                    <p className="text-xs text-muted-foreground italic px-2">Aucune alerte pour le moment.</p>
+                  {(!alertsData?.unreadAlerts || alertsData.unreadAlerts.length === 0) ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-center min-h-[160px]">
+                       <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1">Données vides</p>
+                       <p className="text-[10px] text-slate-300 italic">Aucune alerte active pour le moment.</p>
+                    </div>
                   ) : (
                     <div className="divide-y divide-slate-50">
-                      {alertsData?.unreadAlerts?.slice(0, 5).map((a: any) => (
+                      {alertsData.unreadAlerts.slice(0, 5).map((a: any) => (
                         <div 
                           key={a.id} 
-                          className={cn(
-                            "flex gap-3 items-center px-2 py-3 transition-all group relative cursor-pointer hover:bg-slate-50 rounded-lg",
-                            a.type === 'CRITICAL_STOCK' ? "bg-red-50/30" :
-                            a.type === 'STOCKOUT_RISK' ? "bg-amber-50/30" :
-                            "bg-white"
-                          )}
+                          className="flex gap-3 items-center px-2 py-3 transition-all group relative cursor-pointer hover:bg-slate-50 rounded-lg"
                         >
                           <div className={cn(
                              "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
-                             a.type === 'CRITICAL_STOCK' ? "bg-white text-red-500" :
-                             a.type === 'STOCKOUT_RISK' ? "bg-white text-amber-500" :
+                             (a.type === 'CRITICAL_STOCK' || a.type === 'STOCKOUT_CRITICAL') ? "bg-white text-red-500 shadow-sm" :
+                             (a.type === 'STOCKOUT_RISK' || a.type === 'STOCKOUT_RISK_HIGH') ? "bg-white text-orange-500 shadow-sm" :
+                             a.type === 'STOCKOUT_WARNING' ? "bg-white text-amber-500 shadow-sm" :
                              "bg-slate-50 text-slate-400"
                           )}>
-                             <AlertCircle className="h-4 w-4" />
+                             {(a.type === 'CRITICAL_STOCK' || a.type === 'STOCKOUT_CRITICAL') ? <AlertTriangle className="h-4 w-4" /> :
+                              (a.type === 'STOCKOUT_RISK' || a.type === 'STOCKOUT_RISK_HIGH') ? <AlertCircle className="h-4 w-4" /> :
+                              a.type === 'STOCKOUT_WARNING' ? <Bell className="h-4 w-4" /> :
+                              <AlertCircle className="h-4 w-4" />}
                           </div>
                           
                           <div className="flex-1 min-w-0 pr-16">
@@ -245,7 +247,7 @@ function DashboardContent() {
                                {format(new Date(a.createdAt), 'dd MMM HH:mm', { locale: fr })}
                             </p>
                             <p className="text-xs font-medium text-slate-700 leading-snug truncate">
-                               {a.message.replace(/^(alerte|danger)\s*:\s*/i, '')}
+                               {a.message.replace(/^(alerte|danger|attention)\s*:\s*/i, '')}
                             </p>
                           </div>
 
@@ -292,54 +294,60 @@ function DashboardContent() {
                 </div>
                 
                 <div className="space-y-1">
-                   {omnichannelData?.omnichannelInventory?.length === 0 ? (
-                     <p className="text-xs text-muted-foreground italic px-2">Aucun produit synchronisé.</p>
-                   ) : (
-                     <div className="divide-y divide-slate-50">
-                         {omnichannelData?.omnichannelInventory?.slice(0, 5).map((p: any) => (
-                          <div 
-                            key={p.id} 
-                            onClick={() => setSelectedProductId(p.id || p.sku)}
-                            className="group relative flex items-center justify-between px-2 py-3 hover:bg-slate-50 transition-all cursor-pointer rounded-lg"
-                          >
-                            <div className="min-w-0 flex-1 pr-4">
-                              <p className="text-xs font-medium text-foreground truncate">{p.title}</p>
-                              <p className="text-[10px] text-muted-foreground">SKU: {p.sku}</p>
+                  {(!omnichannelData?.omnichannelInventory || omnichannelData.omnichannelInventory.length === 0) ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-center min-h-[160px]">
+                       <div className="p-3 bg-slate-50 rounded-full mb-3">
+                          <Package className="h-6 w-6 text-slate-300" />
+                       </div>
+                       <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1">Données vides</p>
+                       <p className="text-[10px] text-slate-300 italic">Aucun produit synchronisé.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-50">
+                        {omnichannelData.omnichannelInventory.slice(0, 5).map((p: any) => (
+                        <div 
+                          key={p.id} 
+                          onClick={() => setSelectedProductId(p.id || p.sku)}
+                          className="group relative flex items-center justify-between px-2 py-3 hover:bg-slate-50 transition-all cursor-pointer rounded-lg"
+                        >
+                          <div className="min-w-0 flex-1 pr-4">
+                            <p className="text-xs font-medium text-foreground truncate">{p.title}</p>
+                            <p className="text-[10px] text-muted-foreground">SKU: {p.sku}</p>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            <div className="text-right group-hover:opacity-0 transition-opacity">
+                              <p className="text-xs font-bold text-foreground">{p.totalStock}</p>
+                              <p className="text-[9px] text-muted-foreground">Unités</p>
                             </div>
                             
-                            <div className="flex items-center gap-3">
-                              <div className="text-right group-hover:opacity-0 transition-opacity">
-                                <p className="text-xs font-bold text-foreground">{p.totalStock}</p>
-                                <p className="text-[9px] text-muted-foreground">Unités</p>
-                              </div>
-                              
-                              {/* Quick Actions (Hover) */}
-                              <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all">
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedProductId(p.id || p.sku);
-                                  }}
-                                  className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-primary transition-all shadow-none flex items-center gap-1.5"
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                  <span className="text-[10px] font-bold tracking-widest">Ouvrir</span>
-                                </button>
-                              </div>
+                            {/* Quick Actions (Hover) */}
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedProductId(p.id || p.sku);
+                                }}
+                                className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-primary transition-all shadow-none flex items-center gap-1.5"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                <span className="text-[10px] font-bold tracking-widest">Ouvrir</span>
+                              </button>
                             </div>
                           </div>
-                        ))}
-                        
-                        <div className="pt-2 px-2">
-                          <button 
-                            onClick={() => router.push('/dashboard?tab=inventory')}
-                            className="w-full py-2 text-[10px] font-bold text-emerald-600 tracking-widest bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-all"
-                          >
-                            Gérer l'inventaire
-                          </button>
                         </div>
-                     </div>
-                   )}
+                      ))}
+                      
+                      <div className="pt-2 px-2">
+                        <button 
+                          onClick={() => router.push('/dashboard?tab=inventory')}
+                          className="w-full py-2 text-[10px] font-bold text-emerald-600 tracking-widest bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-all"
+                        >
+                          Gérer l'inventaire
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

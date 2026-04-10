@@ -233,7 +233,10 @@ class ForecastingService:
             if product is None:
                 continue
 
-            run_rate = float(row["run_rate"])
+            # Apply Seasonality Boost (US 12.1)
+            # Default to 1.0 if not set (None/null) to avoid TypeError
+            boost = float(product.boost_factor) if product.boost_factor is not None else 1.0
+            run_rate = float(row["run_rate"]) * boost
             current_stock = float(product.current_stock)
             lead_time = int(product.lead_time)
             moq = int(product.moq)

@@ -12,12 +12,16 @@ import {
   AlertCircle, 
   Zap,
   Calendar,
-  Box
+  Box,
+  Settings,
+  ExternalLink
 } from 'lucide-react';
 import SalesChart from '@/components/dashboard/SalesChart';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { LoadingState } from '@/components/ui/LoadingState';
+import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -29,6 +33,9 @@ export default function ProductDetailPage() {
   // Form states
   const [leadTime, setLeadTime] = useState<number>(0);
   const [moq, setMoq] = useState<number>(0);
+  const [boostFactor, setBoostFactor] = useState<number>(1.0);
+  const [stockWeight, setStockWeight] = useState<number>(1.0);
+  const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
 
   const { data, loading, error, refetch } = useQuery(GET_PRODUCT_DETAIL, {
     variables: { id: id as string },
@@ -54,7 +61,9 @@ export default function ProductDetailPage() {
         variables: {
           id: id as string,
           leadTime,
-          moq
+          moq,
+          boostFactor,
+          stockWeight
         }
       });
     } catch (err) {
@@ -67,11 +76,39 @@ export default function ProductDetailPage() {
     if (data?.productDetail?.[0]) {
       setLeadTime(data.productDetail[0].leadTime);
       setMoq(data.productDetail[0].moq || 0);
+      setBoostFactor(data.productDetail[0].boostFactor || 1.0);
+      setStockWeight(data.productDetail[0].stockWeight || 1.0);
     }
   }, [data]);
 
-  if (loading) return <div className="p-8 text-sm animate-pulse">Chargement analyse...</div>;
-  if (error || !data?.productDetail?.[0]) return <div className="p-8 text-sm text-red-500">Erreur lors de la récupération du produit.</div>;
+  if (loading) return <LoadingState />;
+  if (error || !data?.productDetail?.[0]) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center animate-in fade-in zoom-in duration-500">
+        <div className="bg-red-50 p-6 rounded-full mb-6 ring-8 ring-red-50/50">
+          <AlertCircle className="h-12 w-12 text-red-500" />
+        </div>
+        <h2 className="text-xl font-black text-sentence mb-2 italic tracking-tight">Oups ! Produit introuvable</h2>
+        <p className="text-sm text-muted-foreground text-sentence max-w-sm mb-8 leading-relaxed">
+          Nous n'avons pas pu récupérer les détails de ce produit. Cela peut être dû à un problème de connexion ou le produit a peut-être été supprimé.
+        </p>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => refetch()}
+            className="px-6 py-2.5 bg-slate-900 text-white rounded-lg text-xs font-bold tracking-widest hover:bg-slate-800 transition-all shadow-lg hover:shadow-slate-200 active:scale-95"
+          >
+            Réessayer
+          </button>
+          <button 
+            onClick={() => router.push('/dashboard?tab=inventory')}
+            className="px-6 py-2.5 bg-white border-2 border-slate-200 text-slate-600 rounded-lg text-xs font-bold tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+          >
+            Retour à l'inventaire
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const product = data.productDetail[0];
   const prediction = product.prediction;
@@ -100,7 +137,7 @@ export default function ProductDetailPage() {
         {product.supplier && (
           <div className="ml-auto flex items-center gap-4 px-4 py-2 bg-accent/50 rounded-lg border">
             <div className="text-right">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Fournisseur</p>
+              <p className="text-[10px] font-bold text-muted-foreground tracking-wider">Fournisseur</p>
               <p className="text-sm font-semibold text-sentence">{product.supplier.name}</p>
             </div>
             <div className={`h-8 w-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${product.supplier.reliabilityScore > 0.8 ? 'border-green-500 text-green-600' : 'border-amber-500 text-amber-600'}`}>
@@ -129,16 +166,22 @@ export default function ProductDetailPage() {
           <div className={`text-3xl font-bold tracking-tight ${prediction?.predictedStockoutDate && new Date(prediction.predictedStockoutDate) < new Date() ? 'text-red-500' : ''}`}>
             {prediction?.predictedStockoutDate ? format(new Date(prediction.predictedStockoutDate), 'dd MMM yyyy', { locale: fr }) : 'N/A'}
           </div>
-          <p className="text-[11px] text-muted-foreground mt-2 text-sentence">Basé sur un run rate de {prediction?.runRate.toFixed(1)}/j</p>
+          <p className="text-[11px] text-muted-foreground mt-2 text-sentence">Basé sur un run rate de {prediction?.runRate.toFixed(2)}/j</p>
         </div>
 
-        <div className="bg-primary text-primary-foreground rounded-lg border p-6 shadow-md">
+        <div className="bg-primary text-primary-foreground rounded-lg border p-6 shadow-md relative overflow-hidden">
           <div className="flex items-center gap-2 mb-4 opacity-80">
             <Zap className="h-4 w-4" />
             <span className="text-xs font-medium text-sentence">Commande suggérée</span>
           </div>
           <div className="text-3xl font-bold tracking-tight">+{Math.round(prediction?.reorderQuantity || 0)} u.</div>
-          <p className="text-[11px] opacity-80 mt-2 text-sentence">Délai fournisseur : {product.leadTime} jours</p>
+          <p className="text-[11px] opacity-80 mt-2 text-sentence">
+            Délai fournisseur : {product.leadTime} j. 
+            {boostFactor !== 1 && ` (Boost ×${boostFactor.toFixed(2)})`}
+          </p>
+          {boostFactor > 1.2 && (
+             <div className="absolute top-2 right-2 bg-white/20 px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider animate-pulse">High Demand</div>
+          )}
         </div>
       </div>
 
@@ -154,11 +197,209 @@ export default function ProductDetailPage() {
             <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-indigo-200" /> Prédiction</div>
           </div>
         </div>
-        <div className="h-[320px]">
-          <SalesChart 
-            data={product.cleanedDemand || []} 
-            title="" 
-          />
+        <div className="h-[320px] flex items-center justify-center bg-slate-50/50 rounded-xl border border-dashed">
+          {product.cleanedDemand && product.cleanedDemand.length > 0 ? (
+            <SalesChart 
+              data={product.cleanedDemand || []} 
+              title="" 
+            />
+          ) : (
+            <div className="text-center py-20">
+               <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1">Données vides</p>
+               <p className="text-[10px] text-slate-300 italic">Aucun historique de vente détecté.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Seasonality Boost (US 12.1) */}
+        <div className="bg-white rounded-lg border p-6 space-y-6">
+           <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-sentence">Boost Manuel Saisonnalité</h4>
+                  <p className="text-xs text-muted-foreground text-sentence">Ajustez les prévisions pour les pics de vente</p>
+                </div>
+              </div>
+              <div className="text-lg font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
+                × {boostFactor.toFixed(2)}
+              </div>
+           </div>
+
+           <div className="space-y-6">
+              <div className="flex flex-col gap-6">
+                <input 
+                  type="range"
+                  min="0.5"
+                  max="3.0"
+                  step="0.1"
+                  value={boostFactor}
+                  onChange={(e) => setBoostFactor(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer transition-all [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-lg [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-indigo-600 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:-mt-1.5"
+                  style={{
+                    background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${((boostFactor - 0.5) / 2.5) * 100}%, #f1f5f9 ${((boostFactor - 0.5) / 2.5) * 100}%, #f1f5f9 100%)`
+                  }}
+                />
+                
+                {/* Visual scale indicators with fixed positioning */}
+                <div className="relative h-8 mt-3 mx-1">
+                  {[0.5, 1.0, 2.0, 3.0].map((val) => {
+                    const isActive = Math.abs(boostFactor - val) < 0.05;
+                    const percent = ((val - 0.5) / 2.5) * 100;
+                    return (
+                      <div 
+                        key={val} 
+                        className="absolute flex flex-col items-center gap-1.5 transition-all duration-300"
+                        style={{ left: `${percent}%`, transform: 'translateX(-50%)' }}
+                      >
+                        <div className={cn(
+                          "h-1.5 w-0.5 rounded-full",
+                          isActive ? "bg-indigo-600 h-2.5" : "bg-slate-300"
+                        )} />
+                        <span className={cn(
+                          "text-[9px] font-bold tracking-tighter transition-all whitespace-nowrap",
+                          isActive ? "text-indigo-600 scale-125" : "text-slate-400",
+                          val === 1.0 && !isActive && "text-slate-900 border-b border-slate-200"
+                        )}>
+                          {val === 1.0 ? "Normal" : `x${val}`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100/50">
+                 <div className="flex-1">
+                    <p className="text-[10px] font-bold text-indigo-900 tracking-wider mb-0.5">Facteur Multiplication</p>
+                    <p className="text-[10px] text-indigo-600/70 italic leading-tight">Optimise la prévision de {((boostFactor - 1) * 100).toFixed(0)}%</p>
+                 </div>
+                 <input 
+                   type="number"
+                   step="0.01"
+                   min="0.1"
+                   value={boostFactor.toFixed(2)}
+                   onChange={(e) => setBoostFactor(parseFloat(e.target.value) || 1.0)}
+                   className="w-20 h-10 border-2 border-indigo-200 rounded-lg text-sm font-black text-indigo-700 text-center focus:outline-none focus:border-indigo-500 bg-white transition-colors"
+                 />
+              </div>
+              
+              <div className="p-4 bg-slate-50 rounded-xl border border-dashed text-[11px] text-muted-foreground text-sentence leading-relaxed">
+                Ce coefficient multiplie le run-rate statistique moyen. 
+                <br />• <strong>{boostFactor > 1 ? `+${((boostFactor-1)*100).toFixed(0)}%` : `${((boostFactor-1)*100).toFixed(0)}%`}</strong> de demande prévue par rapport à la normale.
+                <br />• Impact sur la commande suggérée : <strong>+{Math.round((prediction?.reorderQuantity || 0) * (boostFactor - 1))} u.</strong>
+              </div>
+           </div>
+        </div>
+
+        {/* Omnichannel Allocation (US 12.3) */}
+        <div className="bg-white rounded-lg border p-6 space-y-6">
+           <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-50 rounded-lg">
+                <Settings className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-sentence">Allocation & Priorités Canal</h4>
+                <p className="text-xs text-muted-foreground text-sentence">Stratégie de distribution du stock</p>
+              </div>
+           </div>
+
+           <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-muted-foreground tracking-wider">Pondération Global (Stock Weight)</label>
+                <input 
+                  type="number"
+                  step="0.1"
+                  value={stockWeight.toFixed(2)}
+                  onChange={(e) => setStockWeight(parseFloat(e.target.value) || 1.0)}
+                  className="w-20 h-10 border rounded-lg text-sm font-bold text-center focus:outline-none focus:border-amber-500"
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground text-sentence leading-relaxed">
+                Définit l'importance de ce produit dans le shop. En cas de stock limité, 
+                le système priorise l'allocation vers les canaux avec le poids le plus élevé.
+              </p>
+              <div className="flex gap-2">
+                {[0.5, 1.0, 1.5, 2.0].map(val => (
+                  <button 
+                    key={val}
+                    onClick={() => setStockWeight(val)}
+                    className={cn(
+                      "flex-1 py-2 text-[10px] font-bold rounded-md border transition-colors",
+                      stockWeight === val ? "bg-amber-100 border-amber-200 text-amber-700" : "bg-white hover:bg-slate-50 text-slate-500"
+                    )}
+                  >
+                    {val === 1.0 ? 'Normal' : val > 1.0 ? `High (${val}x)` : `Low (${val}x)`}
+                  </button>
+                ))}
+              </div>
+           </div>
+        </div>
+      </div>
+
+      {/* Sources Breakdown (US 12.2) */}
+      <div className="bg-white rounded-lg border p-6">
+        <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-slate-100 rounded-lg">
+              <Box className="h-5 w-5 text-slate-600" />
+            </div>
+            <h4 className="text-sm font-bold text-sentence">Détail par Canal de Vente</h4>
+        </div>
+
+        <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="text-left border-b text-muted-foreground">
+                  <th className="pb-3 font-bold tracking-wider">Plateforme</th>
+                  <th className="pb-3 font-bold tracking-wider text-center">Stock</th>
+                  <th className="pb-3 font-bold tracking-wider text-center">Run Rate</th>
+                  <th className="pb-3 font-bold tracking-wider text-center">Délai</th>
+                  <th className="pb-3 font-bold tracking-wider text-center">MOQ</th>
+                  <th className="pb-3 font-bold tracking-wider text-right">Poids</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {product.channels && product.channels.length > 0 ? (
+                  product.channels.map((ch: any) => (
+                    <tr 
+                      key={ch.productId} 
+                      onClick={() => setSelectedChannelId(ch.productId)}
+                      className="hover:bg-slate-50/50 transition-colors cursor-pointer group"
+                    >
+                      <td className="py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="capitalize font-semibold text-sentence group-hover:text-primary transition-colors">{ch.platform}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 text-center font-bold">{ch.currentStock} u.</td>
+                      <td className="py-4 text-center text-indigo-600 font-bold">{ch.runRate.toFixed(2)} /j</td>
+                      <td className="py-4 text-center text-slate-500">{ch.leadTime} j.</td>
+                      <td className="py-4 text-center text-slate-500">{ch.moq} u.</td>
+                      <td className="py-4 text-right">
+                         <span className={cn(
+                            "px-2 py-0.5 rounded text-[10px] font-bold",
+                            ch.stockWeight > 1 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"
+                         )}>
+                            {ch.stockWeight.toFixed(2)}x
+                         </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="py-20 text-center">
+                       <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1">Données vides</p>
+                       <p className="text-[10px] text-slate-300 italic">Aucune source connectée pour ce produit.</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
         </div>
       </div>
 
@@ -174,38 +415,77 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div className="space-y-4">
-            <div className="flex justify-between items-end">
-              <label className="text-[10px] font-bold text-muted-foreground">Retard fournisseur estimé</label>
-              <span className="text-lg font-bold bg-white px-3 py-1 rounded-md border shadow-sm">
-                {leadTimeDelta > 0 ? `+${leadTimeDelta}` : leadTimeDelta} jours
-              </span>
+        {prediction ? (
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-4">
+              <div className="flex justify-between items-end">
+                <label className="text-[10px] font-bold text-muted-foreground">Retard fournisseur estimé</label>
+                <span className="text-lg font-bold bg-white px-3 py-1 rounded-md border shadow-sm">
+                  {leadTimeDelta > 0 ? `+${leadTimeDelta}` : leadTimeDelta} jours
+                </span>
+              </div>
+              <div className="relative pt-2">
+                <input 
+                  type="range" 
+                  min="-7" 
+                  max="30" 
+                  value={leadTimeDelta} 
+                  onChange={(e) => setLeadTimeDelta(parseInt(e.target.value))}
+                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-600 transition-all [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-lg [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-indigo-600 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:-mt-1.5"
+                  style={{
+                    background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${((leadTimeDelta + 7) / 37) * 100}%, #f1f5f9 ${((leadTimeDelta + 7) / 37) * 100}%, #f1f5f9 100%)`
+                  }}
+                />
+                
+                {/* Visual scale markers with absolute positioning */}
+                <div className="relative h-8 mt-4 mx-1">
+                  {[-7, 0, 7, 14, 21, 30].map((val) => {
+                    const isActive = Math.abs(leadTimeDelta - val) < 1;
+                    const percent = ((val + 7) / 37) * 100;
+                    return (
+                      <div 
+                        key={val} 
+                        className="absolute flex flex-col items-center gap-1.5 transition-all duration-300"
+                        style={{ left: `${percent}%`, transform: 'translateX(-50%)' }}
+                      >
+                        <div className={cn(
+                          "h-1.5 w-0.5 rounded-full",
+                          isActive ? "bg-indigo-600 h-2.5" : "bg-slate-300"
+                        )} />
+                        <span className={cn(
+                          "text-[8px] font-bold tracking-tighter whitespace-nowrap transition-all",
+                          isActive ? "text-indigo-600 scale-110" : "text-slate-400",
+                          val === 0 && !isActive && "text-slate-900 border-b border-slate-200"
+                        )}>
+                          {val === 0 ? "Normal" : `${val > 0 ? '+' : ''}${val}j`}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-            <input 
-              type="range" 
-              min="-7" 
-              max="30" 
-              value={leadTimeDelta} 
-              onChange={(e) => setLeadTimeDelta(parseInt(e.target.value))}
-              className="w-full"
-            />
-          </div>
 
-          <div className="bg-white p-6 rounded-lg border shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <AlertCircle className={`h-4 w-4 ${leadTimeDelta > 5 ? 'text-red-500' : 'text-indigo-500'}`} />
-              <span className="text-xs font-bold text-sentence">Analyse d'impact</span>
+            <div className="bg-white p-6 rounded-lg border shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertCircle className={`h-4 w-4 ${leadTimeDelta > 5 ? 'text-red-500' : 'text-indigo-500'}`} />
+                <span className="text-xs font-bold text-sentence">Analyse d'impact</span>
+              </div>
+              <p className="text-sm font-medium text-sentence mb-1">{impactOnStockout}</p>
+              <p className="text-xs text-muted-foreground text-sentence">
+                {leadTimeDelta > 0 
+                  ? `Une livraison retardée de ${leadTimeDelta} jours augmente la probabilité de rupture de ${(leadTimeDelta * 3.5).toFixed(0)}%.`
+                  : "Optimiser le délai fournisseur réduit drastiquement vos besoins en stock de sécurité."
+                }
+              </p>
             </div>
-            <p className="text-sm font-medium text-sentence mb-1">{impactOnStockout}</p>
-            <p className="text-xs text-muted-foreground text-sentence">
-              {leadTimeDelta > 0 
-                ? `Une livraison retardée de ${leadTimeDelta} jours augmente la probabilité de rupture de ${(leadTimeDelta * 3.5).toFixed(0)}%.`
-                : "Optimiser le délai fournisseur réduit drastiquement vos besoins en stock de sécurité."
-              }
-            </p>
           </div>
-        </div>
+        ) : (
+          <div className="py-12 text-center bg-white/50 rounded-xl border border-dashed flex flex-col items-center justify-center min-h-[140px]">
+             <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1">Simulation indisponible</p>
+             <p className="text-[10px] text-slate-300 italic">Données de prévision insuffisantes pour ce produit.</p>
+          </div>
+        )}
       </div>
 
       {/* Persistent Settings (US 11.4) */}
@@ -228,7 +508,7 @@ export default function ProductDetailPage() {
               type="number" 
               value={leadTime} 
               onChange={(e) => setLeadTime(Math.max(1, parseInt(e.target.value) || 0))}
-              className="w-full h-11 px-4 rounded-md border text-sm focus:ring-2 focus:ring-primary/10 transition-all"
+              className="w-full h-11 px-4 rounded-md border text-sm focus:outline-none focus:border-primary transition-colors"
             />
             <p className="text-[10px] text-muted-foreground italic">Délai de livraison annoncé par le fournisseur (Lead Time).</p>
           </div>
@@ -238,7 +518,7 @@ export default function ProductDetailPage() {
               type="number" 
               value={moq} 
               onChange={(e) => setMoq(Math.max(1, parseInt(e.target.value) || 0))}
-              className="w-full h-11 px-4 rounded-md border text-sm focus:ring-2 focus:ring-primary/10 transition-all"
+              className="w-full h-11 px-4 rounded-md border text-sm focus:outline-none focus:border-primary transition-colors"
             />
             <p className="text-[10px] text-muted-foreground italic">Commande par multiples de cette valeur.</p>
           </div>
@@ -249,7 +529,7 @@ export default function ProductDetailPage() {
              onClick={handleSave}
              disabled={isSaving}
              className={cn(
-               "px-6 py-2.5 bg-slate-900 text-white rounded-md text-xs font-bold hover:bg-slate-800 transition-all shadow-sm",
+               "px-6 py-2.5 bg-slate-900 text-white rounded-md text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm",
                isSaving && "opacity-70 cursor-not-allowed"
              )}
            >
@@ -257,6 +537,11 @@ export default function ProductDetailPage() {
            </button>
         </div>
       </div>
+
+      <ProductQuickView 
+        productId={selectedChannelId}
+        onClose={() => setSelectedChannelId(null)}
+      />
     </div>
   );
 }

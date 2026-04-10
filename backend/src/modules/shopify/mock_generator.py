@@ -92,16 +92,10 @@ def generate_mock_products(count: int = 50, shop_id: Optional[str] = None) -> li
 
     Args:
         count: Nombre de produits à générer (défaut: 50).
-        shop_id: UUID du shop propriétaire. Généré si None.
+        shop_id: UUID du shop propriétaire.
 
     Returns:
         Liste de dicts compatibles avec le modèle Product.
-
-    Notes:
-        - Utilise RANDOM_SEED=42 pour reproductibilité.
-        - Stock initial entre 0 et 200 unités.
-        - Lead time entre 7 et 45 jours.
-        - MOQ entre 5 et 50 unités.
     """
     rng = random.Random(RANDOM_SEED)
     _shop_id = shop_id or str(uuid.uuid4())
@@ -111,19 +105,31 @@ def generate_mock_products(count: int = 50, shop_id: Optional[str] = None) -> li
     )
 
     products = []
+    from src.modules.inventory.models import PlatformSource
+    platforms = [PlatformSource.SHOPIFY, PlatformSource.AMAZON, PlatformSource.WOOCOMMERCE]
+    
     for i, (title, category) in enumerate(catalog[:count]):
-        product_id = str(uuid.uuid4())
         sku = f"{category}-{1000 + i:04d}"
-        products.append({
-            "id": product_id,
-            "shop_id": _shop_id,
-            "sku": sku,
-            "title": title,
-            "current_stock": rng.randint(0, 200),
-            "lead_time": rng.choice([7, 14, 21, 30, 45]),
-            "moq": rng.choice([5, 10, 20, 50]),
-            "source_platform": "shopify",
-        })
+        
+        # 30% de chance d'être multi-canal (2-3 plateformes)
+        is_omni = rng.random() < 0.3
+        num_channels = rng.randint(2, 3) if is_omni else 1
+        
+        selected_platforms = rng.sample(platforms, num_channels)
+        
+        for platform in selected_platforms:
+            products.append({
+                "id": str(uuid.uuid4()),
+                "shop_id": _shop_id,
+                "sku": sku,
+                "title": title,
+                "current_stock": rng.randint(0, 200),
+                "lead_time": rng.choice([7, 14, 21, 30, 45]),
+                "moq": rng.choice([5, 10, 20, 50]),
+                "source_platform": platform,
+                "boost_factor": rng.uniform(0.8, 2.5),
+                "stock_weight": rng.uniform(0.5, 2.0),
+            })
 
     return products
 
@@ -190,12 +196,11 @@ def generate_mock_sales(product_id: str, sku: Optional[str] = None, days: int = 
 
         log = {
             "product_id": product_id,
+            "sku": sku,
             "date": current_date,
             "units_sold": units_sold,
             "end_of_day_stock": int(stock),
         }
-        if sku:
-            log["sku"] = sku
         sales_logs.append(log)
 
     return sales_logs

@@ -313,26 +313,42 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
             ))}
           </thead>
           <tbody className="divide-y">
-            {table.getRowModel().rows.map((row) => (
-              <tr 
-                key={row.id} 
-                className={cn(
-                  "hover:bg-slate-50/50 transition-colors cursor-pointer",
-                  row.getIsSelected() && "bg-primary/[0.02]"
-                )}
-                onClick={() => onRowClick?.(row.original.id || row.original.sku)}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td 
-                    key={cell.id} 
-                    className="px-2 py-2"
-                    style={{ width: cell.column.getSize() }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
+            {table.getRowModel().rows.length > 0 ? (
+              table.getRowModel().rows.map((row) => (
+                <tr 
+                  key={row.id} 
+                  className={cn(
+                    "hover:bg-slate-50/50 transition-colors cursor-pointer",
+                    row.getIsSelected() && "bg-primary/[0.02]"
+                  )}
+                  onClick={() => onRowClick?.(row.original.id || row.original.sku)}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td 
+                      key={cell.id} 
+                      className="px-2 py-2"
+                      style={{ width: cell.column.getSize() }}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={columns.length} className="py-20 text-center">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <div className="p-3 bg-slate-50 rounded-full">
+                       <Layers className="h-6 w-6 text-slate-300" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-900 tracking-widest">Données vides</p>
+                      <p className="text-[10px] text-slate-400 font-medium italic">Aucun produit ne correspond à votre sélection.</p>
+                    </div>
+                  </div>
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

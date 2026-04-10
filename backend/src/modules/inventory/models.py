@@ -33,6 +33,10 @@ class Product(Base):
     # Supply chain parameters
     lead_time = Column(Integer, nullable=False, default=14)   # days
     moq = Column(Integer, nullable=False, default=10)         # minimum order quantity
+    
+    # Algorithmic Parameters (Sprint 12)
+    boost_factor = Column(Float, nullable=False, default=1.0) # seasonality multiplier
+    stock_weight = Column(Float, nullable=False, default=1.0) # channel priority weighting
 
     # Traceability
     source_platform = Column(Enum(PlatformSource), nullable=False, default=PlatformSource.CUSTOM)
@@ -116,9 +120,9 @@ class AlertEmail(Base):
     __tablename__ = "alert_emails"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id"), nullable=False)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
     sent_at = Column(DateTime, default=datetime.utcnow)
-    alert_type = Column(String, default="stockout_imminent")
+    alert_type = Column(String(50), default="stockout_imminent")
 
     product = relationship("Product")
 

@@ -10,7 +10,6 @@ from .service import InventoryService
 from .alert_service import AlertService
 from .supplier_service import SupplierService
 from .omnichannel_service import OmnichannelService
-from .models import PlatformSource
 
 @strawberry.type
 class AlertType:
@@ -42,6 +41,17 @@ class PurchaseOrderType:
     status: str
 
 @strawberry.type
+class ProductType:
+    id: strawberry.ID
+    title: str
+    sku: str
+    lead_time: int
+    moq: int
+    current_stock: int
+    boost_factor: float
+    stock_weight: float
+
+@strawberry.type
 class IngestionResult:
     success: bool
     message: str
@@ -60,6 +70,8 @@ class ChannelBreakdownType:
     current_stock: int
     lead_time: int
     moq: int
+    run_rate: float
+    stock_weight: float
 
 
 @strawberry.type
@@ -177,6 +189,8 @@ class InventoryQuery:
                         current_stock=ch.current_stock,
                         lead_time=ch.lead_time,
                         moq=ch.moq,
+                        run_rate=ch.run_rate,
+                        stock_weight=ch.stock_weight if ch.stock_weight is not None else 1.0,
                     )
                     for ch in item.channels
                 ],
@@ -332,7 +346,14 @@ class InventoryMutation:
         auth_service = AuthService(info.context.db)
         user = await auth_service.get_user_by_id(info.context.user_id)
         
-        from .models import PurchaseOrder
+        from .models import (
+            Product, 
+            SalesLog, 
+            Supplier, 
+            Alert, 
+            PurchaseOrder, 
+            PlatformSource
+        )
         from datetime import date, timedelta
         
         po = PurchaseOrder(
@@ -386,6 +407,7 @@ class InventoryMutation:
             raise UnauthenticatedException()
 
         from src.modules.auth.service import AuthService
+        from .models import PlatformSource
         auth_service = AuthService(info.context.db)
         user = await auth_service.get_user_by_id(info.context.user_id)
 
@@ -401,7 +423,7 @@ class InventoryMutation:
             csv_content=products_csv,
             orders_csv=orders_csv or None,
             mapping={},
-            source_platform="woocommerce",
+            source_platform=PlatformSource.WOOCOMMERCE,
         )
 
         # Pipeline IA auto-déclenchée après ingestion
@@ -445,3 +467,97 @@ class InventoryMutation:
         await service.update_supplier_performance(po.supplier_id)
         
         return True
+
+    @strawberry.mutation
+    async def update_product_settings(
+        self,
+        info,
+        id: strawberry.ID,
+        lead_time: Optional[int] = None,
+        moq: Optional[int] = None,
+        boost_factor: Optional[float] = None,
+        stock_weight: Optional[float] = None
+    ) -> ProductType:
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+
+        from .models import Product
+        from sqlalchemy import select
+        
+        product_id = uuid.UUID(str(id))
+        result = await info.context.db.execute(
+            select(Product).where(Product.id == product_id)
+        )
+        product = result.scalar_one_or_none()
+        
+        if not product:
+            raise Exception("Produit non trouvé")
+            
+        if lead_time is not None:
+            product.lead_time = lead_time
+        if moq is not None:
+            product.moq = moq
+        if boost_factor is not None:
+            product.boost_factor = boost_factor
+        if stock_weight is not None:
+            product.stock_weight = stock_weight
+            
+        await info.context.db.flush()
+        
+        # Trigger prediction update after settings change
+        from src.modules.forecasting.service import ForecastingService
+        forecasting_service = ForecastingService(info.context.db)
+        await forecasting_service.run_prediction_pipeline(str(product.shop_id))
+
+        return ProductType(
+            id=strawberry.ID(str(product.id)),
+            title=product.title,
+            sku=product.sku,
+            lead_time=product.lead_time,
+            moq=product.moq,
+            current_stock=product.current_stock,
+            boost_factor=product.boost_factor if product.boost_factor is not None else 1.0,
+            stock_weight=product.stock_weight if product.stock_weight is not None else 1.0
+        )
+
+    @strawberry.mutation
+    async def trigger_omnichannel_sync(self, info) -> IngestionResult:
+        """
+        Déclenche la synchronisation de toutes les sources connectées (US 9.3).
+        En mode démo, cela régénère le dataset mock multi-canal.
+        """
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+
+        from src.modules.auth.service import AuthService
+        from src.modules.shopify.service import ShopifyService
+        from src.modules.forecasting.service import ForecastingService
+        from .alert_service import AlertService
+        
+        auth_service = AuthService(info.context.db)
+        user = await auth_service.get_user_by_id(info.context.user_id)
+        shop_id = str(user.shop_id)
+
+        # 1. Sync Mock Data (Omnichannel aware)
+        shopify_service = ShopifyService(info.context.db)
+        result = await shopify_service.trigger_mock_sync(shop_id)
+        
+        # 2. Pipeline IA
+        forecasting = ForecastingService(info.context.db)
+        await forecasting.run_cleaning_pipeline(shop_id)
+        await forecasting.run_prediction_pipeline(shop_id)
+
+        # 3. Alert Pipeline
+        alerts = AlertService(info.context.db)
+        await alerts.check_for_stockouts(shop_id)
+
+        # Persistance globale
+        await info.context.db.commit()
+
+        return IngestionResult(
+            success=True,
+            message="Synchronisation omnicanale réussie — Dataset rafraîchi.",
+            platform="all",
+            products_count=result.products_created,
+            sales_logs_count=result.sales_logs_created,
+        )

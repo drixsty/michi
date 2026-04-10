@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Bell, AlertTriangle, Info, CheckCircle2, Trash2, ExternalLink } from 'lucide-react';
+import { X, Bell, AlertTriangle, AlertCircle, Info, CheckCircle2, Trash2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { useQuery, useMutation, gql } from '@apollo/client';
 import { formatDistanceToNow } from 'date-fns';
@@ -66,9 +66,16 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'STOCKOUT_RISK': return <AlertTriangle className="h-5 w-5 text-orange-500" />;
-      case 'CRITICAL_STOCK': return <AlertTriangle className="h-5 w-5 text-red-500" />;
-      default: return <Info className="h-5 w-5 text-blue-500" />;
+      case 'STOCKOUT_CRITICAL':
+      case 'CRITICAL_STOCK': 
+        return <AlertTriangle className="h-5 w-5 text-red-500" />;
+      case 'STOCKOUT_RISK_HIGH':
+      case 'STOCKOUT_RISK': 
+        return <AlertCircle className="h-5 w-5 text-orange-500" />;
+      case 'STOCKOUT_WARNING':
+        return <Bell className="h-5 w-5 text-amber-500" />;
+      default: 
+        return <Info className="h-5 w-5 text-blue-500" />;
     }
   };
 
@@ -133,23 +140,19 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       key={alert.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className={cn(
-                        "group relative flex items-center gap-4 px-4 py-3 transition-colors cursor-pointer border-b border-white/50 rounded-lg",
-                        alert.type === 'CRITICAL_STOCK' ? "bg-red-50/40 hover:bg-red-50/60" :
-                        alert.type === 'STOCKOUT_RISK' ? "bg-amber-50/40 hover:bg-amber-50/60" :
-                        "hover:bg-slate-50"
-                      )}
+                      className="group relative flex items-center gap-4 px-4 py-3 transition-colors cursor-pointer border-b border-white/50 rounded-lg hover:bg-slate-50"
                     >
                       {/* Severity Dot & Icon */}
                       <div className="relative shrink-0 flex items-center justify-center">
                         <div className={cn(
                           "w-8 h-8 rounded-full flex items-center justify-center bg-white/50 text-slate-400 group-hover:bg-white transition-colors",
-                          alert.type === 'CRITICAL_STOCK' && "text-red-500",
-                          alert.type === 'STOCKOUT_RISK' && "text-amber-500"
+                          (alert.type === 'CRITICAL_STOCK' || alert.type === 'STOCKOUT_CRITICAL') && "text-red-500",
+                          (alert.type === 'STOCKOUT_RISK' || alert.type === 'STOCKOUT_RISK_HIGH') && "text-orange-500",
+                          alert.type === 'STOCKOUT_WARNING' && "text-amber-500"
                         )}>
                           {getIcon(alert.type)}
                         </div>
-                        {alert.type === 'CRITICAL_STOCK' && (
+                        {(alert.type === 'CRITICAL_STOCK' || alert.type === 'STOCKOUT_CRITICAL') && (
                           <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm" />
                         )}
                       </div>
@@ -162,7 +165,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                           </p>
                         </div>
                         <p className="text-xs text-slate-600 leading-snug font-medium lowercase break-words">
-                          {alert.message.replace(/^(alerte|danger)\s*:\s*/i, '').toLowerCase()}
+                          {alert.message.replace(/^(alerte|danger|attention)\s*:\s*/i, '').toLowerCase()}
                         </p>
                       </div>
 

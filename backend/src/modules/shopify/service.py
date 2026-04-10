@@ -22,13 +22,14 @@ class ShopifyService:
         Mise à jour des produits existants (par SKU) pour conserver leurs IDs stables.
         Conserve également les réglages utilisateur (Lead Time/MOQ).
         """
+        from src.modules.inventory.models import PlatformSource
         logger.info(f"[ShopifyService] Starting smart Upsert sync for shop {shop_id}")
 
-        # 1. Charger les produits existants
+        # 1. Charger les produits existants (indexé par SKU + Plateforme)
         existing_result = await self.db.execute(
             select(Product).where(Product.shop_id == shop_id)
         )
-        existing_products = {p.sku: p for p in existing_result.scalars().all()}
+        existing_products = {(p.sku, p.source_platform): p for p in existing_result.scalars().all()}
 
         # 2. Charger les fournisseurs pour l'assignation
         from src.modules.inventory.models import Supplier
@@ -44,12 +45,15 @@ class ShopifyService:
         processed_products = []
         for p_data in products_data:
             sku = p_data["sku"]
-            if sku in existing_products:
+            platform = p_data.get("source_platform", PlatformSource.SHOPIFY)
+            key = (sku, platform)
+
+            if key in existing_products:
                 # UPDATE - Conserver l'ID stable
-                p = existing_products[sku]
+                p = existing_products[key]
                 p.title = p_data["title"]
                 p.current_stock = p_data["current_stock"]
-                p.source_platform = "shopify"  # Crucial for icons display
+                # p.source_platform est déjà correct
                 # Assigner un fournisseur s'il n'en a pas
                 if not p.supplier_id and suppliers:
                     p.supplier_id = random.choice(suppliers).id
@@ -65,8 +69,8 @@ class ShopifyService:
         
         await self.db.flush() # Pour avoir les IDs des nouveaux produits
         
-        # Mapper les IDs pour les sales logs
-        sku_to_id = {p.sku: p.id for p in processed_products}
+        # Mapper les IDs pour les sales logs (par SKU + Plateforme)
+        sku_platform_to_id = {(p.sku, p.source_platform): p.id for p in processed_products}
 
         # 4. Gérer les Sales Logs (Remplacer l'historique complet pour chaque produit synchronisé)
         # On supprime tous les logs existants pour ce shop avant d'insérer les nouveaux
@@ -79,12 +83,23 @@ class ShopifyService:
 
         new_sales_logs = []
         for s_data in sales_data:
-            # generate_full_mock_dataset retourne p_data indexé, on doit retrouver l'ID via SKU
-            # (Note: mock_generator devrait être adapté ou on utilise l'index)
-            # Dans notre version, sales_data est lié au SKU via le mock generator
-            sku = s_data.pop("sku", None) # On assume que mock_generator a été adapté ou on gère
-            if sku and sku in sku_to_id:
-                s_data["product_id"] = sku_to_id[sku]
+            # On retrouve le produit via (SKU, Platform)
+            sku = s_data.pop("sku", None)
+            # On doit passer la plateforme dans s_data ou la déduire?
+            # Dans mock_generator.py, on a : 
+            # for platform in selected_platforms: products.append(...)
+            # all_sales.extend(generate_mock_sales(product["id"], sku=sku, ...))
+            # Le product["id"] ici est le UUID temporaire.
+            # On peut mapper ce UUID temporaire à l'ID final!
+            
+        # Re-calculons le mapping TempID -> RealID
+        temp_id_to_real_id = {p_data["id"]: p_final.id for p_data, p_final in zip(products_data, processed_products)}
+
+        new_sales_logs = []
+        for s_data in sales_data:
+            temp_p_id = s_data.pop("product_id", None)
+            if temp_p_id in temp_id_to_real_id:
+                s_data["product_id"] = temp_id_to_real_id[temp_p_id]
                 new_sales_logs.append(SalesLog(**s_data))
 
         self.db.add_all(new_sales_logs)

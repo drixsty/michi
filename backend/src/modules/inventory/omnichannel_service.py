@@ -39,6 +39,8 @@ class ChannelStockBreakdown:
     current_stock: int
     lead_time: int
     moq: int
+    run_rate: float
+    stock_weight: float
 
 
 @dataclass
@@ -113,6 +115,8 @@ class OmnichannelService:
                 current_stock=product.current_stock,
                 lead_time=product.lead_time,
                 moq=product.moq,
+                run_rate=prediction.run_rate if prediction else 0.0,
+                stock_weight=product.stock_weight if product.stock_weight is not None else 1.0,
             )
 
             if sku not in sku_map:
@@ -208,4 +212,41 @@ class OmnichannelService:
                 "moq": product.moq,
             })
 
-        return export
+    async def get_channels_for_sku(self, sku: str, shop_id: str) -> list[ChannelStockBreakdown]:
+        """
+        Retourne la liste des canaux de vente pour un SKU spécifique.
+        """
+        result = await self.db.execute(
+            select(Product)
+            .where(Product.shop_id == shop_id, Product.sku == sku)
+            .order_by(Product.source_platform)
+        )
+        products = list(result.scalars().all())
+
+        if not products:
+            return []
+
+        product_ids = [p.id for p in products]
+
+        # Charger les prédictions
+        pred_result = await self.db.execute(
+            select(Prediction).where(Prediction.product_id.in_(product_ids))
+        )
+        predictions = {str(p.product_id): p for p in pred_result.scalars().all()}
+
+        channels = []
+        for product in products:
+            prediction = predictions.get(str(product.id))
+            channels.append(
+                ChannelStockBreakdown(
+                    platform=product.source_platform.value,
+                    product_id=str(product.id),
+                    current_stock=product.current_stock,
+                    lead_time=product.lead_time,
+                    moq=product.moq,
+                    run_rate=prediction.run_rate if prediction else 0.0,
+                    stock_weight=product.stock_weight if product.stock_weight is not None else 1.0,
+                )
+            )
+
+        return channels

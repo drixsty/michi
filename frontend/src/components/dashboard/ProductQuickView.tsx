@@ -65,6 +65,8 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
   const [mounted, setMounted] = React.useState(false);
   const [leadTime, setLeadTime] = React.useState<number>(0);
   const [moq, setMoq] = React.useState<number>(0);
+  const [boostFactor, setBoostFactor] = React.useState<number>(1.0);
+  const [stockWeight, setStockWeight] = React.useState<number>(1.0);
   const [saveStatus, setSaveStatus] = React.useState<'idle' | 'saving' | 'success'>('idle');
 
   const [updateSettings] = useMutation(UPDATE_PRODUCT_SETTINGS, {
@@ -80,7 +82,13 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
     setSaveStatus('saving');
     try {
       await updateSettings({
-        variables: { id: productId, leadTime, moq }
+        variables: { 
+          id: productId, 
+          leadTime, 
+          moq, 
+          boostFactor, 
+          stockWeight 
+        }
       });
     } catch (e) {
       setSaveStatus('idle');
@@ -91,6 +99,8 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
     if (product) {
       setLeadTime(product.leadTime || 14);
       setMoq(product.moq || 0);
+      setBoostFactor(product.boostFactor || 1.0);
+      setStockWeight(product.stockWeight || 1.0);
     }
   }, [product]);
 
@@ -161,7 +171,82 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                     </div>
                   </div>
                   
-                  {/* Quick Edit Section (US 11.4) */}
+                  {/* Seasonality Boost (US 12.1) */}
+                  <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-3 w-3 text-indigo-500" />
+                        <h3 className="text-[10px] font-bold text-indigo-500 tracking-widest">Boost de saisonnalité</h3>
+                      </div>
+                      <span className="text-[10px] font-bold text-indigo-600 bg-white px-2 py-0.5 rounded-md border border-indigo-100 shadow-sm">
+                        × {boostFactor.toFixed(2)}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="relative pt-2 flex-1">
+                          <input 
+                            type="range"
+                            min="0.5"
+                            max="3.0"
+                            step="0.1"
+                            value={boostFactor}
+                            onChange={(e) => setBoostFactor(parseFloat(e.target.value))}
+                            className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-indigo-500 transition-colors [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-lg [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-indigo-600 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:-mt-1"
+                            style={{
+                              background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${((boostFactor - 0.5) / 2.5) * 100}%, #f1f5f9 ${((boostFactor - 0.5) / 2.5) * 100}%, #f1f5f9 100%)`
+                            }}
+                          />
+                          
+                   {/* Scale markers with absolute positioning */}
+                   <div className="relative h-6 mt-3">
+                     {[0.5, 1.0, 2.0, 3.0].map((val) => {
+                       const isActive = Math.abs(boostFactor - val) < 0.05;
+                       const percent = ((val - 0.5) / 2.5) * 100;
+                       return (
+                         <div 
+                           key={val} 
+                           className="absolute flex flex-col items-center gap-1 transition-all duration-300"
+                           style={{ left: `${percent}%`, transform: 'translateX(-50%)' }}
+                         >
+                           <div className={cn(
+                             "h-1 w-0.5 rounded-full",
+                             isActive ? "bg-indigo-600 h-2" : "bg-slate-300"
+                           )} />
+                           <span className={cn(
+                             "text-[7px] font-bold tracking-tighter whitespace-nowrap",
+                             isActive ? "text-indigo-600 scale-110" : "text-slate-400"
+                           )}>
+                             {val === 1.0 ? "NORM" : `x${val}`}
+                           </span>
+                         </div>
+                       );
+                     })}
+                   </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/30">
+                         <div className="flex-1">
+                            <p className="text-[8px] font-bold text-indigo-900 uppercase tracking-wider mb-0.5">Ratio de boost</p>
+                            <p className="text-[8px] text-indigo-600/70 italic leading-tight">Accélère la demande de {((boostFactor - 1) * 100).toFixed(0)}%</p>
+                         </div>
+                         <input 
+                           type="number"
+                           step="0.01"
+                           min="0.1"
+                           value={boostFactor.toFixed(2)}
+                           onChange={(e) => setBoostFactor(parseFloat(e.target.value) || 1.0)}
+                           className="w-14 h-8 border-2 border-indigo-200 rounded-lg text-[10px] font-black text-indigo-700 text-center focus:outline-none focus:border-indigo-500 bg-white transition-colors"
+                         />
+                      </div>
+                      <p className="text-[8px] text-slate-400 font-medium italic px-1">
+                        * Ce coefficient multiplie directement la demande statistique moyenne pour anticiper les pics.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Settings Grid (Inventory + Weighting) */}
                   <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -172,7 +257,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                         onClick={handleQuickSave}
                         disabled={saveStatus === 'saving'}
                         className={cn(
-                          "flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-bold transition-all",
+                          "flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-bold transition-colors",
                           saveStatus === 'success' ? "bg-emerald-500 text-white shadow-sm" : 
                           saveStatus === 'saving' ? "bg-slate-100 text-slate-400" :
                           "bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm"
@@ -185,6 +270,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                         )}
                       </button>
                     </div>
+
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <p className="text-[9px] font-bold text-slate-400 ml-0.5">Délai (jours)</p>
@@ -192,7 +278,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                           type="number"
                           value={leadTime}
                           onChange={(e) => setLeadTime(parseInt(e.target.value) || 0)}
-                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all font-medium text-slate-900"
+                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-primary transition-colors font-medium text-slate-900"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -201,8 +287,22 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                           type="number"
                           value={moq}
                           onChange={(e) => setMoq(parseInt(e.target.value) || 0)}
-                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all font-medium text-slate-900"
+                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-primary transition-colors font-medium text-slate-900"
                         />
+                      </div>
+                      <div className="col-span-2 space-y-1.5">
+                        <p className="text-[9px] font-bold text-slate-400 ml-0.5">Pondération du canal (Priorité)</p>
+                        <div className="flex items-center gap-3">
+                           <input 
+                            type="number"
+                            step="0.1"
+                            min="0.1"
+                            value={stockWeight.toFixed(2)}
+                            onChange={(e) => setStockWeight(parseFloat(e.target.value) || 1.0)}
+                            className="flex-1 h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-primary transition-colors font-medium text-slate-900"
+                          />
+                          <p className="text-[8px] text-slate-400 leading-tight italic">Détermine l'allocation du stock en cas de rupture multicanale.</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -290,7 +390,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                           </div>
                            <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                             Votre rythme de vente actuel est de <span className="text-slate-900 font-bold">{(product.prediction?.runRate || 0).toFixed(1)} Unit./jour</span>.
+                             Votre rythme de vente actuel est de <span className="text-slate-900 font-bold">{(product.prediction?.runRate || 0).toFixed(2)} Unit./jour</span>.
                            </p>
                        </div>
 
@@ -322,7 +422,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                       router.push(`/dashboard/product/${product.id}`);
                       onClose();
                     }}
-                    className="w-full py-3 bg-slate-900 text-white rounded-lg text-[10px] font-bold tracking-widest hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-slate-900 text-white rounded-lg text-[10px] font-bold tracking-widest hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                   >
                     Voir les détails complets
                     <ArrowRight className="h-3.5 w-3.5" />

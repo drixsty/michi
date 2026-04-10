@@ -31,11 +31,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         <div className="space-y-1">
           <div className="flex justify-between gap-4">
             <span className="text-gray-400">Ventes Corrigées:</span>
-            <span className="font-mono font-bold text-purple-600">{d.correctedUnitsSold.toFixed(1)} u.</span>
+            <span className="font-mono font-bold text-purple-600">{(d.correctedUnitsSold ?? 0).toFixed(2)} u.</span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-gray-400">Ventes Brutes:</span>
-            <span className="font-mono text-gray-500">{d.rawUnitsSold.toFixed(1)} u.</span>
+            <span className="font-mono text-gray-500">{(d.rawUnitsSold ?? 0).toFixed(2)} u.</span>
           </div>
           {d.correctionType !== 'none' && (
             <div className="mt-2 pt-2 border-t border-gray-50 flex items-center gap-1.5 text-amber-600 font-medium">
