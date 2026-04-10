@@ -21,7 +21,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import select, delete, func, case
 from loguru import logger
 
-from src.modules.inventory.models import Product, SalesLog
+from src.modules.inventory.models import Product, SalesLog, SourceConnection, PlatformSource
 from .models import CleanedDemand, Prediction
 from .schemas import PipelineResultSchema, CleanedDemandSchema, PredictionRunResultSchema, DashboardKPISchema
 from .algorithms.out_of_stock_correction import correct_out_of_stock_batch
@@ -327,8 +327,21 @@ class ForecastingService:
         Returns:
             Liste de Prediction triée par date de rupture prévisionnelle (les plus urgentes en premier).
         """
+        # Isolation Sprint 18 : Ne prendre que les produits des sources connectées
+        active_conn_stmt = select(SourceConnection.platform).where(
+            SourceConnection.shop_id == shop_id,
+            SourceConnection.connected == True
+        )
+        active_platforms = (await self.db.execute(active_conn_stmt)).scalars().all()
+        
+        if not active_platforms:
+            return []
+
         products_result = await self.db.execute(
-            select(Product.id).where(Product.shop_id == shop_id)
+            select(Product.id).where(
+                Product.shop_id == shop_id,
+                Product.source_platform.in_(active_platforms)
+            )
         )
         product_ids = [row[0] for row in products_result.all()]
 
@@ -406,12 +419,31 @@ class ForecastingService:
         Unification de la logique avec le Sprint 8 (Performance Fournisseurs) 
         et US 10.2 (Seuils Dynamiques).
         """
-        # 1. Total produits & Ruptures réelles
+        # Isolation Sprint 18 : Ne prendre que les plateformes connectées
+        active_conn_stmt = select(SourceConnection.platform).where(
+            SourceConnection.shop_id == shop_id,
+            SourceConnection.connected == True
+        )
+        active_platforms = (await self.db.execute(active_conn_stmt)).scalars().all()
+        
+        if not active_platforms:
+            return DashboardKPISchema(
+                total_products=0,
+                actual_stockouts=0,
+                urgent_alerts=0,
+                predicted_stockouts_30d=0,
+                message="Aucune boutique connectée."
+            )
+
+        # 1. Total produits & Ruptures réelles sur les sources actives
         res = await self.db.execute(
             select(
                 func.count(Product.id),
                 func.sum(case((Product.current_stock == 0, 1), else_=0))
-            ).where(Product.shop_id == shop_id)
+            ).where(
+                Product.shop_id == shop_id,
+                Product.source_platform.in_(active_platforms)
+            )
         )
         total_products, actual_stockouts = res.one()
         total_products = total_products or 0
@@ -424,7 +456,10 @@ class ForecastingService:
             select(Prediction, Product)
             .join(Product)
             .options(selectinload(Product.supplier))
-            .where(Product.shop_id == shop_id)
+            .where(
+                Product.shop_id == shop_id,
+                Product.source_platform.in_(active_platforms)
+            )
         )
         data = pred_res.all()
         
@@ -492,11 +527,22 @@ class ForecastingService:
         from datetime import date, timedelta
         limit_date = date.today() + timedelta(days=14) # Alertes à 14j
 
+        # Isolation Sprint 18
+        active_conn_stmt = select(SourceConnection.platform).where(
+            SourceConnection.shop_id == shop_id,
+            SourceConnection.connected == True
+        )
+        active_platforms = (await self.db.execute(active_conn_stmt)).scalars().all()
+        
+        if not active_platforms:
+            return []
+
         result = await self.db.execute(
             select(Prediction)
             .join(Product)
             .where(
                 Product.shop_id == shop_id,
+                Product.source_platform.in_(active_platforms),
                 Prediction.predicted_stockout_date <= limit_date
             )
             .order_by(Prediction.predicted_stockout_date.asc())

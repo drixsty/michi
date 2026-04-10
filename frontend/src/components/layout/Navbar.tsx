@@ -15,6 +15,8 @@ import {
   BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@apollo/client';
+import { GET_UNREAD_ALERTS } from '@/graphql/queries/getUnreadAlerts';
 import { NotificationPanel } from '../dashboard/NotificationPanel';
 
 const navItems = [
@@ -65,6 +67,12 @@ export function Navbar() {
   const [searchValue, setSearchValue] = React.useState(searchParams.get('q') || '');
   const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
 
+  const { data: alertsData } = useQuery(GET_UNREAD_ALERTS, {
+    pollInterval: 30000 // Synchronisé avec la page dashboard
+  });
+
+  const hasUnread = alertsData?.unreadAlerts && alertsData.unreadAlerts.length > 0;
+
   React.useEffect(() => {
     const handleOpen = () => setIsNotificationOpen(true);
     window.addEventListener('michi:open-notifications', handleOpen);
@@ -113,7 +121,7 @@ export function Navbar() {
                 value={searchValue}
                 onChange={(e) => handleSearch(e.target.value)}
                 placeholder="Rechercher un produit..."
-                className="w-full h-10 pl-10 pr-4 rounded-lg bg-slate-100/50 border border-transparent text-xs transition-all focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none placeholder:text-muted-foreground/50"
+                className="w-full h-10 pl-10 pr-4 rounded-lg bg-slate-100/50 border border-transparent text-xs transition-colors focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none placeholder:text-muted-foreground/50"
               />
             </div>
             
@@ -123,7 +131,9 @@ export function Navbar() {
                 className="p-2 text-muted-foreground hover:text-foreground transition-colors relative"
               >
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                {hasUnread && (
+                  <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                )}
               </button>
               
               <div className="relative group/user">

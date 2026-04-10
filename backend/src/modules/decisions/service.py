@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
 
-from src.modules.inventory.models import Product
+from src.modules.inventory.models import Product, SourceConnection, PlatformSource
 from src.modules.forecasting.models import Prediction
 from src.modules.auth.models import User
 from .schemas import FinancialKpiSchema, DecisionCenterOverview
@@ -31,7 +31,34 @@ class DecisionCenterService:
         is_mutualized = prefs.get("is_mutualized", False)
         currency = prefs.get("currency", "€")
 
-        # 2. Définition du filtre (Shop spécifique ou Organisation complète)
+        # 2. Identifier les sources connectées pour filtrer les données (Isolation Sprint 18)
+        conn_res = await self.db.execute(
+            select(SourceConnection.platform).where(
+                SourceConnection.shop_id == user.shop_id,
+                SourceConnection.connected == True
+            )
+        )
+        active_platforms = conn_res.scalars().all()
+
+        if not active_platforms:
+            # Aucune source connectée -> Vue vide sécurisée
+            return DecisionCenterOverview(
+                kpis=FinancialKpiSchema(
+                    inventory_value_cost=0.0,
+                    inventory_value_sale=0.0,
+                    revenue_at_risk=0.0,
+                    stock_coverage_avg_days=0.0,
+                    currency=currency,
+                    is_mutualized=is_mutualized
+                ),
+                top_risks=[],
+                total_run_rate=0.0,
+                total_stock=0,
+                health_score=0,
+                message="Aucune boutique connectée. Connectez une source pour voir vos analyses financières."
+            )
+
+        # 3. Définition du filtre (Shop spécifique ou Organisation complète + Platforms actives)
         shop_ids = [user.shop_id]
         
         if is_mutualized and user.organization_id:
@@ -40,7 +67,10 @@ class DecisionCenterService:
             )
             shop_ids = org_shops_res.scalars().all()
 
-        product_filter = Product.shop_id.in_(shop_ids)
+        product_filter = and_(
+            Product.shop_id.in_(shop_ids),
+            Product.source_platform.in_(active_platforms)
+        )
 
         # 3. Charger les produits et leurs prédictions
         stmt = (

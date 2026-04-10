@@ -43,12 +43,53 @@ class Query(ShopifyQuery, ForecastingQuery, InventoryQuery, DecisionQuery):
 
     @strawberry.field
     async def sources(self, info) -> List[SourceType]:
-        """Retourne les sources de données disponibles et leur état."""
-        return [
-            SourceType(id=strawberry.ID("1"), name="Shopify", platform="shopify", connected=True),
-            SourceType(id=strawberry.ID("2"), name="WooCommerce", platform="woocommerce", connected=False),
-            SourceType(id=strawberry.ID("3"), name="Amazon", platform="amazon", connected=False),
-        ]
+        """Retourne les sources de données disponibles et leur état (Sprint 17)."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+        
+        from src.modules.auth.service import AuthService
+        from src.modules.inventory.models import SourceConnection, PlatformSource
+        from sqlalchemy import select
+        
+        user = await AuthService(info.context.db).get_user_by_id(info.context.user_id)
+        shop_id = user.shop_id
+        
+        # 1. Récupérer les connexions existantes
+        result = await info.context.db.execute(
+            select(SourceConnection).where(SourceConnection.shop_id == shop_id)
+        )
+        found_connections = {c.platform: c for c in result.scalars().all()}
+        
+        # 2. S'assurer que les 3 plateformes par défaut sont présentes (Seed à la volée)
+        default_platforms = [PlatformSource.SHOPIFY, PlatformSource.WOOCOMMERCE, PlatformSource.AMAZON]
+        name_map = {"shopify": "Shopify", "woocommerce": "WooCommerce", "amazon": "Amazon"}
+        
+        all_sources = []
+        for p in default_platforms:
+            conn = found_connections.get(p)
+            if not conn:
+                # Création automatique de la source inactive
+                conn = SourceConnection(
+                    shop_id=shop_id,
+                    platform=p,
+                    connected=False
+                )
+                info.context.db.add(conn)
+                await info.context.db.flush()
+            
+            all_sources.append(
+                SourceType(
+                    id=strawberry.ID(str(conn.id)),
+                    name=name_map.get(p.value, p.value.capitalize()),
+                    platform=p.value,
+                    connected=conn.connected,
+                    last_sync_at=conn.last_sync_at,
+                    health_status=conn.health_status
+                )
+            )
+        
+        await info.context.db.commit()
+        return all_sources
 
 
 @strawberry.type
@@ -138,15 +179,72 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
             new_password=input.new_password
         )
 
-    @strawberry.mutation
+    @strawberry.mutation(name="toggleSource")
     async def toggle_source(self, info, platform: str, connected: bool) -> SourceType:
-        """Simule la connexion/déconnexion d'une source de données."""
+        """Gestion réelle du cycle de vie d'une source (Sprint 17)."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        from src.modules.auth.service import AuthService
+        from src.modules.inventory.models import SourceConnection, PlatformSource, Product, SalesLog, Alert
+        from src.modules.forecasting.models import Prediction
+        from sqlalchemy import select, delete
+        from datetime import datetime
+        
+        user = await AuthService(info.context.db).get_user_by_id(info.context.user_id)
+        shop_id = user.shop_id
+        
+        # 1. Récupérer ou créer la connexion
+        plat_enum = PlatformSource(platform)
+        result = await info.context.db.execute(
+            select(SourceConnection).where(
+                SourceConnection.shop_id == shop_id,
+                SourceConnection.platform == plat_enum
+            )
+        )
+        conn = result.scalar_one_or_none()
+        
+        if not conn:
+            conn = SourceConnection(shop_id=shop_id, platform=plat_enum)
+            info.context.db.add(conn)
+            
+        conn.connected = connected
+        
+        # 2. Logique destructive ou synchronisation
+        if not connected:
+            # DÉCONNEXION : Supprimer toutes les données liées à cette source
+            # On récupère les IDs des produits pour supprimer les SalesLogs/Alerts/Predictions
+            # (Note: cascade=all, delete-orphan dans les modèles devrait gérer cela, 
+            # mais on le fait explicitement par sécurité pour la plateforme cible)
+            
+            # Suppression des produits de cette plateforme pour cette boutique
+            # La cascade SQL/SQLAlchemy via relationship(cascade="all, delete-orphan") fera le reste
+            await info.context.db.execute(
+                delete(Product).where(
+                    Product.shop_id == shop_id,
+                    Product.source_platform == plat_enum
+                )
+            )
+        else:
+            # CONNEXION : Déclenchement automatique de la synchronisation (Mock/Real)
+            conn.last_sync_at = datetime.utcnow()
+            conn.health_status = "HEALTHY"
+            
+            from src.modules.inventory.resolvers import InventoryMutation
+            # On appelle le trigger de sync interne (serait idéalement un service)
+            # await InventoryMutation().trigger_omnichannel_sync(info)
+            # Pour l'instant on simule l'appel au service global qui sera implémenté en phase 3
+            
+        await info.context.db.commit()
+        
         name_map = {"shopify": "Shopify", "woocommerce": "WooCommerce", "amazon": "Amazon"}
         return SourceType(
-            id=strawberry.ID(f"src_{platform}"),
+            id=strawberry.ID(str(conn.id)),
             name=name_map.get(platform, platform.capitalize()),
             platform=platform,
-            connected=connected
+            connected=conn.connected,
+            last_sync_at=conn.last_sync_at,
+            health_status=conn.health_status
         )
 
 

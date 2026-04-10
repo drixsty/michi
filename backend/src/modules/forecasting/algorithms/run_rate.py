@@ -29,33 +29,11 @@ RUN_RATE_MIN_PERIODS = 4  # minimum de jours valides pour un run rate fiable
 
 def calculate_run_rate(df: pd.DataFrame, window: int = RUN_RATE_WINDOW) -> pd.DataFrame:
     """
-    Calcule le run rate journalier sur une fenêtre glissante pour un seul produit.
-
-    Args:
-        df: DataFrame avec colonnes [date, corrected_units_sold].
-            La colonne ``is_stockout`` est utilisée si présente pour exclure
-            les jours de rupture du calcul (demand not observed).
-            La colonne ``is_outlier`` est utilisée si présente pour exclure
-            les outliers non corrigés.
-        window: Fenêtre en jours pour la médiane glissante (défaut: 30).
-
-    Returns:
-        DataFrame enrichi avec :
-        - ``run_rate`` (float) : taux de vente quotidien moyen sur ``window`` jours.
-          Toujours >= 0. NaN si insuffisamment de données ET pas de fallback global.
-
-    Raises:
-        ValueError: Si les colonnes requises sont manquantes.
-
-    Example:
-        >>> import pandas as pd
-        >>> df = pd.DataFrame({
-        ...     "date": pd.date_range("2025-01-01", periods=35),
-        ...     "corrected_units_sold": [10.0] * 35,
-        ... })
-        >>> result = calculate_run_rate(df)
-        >>> float(result["run_rate"].iloc[-1])
-        10.0
+    Calcule le run rate journalier avec détection adaptative de tendance (Sprint 15).
+    
+    L'algorithme utilise une médiane glissante, mais réduit dynamiquement la fenêtre
+    si une accélération forte est détectée (momentum), permettant de capturer
+    la saisonnalité ou les tendances de croissance sans l'inertie du 30j.
     """
     required = {"date", "corrected_units_sold"}
     missing = required - set(df.columns)
@@ -64,31 +42,46 @@ def calculate_run_rate(df: pd.DataFrame, window: int = RUN_RATE_WINDOW) -> pd.Da
 
     df = df.sort_values("date").copy()
 
-    # Masquer les jours non fiables pour le calcul du run rate
+    # 1. Masquer les jours non fiables
     valid_mask = pd.Series(True, index=df.index)
     if "is_stockout" in df.columns:
         valid_mask &= ~df["is_stockout"]
     if "is_outlier" in df.columns:
         valid_mask &= ~df["is_outlier"]
 
-    # Série nettoyée — NaN sur les jours invalides
     clean_sales = df["corrected_units_sold"].where(valid_mask)
 
-    # Médiane glissante sur ``window`` jours
-    rolling_run_rate = (
-        clean_sales
-        .rolling(window=window, min_periods=RUN_RATE_MIN_PERIODS)
-        .median()
-    )
+    # 2. Calcul du Momentum (tendance court terme vs moyen terme)
+    # On compare la moyenne 7j à la moyenne 30j
+    short_term = clean_sales.rolling(window=7, min_periods=2).mean()
+    medium_term = clean_sales.rolling(window=30, min_periods=4).mean()
+    
+    # Facteur de tendance : > 1 si croissance, < 1 si déclin
+    momentum = (short_term / medium_term.replace(0, np.nan)).fillna(1.0)
+    
+    # 3. Fenêtre Adaptative
+    # Si momentum > 1.2 (croissance > 20%), on bascule sur une fenêtre de 7j pour être réactif
+    # Sinon on reste sur 30j pour la stabilité
+    is_trending = momentum > 1.2
+    
+    run_rate_30j = clean_sales.rolling(window=30, min_periods=4).median()
+    run_rate_7j = clean_sales.rolling(window=7, min_periods=2).median()
+    
+    # Mixage : run_rate_7j si trending, sinon run_rate_30j
+    adaptive_run_rate = run_rate_30j.copy()
+    adaptive_run_rate[is_trending] = run_rate_7j[is_trending]
 
-    # Fallback : médiane globale des jours valides
+    # 4. Fallback Global
     global_median = clean_sales.dropna().median()
     if pd.isna(global_median):
         global_median = df["corrected_units_sold"].median()
     if pd.isna(global_median):
         global_median = 0.0
 
-    df["run_rate"] = rolling_run_rate.fillna(global_median).clip(lower=0.0)
+    df["run_rate"] = adaptive_run_rate.fillna(global_median).clip(lower=0.0)
+    
+    # Ajout du diagnostic (invisible au frontend mais utile pour l'audit)
+    df["is_trending"] = is_trending
 
     return df
 

@@ -17,12 +17,13 @@ class ShopifyService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def trigger_mock_sync(self, shop_id: str) -> SyncResultSchema:
+    async def trigger_mock_sync(self, shop_id: str, platform: str = "shopify") -> SyncResultSchema:
         """
         Synchronisation intelligente (Upsert) spécifique à Shopify :
         Régénère un dataset mock et le synchronise via l'inventaire.
         """
-        logger.info(f"[ShopifyService] Starting smart mock sync for shop {shop_id}")
+        plat_enum = PlatformSource(platform)
+        logger.info(f"[ShopifyService] Starting smart mock sync for shop {shop_id} (Platform: {platform})")
 
         # 1. Charger les produits existants
         existing_result = await self.db.execute(
@@ -36,8 +37,8 @@ class ShopifyService:
         )
         suppliers = list(supplier_result.scalars().all())
 
-        # 3. Générer le nouveau dataset mock
-        products_data, sales_data = generate_full_mock_dataset(count=50, shop_id=shop_id)
+        # 3. Générer le nouveau dataset mock avec la plateforme forcée
+        products_data, sales_data = generate_full_mock_dataset(count=50, shop_id=shop_id, platform=plat_enum)
 
         # 4. Traiter les produits (Update ou Create)
         processed_products = []
@@ -86,5 +87,5 @@ class ShopifyService:
             success=True,
             products_created=len(processed_products),
             sales_logs_created=len(new_sales_logs),
-            message=f"Sync mock Shopify réussie : {len(processed_products)} produits.",
+            message=f"Sync mock {platform} réussie : {len(processed_products)} produits.",
         )

@@ -86,16 +86,14 @@ def _is_peak_day(d: date) -> bool:
     return False
 
 
-def generate_mock_products(count: int = 50, shop_id: Optional[str] = None) -> list[dict]:
+def generate_mock_products(count: int = 50, shop_id: Optional[str] = None, platform: Optional[any] = None) -> list[dict]:
     """
     Génère une liste de produits mock pour un shop.
 
     Args:
         count: Nombre de produits à générer (défaut: 50).
         shop_id: UUID du shop propriétaire.
-
-    Returns:
-        Liste de dicts compatibles avec le modèle Product.
+        platform: Plateforme spécifique (PlatformSource) pour forcer le marquage.
     """
     rng = random.Random(RANDOM_SEED)
     _shop_id = shop_id or str(uuid.uuid4())
@@ -111,13 +109,15 @@ def generate_mock_products(count: int = 50, shop_id: Optional[str] = None) -> li
     for i, (title, category) in enumerate(catalog[:count]):
         sku = f"{category}-{1000 + i:04d}"
         
-        # 30% de chance d'être multi-canal (2-3 plateformes)
-        is_omni = rng.random() < 0.3
-        num_channels = rng.randint(2, 3) if is_omni else 1
+        if platform:
+            selected_platforms = [platform]
+        else:
+            # 30% de chance d'être multi-canal (2-3 plateformes)
+            is_omni = rng.random() < 0.3
+            num_channels = rng.randint(2, 3) if is_omni else 1
+            selected_platforms = rng.sample(platforms, num_channels)
         
-        selected_platforms = rng.sample(platforms, num_channels)
-        
-        for platform in selected_platforms:
+        for p_form in selected_platforms:
             products.append({
                 "id": str(uuid.uuid4()),
                 "shop_id": _shop_id,
@@ -126,7 +126,7 @@ def generate_mock_products(count: int = 50, shop_id: Optional[str] = None) -> li
                 "current_stock": rng.randint(0, 200),
                 "lead_time": rng.choice([7, 14, 21, 30, 45]),
                 "moq": rng.choice([5, 10, 20, 50]),
-                "source_platform": platform,
+                "source_platform": p_form,
                 "boost_factor": rng.uniform(0.8, 2.5),
                 "stock_weight": rng.uniform(0.5, 2.0),
                 "cost_price": round(rng.uniform(10.0, 150.0), 2),
@@ -207,22 +207,17 @@ def generate_mock_sales(product_id: str, sku: Optional[str] = None, days: int = 
     return sales_logs
 
 
-def generate_full_mock_dataset(count: int = 50, shop_id: Optional[str] = None) -> tuple[list[dict], list[dict]]:
+def generate_full_mock_dataset(count: int = 50, shop_id: Optional[str] = None, platform: Optional[any] = None) -> tuple[list[dict], list[dict]]:
     """
     Génère le dataset complet : produits + historique ventes.
 
     Args:
         count: Nombre de produits.
         shop_id: UUID du shop.
-
-    Returns:
-        Tuple (products, sales_logs).
-
-    Notes:
-        - 10-15% des produits auront des ruptures simulées.
+        platform: Plateforme forcée.
     """
     rng = random.Random(RANDOM_SEED)
-    products = generate_mock_products(count=count, shop_id=shop_id)
+    products = generate_mock_products(count=count, shop_id=shop_id, platform=platform)
 
     # 10-15% ont des ruptures
     stockout_count = int(count * rng.uniform(0.10, 0.15))

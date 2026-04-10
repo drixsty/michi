@@ -12,7 +12,7 @@ import { INGEST_CSV_DATA } from '@/graphql/mutations/ingestCSV';
 import { AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { LayoutDashboard, Package, Layers, Bell, AlertCircle, AlertTriangle, Trash2, ExternalLink, Eye, CheckCircle2, Database } from 'lucide-react';
+import { LayoutDashboard, Package, Layers, Bell, BellOff, AlertCircle, AlertTriangle, Trash2, ExternalLink, Eye, CheckCircle2, Database } from 'lucide-react';
 import Link from 'next/link';
 import { gql } from '@apollo/client';
 import { cn } from '@/lib/utils';
@@ -138,6 +138,7 @@ function DashboardContent() {
     return { total: 0, urgent: 0, warning: 0, healthy: 0 };
   }, [statsData]);
 
+
   // Relaxed Auth check for preview stability
   useEffect(() => {
     if (meError) {
@@ -224,7 +225,10 @@ function DashboardContent() {
                 <div className="space-y-1">
                   {(!alertsData?.unreadAlerts || alertsData.unreadAlerts.length === 0) ? (
                     <div className="flex flex-col items-center justify-center py-10 text-center min-h-[160px]">
-                       <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1">Données vides</p>
+                       <div className="p-3 bg-slate-50 rounded-full mb-3">
+                          <BellOff className="h-6 w-6 text-slate-300" />
+                       </div>
+                       <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1 uppercase text-balance">Données vides</p>
                        <p className="text-[10px] text-slate-300 italic">Aucune alerte active pour le moment.</p>
                     </div>
                   ) : (
@@ -317,7 +321,7 @@ function DashboardContent() {
                         >
                           <div className="min-w-0 flex-1 pr-4">
                             <p className="text-xs font-medium text-foreground truncate">{p.title}</p>
-                            <p className="text-[10px] text-muted-foreground">SKU: {p.sku}</p>
+                            <p className="text-[10px] text-muted-foreground">Sku: {p.sku}</p>
                           </div>
                           
                           <div className="flex items-center gap-3">
@@ -378,30 +382,27 @@ function DashboardContent() {
         {activeTab === 'sources' && (
           <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
              <div className="bg-white rounded-2xl border border-slate-100 p-6">
-                <div className="flex items-center gap-3 mb-5">
-                   <div className="p-3 bg-primary/5 rounded-2xl text-primary">
-                      <Database className="h-5 w-5" />
-                   </div>
-                   <div>
-                      <h2 className="text-sm font-extrabold text-slate-900 tracking-widest">Connecteurs de données</h2>
-                      <p className="text-[10px] text-slate-500 font-medium italic">Connectez vos plateformes pour synchroniser votre inventaire Michi en temps réel.</p>
-                   </div>
-                </div>
 
                 <ConnectorsGrid onImport={handleCSVUpload} />
              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-6 bg-slate-50/50 rounded-2xl border border-slate-100">
-                   <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-2">État de santé API</p>
-                   <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-xs font-bold text-slate-900">Systèmes opérationnels</span>
+                <div className="p-6 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                   <div>
+                      <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1 text-balance">État Global</p>
+                      <div className="flex items-center gap-2">
+                         <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                         <span className="text-xs font-bold text-slate-900">Systèmes opérationnels</span>
+                      </div>
                    </div>
+                   <CheckCircle2 className="h-5 w-5 text-emerald-500/20" />
                 </div>
-                <div className="p-8 bg-slate-50/50 rounded-2xl border border-slate-100">
-                   <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-2">Dernière synchronisation</p>
-                   <p className="text-xs font-bold text-slate-900">Il y a 5 minutes (automatique)</p>
+                <div className="p-6 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                   <div>
+                      <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1">Flux Automatiques</p>
+                      <p className="text-xs font-bold text-slate-900">Activés (Temps réel)</p>
+                   </div>
+                   <Database className="h-5 w-5 text-primary/20" />
                 </div>
              </div>
           </div>

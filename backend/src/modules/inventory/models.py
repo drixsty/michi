@@ -149,5 +149,21 @@ class PurchaseOrder(Base):
 
     supplier = relationship("Supplier", back_populates="purchase_orders")
 
+class SourceConnection(Base):
+    """
+    Persistance de la connexion à une plateforme source (US Sprint 17).
+    Stocke si la source est active, quand elle a été sync pour la dernière fois 
+    et son état de santé (API metrics).
+    """
+    __tablename__ = "source_connections"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    shop_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    platform = Column(Enum(PlatformSource), nullable=False)
+    connected = Column(Boolean, default=False, nullable=False)
+    
+    last_sync_at = Column(DateTime, nullable=True)
+    health_status = Column(String(50), default="HEALTHY") # HEALTHY, ERROR, UNKNOWN
+
     def __repr__(self):
-        return f"<PurchaseOrder {self.id} status={self.status}>"
+        return f"<SourceConnection {self.platform.value} connected={self.connected}>"

@@ -5,7 +5,7 @@ from loguru import logger
 from datetime import datetime, date, timedelta
 import uuid
 
-from .models import Product, Alert, PlatformSource
+from .models import Product, Alert, PlatformSource, SourceConnection
 from src.modules.forecasting.models import Prediction
 
 class AlertService:
@@ -113,10 +113,24 @@ class AlertService:
         Récupère les alertes non lues pour l'affichage UI.
         """
         s_uuid = uuid.UUID(str(shop_id))
+        # Isolation Sprint 18 : Ne prendre que les alertes des sources connectées
+        active_conn_stmt = select(SourceConnection.platform).where(
+            SourceConnection.shop_id == s_uuid,
+            SourceConnection.connected == True
+        )
+        active_platforms = (await self.db.execute(active_conn_stmt)).scalars().all()
+        
+        if not active_platforms:
+            return []
+
         result = await self.db.execute(
             select(Alert)
             .join(Product)
-            .where(Product.shop_id == s_uuid, Alert.is_read == False)
+            .where(
+                Product.shop_id == s_uuid, 
+                Alert.is_read == False,
+                Product.source_platform.in_(active_platforms)
+            )
             .order_by(Alert.severity.desc(), Alert.created_at.desc())
         )
         return list(result.scalars().all())

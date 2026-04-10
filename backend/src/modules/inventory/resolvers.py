@@ -368,6 +368,34 @@ class InventoryMutation:
         )
         info.context.db.add(po)
         await info.context.db.flush()
+
+        # Envoi de la notification email (Sprint 16)
+        try:
+            from .email_service import EmailService
+            from sqlalchemy import select
+            
+            # Récupérer les détails pour l'email
+            prod_res = await info.context.db.execute(select(Product).where(Product.id == po.product_id))
+            product = prod_res.scalar_one()
+            
+            supp_res = await info.context.db.execute(select(Supplier).where(Supplier.id == po.supplier_id))
+            supplier = supp_res.scalar_one()
+
+            if supplier.contact_email:
+                email_service = EmailService()
+                await email_service.send_purchase_order(
+                    to_email=supplier.contact_email,
+                    po_id=str(po.id),
+                    supplier_name=supplier.name,
+                    product_title=product.title,
+                    product_sku=product.sku,
+                    quantity=po.quantity,
+                    order_date=str(po.order_date),
+                    expected_date=str(po.expected_arrival_date)
+                )
+        except Exception as e:
+            from loguru import logger
+            logger.error(f"[PurchaseOrder] Failed to trigger notification email: {str(e)}")
         
         return PurchaseOrderType(
             id=strawberry.ID(str(po.id)),
@@ -514,41 +542,77 @@ class InventoryMutation:
     @strawberry.mutation
     async def trigger_omnichannel_sync(self, info) -> IngestionResult:
         """
-        Déclenche la synchronisation de toutes les sources connectées (US 9.3).
-        En mode démo, cela régénère le dataset mock multi-canal.
+        Déclenche la synchronisation de TOUTES les sources connectées (Sprint 17).
+        Remplace l'ancienne version statique par une version basée sur la base de données.
         """
         if not info.context.user_id:
             raise UnauthenticatedException()
 
         from src.modules.auth.service import AuthService
-        from src.modules.shopify.service import ShopifyService
+        from src.modules.inventory.models import SourceConnection, PlatformSource
+        from src.modules.shopify.service import ShopifyService # Mock for now
         from src.modules.forecasting.service import ForecastingService
         from .alert_service import AlertService
+        from sqlalchemy import select
+        from datetime import datetime
         
         auth_service = AuthService(info.context.db)
         user = await auth_service.get_user_by_id(info.context.user_id)
         shop_id = str(user.shop_id)
 
-        # 1. Sync Mock Data (Omnichannel aware)
-        shopify_service = ShopifyService(info.context.db)
-        result = await shopify_service.trigger_mock_sync(shop_id)
+        # 1. Identifier les sources actives
+        result = await info.context.db.execute(
+            select(SourceConnection).where(
+                SourceConnection.shop_id == user.shop_id,
+                SourceConnection.connected == True
+            )
+        )
+        active_connections = result.scalars().all()
         
-        # 2. Pipeline IA
+        if not active_connections:
+            return IngestionResult(
+                success=False,
+                message="Aucune source connectée. Connectez une boutique d'abord.",
+                platform="none",
+                products_count=0,
+                sales_logs_count=0
+            )
+
+        total_prods = 0
+        total_logs = 0
+        platforms_synced = []
+
+        # 2. Synchronisation séquentielle (Mocking logic for multi-channel)
+        shopify_service = ShopifyService(info.context.db)
+        
+        for conn in active_connections:
+            # Simulation : On utilise le mock generator pour toutes les sources connectées
+            # En production, chaque plateforme appellerait son propre service
+            res = await shopify_service.trigger_mock_sync(shop_id, platform=conn.platform.value)
+            
+            total_prods += res.products_created
+            total_logs += res.sales_logs_created
+            platforms_synced.append(conn.platform.value)
+            
+            # Mise à jour metadata
+            conn.last_sync_at = datetime.utcnow()
+            conn.health_status = "HEALTHY"
+
+        # 3. Pipeline IA Global
         forecasting = ForecastingService(info.context.db)
         await forecasting.run_cleaning_pipeline(shop_id)
         await forecasting.run_prediction_pipeline(shop_id)
 
-        # 3. Alert Pipeline
+        # 4. Alert Pipeline
         alerts = AlertService(info.context.db)
         await alerts.check_for_stockouts(shop_id)
 
-        # Persistance globale
         await info.context.db.commit()
 
         return IngestionResult(
             success=True,
-            message="Synchronisation omnicanale réussie — Dataset rafraîchi.",
+            message=f"Sync réussie pour : {', '.join(platforms_synced)}.",
             platform="all",
-            products_count=result.products_created,
-            sales_logs_count=result.sales_logs_created,
+            products_count=total_prods,
+            sales_logs_count=total_logs,
         )

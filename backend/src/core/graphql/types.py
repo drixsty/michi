@@ -51,3 +51,5 @@ class SourceType:
     name: str
     platform: str
     connected: bool
+    last_sync_at: Optional[datetime] = None
+    health_status: Optional[str] = "HEALTHY"

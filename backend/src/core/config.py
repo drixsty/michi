@@ -39,6 +39,12 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = "your_password"
     EMAIL_FROM: str = "notifications@michi-app.io"
     
+    # Shopify OAuth (Sprint 15)
+    SHOPIFY_API_KEY: str = "your_shopify_key"
+    SHOPIFY_API_SECRET: str = "your_shopify_secret"
+    SHOPIFY_REDIRECT_URI: str = "http://localhost:8000/api/shopify/callback"
+    SHOPIFY_SCOPES: str = "read_products,read_orders,read_inventory"
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

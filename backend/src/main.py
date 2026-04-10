@@ -12,6 +12,7 @@ from src.core.graphql.schema import schema
 from src.core.graphql.context import GraphQLContext
 from src.core.database import get_db
 from src.core.middleware.auth import get_current_user_from_token
+from src.modules.shopify.auth_routes import router as shopify_auth_router
 
 
 @asynccontextmanager
@@ -77,6 +78,7 @@ graphql_app = GraphQLRouter(
 )
 
 app.include_router(graphql_app, prefix="/graphql")
+app.include_router(shopify_auth_router)
 
 
 # Health Check

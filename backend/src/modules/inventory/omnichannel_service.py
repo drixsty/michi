@@ -83,10 +83,22 @@ class OmnichannelService:
             Liste de OmnichannelProduct, triée par total_stock ASC
             (les SKUs les plus à risque en premier).
         """
-        # ── 1. Charger tous les produits avec leurs prédictions ──────────────
+        # ── 1. Charger les sources connectées et filtrer les produits ────────
+        from .models import SourceConnection
+        
+        # Récupérer les plateformes actives
+        active_sources_res = await self.db.execute(
+            select(SourceConnection.platform)
+            .where(SourceConnection.shop_id == shop_id, SourceConnection.connected == True)
+        )
+        active_platforms = [p for p in active_sources_res.scalars().all()]
+
         result = await self.db.execute(
             select(Product)
-            .where(Product.shop_id == shop_id)
+            .where(
+                Product.shop_id == shop_id,
+                Product.source_platform.in_(active_platforms)
+            )
             .order_by(Product.sku, Product.source_platform)
         )
         products = list(result.scalars().all())

@@ -123,16 +123,16 @@ function HealthGauge({ score }: { score: number }) {
 function ABCParetoChart({ risks }: { risks: any[] }) {
   const abcData = useMemo(() => {
     const sorted = [...risks]
-      .map(r => ({ ...r, annualValue: (r.salePrice || 0) * (r.runRate || 0) * 365 }))
-      .sort((a, b) => b.annualValue - a.annualValue);
-    const total = sorted.reduce((acc, r) => acc + r.annualValue, 0) || 1;
+      .map(r => ({ ...r, annualMargin: ((r.salePrice || 0) - (r.costPrice || 0)) * (r.runRate || 0) * 365 }))
+      .sort((a, b) => b.annualMargin - a.annualMargin);
+    const total = sorted.reduce((acc, r) => acc + (r.annualMargin > 0 ? r.annualMargin : 0), 0) || 1;
     let cumulative = 0;
-    return sorted.slice(0, 12).map((r) => {
-      cumulative += r.annualValue;
+    return sorted.filter(r => r.annualMargin > 0).slice(0, 12).map((r) => {
+      cumulative += r.annualMargin;
       const pct = (cumulative / total) * 100;
       return {
         name: r.sku.length > 6 ? r.sku.substring(0, 6) + '…' : r.sku,
-        value: Math.round(r.annualValue),
+        value: Math.round(r.annualMargin),
         cumulative: Math.round(pct),
         category: pct <= 80 ? 'A' : pct <= 95 ? 'B' : 'C',
       };
@@ -403,7 +403,7 @@ export function DecisionsView() {
                   className="group p-3 bg-background rounded-lg border border-transparent hover:border-border transition-all cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-1">
-                    <span className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide">{risk.sku}</span>
+                    <span className="text-[9px] font-semibold text-muted-foreground tracking-wide">Sku : {risk.sku}</span>
                     <span className="text-[10px] font-bold text-destructive">{formatCurrency(risk.riskValue)}</span>
                   </div>
                   <h4 className="text-xs font-semibold text-foreground mb-1.5 group-hover:text-primary transition-colors truncate">{risk.title}</h4>
