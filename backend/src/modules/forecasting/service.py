@@ -14,6 +14,7 @@ Pipeline prédictions (US 2.8) :
     4. Écriture dans predictions (delete + insert par shop)
 """
 from datetime import date
+from typing import Optional, List
 
 import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,7 +22,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import select, delete, func, case
 from loguru import logger
 
-from src.modules.inventory.models import Product, SalesLog, SourceConnection, PlatformSource
+from src.modules.inventory.models import Product, SalesLog, PlatformSource
 from .models import CleanedDemand, Prediction
 from .schemas import PipelineResultSchema, CleanedDemandSchema, PredictionRunResultSchema, DashboardKPISchema
 from .algorithms.out_of_stock_correction import correct_out_of_stock_batch
@@ -34,21 +35,21 @@ class ForecastingService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def run_cleaning_pipeline(self, shop_id: str) -> PipelineResultSchema:
+    async def run_cleaning_pipeline(self, store_id: str) -> PipelineResultSchema:
         """
-        Exécute la pipeline complète OOS + IQR pour tous les produits du shop.
+        Exécute la pipeline complète OOS + IQR pour tous les produits du store.
 
         Args:
-            shop_id: UUID du shop.
+            store_id: UUID du store.
 
         Returns:
             PipelineResultSchema avec les statistiques de nettoyage.
         """
-        logger.info(f"[ForecastingService] Pipeline start — shop {shop_id}")
+        logger.info(f"[ForecastingService] Pipeline start — store {store_id}")
 
-        # ── 1. Charger les produits du shop ───────────────────────────────────
+        # ── 1. Charger les produits du store ───────────────────────────────────
         products_result = await self.db.execute(
-            select(Product).where(Product.shop_id == shop_id)
+            select(Product).where(Product.store_id == store_id)
         )
         products = list(products_result.scalars().all())
 
@@ -152,25 +153,25 @@ class ForecastingService:
             ),
         )
 
-    async def run_prediction_pipeline(self, shop_id: str) -> PredictionRunResultSchema:
+    async def run_prediction_pipeline(self, store_id: str) -> PredictionRunResultSchema:
         """
-        Calcule le run rate + prédictions pour tous les produits du shop.
+        Calcule le run rate + prédictions pour tous les produits du store.
 
         Nécessite que la pipeline de nettoyage ait été exécutée au préalable.
 
         Args:
-            shop_id: UUID du shop.
+            store_id: UUID du store.
 
         Returns:
             PredictionRunResultSchema avec les statistiques.
         """
-        logger.info(f"[ForecastingService] Prediction pipeline start — shop {shop_id}")
+        logger.info(f"[ForecastingService] Prediction pipeline start — store {store_id}")
 
-        # ── 1. Charger les produits du shop ───────────────────────────────────
+        # ── 1. Charger les produits du store ───────────────────────────────────
         products_result = await self.db.execute(
             select(Product)
             .options(selectinload(Product.supplier))
-            .where(Product.shop_id == shop_id)
+            .where(Product.store_id == store_id)
         )
         products = list(products_result.scalars().all())
 
@@ -317,41 +318,31 @@ class ForecastingService:
         )
         return list(result.scalars().all())
 
-    async def get_predictions(self, shop_id: str) -> list[Prediction]:
+    async def get_predictions(self, store_id: Optional[str] = None, organization_id: Optional[str] = None) -> list[Prediction]:
         """
-        Retourne les prédictions pour tous les produits du shop.
-
-        Args:
-            shop_id: UUID du shop.
-
-        Returns:
-            Liste de Prediction triée par date de rupture prévisionnelle (les plus urgentes en premier).
+        Retourne les prédictions pour tous les produits du store ou de l'organisation.
         """
-        # Isolation Sprint 18 : Ne prendre que les produits des sources connectées
-        active_conn_stmt = select(SourceConnection.platform).where(
-            SourceConnection.shop_id == shop_id,
-            SourceConnection.connected == True
-        )
-        active_platforms = (await self.db.execute(active_conn_stmt)).scalars().all()
+        from src.modules.inventory.models import Store
         
-        if not active_platforms:
-            return []
-
-        products_result = await self.db.execute(
-            select(Product.id).where(
-                Product.shop_id == shop_id,
-                Product.source_platform.in_(active_platforms)
+        stmt = select(Prediction).join(Product)
+        
+        if store_id:
+            # Isolation SaaS : Ne prendre les produits que si le store est connecté
+            store_res = await self.db.execute(select(Store).where(Store.id == store_id))
+            store = store_res.scalars().first()
+            if not store or not store.connected:
+                return []
+            stmt = stmt.where(Product.store_id == store_id)
+        elif organization_id:
+            stmt = stmt.join(Store, Product.store_id == Store.id).where(
+                Store.organization_id == organization_id,
+                Store.connected == True
             )
-        )
-        product_ids = [row[0] for row in products_result.all()]
-
-        if not product_ids:
+        else:
             return []
 
         result = await self.db.execute(
-            select(Prediction)
-            .where(Prediction.product_id.in_(product_ids))
-            .order_by(Prediction.predicted_stockout_date.asc().nullslast())
+            stmt.order_by(Prediction.predicted_stockout_date.asc().nullslast())
         )
         return list(result.scalars().all())
 
@@ -413,37 +404,33 @@ class ForecastingService:
         await self.db.flush()
         return prediction
 
-    async def get_dashboard_kpis(self, shop_id: str) -> DashboardKPISchema:
+    async def get_dashboard_kpis(self, store_id: Optional[str] = None, organization_id: Optional[str] = None) -> DashboardKPISchema:
         """
-        Calcule les KPIs globaux pour le shop (US 3.5 + Sprint 10).
-        Unification de la logique avec le Sprint 8 (Performance Fournisseurs) 
-        et US 10.2 (Seuils Dynamiques).
+        Calcule les KPIs globaux pour le store ou l'organisation (US 3.5 + Sprint 10).
         """
-        # Isolation Sprint 18 : Ne prendre que les plateformes connectées
-        active_conn_stmt = select(SourceConnection.platform).where(
-            SourceConnection.shop_id == shop_id,
-            SourceConnection.connected == True
-        )
-        active_platforms = (await self.db.execute(active_conn_stmt)).scalars().all()
+        from src.modules.inventory.models import Store
         
-        if not active_platforms:
-            return DashboardKPISchema(
-                total_products=0,
-                actual_stockouts=0,
-                urgent_alerts=0,
-                predicted_stockouts_30d=0,
-                message="Aucune boutique connectée."
+        base_stmt = select(Product)
+        if store_id:
+            store_res = await self.db.execute(select(Store).where(Store.id == store_id))
+            store = store_res.scalars().first()
+            if not store or not store.connected:
+                return DashboardKPISchema(total_products=0, actual_stockouts=0, urgent_alerts=0, predicted_stockouts_30d=0, message="Boutique inactive.")
+            base_stmt = base_stmt.where(Product.store_id == store_id)
+        elif organization_id:
+            base_stmt = base_stmt.join(Store, Product.store_id == Store.id).where(
+                Store.organization_id == organization_id,
+                Store.connected == True
             )
+        else:
+            return DashboardKPISchema(total_products=0, actual_stockouts=0, urgent_alerts=0, predicted_stockouts_30d=0, message="Aucun contexte.")
 
-        # 1. Total produits & Ruptures réelles sur les sources actives
+        # 1. Total produits & Ruptures réelles
         res = await self.db.execute(
             select(
                 func.count(Product.id),
                 func.sum(case((Product.current_stock == 0, 1), else_=0))
-            ).where(
-                Product.shop_id == shop_id,
-                Product.source_platform.in_(active_platforms)
-            )
+            ).select_from(base_stmt.subquery())
         )
         total_products, actual_stockouts = res.one()
         total_products = total_products or 0
@@ -452,15 +439,16 @@ class ForecastingService:
         # 2. Alertes de réapprovisionnement (Urgence & Warning)
         today = date.today()
         
-        pred_res = await self.db.execute(
-            select(Prediction, Product)
-            .join(Product)
-            .options(selectinload(Product.supplier))
-            .where(
-                Product.shop_id == shop_id,
-                Product.source_platform.in_(active_platforms)
+        pred_stmt = select(Prediction, Product).join(Product).options(selectinload(Product.supplier))
+        if store_id:
+            pred_stmt = pred_stmt.where(Product.store_id == store_id)
+        elif organization_id:
+            pred_stmt = pred_stmt.join(Store, Product.store_id == Store.id).where(
+                Store.organization_id == organization_id,
+                Store.connected == True
             )
-        )
+            
+        pred_res = await self.db.execute(pred_stmt)
         data = pred_res.all()
         
         urgent_alerts = 0
@@ -475,10 +463,8 @@ class ForecastingService:
                 days_to_stockout = (pred.predicted_stockout_date - today).days
                 
                 # US 10.2 : Seuils dynamiques
-                # Urgent : Le stock expire AVANT ou PENDANT le délai de livraison
                 if days_to_stockout <= effective_lead_time:
                     urgent_alerts += 1
-                # Warning : Le stock expire dans le délai de livraison + 7 jours de sécurité
                 elif days_to_stockout <= (effective_lead_time + 7):
                     warning_alerts += 1
 
@@ -486,8 +472,8 @@ class ForecastingService:
             total_products=total_products,
             actual_stockouts=actual_stockouts,
             urgent_alerts=urgent_alerts,
-            predicted_stockouts_30d=warning_alerts, # On réutilise ce champ pour les warnings (Dashboard UI)
-            message="KPIs Sprint 10 calculés avec succès"
+            predicted_stockouts_30d=warning_alerts,
+            message="KPIs Omnicanaux calculés avec succès"
         )
 
     def _calculate_mape_backtest(self, product_df: pd.DataFrame, test_days: int = 7) -> float | None:
@@ -519,32 +505,31 @@ class ForecastingService:
         mape = abs(actual_total - expected_total) / max(actual_total, 1.0) * 100
         return min(mape, 100.0) # Capé à 100% pour la lisibilité
 
-    async def get_replenishment_alerts(self, shop_id: str) -> list[Prediction]:
+    async def get_replenishment_alerts(self, store_id: Optional[str] = None, organization_id: Optional[str] = None) -> list[Prediction]:
         """
-        Retourne la liste des produits prioritaires pour le réapprovisionnement (US 3.4).
-        Priorité : Date de rupture proche.
+        Retourne la liste des produits prioritaires pour le réapprovisionnement (Store ou Organisation).
         """
         from datetime import date, timedelta
-        limit_date = date.today() + timedelta(days=14) # Alertes à 14j
+        from src.modules.inventory.models import Store
+        limit_date = date.today() + timedelta(days=14)
 
-        # Isolation Sprint 18
-        active_conn_stmt = select(SourceConnection.platform).where(
-            SourceConnection.shop_id == shop_id,
-            SourceConnection.connected == True
+        stmt = select(Prediction).join(Product).where(
+            Prediction.predicted_stockout_date <= limit_date
         )
-        active_platforms = (await self.db.execute(active_conn_stmt)).scalars().all()
-        
-        if not active_platforms:
+
+        if store_id:
+            store_res = await self.db.execute(select(Store).where(Store.id == store_id))
+            store = store_res.scalars().first()
+            if not store or not store.connected:
+                return []
+            stmt = stmt.where(Product.store_id == store_id)
+        elif organization_id:
+            stmt = stmt.join(Store, Product.store_id == Store.id).where(
+                Store.organization_id == organization_id,
+                Store.connected == True
+            )
+        else:
             return []
 
-        result = await self.db.execute(
-            select(Prediction)
-            .join(Product)
-            .where(
-                Product.shop_id == shop_id,
-                Product.source_platform.in_(active_platforms),
-                Prediction.predicted_stockout_date <= limit_date
-            )
-            .order_by(Prediction.predicted_stockout_date.asc())
-        )
+        result = await self.db.execute(stmt.order_by(Prediction.predicted_stockout_date.asc()))
         return list(result.scalars().all())

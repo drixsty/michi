@@ -15,7 +15,7 @@ export interface Supplier {
 
 export interface Product {
   id: string;
-  shopId: string;
+  storeId: string;
   sku: string;
   title: string;
   currentStock: number;

@@ -1,0 +1,7 @@
+{
+  "query": "query GetFinancialOverview($storeId: ID, $channel: String) { financialOverview(storeId: $storeId, channel: $channel) { kpis { inventoryValueCost } topRisks { sku sourcePlatform } activePlatforms capitalBreakdown { platform value } message } }",
+  "variables": {
+    "storeId": null,
+    "channel": "amazon"
+  }
+}

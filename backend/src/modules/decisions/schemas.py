@@ -16,4 +16,6 @@ class DecisionCenterOverview(BaseModel):
     total_run_rate: float = 0.0
     total_stock: int = 0
     health_score: int = 0
+    active_platforms: List[str] = []
+    capital_breakdown: List[dict] = []
     message: Optional[str] = None

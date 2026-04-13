@@ -1,10 +1,8 @@
 # 📊 Michi - Progress Tracker
 
-**Dernière mise à jour :** 10 Avril 2026  
-**Version :** 9.2 (Elite BI Ready)  
-**Date :** 10 Avril 2026  
-**Agent IA :** Claude Sonnet 4.6  
-**Objectif :** Solution OMNICANAL Robuste — **Avancement : 100% (13/13 sprints)**
+**Date last update :** 11 Avril 2026  
+**Agent IA :** Antigravity — Sprint 16 (Phase 2) Validé ✅
+**Objectif :** Solution OMNICANAL Robuste & SaaS Multi-Tenant — **Avancement : 90%**
 
 ---
 
@@ -38,6 +36,11 @@ Sprint 10 ✅ [■■■■■■■■■■] 100%  Go-Live Readiness (Alertes,
 Sprint 11 ✅ [■■■■■■■■■■] 100%  Michi UI 2.0 Overhaul (Ultra-Light, Sidebar/Tabs, Unification Elite)
 Sprint 12 ✅ [■■■■■■■■■■] 100%  Optimisation Algorithmique (Boost Manuel & Pondération Omnicanale)
 Sprint 13 ✅ [■■■■■■■■■■] 100%  Intelligence Stratégique (BI, Mutualisation, Centre Décisionnel)
+Sprint 14 ✅ [■■■■■■■■■■] 100%  Cockpit de Pilotage (Action & Simulation)
+Sprint 15 🚧 [■■■■■□□□□□] 50%   Connectivité & Précision (Saisonnalité & Marges)
+Sprint 16 ✅ [■■■■■■■■□□] 80%   SaaS Enterprise : IAM & Multi-Tenancy (Switching & Roles)
+Sprint 17 ⏳ [□□□□□□□□□□] 0%    SaaS Enterprise : Monétisation (Stripe & Abonnements)
+Sprint 18 ⏳ [□□□□□□□□□□] 0%    SaaS Enterprise : Multi-Store UX & Dashboard Global
 ```
 
 ---
@@ -497,6 +500,9 @@ Supporte les exports natifs wp-admin. Gère les alias de colonnes (`Item SKU`, `
 | Sprint 0-8 | 154 pts | 154 pts | 100% ✅ |
 | Sprint 9   | 30 pts  | 30 pts  | 100% ✅ |
 | Sprint 10  | 30 pts  | 30 pts  | 100% ✅ |
+| Sprint 16  | 30 pts  | 0 pts   | 0% ⏳   |
+| Sprint 17  | 25 pts  | 0 pts   | 0% ⏳   |
+| Sprint 18  | 20 pts  | 0 pts   | 0% ⏳   |
 
 **Total MVP :** 214 story points — **214 livrés (100%)**
 
@@ -795,6 +801,42 @@ Ces features sont hors scope MVP mais peuvent être ajoutées après validation 
 **DS-Chunking — ForecastingService en mémoire**
 - Problème : charge tous les sales_logs en RAM (50 produits × 365j = 18 250 lignes — OK pour MVP, pas pour 1 000 produits)
 - Solution : traitement par batch de 100 produits avec `yield`
+
+---
+
+
+---
+
+## 🚧 Sprint 16 : SaaS Enterprise - IAM & Multi-Tenancy — EN COURS
+
+**Dates :** 6 - 19 Juillet 2026 (2 semaines)  
+**Objectif :** Migration vers une architecture multi-tenant. Switching d'organisation, rôles granulaires et authentification Google.  
+**Statut :** 🚧 **En cours (Backend 100%, Frontend 0%)**  
+**Vélocité planifiée :** 30 pts
+
+### User Stories — Sprint 16
+
+| ID | User Story | Points | Statut |
+|----|-----------|--------|--------|
+| US 16.1 | **Modèles Multi-Tenant** — Création `Organization`, `Member` et refonte des FKs backend | 10 | ✅ Done |
+| US 16.3 | **Switching d'Organisation (Backend)** — Logique GQL et mutation `switchOrganization` | 5 | ✅ Done |
+| US 16.5 | **Multi-Store Seed V2** — Script de seed SaaS avec stores Shopify/Amazon/Woo | 2 | ✅ Done |
+| US 16.6 | **Frontend SaaS Alignment** — Refonte Types, Queries & Context (StoreContext) | 7 | 🚧 In Progress |
+| US 16.7 | **Switching UI** — Composants OrgSwitcher & StoreSwitcher dans la sidebar/navbar | 6 | ⏳ To Do |
+
+### Checklist Backend (TERMINÉ)
+- [x] Modèles `Organization`, `OrganizationMember`, `Store`
+- [x] Migration de tous les résolveurs vers `store_id`
+- [x] Middleware JWT avec `org_id` contextuel
+- [x] Mutation `switchOrganization` fonctionnelle
+- [x] Script `seed_v2.py` avec données multi-stores
+
+### Checklist Frontend (DÉMARRÉ)
+- [ ] Mettre à jour `User`, `Product`, `Org` interfaces
+- [ ] Créer `StoreContext` pour gérer l'organisation/boutique active
+- [ ] Redesign de la Navbar avec **OrgSwitcher**
+- [ ] Intégration du **StoreSwitcher** dans la sidebar
+- [ ] Injection du `storeId` dans toutes les queries dashboard
 
 ---
 

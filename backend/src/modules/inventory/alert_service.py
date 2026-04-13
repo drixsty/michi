@@ -5,7 +5,7 @@ from loguru import logger
 from datetime import datetime, date, timedelta
 import uuid
 
-from .models import Product, Alert, PlatformSource, SourceConnection
+from .models import Product, Alert, PlatformSource
 from src.modules.forecasting.models import Prediction
 
 class AlertService:
@@ -15,33 +15,43 @@ class AlertService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def check_for_stockouts(self, shop_id: str) -> List[Alert]:
+    async def check_for_stockouts(self, store_id: str) -> List[Alert]:
         """
-        Analyse tous les produits d'un shop et génère des alertes + emails (US 10.4).
-        Logic: Stock < (RunRate * LeadTime) + SafetyBuffer
+        Analyse tous les produits d'un store et génère des alertes + emails.
         """
         from .email_service import EmailService
-        from .models import AlertEmail
-        from src.modules.auth.models import User
+        from .models import AlertEmail, Store
+        from src.modules.auth.models import User, OrganizationMember, UserRole
         
-        logger.info(f"[AlertService] Running stockout check for shop {shop_id}")
-        s_uuid = uuid.UUID(str(shop_id))
+        logger.info(f"[AlertService] Running stockout check for store {store_id}")
+        s_uuid = uuid.UUID(str(store_id))
         today = date.today()
 
-        # 1. Charger les produits avec leurs prédictions (Run Rate, Stockout Date)
+        # 1. Charger les produits avec leurs prédictions
         stmt = (
             select(Product, Prediction)
             .join(Prediction, Product.id == Prediction.product_id)
-            .where(Product.shop_id == s_uuid)
+            .where(Product.store_id == s_uuid)
         )
         result = await self.db.execute(stmt)
         rows = result.all()
 
-        # 2. Chercher l'email du propriétaire du shop pour les notifications
-        user_stmt = select(User).where(User.shop_id == s_uuid).limit(1)
-        user_res = await self.db.execute(user_stmt)
-        shop_owner = user_res.scalars().first()
-        recipient_email = shop_owner.email if shop_owner else None
+        # 2. Chercher les destinataires (Admins de l'org du store)
+        store_res = await self.db.execute(select(Store).where(Store.id == s_uuid))
+        store = store_res.scalars().first()
+        if not store:
+            return []
+
+        admin_stmt = (
+            select(User.email)
+            .join(OrganizationMember)
+            .where(
+                OrganizationMember.organization_id == store.organization_id,
+                OrganizationMember.role == UserRole.ADMIN
+            )
+        )
+        admin_emails = (await self.db.execute(admin_stmt)).scalars().all()
+        recipient_email = admin_emails[0] if admin_emails else None
 
         new_alerts = []
         email_service = EmailService()
@@ -108,29 +118,35 @@ class AlertService:
         await self.db.flush()
         return new_alerts
 
-    async def get_unread_alerts(self, shop_id: str) -> List[Alert]:
+    async def get_unread_alerts(self, store_id: Optional[str] = None, organization_id: Optional[str] = None) -> List[Alert]:
         """
         Récupère les alertes non lues pour l'affichage UI.
         """
-        s_uuid = uuid.UUID(str(shop_id))
-        # Isolation Sprint 18 : Ne prendre que les alertes des sources connectées
-        active_conn_stmt = select(SourceConnection.platform).where(
-            SourceConnection.shop_id == s_uuid,
-            SourceConnection.connected == True
-        )
-        active_platforms = (await self.db.execute(active_conn_stmt)).scalars().all()
+        from .models import Store
         
-        if not active_platforms:
+        if store_id:
+            s_uuid = uuid.UUID(str(store_id))
+            # Isolation SaaS : Ne prendre que les alertes si le store est connecté
+            store_res = await self.db.execute(select(Store).where(Store.id == s_uuid))
+            store = store_res.scalars().first()
+            
+            if not store or not store.connected:
+                return []
+
+            stmt = select(Alert).join(Product).where(
+                Product.store_id == s_uuid, 
+                Alert.is_read == False
+            )
+        elif organization_id:
+            o_uuid = uuid.UUID(str(organization_id))
+            stmt = select(Alert).join(Product).join(Store).where(
+                Store.organization_id == o_uuid,
+                Alert.is_read == False
+            )
+        else:
             return []
 
         result = await self.db.execute(
-            select(Alert)
-            .join(Product)
-            .where(
-                Product.shop_id == s_uuid, 
-                Alert.is_read == False,
-                Product.source_platform.in_(active_platforms)
-            )
-            .order_by(Alert.severity.desc(), Alert.created_at.desc())
+            stmt.order_by(Alert.severity.desc(), Alert.created_at.desc())
         )
         return list(result.scalars().all())

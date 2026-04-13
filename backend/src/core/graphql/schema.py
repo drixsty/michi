@@ -2,15 +2,25 @@
 Schema GraphQL Principal
 """
 import strawberry
-from typing import List
+from typing import List, Optional
+from loguru import logger
+import uuid
+import json
 
-from .types import UserType, LoginInput, AuthPayload, UpdateProfileInput, ChangePasswordInput, SourceType
+from .types import (
+    UserType, LoginInput, AuthPayload, UpdateProfileInput, 
+    ChangePasswordInput, SourceType, InvitationType, 
+    OrganizationMemberType, OrganizationType, UpdateOrganizationInput,
+    RegisterInput, GoogleLoginInput
+)
 from src.modules.auth.service import AuthService
+from src.modules.auth.invitation_service import InvitationService
 from src.modules.shopify.resolvers import ShopifyQuery, ShopifyMutation
 from src.modules.forecasting.resolvers import ForecastingQuery, ForecastingMutation
 from src.modules.inventory.resolvers import InventoryQuery, InventoryMutation
 from src.modules.decisions.resolvers import DecisionQuery, DecisionMutation
-from src.core.exceptions import UnauthenticatedException
+from src.core.exceptions import UnauthenticatedException, MichiException, ErrorCode
+import requests
 
 
 @strawberry.type
@@ -19,77 +29,175 @@ class Query(ShopifyQuery, ForecastingQuery, InventoryQuery, DecisionQuery):
 
     @strawberry.field
     async def me(self, info) -> UserType:
-        """
-        Récupère l'utilisateur actuellement connecté.
-        Nécessite authentication (JWT token).
-        """
+        """Récupère l'utilisateur avec ses organisations."""
         if not info.context.user_id:
             raise UnauthenticatedException()
 
         auth_service = AuthService(info.context.db)
         user = await auth_service.get_user_by_id(info.context.user_id)
-
         if not user:
             raise UnauthenticatedException()
 
-        import json
+        # Mapping manuel pour éviter le deadlock Pydantic/SQLAlchemy en async
         return UserType(
             id=strawberry.ID(str(user.id)),
             email=user.email,
-            shop_id=strawberry.ID(str(user.shop_id)),
+            first_name=user.first_name,
+            last_name=user.last_name,
+            current_organization_id=strawberry.ID(str(user.current_organization_id)) if user.current_organization_id else None,
+            shop_id=strawberry.ID(str(user.shop_id)) if user.shop_id else None,
             created_at=user.created_at,
             preferences=json.dumps(user.preferences or {}),
+            organizations=[
+                OrganizationMemberType(
+                    organization_id=strawberry.ID(str(m.organization_id)),
+                    user_id=strawberry.ID(str(m.user_id)),
+                    role=m.role.value if hasattr(m.role, 'value') else str(m.role),
+                    permissions=json.dumps(m.permissions or {}),
+                    organization=OrganizationType(
+                        id=strawberry.ID(str(m.organization.id)),
+                        name=m.organization.name,
+                        slug=m.organization.slug,
+                        plan=m.organization.plan,
+                        subscription_status=m.organization.subscription_status,
+                        created_at=m.organization.created_at,
+                        settings=json.dumps(m.organization.settings or {})
+                    )
+                ) for m in user.organizations
+            ]
         )
 
     @strawberry.field
     async def sources(self, info) -> List[SourceType]:
-        """Retourne les sources de données disponibles et leur état (Sprint 17)."""
-        if not info.context.user_id:
+        """Retourne les stores de l'organisation active."""
+        if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()
         
-        from src.modules.auth.service import AuthService
-        from src.modules.inventory.models import SourceConnection, PlatformSource
+        from src.modules.inventory.models import Store
         from sqlalchemy import select
         
-        user = await AuthService(info.context.db).get_user_by_id(info.context.user_id)
-        shop_id = user.shop_id
-        
-        # 1. Récupérer les connexions existantes
         result = await info.context.db.execute(
-            select(SourceConnection).where(SourceConnection.shop_id == shop_id)
+            select(Store).where(Store.organization_id == uuid.UUID(str(info.context.org_id)))
         )
-        found_connections = {c.platform: c for c in result.scalars().all()}
+        stores = result.scalars().all()
         
-        # 2. S'assurer que les 3 plateformes par défaut sont présentes (Seed à la volée)
-        default_platforms = [PlatformSource.SHOPIFY, PlatformSource.WOOCOMMERCE, PlatformSource.AMAZON]
-        name_map = {"shopify": "Shopify", "woocommerce": "WooCommerce", "amazon": "Amazon"}
-        
-        all_sources = []
-        for p in default_platforms:
-            conn = found_connections.get(p)
-            if not conn:
-                # Création automatique de la source inactive
-                conn = SourceConnection(
-                    shop_id=shop_id,
-                    platform=p,
-                    connected=False
-                )
-                info.context.db.add(conn)
-                await info.context.db.flush()
-            
-            all_sources.append(
-                SourceType(
-                    id=strawberry.ID(str(conn.id)),
-                    name=name_map.get(p.value, p.value.capitalize()),
-                    platform=p.value,
-                    connected=conn.connected,
-                    last_sync_at=conn.last_sync_at,
-                    health_status=conn.health_status
-                )
+        return [
+            SourceType(
+                id=strawberry.ID(str(s.id)),
+                name=s.name,
+                platform=s.platform.value,
+                connected=s.connected,
+                last_sync_at=s.last_sync_at,
+                health_status=s.health_status,
+                organization_id=strawberry.ID(str(s.organization_id))
+            ) for s in stores
+        ]
+
+    @strawberry.field(name="organizationMembers")
+    async def organization_members(self, info) -> Optional[List[OrganizationMemberType]]:
+        """Liste les membres de l'organisation active.
+
+        Retourne une liste vide si l'utilisateur n'a pas de contexte d'organisation
+        (pas d'org_id dans le JWT) plutôt que de propager une erreur au niveau racine.
+        """
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+
+        # Pas d'org dans le contexte → liste vide (pas d'erreur racine)
+        if not info.context.org_id:
+            return []
+
+        from src.modules.auth.models import OrganizationMember
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        try:
+            result = await info.context.db.execute(
+                select(OrganizationMember)
+                .where(OrganizationMember.organization_id == uuid.UUID(str(info.context.org_id)))
+                .options(selectinload(OrganizationMember.user))
             )
+            members = result.scalars().all()
+
+            return [
+                OrganizationMemberType(
+                    organization_id=strawberry.ID(str(m.organization_id)),
+                    user_id=strawberry.ID(str(m.user_id)),
+                    role=m.role.value if hasattr(m.role, 'value') else str(m.role),
+                    permissions=json.dumps(m.permissions or {}),
+                    user=UserType(
+                        id=strawberry.ID(str(m.user.id)),
+                        email=m.user.email,
+                        first_name=m.user.first_name,
+                        last_name=m.user.last_name,
+                        created_at=m.user.created_at,
+                        preferences=json.dumps(m.user.preferences or {}),
+                        organizations=[]
+                    ) if m.user else None
+                ) for m in members
+            ]
+        except Exception as exc:
+            logger.error(f"[organizationMembers] DB error: {exc}")
+            return []
+
+    @strawberry.field(name="pendingInvitations")
+    async def pending_invitations(self, info) -> Optional[List[InvitationType]]:
+        """Liste les invitations en attente pour l'organisation active."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+
+        if not info.context.org_id:
+            return []
+
+        service = InvitationService(info.context.db)
+        try:
+            invitations = await service.get_pending_invitations(uuid.UUID(str(info.context.org_id)))
+        except Exception as exc:
+            logger.error(f"[pendingInvitations] get_pending_invitations failed: {exc!r}")
+            raise
+
+        try:
+            return [
+                InvitationType(
+                    id=strawberry.ID(str(i.id)),
+                    email=i.email,
+                    organization_id=strawberry.ID(str(i.organization_id)),
+                    role=i.role.value if hasattr(i.role, 'value') else str(i.role),
+                    status=i.status.value if hasattr(i.status, 'value') else str(i.status),
+                    code=i.code,
+                    created_at=i.created_at,
+                    expires_at=i.expires_at
+                ) for i in invitations
+            ]
+        except Exception as exc:
+            logger.error(f"[pendingInvitations] mapping error on {len(invitations)} rows: {exc!r}")
+            raise
+
+    @strawberry.field
+    async def currentOrganization(self, info) -> Optional[OrganizationType]:
+        """Récupère les détails de l'organisation active."""
+        if not info.context.user_id or not info.context.org_id:
+            raise UnauthenticatedException()
         
-        await info.context.db.commit()
-        return all_sources
+        from src.modules.auth.models import Organization
+        from sqlalchemy import select
+        
+        result = await info.context.db.execute(
+            select(Organization).where(Organization.id == uuid.UUID(str(info.context.org_id)))
+        )
+        org = result.scalar_one_or_none()
+        if not org:
+            return None
+            
+        return OrganizationType(
+            id=strawberry.ID(str(org.id)),
+            name=org.name,
+            slug=org.slug,
+            plan=org.plan,
+            subscription_status=org.subscription_status,
+            created_at=org.created_at,
+            settings=json.dumps(org.settings or {})
+        )
 
 
 @strawberry.type
@@ -98,77 +206,250 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
 
     @strawberry.mutation
     async def login(self, info, input: LoginInput) -> AuthPayload:
-        """
-        Authentifie un utilisateur et retourne un token JWT.
-
-        Example:
-            mutation {
-              login(input: {email: "user@example.com", password: "password"}) {
-                token
-                user { id email }
-              }
-            }
-        """
+        """Login SaaS avec support multi-org."""
         auth_service = AuthService(info.context.db)
-
         from src.modules.auth.schemas import LoginInput as LoginInputSchema
-        login_data = LoginInputSchema(email=input.email, password=input.password)
+        
+        result = await auth_service.login(LoginInputSchema(email=input.email, password=input.password))
 
-        result = await auth_service.login(login_data)
-
-        import json
+        user = result.user
         return AuthPayload(
             token=result.token,
             user=UserType(
-                id=strawberry.ID(str(result.user.id)),
-                email=result.user.email,
-                shop_id=strawberry.ID(str(result.user.shop_id)),
-                created_at=result.user.created_at,
-                preferences=json.dumps(result.user.preferences or {}),
-            ),
+                id=strawberry.ID(str(user.id)),
+                email=user.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                current_organization_id=strawberry.ID(str(user.current_organization_id)) if user.current_organization_id else None,
+                shop_id=strawberry.ID(str(user.shop_id)) if user.shop_id else None,
+                created_at=user.created_at,
+                preferences=json.dumps(user.preferences or {}),
+                organizations=[
+                    OrganizationMemberType(
+                        organization_id=strawberry.ID(str(m.organization_id)),
+                        user_id=strawberry.ID(str(m.user_id)),
+                        role=m.role.value if hasattr(m.role, 'value') else str(m.role),
+                        permissions=json.dumps(m.permissions or {}),
+                        organization=OrganizationType(
+                            id=strawberry.ID(str(m.organization.id)),
+                            name=m.organization.name,
+                            slug=m.organization.slug,
+                            plan=m.organization.plan,
+                            subscription_status=m.organization.subscription_status,
+                            created_at=m.organization.created_at,
+                            settings=json.dumps(m.organization.settings or {})
+                        )
+                    ) for m in user.organizations
+                ]
+            )
+        )
+
+    @strawberry.mutation
+    async def switch_organization(self, info, organization_id: strawberry.ID) -> AuthPayload:
+        """Bascule vers une autre organisation et rafraîchit le token."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        auth_service = AuthService(info.context.db)
+        user = await auth_service.update_user(
+            user_id=info.context.user_id,
+            current_organization_id=uuid.UUID(str(organization_id))
+        )
+        
+        from src.core.security import create_access_token
+        token = create_access_token({
+            "user_id": str(user.id),
+            "org_id": str(organization_id),
+            "email": user.email
+        })
+        
+        from src.modules.auth.schemas import UserSchema
+        user_schema = UserSchema.model_validate(user)
+
+        return AuthPayload(
+            token=token,
+            user=UserType(
+                id=strawberry.ID(str(user_schema.id)),
+                email=user_schema.email,
+                first_name=user_schema.first_name,
+                last_name=user_schema.last_name,
+                current_organization_id=strawberry.ID(str(user_schema.current_organization_id)) if user_schema.current_organization_id else None,
+                shop_id=strawberry.ID(str(user_schema.shop_id)) if user_schema.shop_id else None,
+                created_at=user_schema.created_at,
+                preferences=json.dumps(user_schema.preferences or {}),
+                organizations=[
+                    OrganizationMemberType(
+                        organization_id=strawberry.ID(str(m.organization_id)),
+                        user_id=strawberry.ID(str(m.user_id)),
+                        role=m.role.value if hasattr(m.role, 'value') else str(m.role),
+                        permissions=json.dumps(m.permissions or {}),
+                        organization=OrganizationType(
+                            id=strawberry.ID(str(m.organization.id)),
+                            name=m.organization.name,
+                            slug=m.organization.slug,
+                            plan=m.organization.plan,
+                            subscription_status=m.organization.subscription_status,
+                            created_at=m.organization.created_at,
+                            settings=json.dumps(m.organization.settings or {})
+                        )
+                    ) for m in user_schema.organizations
+                ]
+            )
         )
 
     @strawberry.mutation
     async def update_profile(self, info, input: UpdateProfileInput) -> UserType:
-        """
-        Met à jour le profil de l'utilisateur (US 11.2).
-        """
+        """Maj profil multi-tenant."""
         if not info.context.user_id:
             raise UnauthenticatedException()
 
         auth_service = AuthService(info.context.db)
+        user = await auth_service.get_user_by_id(info.context.user_id)
+        if not user:
+            raise UnauthenticatedException()
+            
+        # Clean current preferences (Relocation Sprint 16)
+        # On supprime les anciennes clés qui ont été déplacées vers l'organisation
+        current_prefs = dict(user.preferences or {})
+        current_prefs.pop("currency", None)
+        current_prefs.pop("is_mutualized", None)
         
-        # Préférences extraites de l'input
-        prefs = {}
-        if input.email_alerts_enabled is not None:
-            prefs["email_alerts_enabled"] = input.email_alerts_enabled
-        if input.min_severity is not None:
-            prefs["min_severity"] = input.min_severity
-        if input.currency is not None:
-            prefs["currency"] = input.currency
-        if input.is_mutualized is not None:
-            prefs["is_mutualized"] = input.is_mutualized
+        # New base prefs
+        prefs = current_prefs
+        if input.email_alerts_enabled is not None: prefs["email_alerts_enabled"] = input.email_alerts_enabled
+        if input.min_severity is not None: prefs["min_severity"] = input.min_severity
             
         user = await auth_service.update_user(
             user_id=info.context.user_id,
             email=input.email,
-            preferences=prefs if prefs else None
+            preferences=prefs
         )
 
-        import json
         return UserType(
             id=strawberry.ID(str(user.id)),
             email=user.email,
-            shop_id=strawberry.ID(str(user.shop_id)),
+            first_name=user.first_name,
+            last_name=user.last_name,
+            current_organization_id=strawberry.ID(str(user.current_organization_id)) if user.current_organization_id else None,
+            shop_id=strawberry.ID(str(user.shop_id)) if user.shop_id else None,
             created_at=user.created_at,
             preferences=json.dumps(user.preferences or {}),
+            organizations=[]
+        )
+
+    @strawberry.mutation
+    async def register(self, info, input: RegisterInput) -> AuthPayload:
+        """Inscription manuelle."""
+        auth_service = AuthService(info.context.db)
+        result = await auth_service.register(
+            email=input.email,
+            password=input.password,
+            first_name=input.first_name,
+            last_name=input.last_name
+        )
+        
+        user = result.user
+        return AuthPayload(
+            token=result.token,
+            user=UserType(
+                id=strawberry.ID(str(user.id)),
+                email=user.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                current_organization_id=strawberry.ID(str(user.current_organization_id)),
+                created_at=user.created_at,
+                preferences=json.dumps(user.preferences or {}),
+                organizations=[]
+            )
+        )
+
+    @strawberry.mutation
+    async def googleLogin(self, info, input: GoogleLoginInput) -> AuthPayload:
+        """Auth Google avec vérification de token."""
+        # Note: Dans un vrai SaaS on utiliserait google-auth-library
+        # Ici on simule ou on utilise l'endpoint tokeninfo pour rester léger
+        try:
+            resp = requests.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={input.id_token}")
+            if resp.status_code != 200:
+                raise MichiException(message="Token Google invalide", code=ErrorCode.UNAUTHENTICATED)
+            
+            payload = resp.json()
+            google_id = payload["sub"]
+            email = payload["email"]
+            first_name = payload.get("given_name")
+            last_name = payload.get("family_name")
+            
+            auth_service = AuthService(info.context.db)
+            result = await auth_service.login_with_google(
+                google_id=google_id,
+                email=email,
+                first_name=first_name,
+                last_name=last_name
+            )
+            
+            user = result.user
+            return AuthPayload(
+                token=result.token,
+                user=UserType(
+                    id=strawberry.ID(str(user.id)),
+                    email=user.email,
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                    current_organization_id=strawberry.ID(str(user.current_organization_id)),
+                    created_at=user.created_at,
+                    preferences=json.dumps(user.preferences or {}),
+                    organizations=[]
+                )
+            )
+        except Exception as e:
+            logger.error(f"Google login error: {e}")
+            raise MichiException(message="Erreur lors de l'authentification Google", code=ErrorCode.UNAUTHENTICATED)
+
+    @strawberry.mutation
+    async def updateOrganization(self, info, input: UpdateOrganizationInput) -> OrganizationType:
+        """Met à jour les réglages de l'organisation active."""
+        if not info.context.user_id or not info.context.org_id:
+            raise UnauthenticatedException()
+            
+        from src.modules.auth.models import Organization
+        from sqlalchemy import select
+        
+        # 1. Fetch organization
+        result = await info.context.db.execute(
+            select(Organization).where(Organization.id == uuid.UUID(str(info.context.org_id)))
+        )
+        org = result.scalar_one_or_none()
+        if not org:
+            raise MichiException(message="Organisation non trouvée", code=ErrorCode.NOT_FOUND)
+            
+        # 2. Update fields
+        if input.name:
+            org.name = input.name
+            
+        # 3. Update settings (JSONB)
+        current_settings = dict(org.settings or {})
+        if input.currency is not None:
+            current_settings["currency"] = input.currency
+        if input.is_mutualized is not None:
+            current_settings["is_mutualized"] = input.is_mutualized
+            
+        org.settings = current_settings
+        
+        await info.context.db.commit()
+        
+        return OrganizationType(
+            id=strawberry.ID(str(org.id)),
+            name=org.name,
+            slug=org.slug,
+            plan=org.plan,
+            subscription_status=org.subscription_status,
+            created_at=org.created_at,
+            settings=json.dumps(org.settings or {})
         )
 
     @strawberry.mutation
     async def change_password(self, info, input: ChangePasswordInput) -> bool:
-        """
-        Change le mot de passe de l'utilisateur.
-        """
+        """Change le mot de passe de l'utilisateur."""
         if not info.context.user_id:
             raise UnauthenticatedException()
 
@@ -180,79 +461,162 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         )
 
     @strawberry.mutation(name="toggleSource")
-    async def toggle_source(self, info, platform: str, connected: bool) -> SourceType:
-        """Gestion réelle du cycle de vie d'une source (Sprint 17)."""
-        if not info.context.user_id:
+    async def toggle_source(self, info, platform: str, connected: bool, store_id: Optional[strawberry.ID] = None) -> SourceType:
+        """Gère la connexion/déconnexion d'un Store."""
+        if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()
             
-        from src.modules.auth.service import AuthService
-        from src.modules.inventory.models import SourceConnection, PlatformSource, Product, SalesLog, Alert
-        from src.modules.forecasting.models import Prediction
+        from src.modules.inventory.models import Store, PlatformSource, Product
         from sqlalchemy import select, delete
-        from datetime import datetime
         
-        user = await AuthService(info.context.db).get_user_by_id(info.context.user_id)
-        shop_id = user.shop_id
-        
-        # 1. Récupérer ou créer la connexion
-        plat_enum = PlatformSource(platform)
-        result = await info.context.db.execute(
-            select(SourceConnection).where(
-                SourceConnection.shop_id == shop_id,
-                SourceConnection.platform == plat_enum
-            )
-        )
-        conn = result.scalar_one_or_none()
-        
-        if not conn:
-            conn = SourceConnection(shop_id=shop_id, platform=plat_enum)
-            info.context.db.add(conn)
-            
-        conn.connected = connected
-        
-        # 2. Logique destructive ou synchronisation
-        if not connected:
-            # DÉCONNEXION : Supprimer toutes les données liées à cette source
-            # On récupère les IDs des produits pour supprimer les SalesLogs/Alerts/Predictions
-            # (Note: cascade=all, delete-orphan dans les modèles devrait gérer cela, 
-            # mais on le fait explicitement par sécurité pour la plateforme cible)
-            
-            # Suppression des produits de cette plateforme pour cette boutique
-            # La cascade SQL/SQLAlchemy via relationship(cascade="all, delete-orphan") fera le reste
-            await info.context.db.execute(
-                delete(Product).where(
-                    Product.shop_id == shop_id,
-                    Product.source_platform == plat_enum
+        # 1. Récupérer ou créer le Store
+        plat_enum = PlatformSource(platform.upper())
+        if store_id:
+            result = await info.context.db.execute(select(Store).where(Store.id == uuid.UUID(str(store_id))))
+            store = result.scalar_one_or_none()
+        else:
+            result = await info.context.db.execute(
+                select(Store).where(
+                    Store.organization_id == uuid.UUID(str(info.context.org_id)),
+                    Store.platform == plat_enum
                 )
             )
+            store = result.scalar_one_or_none()
+        
+        if not store:
+            store = Store(
+                organization_id=uuid.UUID(str(info.context.org_id)),
+                platform=plat_enum,
+                name=platform.capitalize()
+            )
+            info.context.db.add(store)
         else:
-            # CONNEXION : Déclenchement automatique de la synchronisation (Mock/Real)
-            conn.last_sync_at = datetime.utcnow()
-            conn.health_status = "HEALTHY"
+            # Enforce standardized naming even for existing records
+            store.name = platform.capitalize()
             
-            from src.modules.inventory.resolvers import InventoryMutation
-            # On appelle le trigger de sync interne (serait idéalement un service)
-            # await InventoryMutation().trigger_omnichannel_sync(info)
-            # Pour l'instant on simule l'appel au service global qui sera implémenté en phase 3
+        store.connected = connected
+        
+        # 2. Logique destructive
+        if not connected:
+            logger.warning(f"Disconnecting {platform} for org {info.context.org_id}. Deleting associated products.")
+            await info.context.db.execute(delete(Product).where(Product.store_id == store.id))
             
         await info.context.db.commit()
         
-        name_map = {"shopify": "Shopify", "woocommerce": "WooCommerce", "amazon": "Amazon"}
         return SourceType(
-            id=strawberry.ID(str(conn.id)),
-            name=name_map.get(platform, platform.capitalize()),
-            platform=platform,
-            connected=conn.connected,
-            last_sync_at=conn.last_sync_at,
-            health_status=conn.health_status
+            id=strawberry.ID(str(store.id)),
+            name=store.name,
+            platform=store.platform.value,
+            connected=store.connected,
+            last_sync_at=store.last_sync_at,
+            health_status=store.health_status,
+            organization_id=strawberry.ID(str(store.organization_id))
         )
 
+    @strawberry.mutation(name="inviteMember")
+    async def invite_member(self, info, email: str, role: str) -> InvitationType:
+        """Invite un nouveau collaborateur par email."""
+        if not info.context.user_id or not info.context.org_id:
+            raise UnauthenticatedException()
+            
+        from src.modules.auth.models import UserRole
+        
+        service = InvitationService(info.context.db)
+        invitation = await service.create_invitation(
+            email=email,
+            organization_id=uuid.UUID(str(info.context.org_id)),
+            role=UserRole(role.lower()),
+            invited_by_id=uuid.UUID(str(info.context.user_id))
+        )
+        
+        await info.context.db.commit()
+        
+        return InvitationType(
+            id=strawberry.ID(str(invitation.id)),
+            email=invitation.email,
+            organization_id=strawberry.ID(str(invitation.organization_id)),
+            role=invitation.role.value,
+            status=invitation.status.value,
+            code=invitation.code,
+            created_at=invitation.created_at,
+            expires_at=invitation.expires_at
+        )
 
-from .extensions import SQLAlchemySessionExtension
+    @strawberry.mutation(name="acceptInvitation")
+    async def accept_invitation(self, info, code: str) -> bool:
+        """Accepte une invitation via son code secret."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        service = InvitationService(info.context.db)
+        success = await service.accept_invitation(
+            code=code,
+            user_id=uuid.UUID(str(info.context.user_id))
+        )
+        
+        await info.context.db.commit()
+        return success
+
+    @strawberry.mutation(name="deleteInvitation")
+    async def delete_invitation(self, info, invitation_id: strawberry.ID) -> bool:
+        """Annule une invitation pendante."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        service = InvitationService(info.context.db)
+        success = await service.delete_invitation(uuid.UUID(str(invitation_id)))
+        
+        await info.context.db.commit()
+        return success
+
+    @strawberry.mutation(name="removeMember")
+    async def remove_member(self, info, user_id: strawberry.ID) -> bool:
+        """Retire un membre de l'organisation."""
+        if not info.context.user_id or not info.context.org_id:
+            raise UnauthenticatedException()
+            
+        auth_service = AuthService(info.context.db)
+        success = await auth_service.remove_member(
+            organization_id=uuid.UUID(str(info.context.org_id)),
+            user_id=uuid.UUID(str(user_id))
+        )
+        await info.context.db.commit()
+        return success
+
+    @strawberry.mutation(name="updateMemberRole")
+    async def update_member_role(self, info, user_id: strawberry.ID, role: str) -> bool:
+        """Met à jour le rôle d'un membre."""
+        if not info.context.user_id or not info.context.org_id:
+            raise UnauthenticatedException()
+            
+        from src.modules.auth.models import UserRole
+        auth_service = AuthService(info.context.db)
+        member = await auth_service.update_member_role(
+            organization_id=uuid.UUID(str(info.context.org_id)),
+            user_id=uuid.UUID(str(user_id)),
+            role=UserRole(role.lower())
+        )
+        await info.context.db.commit()
+        return member is not None
+
+    @strawberry.mutation(name="toggleUserStatus")
+    async def toggle_user_status(self, info, user_id: strawberry.ID, active: bool) -> bool:
+        """Active ou désactive un utilisateur (Ban)."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        auth_service = AuthService(info.context.db)
+        user = await auth_service.toggle_user_status(
+            user_id=uuid.UUID(str(user_id)),
+            is_active=active
+        )
+        await info.context.db.commit()
+        return user is not None
+
 
 # Schema final
 schema = strawberry.Schema(
     query=Query,
     mutation=Mutation,
-    extensions=[SQLAlchemySessionExtension],
+    extensions=[],
 )

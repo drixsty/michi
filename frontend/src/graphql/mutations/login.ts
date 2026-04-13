@@ -10,7 +10,16 @@ export const LOGIN = gql`
       user {
         id
         email
-        shopId
+        currentOrganizationId
+        organizations {
+          organizationId
+          role
+          organization {
+            id
+            name
+            slug
+          }
+        }
       }
     }
   }

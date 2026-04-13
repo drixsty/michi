@@ -24,11 +24,13 @@ import { StatsOverview } from '@/components/dashboard/StatsOverview';
 import { ProductTable } from '@/components/dashboard/ProductTable';
 import { ConnectorsGrid } from '@/components/dashboard/ConnectorsGrid';
 import { DecisionsView } from '@/components/dashboard/DecisionsView';
+import { OrganizationView } from '@/components/dashboard/OrganizationView';
 
 import OnboardingWizard from '@/components/dashboard/OnboardingWizard';
 
 import { GET_OMNICHANNEL_INVENTORY } from '@/graphql/queries/getOmnichannelInventory';
 import type { Product, OmnichannelProduct } from '@/types/product';
+import { useStore } from '@/context/StoreContext';
 
 const DELETE_ALERT = gql`
   mutation DeleteAlert($id: ID!) {
@@ -36,9 +38,15 @@ const DELETE_ALERT = gql`
   }
 `;
 
-function DashboardContent() {
-  const router = useRouter();
+export function DashboardContent() {
+  const [isMounted, setIsMounted] = React.useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -52,11 +60,24 @@ function DashboardContent() {
     if (!onboarded) setShowOnboarding(true);
   }, []);
 
+  const { currentOrganization } = useStore();
+
   // -- Queries --
   const { data: meData, loading: meLoading, error: meError } = useQuery(GET_ME);
-  const { data: omnichannelData, loading: productsLoading, refetch: refetchProducts } = useQuery(GET_OMNICHANNEL_INVENTORY);
-  const { data: statsData, refetch: refetchStats } = useQuery(GET_DASHBOARD_STATS);
-  const { data: alertsData, refetch: refetchAlerts } = useQuery(GET_UNREAD_ALERTS, { pollInterval: 30000 });
+  
+  // Wait for meData to be available before fetching other protected resources
+  const isAuthReady = !meLoading && !!meData;
+
+  const { data: omnichannelData, loading: productsLoading, refetch: refetchProducts } = useQuery(GET_OMNICHANNEL_INVENTORY, {
+    skip: !currentOrganization || !isAuthReady
+  });
+  const { data: statsData, refetch: refetchStats } = useQuery(GET_DASHBOARD_STATS, {
+    skip: !currentOrganization || !isAuthReady
+  });
+  const { data: alertsData, refetch: refetchAlerts } = useQuery(GET_UNREAD_ALERTS, { 
+    skip: !currentOrganization || !isAuthReady,
+    pollInterval: 30000 
+  });
 
   // -- Mutations --
   const [triggerSync, { loading: syncing }] = useMutation(TRIGGER_MOCK_DATA_SYNC, {
@@ -147,11 +168,10 @@ function DashboardContent() {
     }
   }, [meError, router]);
 
-  // Loading state with beautiful skeleton
   // Loading state with beautiful spinner
-  if (meLoading && !meData) return (
-    <LoadingState fullScreen message="initialisation michi..." />
-  );
+  if (!isMounted || (meLoading && !meData)) {
+    return <LoadingState fullScreen message="initialisation michi..." />;
+  }
 
   const tabConfigs: Record<string, { title: string; subtitle: string }> = {
     overview: { 
@@ -173,6 +193,10 @@ function DashboardContent() {
     profile: { 
       title: "Mon Profil", 
       subtitle: "Gérez vos préférences de notification et sécurité" 
+    },
+    organization: {
+      title: "Mon Organisation",
+      subtitle: "Gérez vos collaborateurs et invitations d'accès"
     }
   };
 
@@ -184,6 +208,7 @@ function DashboardContent() {
       <AnimatePresence>
         {showOnboarding && (
           <OnboardingWizard 
+            userName={meData?.me?.firstName}
             onSync={() => triggerSync() as any} 
             onComplete={() => setShowOnboarding(false)} 
           />
@@ -202,7 +227,9 @@ function DashboardContent() {
         title={title}
         subtitle={subtitle}
         syncing={syncing}
-        onSync={() => triggerSync()}
+        onSync={() => {
+            triggerSync();
+        }}
         onExport={activeTab === 'decisions' ? () => {} : handleExport}
         showActions={activeTab === 'inventory' || activeTab === 'decisions'}
       />
@@ -235,7 +262,7 @@ function DashboardContent() {
                     <div className="divide-y divide-slate-50">
                       {alertsData.unreadAlerts.slice(0, 5).map((a: any) => (
                         <div 
-                          key={a.id} 
+                          key={`alert-${a.id}`} 
                           className="flex gap-3 items-center px-2 py-3 transition-all group relative cursor-pointer hover:bg-slate-50 rounded-lg"
                         >
                           <div className={cn(
@@ -315,7 +342,7 @@ function DashboardContent() {
                     <div className="divide-y divide-slate-50">
                         {omnichannelData.omnichannelInventory.slice(0, 5).map((p: any) => (
                         <div 
-                          key={p.id} 
+                          key={`prod-${p.id || p.sku}`} 
                           onClick={() => setSelectedProductId(p.id || p.sku)}
                           className="group relative flex items-center justify-between px-2 py-3 hover:bg-slate-50 transition-all cursor-pointer rounded-lg"
                         >
@@ -411,6 +438,8 @@ function DashboardContent() {
         {activeTab === 'decisions' && (
           <DecisionsView />
         )}
+
+          {activeTab === 'organization' && <OrganizationView />}
       </div>
 
       <ProductQuickView 

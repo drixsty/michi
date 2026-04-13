@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const GET_UNREAD_ALERTS = gql`
-  query GetUnreadAlerts {
-    unreadAlerts {
+  query GetUnreadAlerts($storeId: ID) {
+    unreadAlerts(storeId: $storeId) {
       id
       productId
       type

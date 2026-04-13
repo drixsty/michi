@@ -12,12 +12,14 @@ import {
   LogOut,
   Settings,
   Database,
-  BarChart3
+  BarChart3,
+  Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@apollo/client';
 import { GET_UNREAD_ALERTS } from '@/graphql/queries/getUnreadAlerts';
 import { NotificationPanel } from '../dashboard/NotificationPanel';
+import { OrgSwitcher } from './OrgSwitcher';
 
 const navItems = [
   { id: 'overview', label: 'Aperçu', icon: LayoutDashboard, href: '/dashboard' },
@@ -34,10 +36,15 @@ function NavLinks() {
   return (
     <div className="hidden md:flex items-center gap-1 flex-1">
       {navItems.map((item) => {
-        const isActive = (item.id === 'inventory' && pathname.startsWith('/dashboard/product')) ||
-                        (item.id === 'decisions' && activeTab === 'decisions') ||
-                        (item.id === 'overview' && activeTab === 'overview' && !pathname.startsWith('/dashboard/product')) || 
-                        (activeTab === item.id);
+        const isProductDetail = pathname.startsWith('/dashboard/product');
+        const isDashboardHome = pathname === '/dashboard';
+        
+        // Un item est actif si :
+        // 1. C'est l'inventaire et on est dans un détail produit
+        // 2. Le tab correspond à l'ID (seulement si on est sur /dashboard)
+        // 3. C'est 'overview' et on est sur /dashboard sans paramètres (ou tab=overview)
+        const isActive = (item.id === 'inventory' && isProductDetail) ||
+                        (isDashboardHome && activeTab === item.id);
         const Icon = item.icon;
         
         return (
@@ -52,7 +59,7 @@ function NavLinks() {
             )}
           >
             <Icon className={cn("h-4 w-4 transition-colors", isActive ? "text-primary" : "group-hover:text-foreground")} />
-            <span className="text-sentence">{item.label}</span>
+            <span className="text-sm font-medium">{item.label}</span>
           </Link>
         );
       })}
@@ -99,12 +106,9 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center gap-8">
           
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary/20 transition-transform active:scale-95 cursor-pointer">
-              道
-            </div>
-            <span className="text-xl font-bold tracking-tight text-foreground hidden lg:block">Michi</span>
+          {/* Logo & Org Switcher */}
+          <div className="flex items-center gap-4 shrink-0">
+            <OrgSwitcher />
           </div>
 
           {/* Navigation Links wrapped in Suspense for useSearchParams safety */}
@@ -112,23 +116,29 @@ export function Navbar() {
             <NavLinks />
           </Suspense>
 
-          {/* Search Bar & Actions */}
-          <div className="flex items-center gap-4 flex-1 justify-end max-w-md">
-            <div className="relative w-full hidden sm:block group">
+          {/* Action Area: Search & Notifications & Profile */}
+          <div className="flex items-center gap-4 flex-1 justify-end">
+            
+            <div className="relative w-full hidden md:block group max-w-md transition-all focus-within:max-w-xl">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
               <input
                 type="text"
                 value={searchValue}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Rechercher un produit..."
-                className="w-full h-10 pl-10 pr-4 rounded-lg bg-slate-100/50 border border-transparent text-xs transition-colors focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none placeholder:text-muted-foreground/50"
+                placeholder="Rechercher un produit, une commande..."
+                className="w-full h-10 pl-10 pr-4 rounded-lg bg-slate-100/50 border border-transparent text-xs transition-all focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 focus:ring-0 focus:outline-none placeholder:text-muted-foreground/50 shadow-sm"
               />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-white px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                  <span className="text-xs">⌘</span>K
+                </kbd>
+              </div>
             </div>
             
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 ml-2">
               <button 
                 onClick={() => setIsNotificationOpen(true)}
-                className="p-2 text-muted-foreground hover:text-foreground transition-colors relative"
+                className="p-2 text-muted-foreground hover:text-foreground transition-all relative hover:bg-accent rounded-lg"
               >
                 <Bell className="h-5 w-5" />
                 {hasUnread && (
@@ -138,8 +148,7 @@ export function Navbar() {
               
               <div className="relative group/user">
                 <button 
-                  onClick={() => router.push('/dashboard/profile')}
-                  className="w-9 h-9 rounded-full bg-accent border border-border flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary/30 transition-all ml-1"
+                  className="w-9 h-9 rounded-full bg-accent border border-border flex items-center justify-center overflow-hidden cursor-default ml-1"
                 >
                   <User className="h-5 w-5 text-muted-foreground" />
                 </button>
@@ -149,6 +158,10 @@ export function Navbar() {
                   <Link href="/dashboard/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span>Mon profil</span>
+                  </Link>
+                  <Link href="/dashboard?tab=organization" className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <span>Mon organisation</span>
                   </Link>
                   <div className="h-px bg-border my-1" />
                   <button 

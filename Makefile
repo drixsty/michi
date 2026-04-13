@@ -31,6 +31,10 @@ seed: ## Seed la DB (crée tables + user de dev)
 	@echo "🌱 Seeding database..."
 	cd backend && python -m alembic upgrade head && python scripts/seed_dev_data.py
 
+seed-v2: ## Seed la DB v2 (SaaS Multi-Tenant Enterprise) [S16]
+	@echo "🌱 Seeding database v2 (SaaS)..."
+	cd backend && set PYTHONPATH=. && python scripts/seed_v2.py
+
 seed-demo: ## Régénère le dataset mock démo (50 produits + 365j historique)
 	@echo "🌱 Seeding demo data..."
 	cd backend && python scripts/seed_demo.py

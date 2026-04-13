@@ -75,18 +75,7 @@ class ForecastingQuery:
         product_id: strawberry.ID,
         limit: int = 365,
     ) -> List[CleanedDemandType]:
-        """
-        Retourne la demande nettoyée pour un produit.
-        Nécessite authentication (JWT).
-
-        Example:
-            query {
-              cleanedDemand(productId: "uuid", limit: 30) {
-                date rawUnitsSold correctedUnitsSold isStockout isOutlier correctionType
-              }
-            }
-        """
-        if not info.context.shop_id:
+        if not info.context.user_id:
             raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
@@ -108,24 +97,15 @@ class ForecastingQuery:
         ]
 
     @strawberry.field
-    async def predictions(self, info) -> List[PredictionType]:
-        """
-        Retourne les prédictions pour tous les produits du shop,
-        triées par date de rupture prévisionnelle (les plus urgentes en premier).
-        Nécessite authentication (JWT).
-
-        Example:
-            query {
-              predictions {
-                productId runRate daysOfStock predictedStockoutDate reorderQuantity
-              }
-            }
-        """
-        if not info.context.shop_id:
+    async def predictions(self, info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
+        if not info.context.user_id:
             raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
-        rows = await service.get_predictions(info.context.shop_id)
+        rows = await service.get_predictions(
+            store_id=str(store_id) if store_id else None,
+            organization_id=str(info.context.org_id) if not store_id else None
+        )
 
         return [_prediction_to_type(r) for r in rows]
 
@@ -135,10 +115,7 @@ class ForecastingQuery:
         info,
         product_id: strawberry.ID,
     ) -> Optional[PredictionType]:
-        """
-        Retourne la prédiction pour un produit spécifique, ou null si non calculée.
-        """
-        if not info.context.shop_id:
+        if not info.context.user_id:
             raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
@@ -149,15 +126,15 @@ class ForecastingQuery:
         return _prediction_to_type(row)
 
     @strawberry.field
-    async def dashboard_kpis(self, info) -> DashboardKPIType:
-        """
-        Retourne les indicateurs clés de performance du shop (US 3.5).
-        """
-        if not info.context.shop_id:
+    async def dashboard_kpis(self, info, store_id: Optional[strawberry.ID] = None) -> DashboardKPIType:
+        if not info.context.user_id:
             raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
-        res = await service.get_dashboard_kpis(info.context.shop_id)
+        res = await service.get_dashboard_kpis(
+            store_id=str(store_id) if store_id else None,
+            organization_id=str(info.context.org_id) if not store_id else None
+        )
 
         return DashboardKPIType(
             total_products=res.total_products,
@@ -168,15 +145,15 @@ class ForecastingQuery:
         )
 
     @strawberry.field
-    async def replenishment_alerts(self, info) -> List[PredictionType]:
-        """
-        Retourne les alertes de réapprovisionnement (US 3.4).
-        """
-        if not info.context.shop_id:
+    async def replenishment_alerts(self, info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
+        if not info.context.user_id:
             raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
-        rows = await service.get_replenishment_alerts(info.context.shop_id)
+        rows = await service.get_replenishment_alerts(
+            store_id=str(store_id) if store_id else None,
+            organization_id=str(info.context.org_id) if not store_id else None
+        )
 
         return [_prediction_to_type(r) for r in rows]
 
@@ -184,24 +161,12 @@ class ForecastingQuery:
 @strawberry.type
 class ForecastingMutation:
     @strawberry.mutation
-    async def run_cleaning_pipeline(self, info) -> PipelineResultType:
-        """
-        Exécute la pipeline OOS + IQR sur tous les produits du shop.
-        Nécessite authentication (JWT).
-
-        Example:
-            mutation {
-              runCleaningPipeline {
-                success productsProcessed rowsWritten
-                stockoutCorrections outlierCorrections message
-              }
-            }
-        """
-        if not info.context.shop_id:
+    async def run_cleaning_pipeline(self, info, store_id: strawberry.ID) -> PipelineResultType:
+        if not info.context.user_id:
             raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
-        result = await service.run_cleaning_pipeline(info.context.shop_id)
+        result = await service.run_cleaning_pipeline(str(store_id))
 
         return PipelineResultType(
             success=result.success,
@@ -213,25 +178,12 @@ class ForecastingMutation:
         )
 
     @strawberry.mutation
-    async def run_prediction_pipeline(self, info) -> PredictionRunResultType:
-        """
-        Calcule le run rate + prédictions (stockout date + reorder qty) pour
-        tous les produits du shop.
-        Nécessite que runCleaningPipeline ait été exécuté au préalable.
-        Nécessite authentication (JWT).
-
-        Example:
-            mutation {
-              runPredictionPipeline {
-                success productsProcessed message
-              }
-            }
-        """
-        if not info.context.shop_id:
+    async def run_prediction_pipeline(self, info, store_id: strawberry.ID) -> PredictionRunResultType:
+        if not info.context.user_id:
             raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
-        result = await service.run_prediction_pipeline(info.context.shop_id)
+        result = await service.run_prediction_pipeline(str(store_id))
 
         return PredictionRunResultType(
             success=result.success,

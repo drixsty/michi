@@ -1,0 +1,312 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useMutation, gql } from '@apollo/client';
+import { 
+  X, 
+  Trash2, 
+  ShieldAlert, 
+  Ban, 
+  CheckCircle2, 
+  AlertCircle,
+  Mail,
+  Calendar,
+  Shield,
+  User,
+  Clock,
+  RefreshCw,
+  MoreVertical,
+  ChevronDown
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const REMOVE_MEMBER = gql`
+  mutation RemoveMember($userId: ID!) {
+    removeMember(user_id: $userId)
+  }
+`;
+
+const UPDATE_MEMBER_ROLE = gql`
+  mutation UpdateMemberRole($userId: ID!, $role: String!) {
+    updateMemberRole(user_id: $userId, role: $role)
+  }
+`;
+
+const TOGGLE_USER_STATUS = gql`
+  mutation ToggleUserStatus($userId: ID!, $active: Boolean!) {
+    toggleUserStatus(user_id: $userId, active: $active)
+  }
+`;
+
+const DELETE_INVITATION = gql`
+  mutation DeleteInvitation($id: ID!) {
+    deleteInvitation(invitationId: $id)
+  }
+`;
+
+interface MemberDetailPanelProps {
+  member?: any;
+  invitation?: any;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export function MemberDetailPanel({ member, invitation, isOpen, onClose, onSuccess }: MemberDetailPanelProps) {
+  const [showConfirm, setShowConfirm] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const [removeMember, { loading: removing }] = useMutation(REMOVE_MEMBER);
+  const [updateRole, { loading: updatingRole }] = useMutation(UPDATE_MEMBER_ROLE);
+  const [toggleStatus, { loading: togglingStatus }] = useMutation(TOGGLE_USER_STATUS);
+  const [deleteInvitation, { loading: deletingInvite }] = useMutation(DELETE_INVITATION);
+
+  if (!isOpen || (!member && !invitation)) return null;
+
+  const data = member || invitation;
+  const isMember = !!member;
+  
+  const email = isMember ? member.user.email : invitation.email;
+  const firstName = isMember ? member.user.firstName : '';
+  const lastName = isMember ? member.user.lastName : '';
+  const name = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : email.split('@')[0];
+  const role = data.role.toLowerCase();
+  
+  const handleAction = async (action: string) => {
+    try {
+      if (action === 'remove') {
+        const userId = isMember ? member.userId : null;
+        if (userId) {
+          await removeMember({ variables: { userId } });
+          setSuccessMsg("Membre retiré avec succès");
+        }
+      } else if (action === 'delete_invite') {
+        await deleteInvitation({ variables: { id: invitation.id } });
+        setSuccessMsg("Invitation annulée");
+      } else if (action === 'ban') {
+        await toggleStatus({ variables: { userId: member.userId, active: false } });
+        setSuccessMsg("Utilisateur banni");
+      } else if (action === 'unban') {
+        await toggleStatus({ variables: { userId: member.userId, active: true } });
+        setSuccessMsg("Bannissement levé");
+      }
+      
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+        setShowConfirm(null);
+        setSuccessMsg(null);
+      }, 1500);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+      setTimeout(() => setErrorMsg(null), 3000);
+    }
+  };
+
+  const handleChangeRole = async (newRole: string) => {
+    try {
+      await updateRole({ variables: { userId: member.userId, role: newRole } });
+      setSuccessMsg(`Rôle mis à jour : ${newRole}`);
+      setTimeout(() => {
+        onSuccess();
+        setSuccessMsg(null);
+      }, 1000);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  return (
+    <>
+      <div 
+        className="fixed inset-0 bg-slate-900/10 backdrop-blur-[1px] z-[110] animate-in fade-in duration-300"
+        onClick={onClose}
+      />
+      
+      <div className="fixed top-0 right-0 h-full w-full max-w-[380px] bg-white border-l border-border z-[120] animate-in slide-in-from-right duration-300 flex flex-col">
+        
+        {/* Header (No Scroll) */}
+        <div className="px-5 py-6 border-b border-border flex flex-col gap-4 relative shrink-0">
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 text-muted-foreground/40 hover:text-foreground transition-all rounded-lg hover:bg-muted"
+          >
+            <X className="h-4 w-4" />
+          </button>
+
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center text-muted-foreground text-2xl font-bold border border-border">
+              {name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground truncate">{name}</h2>
+              <p className="text-[13px] text-muted-foreground truncate">{email}</p>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+             <span className={cn(
+               "text-[11px] font-bold px-2.5 py-1 rounded-md border tracking-tight",
+               role === 'admin' ? "bg-red-50 text-red-600 border-red-100" :
+               role === 'manager' ? "bg-amber-50 text-amber-600 border-amber-100" :
+               "bg-emerald-50 text-emerald-600 border-emerald-100"
+             )}>
+               {role.charAt(0).toUpperCase() + role.slice(1)}
+             </span>
+             {isMember && (
+               <span className="text-[11px] font-bold px-2.5 py-1 rounded-md border text-muted-foreground bg-muted/50 border-border tracking-tight">
+                 Actif
+               </span>
+             )}
+             {!isMember && (
+               <span className="text-[11px] font-bold px-2.5 py-1 rounded-md border text-amber-600 bg-amber-50 border-amber-100 tracking-tight">
+                 En attente
+               </span>
+             )}
+          </div>
+        </div>
+
+        {/* Content (No visible scrollbar) */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-8 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          
+          {(successMsg || errorMsg) && (
+            <div className={cn(
+              "p-3 rounded-lg border text-[13px] flex items-center gap-3 animate-in fade-in slide-in-from-top-1",
+              successMsg ? "bg-emerald-50 border-emerald-100 text-emerald-700" : "bg-red-50 border-red-100 text-red-700"
+            )}>
+              {successMsg ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+              {successMsg || errorMsg}
+            </div>
+          )}
+
+          <section className="space-y-3">
+            <h3 className="text-[13px] font-semibold text-foreground px-1">Détails</h3>
+            <div className="space-y-3 bg-muted/10 rounded-lg p-4 border border-border">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 text-muted-foreground">
+                  <Mail className="h-3.5 w-3.5" />
+                  <span className="text-[13px] font-medium">Email</span>
+                </div>
+                <span className="text-[13px] font-semibold text-foreground truncate max-w-[180px]">{email}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 text-muted-foreground">
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span className="text-[13px] font-medium">{isMember ? 'Arrivée' : 'Invitation envoyée'}</span>
+                </div>
+                <span className="text-[13px] font-semibold text-foreground">
+                  {new Date(data.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {isMember && (
+            <section className="space-y-3">
+              <h3 className="text-[13px] font-semibold text-foreground px-1">Changer le rôle</h3>
+              <div className="grid grid-cols-1 gap-2">
+                {['ADMIN', 'MANAGER', 'VIEWER'].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => handleChangeRole(r)}
+                    className={cn(
+                      "flex items-center justify-between px-4 py-3 rounded-lg border transition-all text-left",
+                      role === r.toLowerCase() 
+                        ? "bg-primary/5 border-primary/20 ring-1 ring-primary/10" 
+                        : "bg-white border-border hover:bg-muted"
+                    )}
+                  >
+                    <div>
+                      <p className={cn("text-[13px] font-semibold", role === r.toLowerCase() ? "text-primary" : "text-foreground")}>
+                        {r === 'ADMIN' ? 'Administrateur' : r === 'MANAGER' ? 'Gestionnaire' : 'Lecteur'}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {r === 'ADMIN' ? 'Accès complet à tous les réglages' : 
+                         r === 'MANAGER' ? 'Gestion des stocks et commandes' : 
+                         'Accès en lecture seule'}
+                      </p>
+                    </div>
+                    {role === r.toLowerCase() && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="space-y-3 pt-6 border-t border-border">
+            <h3 className="text-[13px] font-semibold text-red-500 px-1">Zone de danger</h3>
+            
+            <div className="space-y-2">
+              {isMember ? (
+                <>
+                  <button 
+                    onClick={() => setShowConfirm('remove')}
+                    className="w-full h-11 flex items-center justify-between px-4 rounded-lg bg-red-50/50 border border-red-100 text-red-600 hover:bg-red-50 transition-all text-[13px] font-semibold"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Trash2 className="h-4 w-4" />
+                      Retirer de l'organisation
+                    </div>
+                  </button>
+
+                  <button 
+                    onClick={() => setShowConfirm('ban')}
+                    className="w-full h-11 flex items-center justify-between px-4 rounded-lg bg-foreground text-background hover:opacity-90 transition-all text-[13px] font-semibold"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Ban className="h-4 w-4" />
+                      Bannir le compte
+                    </div>
+                  </button>
+                </>
+              ) : (
+                <button 
+                  onClick={() => setShowConfirm('delete_invite')}
+                  className="w-full h-11 flex items-center justify-between px-4 rounded-lg bg-red-50/50 border border-red-100 text-red-600 hover:bg-red-50 transition-all text-[13px] font-semibold"
+                >
+                  <div className="flex items-center gap-3">
+                    <Trash2 className="h-4 w-4" />
+                    Annuler l'invitation
+                  </div>
+                </button>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* Confirmation Modal */}
+        {showConfirm && (
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-[130] flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-200">
+            <div className="w-12 h-12 rounded-3xl bg-red-100 flex items-center justify-center text-red-600 mb-4">
+              <ShieldAlert className="h-6 w-6" />
+            </div>
+            <h4 className="text-lg font-bold text-foreground mb-2">Confirmation requise</h4>
+            <p className="text-[13px] text-muted-foreground mb-8">
+              {showConfirm === 'remove' ? "L'accès de cet utilisateur sera révoqué immédiatement." : 
+               showConfirm === 'ban' ? "L'utilisateur ne pourra plus se connecter à aucun service Michi." :
+               "Cette invitation sera invalidée."}
+            </p>
+            <div className="flex flex-col w-full gap-2 px-10">
+              <button 
+                onClick={() => handleAction(showConfirm)}
+                disabled={removing || deletingInvite || togglingStatus}
+                className="w-full h-10 bg-red-600 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-2 hover:bg-red-700 transition-all"
+              >
+                {removing || deletingInvite || togglingStatus ? (
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : "Confirmer"}
+              </button>
+              <button 
+                onClick={() => setShowConfirm(null)}
+                className="w-full h-10 bg-muted text-foreground rounded-lg text-sm font-bold hover:bg-border transition-all"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}

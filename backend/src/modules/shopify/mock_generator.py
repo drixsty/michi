@@ -86,7 +86,7 @@ def _is_peak_day(d: date) -> bool:
     return False
 
 
-def generate_mock_products(count: int = 50, shop_id: Optional[str] = None, platform: Optional[any] = None) -> list[dict]:
+def generate_mock_products(count: int = 50, store_id: Optional[str] = None, platform: Optional[any] = None) -> list[dict]:
     """
     Génère une liste de produits mock pour un shop.
 
@@ -96,7 +96,7 @@ def generate_mock_products(count: int = 50, shop_id: Optional[str] = None, platf
         platform: Plateforme spécifique (PlatformSource) pour forcer le marquage.
     """
     rng = random.Random(RANDOM_SEED)
-    _shop_id = shop_id or str(uuid.uuid4())
+    _store_id = store_id or str(uuid.uuid4())
 
     catalog = PRODUCT_CATALOG[:count] if count <= len(PRODUCT_CATALOG) else (
         PRODUCT_CATALOG + [(f"Produit Extra {i}", "MISC") for i in range(count - len(PRODUCT_CATALOG))]
@@ -120,7 +120,7 @@ def generate_mock_products(count: int = 50, shop_id: Optional[str] = None, platf
         for p_form in selected_platforms:
             products.append({
                 "id": str(uuid.uuid4()),
-                "shop_id": _shop_id,
+                "store_id": _store_id,
                 "sku": sku,
                 "title": title,
                 "current_stock": rng.randint(0, 200),
@@ -207,7 +207,7 @@ def generate_mock_sales(product_id: str, sku: Optional[str] = None, days: int = 
     return sales_logs
 
 
-def generate_full_mock_dataset(count: int = 50, shop_id: Optional[str] = None, platform: Optional[any] = None) -> tuple[list[dict], list[dict]]:
+def generate_full_mock_dataset(count: int = 50, store_id: Optional[str] = None, platform: Optional[any] = None) -> tuple[list[dict], list[dict]]:
     """
     Génère le dataset complet : produits + historique ventes.
 
@@ -217,7 +217,7 @@ def generate_full_mock_dataset(count: int = 50, shop_id: Optional[str] = None, p
         platform: Plateforme forcée.
     """
     rng = random.Random(RANDOM_SEED)
-    products = generate_mock_products(count=count, shop_id=shop_id, platform=platform)
+    products = generate_mock_products(count=count, store_id=store_id, platform=platform)
 
     # 10-15% ont des ruptures
     stockout_count = int(count * rng.uniform(0.10, 0.15))

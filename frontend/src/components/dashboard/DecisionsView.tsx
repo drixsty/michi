@@ -33,10 +33,11 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
 import { RisksReportPanel } from '@/components/dashboard/RisksReportPanel';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { useStore } from '@/context/StoreContext';
 
 const GET_FINANCIAL_OVERVIEW = gql`
-  query GetFinancialOverview {
-    financialOverview {
+  query GetFinancialOverview($storeId: ID, $channel: String) {
+    financialOverview(storeId: $storeId, channel: $channel) {
       kpis {
         inventoryValueCost
         inventoryValueSale
@@ -62,6 +63,11 @@ const GET_FINANCIAL_OVERVIEW = gql`
       totalRunRate
       totalStock
       healthScore
+      activePlatforms
+      capitalBreakdown {
+        platform
+        value
+      }
       message
     }
   }
@@ -160,17 +166,15 @@ function ABCParetoChart({ risks }: { risks: any[] }) {
 }
 
 // ── Capital by Channel Donut ────────────────────────────────
-function ChannelDonut({ risks }: { risks: any[] }) {
+function ChannelDonut({ kpis, breakdown }: { kpis: any, breakdown: any[] }) {
   const channelData = useMemo(() => {
-    const map: Record<string, number> = {};
-    risks.forEach(r => {
-      const p = r.sourcePlatform || 'custom';
-      map[p] = (map[p] || 0) + (r.costPrice || 0) * Math.max(1, Math.round(r.runRate || 0));
-    });
-    return Object.entries(map).map(([name, value]) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1), value: Math.round(value)
-    })).sort((a, b) => b.value - a.value);
-  }, [risks]);
+    if (!breakdown || breakdown.length === 0) return [];
+    return breakdown.map(item => {
+      const p = item.platform.toLowerCase();
+      const name = p === 'amazon' ? 'Amazon' : p === 'shopify' ? 'Shopify' : p === 'woocommerce' ? 'WooCommerce' : p.charAt(0).toUpperCase() + p.slice(1);
+      return { name, value: item.value };
+    }).sort((a, b) => b.value - a.value);
+  }, [breakdown]);
   const total = channelData.reduce((acc, d) => acc + d.value, 0) || 1;
   const COLORS = ['hsl(262, 83%, 58%)', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
 
@@ -216,29 +220,47 @@ export function DecisionsView() {
   const [period, setPeriod] = useState('all');
   const [channel, setChannel] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isMounted, setIsMounted] = useState(false);
 
-  const { data, loading } = useQuery(GET_FINANCIAL_OVERVIEW, { pollInterval: 30000 });
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const { data: data, loading, error, refetch } = useQuery(GET_FINANCIAL_OVERVIEW, { 
+    variables: { 
+      channel: channel === 'all' ? null : channel 
+    },
+    errorPolicy: 'all',
+    fetchPolicy: 'cache-and-network',
+    pollInterval: 30000 
+  });
+
+  if (error) {
+    console.warn("[DecisionsView] Query handled partial or error state:", error.message);
+  }
 
   const overview = data?.financialOverview;
+  console.log("[DecisionsView] Organization Context Active");
   const kpis = overview?.kpis;
   const allRisks = overview?.topRisks || [];
   const totalRunRate = overview?.totalRunRate || 0;
   const totalStock = overview?.totalStock || 0;
   const healthScore = overview?.healthScore || 0;
   const currency = kpis?.currency || '€';
-  const platforms = [...new Set(allRisks.map((r: any) => r.sourcePlatform).filter(Boolean))] as string[];
+  const activePlatforms = overview?.activePlatforms || [];
+  const platforms = [...new Set(activePlatforms)] as string[];
 
   const risks = useMemo(() => allRisks.filter((r: any) => {
-    if (channel !== 'all' && r.sourcePlatform !== channel) return false;
+    const platformStr = (r.sourcePlatform || "").toLowerCase();
+    const currentChannel = channel.toLowerCase();
+    
+    if (currentChannel !== 'all' && !platformStr.split(',').map((s: string) => s.trim().toLowerCase()).includes(currentChannel)) return false;
     if (statusFilter === 'critical' && r.daysOfStock >= 14) return false;
     if (statusFilter === 'tense' && (r.daysOfStock < 14 || r.daysOfStock >= 30)) return false;
     if (statusFilter === 'healthy' && r.daysOfStock < 30) return false;
     if (period !== 'all') {
       const days = parseInt(period);
-      if (r.stockoutDate) {
-        const stockoutMs = new Date(r.stockoutDate).getTime() - Date.now();
-        if (stockoutMs > days * 86400000) return false;
-      } else if (r.riskValue === 0) return false;
+      if (r.daysOfStock > days) return false;
     }
     return true;
   }), [allRisks, channel, statusFilter, period]);
@@ -261,7 +283,7 @@ export function DecisionsView() {
     return totalRunRate * avgLead * (kpis?.inventoryValueCost / Math.max(1, totalStock) || 0);
   }, [totalRunRate, totalStock, kpis]);
 
-  if (loading) return <LoadingState fullScreen message="Génération des indicateurs stratégiques..." />;
+  if ((loading && !data) || !isMounted) return <LoadingState fullScreen message="Génération des indicateurs stratégiques..." />;
 
   const periods = [
     { value: 'all', label: 'Tout' },
@@ -294,7 +316,10 @@ export function DecisionsView() {
         <CustomSelect 
           options={[
             { value: 'all', label: 'Tous les canaux' },
-            ...platforms.map(p => ({ value: p, label: p.charAt(0).toUpperCase() + p.slice(1) }))
+            ...platforms.map(p => ({ 
+              value: p.toLowerCase(), 
+              label: p.toLowerCase().charAt(0).toUpperCase() + p.toLowerCase().slice(1) 
+            }))
           ]}
           value={channel}
           onChange={setChannel}
@@ -383,7 +408,7 @@ export function DecisionsView() {
               <h2 className="text-sm font-semibold text-foreground mb-1">Capital par canal</h2>
               <p className="text-[10px] text-muted-foreground font-medium mb-3">Répartition par plateforme.</p>
               <div className="flex-1 flex items-center">
-                <ChannelDonut risks={risks} />
+                <ChannelDonut kpis={kpis} breakdown={overview?.capitalBreakdown || []} />
               </div>
             </section>
           </div>

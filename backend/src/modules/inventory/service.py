@@ -30,7 +30,7 @@ class InventoryService:
         # 1. Charger les produits existants pour réconciliation
         s_uuid = uuid.UUID(str(shop_id))
         existing_result = await self.db.execute(
-            select(Product).where(Product.shop_id == s_uuid)
+            select(Product).where(Product.store_id == s_uuid)
         )
         existing_products = {p.sku: p for p in existing_result.scalars().all()}
 
@@ -48,7 +48,7 @@ class InventoryService:
                 processed_products.append(p)
             else:
                 # CREATE
-                p_data["shop_id"] = s_uuid
+                p_data["store_id"] = s_uuid
                 p_data["source_platform"] = platform
                 new_p = Product(**p_data)
                 self.db.add(new_p)
@@ -82,37 +82,39 @@ class InventoryService:
     async def get_products(self, shop_ids: List[str], product_id: str = None) -> List[Product]:
         """
         Lecture unifiée (Agnostique).
-        Supporte la recherche multi-boutiques (Organisation) et par ID unique.
+        Supporte la recherche multi-boutiques (Organisation) et par ID unique ou SKU.
         """
         from sqlalchemy.orm import selectinload
         import uuid
         
         # Conversion UUIDs
         s_uuids = [uuid.UUID(str(sid)) for sid in shop_ids]
-        p_uuid = uuid.UUID(str(product_id)) if product_id else None
+        
+        # Détecter si product_id est un UUID ou un SKU
+        p_uuid = None
+        p_sku = None
+        if product_id:
+            try:
+                p_uuid = uuid.UUID(str(product_id))
+            except ValueError:
+                p_sku = str(product_id)
  
+        stmt = (
+            select(Product)
+            .options(
+                selectinload(Product.prediction),
+                selectinload(Product.cleaned_demands),
+                selectinload(Product.supplier),
+                selectinload(Product.sales_logs)
+            )
+        )
+
         if p_uuid:
-            stmt = (
-                select(Product)
-                .options(
-                    selectinload(Product.prediction),
-                    selectinload(Product.cleaned_demands),
-                    selectinload(Product.supplier),
-                    selectinload(Product.sales_logs)
-                )
-                .where(Product.id == p_uuid)
-            )
+            stmt = stmt.where(Product.id == p_uuid)
+        elif p_sku:
+            stmt = stmt.where(Product.sku == p_sku, Product.store_id.in_(s_uuids))
         else:
-            stmt = (
-                select(Product)
-                .options(
-                    selectinload(Product.prediction),
-                    selectinload(Product.supplier),
-                    selectinload(Product.sales_logs)
-                )
-                .where(Product.shop_id.in_(s_uuids))
-                .order_by(Product.sku)
-            )
+            stmt = stmt.where(Product.store_id.in_(s_uuids)).order_by(Product.sku)
             
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
@@ -132,11 +134,15 @@ class InventoryService:
         """
         from sqlalchemy import select
         import uuid
-        
-        p_uuid = uuid.UUID(str(product_id))
-        result = await self.db.execute(
-            select(Product).where(Product.id == p_uuid)
-        )
+        try:
+            p_uuid = uuid.UUID(str(product_id))
+            stmt = select(Product).where(Product.id == p_uuid)
+        except ValueError:
+            # Fallback SKU lookup is risky for updates if not unique per shop, 
+            # but usually we use UUID for mutations.
+            raise Exception("UUID invalide pour la mise à jour des paramètres")
+
+        result = await self.db.execute(stmt)
         product = result.scalar_one_or_none()
         
         if not product:
@@ -160,6 +166,6 @@ class InventoryService:
         # Déclenchement du recalcul des prédictions (IA)
         from src.modules.forecasting.service import ForecastingService
         forecasting_service = ForecastingService(self.db)
-        await forecasting_service.run_prediction_pipeline(str(product.shop_id))
+        await forecasting_service.run_prediction_pipeline(str(product.store_id))
 
         return product

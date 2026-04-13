@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from loguru import logger
 
-from .models import Product, PlatformSource
+from .models import Product, PlatformSource, Store
 from src.modules.forecasting.models import Prediction
 
 
@@ -69,35 +69,39 @@ class OmnichannelService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_omnichannel_inventory(self, shop_id: str) -> list[OmnichannelProduct]:
+    async def get_omnichannel_inventory(self, org_id: str) -> list[OmnichannelProduct]:
         """
         Retourne la vue omnichannel de l'inventaire — agrégation par SKU.
 
-        Charge tous les produits du shop avec leurs prédictions, puis
+        Charge tous les produits de l'organisation avec leurs prédictions, puis
         agrège par SKU pour donner la vue consolidée.
 
         Args:
-            shop_id: UUID du shop.
+            org_id: UUID de l'organisation.
 
         Returns:
             Liste de OmnichannelProduct, triée par total_stock ASC
             (les SKUs les plus à risque en premier).
         """
-        # ── 1. Charger les sources connectées et filtrer les produits ────────
-        from .models import SourceConnection
-        
-        # Récupérer les plateformes actives
-        active_sources_res = await self.db.execute(
-            select(SourceConnection.platform)
-            .where(SourceConnection.shop_id == shop_id, SourceConnection.connected == True)
+        # ── 1. Charger les stores de l'organisation et filtrer les produits ──
+        import uuid
+        org_uuid = uuid.UUID(org_id)
+
+        # Récupérer les stores actifs
+        active_stores_res = await self.db.execute(
+            select(Store).where(Store.organization_id == org_uuid, Store.connected == True)
         )
-        active_platforms = [p for p in active_sources_res.scalars().all()]
+        active_stores = active_stores_res.scalars().all()
+        active_store_ids = [s.id for s in active_stores]
+        active_platforms = [s.platform for s in active_stores]
+
+        if not active_store_ids:
+            return []
 
         result = await self.db.execute(
             select(Product)
             .where(
-                Product.shop_id == shop_id,
-                Product.source_platform.in_(active_platforms)
+                Product.store_id.in_(active_store_ids)
             )
             .order_by(Product.sku, Product.source_platform)
         )
@@ -185,26 +189,18 @@ class OmnichannelService:
 
         return result_list
 
-    async def get_replenishment_export_data(self, shop_id: str) -> list[dict]:
+    async def get_replenishment_export_data(self, org_id: str) -> list[dict]:
         """
         Prépare les données d'export CSV pour le plan de réapprovisionnement.
-
-        Retourne une liste de dicts prête pour l'écriture CSV :
-            [{ sku, title, platform, current_stock, run_rate, days_of_stock,
-               predicted_stockout_date, reorder_quantity, lead_time, moq }]
-
-        Triée par urgence (date de rupture la plus proche en premier).
-
-        Args:
-            shop_id: UUID du shop.
-
-        Returns:
-            Liste de dicts pour génération CSV.
         """
+        import uuid
+        org_uuid = uuid.UUID(org_id)
+
         result = await self.db.execute(
             select(Product, Prediction)
+            .join(Store, Store.id == Product.store_id)
             .outerjoin(Prediction, Prediction.product_id == Product.id)
-            .where(Product.shop_id == shop_id)
+            .where(Store.organization_id == org_uuid)
             .order_by(Prediction.predicted_stockout_date.asc().nullslast())
         )
         rows = result.all()
@@ -224,13 +220,17 @@ class OmnichannelService:
                 "moq": product.moq,
             })
 
-    async def get_channels_for_sku(self, sku: str, shop_id: str) -> list[ChannelStockBreakdown]:
+    async def get_channels_for_sku(self, sku: str, org_id: str) -> list[ChannelStockBreakdown]:
         """
-        Retourne la liste des canaux de vente pour un SKU spécifique.
+        Retourne la liste des canaux de vente pour un SKU spécifique dans une organisation.
         """
+        import uuid
+        org_uuid = uuid.UUID(org_id)
+
         result = await self.db.execute(
             select(Product)
-            .where(Product.shop_id == shop_id, Product.sku == sku)
+            .join(Store, Store.id == Product.store_id)
+            .where(Store.organization_id == org_uuid, Product.sku == sku)
             .order_by(Product.source_platform)
         )
         products = list(result.scalars().all())

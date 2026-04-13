@@ -1,5 +1,5 @@
 """
-Point d'entrée FastAPI - Michi Backend
+Point d'entrée FastAPI - Michi Backend 
 """
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.config import settings
 from src.core.graphql.schema import schema
 from src.core.graphql.context import GraphQLContext
+import asyncio
 from src.core.database import get_db
+from src.core.database_utils import SerializedAsyncSession
 from src.core.middleware.auth import get_current_user_from_token
 from src.modules.shopify.auth_routes import router as shopify_auth_router
 
@@ -20,6 +22,7 @@ async def lifespan(_app: FastAPI):
     """Lifespan events (startup/shutdown)"""
     # Startup
     print("[INFO] Michi API starting...")
+    print(">>> [DEBUG] CHARGEMENT DE MICI MAIN.PY OK <<<")
     print("[INFO] Sprint 13: Strategic BI active.")
     print(f"[INFO] Environment: {settings.ENVIRONMENT}")
     print(f"[INFO] CORS Origins: {settings.cors_origins_list}")
@@ -41,13 +44,20 @@ app = FastAPI(
 )
 
 
-# CORS Middleware
+# CORS Middleware (Configuration standard FastAPI optimisée)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_credentials=True,
-    allow_methods=["POST", "GET"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["*"],
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "Apollo-Require-Preflight",
+        "X-Requested-With",
+        "Accept"
+    ],
 )
 
 
@@ -58,15 +68,19 @@ async def get_context(
 ) -> GraphQLContext:
     """
     Crée le context GraphQL pour chaque requête.
-    Extrait user_id et shop_id du token JWT.
+    Extrait user_id et org_id du token JWT.
     """
-    # Extraire user_id/shop_id du token JWT
-    user_id, shop_id = await get_current_user_from_token(request)
+    # Extraire user_id/org_id du token JWT
+    user_id, org_id = await get_current_user_from_token(request)
+    
+    # Sérialiser la session DB pour GraphQL (concurrence inter-résolveurs)
+    lock = asyncio.Lock()
+    serialized_db = SerializedAsyncSession(db, lock)
     
     return GraphQLContext(
-        db=db,
+        db=serialized_db,
         user_id=user_id,
-        shop_id=shop_id,
+        org_id=org_id,
     )
 
 

@@ -19,8 +19,8 @@ from sqlalchemy.orm import sessionmaker
 from src.core.config import settings
 from src.core.security import hash_password
 from src.core.database import Base
-from src.modules.auth.models import User
-from src.modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder
+from src.modules.auth.models import User, Organization, OrganizationMember, UserRole
+from src.modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder, Store, PlatformSource
 from src.modules.forecasting.models import CleanedDemand, Prediction
 
 
@@ -33,6 +33,40 @@ async def create_tables():
     
     await engine.dispose()
     print("Tables creees")
+
+
+async def _create_org_for_user(session: AsyncSession, user: User) -> None:
+    """Crée une organisation par défaut et y rattache l'utilisateur en ADMIN."""
+    org = Organization(
+        name="Michi Dev Corp",
+        slug=f"michi-dev-{uuid.uuid4().hex[:6]}",
+        plan="ENTERPRISE",
+        subscription_status="ACTIVE",
+    )
+    session.add(org)
+    await session.flush()
+
+    member = OrganizationMember(
+        user_id=user.id,
+        organization_id=org.id,
+        role=UserRole.ADMIN,
+        permissions={"all": True},
+    )
+    session.add(member)
+    user.current_organization_id = org.id
+
+    # Créer un store Shopify de démo rattaché à l'org
+    store = Store(
+        organization_id=org.id,
+        name="Shopify Dev Store",
+        platform=PlatformSource.SHOPIFY,
+        connected=True,
+    )
+    session.add(store)
+    await session.flush()
+
+    print(f"   ✅ Organisation '{org.name}' créée (id={org.id})")
+    print(f"   ✅ Membre ADMIN ajouté pour {user.email}")
 
 
 async def seed_dev_user():
@@ -54,18 +88,31 @@ async def seed_dev_user():
         if existing_user:
             print("⚠️  User dev@michi.com existe déjà")
             print(f"   User ID: {existing_user.id}")
-            print(f"   Shop ID: {existing_user.shop_id}")
+            # Vérifier si l'organisation existe déjà
+            from sqlalchemy import select as sa_select
+            org_result = await session.execute(
+                sa_select(OrganizationMember).where(OrganizationMember.user_id == existing_user.id)
+            )
+            if not org_result.scalar_one_or_none():
+                print("   ⚠️  Aucune organisation — création en cours...")
+                await _create_org_for_user(session, existing_user)
             return
-        
+
         # Créer nouveau user
         shop_id = uuid.uuid4()
         user = User(
             email="dev@michi.com",
+            first_name="Dev",
+            last_name="Admin",
             hashed_password=hash_password("password123"),
             shop_id=shop_id,
         )
-        
+
         session.add(user)
+        await session.flush()
+
+        await _create_org_for_user(session, user)
+
         await session.commit()
         await session.refresh(user)
         

@@ -10,8 +10,8 @@ import asyncio
 
 # Import Base et tous les models
 from src.core.database import Base
-from src.modules.auth.models import User
-from src.modules.inventory.models import Product, SalesLog, Supplier, Alert, AlertEmail
+from src.modules.auth.models import User, Organization, OrganizationMember, Invitation
+from src.modules.inventory.models import Product, SalesLog, Supplier, Alert, AlertEmail, Store
 from src.modules.forecasting.models import CleanedDemand, Prediction
 
 # Alembic Config object

@@ -2,57 +2,61 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, BarChart2, CheckCircle2, ArrowRight, Layers, Zap } from 'lucide-react';
+import { Sparkles, BarChart2, CheckCircle2, ArrowRight, Layers, Zap, ShoppingBag, Globe, FileSpreadsheet } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface OnboardingWizardProps {
+  userName?: string;
   onComplete: () => void;
-  onSync: () => Promise<void>;
+  onSync: (platform: string) => Promise<void>;
 }
 
 const STEPS = [
   {
     id: 'welcome',
     title: 'Bienvenue sur Michi 道',
-    description: 'Transformons vos données e-commerce en décisions logistiques intelligentes.',
-    icon: <Sparkles className="text-purple-500 h-8 w-8" />,
-    cta: 'Commencer',
+    description: 'Le futur de votre logistique commence ici. Nous allons configurer votre environnement en quelques secondes.',
+    icon: <Sparkles className="text-primary h-12 w-12" />,
+    cta: 'Démarrer la configuration',
   },
   {
-    id: 'sync',
-    title: 'Synchronisation Intelligente',
-    description: 'Nous allons importer vos produits et l\'historique de vos ventes pour nourrir notre IA.',
-    icon: <Zap className="text-amber-500 h-8 w-8" />,
-    cta: 'Lancer la Synchronisation',
+    id: 'connect',
+    title: 'Connectez votre première boutique',
+    description: 'Michi a besoin de vos données pour prédire vos besoins. Choisissez votre plateforme principale.',
+    icon: <ShoppingBag className="text-blue-500 h-12 w-12" />,
+    cta: 'Connecter', // Dynamic
   },
   {
     id: 'analysis',
-    title: 'Analyse IA en cours',
-    description: 'Michi nettoie vos données (ruptures, outliers) et calcule votre Run Rate et vos dates de rupture.',
-    icon: <BarChart2 className="text-blue-500 h-8 w-8" />,
-    cta: 'Voir mes Prévisions',
+    title: 'Moteur IA en pleine action',
+    description: 'Nous analysons vos flux, nettoyons les ruptures historiques et calculons vos modèles de croissance.',
+    icon: <Zap className="text-amber-500 h-12 w-12" />,
+    cta: 'Finaliser l\'analyse',
   },
   {
-    id: 'discovery',
-    title: 'Vous êtes prêt !',
-    description: 'Découvrez vos besoins de réapprovisionnement et gérez vos stocks multi-canaux avec précision.',
-    icon: <CheckCircle2 className="text-emerald-500 h-8 w-8" />,
-    cta: 'Accéder au Dashboard',
+    id: 'ready',
+    title: 'Prêt pour la croissance',
+    description: 'Votre inventaire est maintenant sous contrôle. Prêt à voir vos premières prévisions ?',
+    icon: <CheckCircle2 className="text-emerald-500 h-12 w-12" />,
+    cta: 'Entrer dans Michi',
   }
 ];
 
-export default function OnboardingWizard({ onComplete, onSync }: OnboardingWizardProps) {
+export default function OnboardingWizard({ userName, onComplete, onSync }: OnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
 
   const handleNext = async () => {
     if (currentStep === 1) {
+      if (!selectedPlatform) return;
       setIsSyncing(true);
-      await onSync();
+      await onSync(selectedPlatform);
       setIsSyncing(false);
       setCurrentStep(currentStep + 1);
     } else if (currentStep === STEPS.length - 1) {
-      onComplete();
       localStorage.setItem('michi_onboarded', 'true');
+      onComplete();
     } else {
       setCurrentStep(currentStep + 1);
     }
@@ -61,59 +65,98 @@ export default function OnboardingWizard({ onComplete, onSync }: OnboardingWizar
   const step = STEPS[currentStep];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        initial={{ opacity: 0, scale: 0.9, y: 30 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-[32px] shadow-2xl border border-gray-100 max-w-lg w-full overflow-hidden"
+        className="bg-white rounded-[40px] shadow-2xl border border-slate-100 max-w-xl w-full overflow-hidden flex flex-col"
       >
-        {/* Progress Bar */}
-        <div className="h-1.5 w-full bg-gray-100 flex">
-          {STEPS.map((_, i) => (
-            <div 
-              key={i} 
-              className={`h-full flex-1 transition-all duration-500 ${i <= currentStep ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : ''}`}
-            />
-          ))}
+        {/* Progress header */}
+        <div className="px-10 pt-10 pb-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">道</div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Onboarding</span>
+            </div>
+            <div className="flex gap-1.5">
+                {STEPS.map((_, i) => (
+                    <div key={i} className={cn(
+                        "h-1 rounded-full transition-all duration-500",
+                        i === currentStep ? "w-8 bg-primary" : "w-1.5 bg-slate-100"
+                    )} />
+                ))}
+            </div>
         </div>
 
-        <div className="p-10 text-center">
+        <div className="px-10 pb-10 flex-1">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-6"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              transition={{ duration: 0.4, ease: "circOut" }}
+              className="space-y-8 flex flex-col items-center text-center"
             >
-              <div className="inline-flex items-center justify-center p-4 bg-gray-50 rounded-2xl">
-                {step.icon}
+              <div className="relative">
+                 <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full scale-150" />
+                 <div className="relative p-6 bg-slate-50/50 rounded-[30px] border border-slate-100 mb-2">
+                    {step.icon}
+                 </div>
               </div>
               
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{step.title}</h2>
-                <p className="text-gray-500 text-sm leading-relaxed px-4">{step.description}</p>
+              <div className="space-y-3">
+                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+                    {currentStep === 0 && userName ? `Salut, ${userName} !` : step.title}
+                </h2>
+                <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">{step.description}</p>
               </div>
 
-              <div className="pt-6">
+              {currentStep === 1 && (
+                 <div className="grid grid-cols-3 gap-4 w-full pt-2">
+                    {[
+                        { id: 'shopify', label: 'Shopify', icon: <ShoppingBag className="h-5 w-5" /> },
+                        { id: 'amazon', label: 'Amazon', icon: <Globe className="h-5 w-5" /> },
+                        { id: 'csv', label: 'CSV/Excel', icon: <FileSpreadsheet className="h-5 w-5" /> },
+                    ].map((plat) => (
+                        <button
+                            key={plat.id}
+                            onClick={() => setSelectedPlatform(plat.id)}
+                            className={cn(
+                                "flex flex-col items-center justify-center p-5 rounded-3xl border-2 transition-all gap-3 group hover:scale-[1.02] active:scale-[0.98]",
+                                selectedPlatform === plat.id 
+                                    ? "bg-primary/5 border-primary text-primary shadow-xl shadow-primary/10" 
+                                    : "bg-white border-slate-50 text-slate-400 hover:border-slate-200"
+                            )}
+                        >
+                            <div className={cn(
+                                "p-2.5 rounded-xl transition-colors",
+                                selectedPlatform === plat.id ? "bg-primary text-white" : "bg-slate-50 group-hover:bg-slate-100"
+                            )}>{plat.icon}</div>
+                            <span className="text-[10px] font-bold tracking-widest uppercase">{plat.label}</span>
+                        </button>
+                    ))}
+                 </div>
+              )}
+
+              <div className="w-full pt-8">
                 <button
                   onClick={handleNext}
-                  disabled={isSyncing}
-                  className={`
-                    w-full flex items-center justify-center gap-2 py-4 rounded-2xl text-sm font-bold transition-all shadow-lg
-                    ${isSyncing 
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                      : 'bg-gray-900 text-white hover:bg-black hover:shadow-xl active:scale-95'}
-                  `}
+                  disabled={isSyncing || (currentStep === 1 && !selectedPlatform)}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-3 py-4 rounded-[20px] text-sm font-bold tracking-widest uppercase transition-all shadow-2xl",
+                    isSyncing || (currentStep === 1 && !selectedPlatform)
+                      ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none" 
+                      : "bg-slate-900 text-white hover:bg-slate-800 hover:shadow-slate-900/20 active:scale-[0.98]"
+                  )}
                 >
                   {isSyncing ? (
                     <>
-                      <div className="animate-spin h-4 w-4 border-2 border-gray-300 border-t-white rounded-full" />
-                      Analyse en cours...
+                      <div className="animate-spin h-4 w-4 border-2 border-slate-400 border-t-white rounded-full" />
+                      Analyse des flux...
                     </>
                   ) : (
                     <>
-                      {step.cta}
+                      <span>{step.cta}</span>
                       <ArrowRight size={16} />
                     </>
                   )}
@@ -125,26 +168,14 @@ export default function OnboardingWizard({ onComplete, onSync }: OnboardingWizar
                       localStorage.setItem('michi_onboarded', 'true');
                       onComplete();
                     }}
-                    className="mt-4 text-xs text-gray-400 hover:text-gray-600 underline font-medium"
+                    className="mt-6 text-[10px] font-bold text-slate-400 hover:text-primary tracking-[0.2em] uppercase transition-colors"
                   >
-                    Passer (expert)
+                    Passer la configuration (Expert)
                   </button>
                 )}
               </div>
             </motion.div>
           </AnimatePresence>
-        </div>
-        
-        {/* Footer info */}
-        <div className="bg-gray-50 px-10 py-4 flex items-center justify-center gap-6">
-          <div className="flex items-center gap-1.5 opacity-40">
-            <Layers size={12} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Omnicanal</span>
-          </div>
-          <div className="flex items-center gap-1.5 opacity-40">
-            <Zap size={12} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Temps Réel</span>
-          </div>
         </div>
       </motion.div>
     </div>

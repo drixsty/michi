@@ -3,6 +3,11 @@ from typing import List, Optional
 from datetime import date
 
 @strawberry.type
+class PlatformCapitalType:
+    platform: str
+    value: float
+
+@strawberry.type
 class FinancialKpiType:
     inventory_value_cost: float
     inventory_value_sale: float
@@ -33,4 +38,6 @@ class DecisionCenterOverviewType:
     total_run_rate: float = 0.0
     total_stock: int = 0
     health_score: int = 0
+    active_platforms: List[str] = strawberry.field(default_factory=list)
+    capital_breakdown: List[PlatformCapitalType] = strawberry.field(default_factory=list)
     message: Optional[str] = None

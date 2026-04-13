@@ -10,23 +10,20 @@ from src.core.security import decode_access_token
 
 async def get_current_user_from_token(request: Request) -> tuple[str | None, str | None]:
     """
-    Extrait user_id et shop_id du token JWT.
+    Extrait user_id et org_id du token JWT.
     
     Args:
         request: FastAPI Request
     
     Returns:
-        Tuple (user_id, shop_id) ou (None, None) si pas de token
+        Tuple (user_id, org_id) ou (None, None)
     """
-    # Récupérer le header Authorization
+    # ... (header extraction logic same)
     authorization = request.headers.get("Authorization")
-    
     if not authorization:
         return None, None
     
-    # Format attendu : "Bearer <token>"
     parts = authorization.split()
-    
     if len(parts) != 2 or parts[0].lower() != "bearer":
         return None, None
     
@@ -37,10 +34,9 @@ async def get_current_user_from_token(request: Request) -> tuple[str | None, str
         payload = decode_access_token(token)
         
         user_id = payload.get("user_id")
-        shop_id = payload.get("shop_id")
+        org_id = payload.get("org_id")
         
-        return user_id, shop_id
+        return user_id, org_id
     
     except JWTError:
-        # Token invalide ou expiré
         return None, None

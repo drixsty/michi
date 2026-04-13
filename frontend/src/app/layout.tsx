@@ -5,10 +5,15 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ApolloWrapper } from '@/components/providers/ApolloWrapper';
+import { StoreProvider } from '@/context/StoreContext';
 import MainLayout from '@/components/layout/MainLayout';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
+
+// Note: In a real app, use environment variables
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "PASTE_YOUR_GOOGLE_CLIENT_ID_HERE";
 
 export const metadata: Metadata = {
   title: 'Michi 道 | Inventory Forecasting',
@@ -23,11 +28,15 @@ export default function RootLayout({
   return (
     <html lang="fr" className="h-full">
       <body className={`${inter.className} h-full antialiased`}>
-        <ApolloWrapper>
-          <MainLayout>
-            {children}
-          </MainLayout>
-        </ApolloWrapper>
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          <ApolloWrapper>
+            <StoreProvider>
+              <MainLayout>
+                {children}
+              </MainLayout>
+            </StoreProvider>
+          </ApolloWrapper>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

@@ -4,17 +4,17 @@ from strawberry.types import Info
 from src.core.graphql.context import GraphQLContext
 from src.core.exceptions import UnauthenticatedException
 from src.modules.auth.models import User
-from .types import DecisionCenterOverviewType, FinancialKpiType, TopRiskType
+from .types import DecisionCenterOverviewType, FinancialKpiType, TopRiskType, PlatformCapitalType
 from .service import DecisionCenterService
 
 @strawberry.type
 class DecisionQuery:
     @strawberry.field
-    async def financial_overview(self, info: Info[GraphQLContext, None]) -> DecisionCenterOverviewType:
+    async def financial_overview(self, info: Info[GraphQLContext, None], store_id: Optional[strawberry.ID] = None, channel: Optional[str] = None) -> DecisionCenterOverviewType:
         if not info.context.user_id:
             raise UnauthenticatedException()
         service = DecisionCenterService(info.context.db)
-        overview = await service.get_overview(info.context.user_id)
+        overview = await service.get_overview(info.context.user_id, store_id=str(store_id) if store_id else None, channel=channel)
         
         return DecisionCenterOverviewType(
             kpis=FinancialKpiType(
@@ -44,6 +44,11 @@ class DecisionQuery:
             total_run_rate=overview.total_run_rate,
             total_stock=overview.total_stock,
             health_score=overview.health_score,
+            active_platforms=overview.active_platforms,
+            capital_breakdown=[
+                PlatformCapitalType(platform=c["platform"], value=c["value"])
+                for c in overview.capital_breakdown
+            ],
             message=overview.message
         )
 

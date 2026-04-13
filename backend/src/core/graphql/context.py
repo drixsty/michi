@@ -17,9 +17,9 @@ class GraphQLContext(BaseContext):
     
     Contient:
     - db: Session SQLAlchemy async
-    - user_id: ID de l'utilisateur connecté (None si non authentifié)
-    - shop_id: ID du shop de l'utilisateur (None si non authentifié)
+    - user_id: ID de l'utilisateur connecté
+    - org_id: ID de l'organisation active (contexte de session)
     """
-    db: Optional[AsyncSession] = None
+    db: Optional[AsyncSession] = None # Sérialisé via SerializedAsyncSession pour éviter les conflits GraphQL
     user_id: Optional[str] = None
-    shop_id: Optional[str] = None
+    org_id: Optional[str] = None

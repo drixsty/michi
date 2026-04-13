@@ -8,8 +8,17 @@ export const GET_ME = gql`
     me {
       id
       email
-      shopId
+      currentOrganizationId
       createdAt
+      organizations {
+        organizationId
+        role
+        organization {
+          id
+          name
+          slug
+        }
+      }
     }
   }
 `;

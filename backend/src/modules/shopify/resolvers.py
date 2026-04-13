@@ -25,7 +25,7 @@ from src.modules.inventory.resolvers import SupplierType, ChannelBreakdownType
 @strawberry.type
 class ProductType:
     id: strawberry.ID
-    shop_id: strawberry.ID
+    store_id: strawberry.ID
     sku: str
     title: str
     current_stock: int
@@ -44,9 +44,11 @@ class ProductType:
     @strawberry.field
     async def channels(self, info) -> List[ChannelBreakdownType]:
         """Détail des stocks et run rate par canal de vente."""
+        if not info.context.org_id:
+            return []
         from src.modules.inventory.omnichannel_service import OmnichannelService
         service = OmnichannelService(info.context.db)
-        return await service.get_channels_for_sku(self.sku, str(self.shop_id))
+        return await service.get_channels_for_sku(self.sku, str(info.context.org_id))
 
 
 @strawberry.type
@@ -79,38 +81,29 @@ class ValidationReportType:
 @strawberry.type
 class ShopifyQuery:
     @strawberry.field
-    async def products(self, info, id: Optional[strawberry.ID] = None) -> List[ProductType]:
-        """
-        Retourne tous les produits du shop connecté.
-        Nécessite authentication (JWT).
-
-        Example:
-            query {
-              products {
-                id sku title currentStock leadTime moq
-              }
-            }
-        """
-        from src.modules.auth.models import User
-        user_res = await info.context.db.execute(select(User).where(User.id == info.context.user_id))
-        user = user_res.scalars().first()
-        if not user:
+    async def products(self, info, store_id: Optional[strawberry.ID] = None, id: Optional[strawberry.ID] = None) -> List[ProductType]:
+        if not info.context.user_id:
             raise UnauthenticatedException()
 
-        shop_ids = [user.shop_id]
-        if user.organization_id:
-            org_shops_res = await info.context.db.execute(
-                select(User.shop_id).where(User.organization_id == user.organization_id)
+        db = info.context.db
+        if store_id:
+            shop_ids = [str(store_id)]
+        else:
+            # Fallback omnichannel: tous les stores de l'organisation
+            from src.modules.inventory.models import Store
+            import uuid
+            res = await db.execute(
+                select(Store.id).where(Store.organization_id == uuid.UUID(str(info.context.org_id)))
             )
-            shop_ids = org_shops_res.scalars().all()
+            shop_ids = [str(sid) for sid in res.scalars().all()]
 
-        service = InventoryService(info.context.db)
+        service = InventoryService(db)
         items = await service.get_products(shop_ids, product_id=str(id) if id else None)
 
         return [
             ProductType(
                 id=strawberry.ID(str(p.id)),
-                shop_id=strawberry.ID(str(p.shop_id)),
+                store_id=strawberry.ID(str(p.store_id)),
                 sku=p.sku,
                 title=p.title,
                 current_stock=p.current_stock,
@@ -152,24 +145,12 @@ class ShopifyQuery:
         ]
 
     @strawberry.field
-    async def validate_mock_data(self, info) -> ValidationReportType:
-        """
-        Valide la cohérence du dataset mock (R1–R6).
-        Nécessite authentication (JWT).
-
-        Example:
-            query {
-              validateMockData {
-                isValid productCount salesLogCount stockoutRatio summary
-                issues { rule severity detail }
-              }
-            }
-        """
-        if not info.context.shop_id:
+    async def validate_mock_data(self, info, store_id: strawberry.ID) -> ValidationReportType:
+        if not info.context.user_id:
             raise UnauthenticatedException()
 
         validator = DataValidationService(info.context.db)
-        report = await validator.validate(info.context.shop_id)
+        report = await validator.validate(str(store_id))
 
         return ValidationReportType(
             is_valid=report.is_valid,
@@ -189,34 +170,21 @@ class ShopifyQuery:
 @strawberry.type
 class ShopifyMutation:
     @strawberry.mutation
-    async def trigger_mock_data_sync(self, info) -> SyncResultType:
-        """
-        Régénère un dataset mock complet (50 produits + 365j historique).
-        Nécessite authentication (JWT).
-
-        Example:
-            mutation {
-              triggerMockDataSync {
-                success productsCreated salesLogsCreated message
-              }
-            }
-        """
-        if not info.context.shop_id:
+    async def trigger_mock_data_sync(self, info, store_id: strawberry.ID) -> SyncResultType:
+        if not info.context.user_id:
             raise UnauthenticatedException()
 
+        s_id = str(store_id)
         service = ShopifyService(info.context.db)
-        result = await service.trigger_mock_sync(info.context.shop_id)
+        result = await service.trigger_mock_sync(s_id)
         
-        # ── Déclenchement automatique des prédictions (US 2.8) ────────────────
-        # On relance le nettoyage et le calcul pour que le dashboard soit à jour
         forecasting = ForecastingService(info.context.db)
-        await forecasting.run_cleaning_pipeline(info.context.shop_id)
-        await forecasting.run_prediction_pipeline(info.context.shop_id)
+        await forecasting.run_cleaning_pipeline(s_id)
+        await forecasting.run_prediction_pipeline(s_id)
 
-        # ── Déclenchement des alertes et emails (US 10.4) ─────────────────────
         from src.modules.inventory.alert_service import AlertService
         alerts = AlertService(info.context.db)
-        await alerts.check_for_stockouts(info.context.shop_id)
+        await alerts.check_for_stockouts(s_id)
 
         # Persistance globale
         await info.context.db.commit()
@@ -240,7 +208,7 @@ class ShopifyMutation:
         Met à jour les paramètres logistiques d'un produit (Lead Time, MOQ).
         Nécessite authentication (JWT).
         """
-        if not info.context.shop_id:
+        if not info.context.org_id:
             raise UnauthenticatedException()
 
         service = InventoryService(info.context.db)
@@ -259,11 +227,15 @@ class ShopifyMutation:
 
         return ProductType(
             id=strawberry.ID(str(product.id)),
-            shop_id=strawberry.ID(str(product.shop_id)),
+            store_id=strawberry.ID(str(product.store_id)),
             sku=product.sku,
             title=product.title,
             current_stock=product.current_stock,
             lead_time=product.lead_time,
             moq=product.moq,
+            boost_factor=product.boost_factor if product.boost_factor is not None else 1.0,
+            stock_weight=product.stock_weight if product.stock_weight is not None else 1.0,
+            cost_price=product.cost_price,
+            sale_price=product.sale_price,
             created_at=product.created_at,
         )

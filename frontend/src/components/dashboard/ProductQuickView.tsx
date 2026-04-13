@@ -35,6 +35,7 @@ import { UPDATE_PRODUCT_SETTINGS } from '@/graphql/mutations/updateProduct';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { LoadingState } from '../ui/LoadingState';
+import { useStore } from '@/context/StoreContext';
 
 interface ProductQuickViewProps {
   productId: string | null;
@@ -180,8 +181,11 @@ function WhatIfSimulator({
 
 export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) {
   const router = useRouter();
+  const { user } = useStore();
   const { data, loading } = useQuery(GET_PRODUCTS, {
-    variables: { id: productId },
+    variables: { 
+      id: productId 
+    },
     skip: !productId
   });
 
@@ -272,7 +276,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fixed inset-y-0 right-0 z-[70] w-full max-w-md bg-white border-l border-slate-100 flex flex-col shadow-none"
           >
-            {loading ? (
+            {loading && !product ? (
               <LoadingState className="flex-1" message="Chargement du produit..." />
             ) : product ? (
               <>

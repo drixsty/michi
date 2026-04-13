@@ -2,10 +2,14 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Chrome, Ship, ArrowRight, Lock, Mail, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMutation } from '@apollo/client';
 import { LOGIN } from '@/graphql/mutations/login';
+
+import { GoogleLogin } from '@react-oauth/google';
+import { GOOGLE_LOGIN } from '@/graphql/mutations/googleLogin';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,10 +17,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('password123');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [login, { loading: mutationLoading }] = useMutation(LOGIN, {
+  const [login, { loading: loginLoading }] = useMutation(LOGIN, {
     onCompleted: (data) => {
-      const { token } = data.login;
-      localStorage.setItem('michi_token', token);
+      localStorage.setItem('michi_token', data.login.token);
       router.push('/dashboard');
     },
     onError: (err) => {
@@ -25,53 +28,56 @@ export default function LoginPage() {
     }
   });
 
+  const [googleLogin, { loading: googleLoading }] = useMutation(GOOGLE_LOGIN, {
+    onCompleted: (data) => {
+      localStorage.setItem('michi_token', data.googleLogin.token);
+      router.push('/dashboard');
+    },
+    onError: (err) => {
+      console.error("Google Login Error:", err);
+      setErrorMessage("Erreur lors de la connexion avec Google.");
+    }
+  });
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
-    try {
-      await login({
-        variables: {
-          input: { email, password }
-        }
-      });
-    } catch (err) {
-      // Handled in onError
-    }
+    await login({ variables: { input: { email, password } } });
   };
 
-  const isBtnLoading = mutationLoading;
+  const isBtnLoading = loginLoading || googleLoading;
 
   return (
     <div className="min-h-screen bg-background flex selection:bg-primary/10 flex-col lg:flex-row shadow-sm">
       {/* Left Column: Login Form */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 lg:p-8 animate-in fade-in duration-700">
-        <div className="w-full max-w-sm space-y-8">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 lg:p-4 animate-in fade-in duration-700">
+        <div className="w-full max-w-[320px] space-y-4">
           
           {/* Header Section */}
-          <div className="flex flex-col items-start space-y-4">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary/20 animate-in zoom-in duration-500">
+          <div className="flex flex-col items-start space-y-2">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-base shadow-lg shadow-primary/20 animate-in zoom-in duration-500">
               道
             </div>
-            <div className="space-y-1">
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">Bon retour</h1>
-              <p className="text-sm text-muted-foreground">
-                Connectez-vous pour gérer vos stocks omnicanaux.
+            <div className="space-y-0.5">
+              <h1 className="text-xl font-bold tracking-tight text-foreground">Bon retour</h1>
+              <p className="text-[13px] text-muted-foreground font-medium">
+                Connectez-vous à votre espace Michi.
               </p>
             </div>
           </div>
 
           {/* Form Section */}
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-2.5">
             {errorMessage && (
-              <div className="p-3 rounded-md bg-red-50 border border-red-100 text-red-600 text-xs font-medium flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-                <Info className="h-4 w-4" />
+              <div className="p-2.5 rounded-md bg-red-50 border border-red-100 text-red-600 text-[10px] font-medium flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                <Info className="h-3.5 w-3.5" />
                 {errorMessage}
               </div>
             )}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground ml-1">Adresse email</label>
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-foreground/60 ml-1">Adresse email</label>
               <div className="relative group">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
                 <input
                   type="email"
                   placeholder="nom@exemple.com"
@@ -83,10 +89,10 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground ml-1">Mot de passe</label>
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-foreground/60 ml-1">Mot de passe</label>
               <div className="relative group">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
                 <input
                   type="password"
                   placeholder="••••••••"
@@ -102,7 +108,7 @@ export default function LoginPage() {
               type="submit"
               disabled={isBtnLoading}
               className={cn(
-                "w-full h-11 bg-foreground text-background rounded-md text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2 mt-4",
+                "w-full h-11 bg-foreground text-background rounded-md text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98] flex items-center justify-center gap-2 mt-2",
                 isBtnLoading && "opacity-70 cursor-not-allowed"
               )}
             >
@@ -111,56 +117,51 @@ export default function LoginPage() {
               ) : (
                 <>
                   <span>Se connecter</span>
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-3.5 w-3.5" />
                 </>
               )}
             </button>
           </form>
 
           {/* OAuth Section */}
-          <div className="space-y-5">
+          <div className="space-y-3">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t border-border" />
               </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-background px-2 text-muted-foreground font-medium">Ou continuer avec</span>
+              <div className="relative flex justify-center text-[10px]">
+                <span className="bg-background px-2 text-muted-foreground font-medium italic">Ou continuer avec</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="relative group">
-                <button 
-                  disabled 
-                  className="w-full flex h-11 items-center justify-center gap-2 rounded-md border bg-muted/50 px-4 py-2 text-sm font-medium opacity-50 cursor-not-allowed border-border"
-                >
-                  <Chrome className="h-4 w-4" />
-                  Google
-                </button>
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-foreground text-background text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                  Bientôt disponible
-                </div>
-              </div>
-
-              <div className="relative group">
-                <button 
-                  disabled 
-                  className="w-full flex h-11 items-center justify-center gap-2 rounded-md border bg-muted/50 px-4 py-2 text-sm font-medium opacity-50 cursor-not-allowed border-border"
-                >
-                  <Ship className="h-4 w-4" />
-                  Shopify
-                </button>
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-foreground text-background text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                  Bientôt disponible
-                </div>
+            <div className="flex justify-center">
+              <div className="w-full max-w-[280px]">
+                <GoogleLogin 
+                  onSuccess={(credentialResponse) => {
+                    googleLogin({ variables: { input: { idToken: credentialResponse.credential } } });
+                  }}
+                  onError={() => setErrorMessage("Erreur Google Auth")}
+                  useOneTap
+                  theme="outline"
+                  shape="rectangular"
+                  text="signin_with"
+                />
               </div>
             </div>
           </div>
 
           {/* Footer info */}
-          <p className="text-center text-[12px] text-muted-foreground px-8 leading-relaxed">
-            En continuant, vous acceptez nos <span className="underline underline-offset-4 cursor-pointer hover:text-foreground transition-colors">conditions d&apos;utilisation</span>.
-          </p>
+          <div className="text-center space-y-2">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              Pas encore de compte ?{' '}
+              <Link href="/register" className="text-primary font-bold hover:underline">
+                S&apos;inscrire gratuitement
+              </Link>
+            </p>
+            <p className="text-[9px] text-muted-foreground/50 px-8 leading-tight italic">
+              En continuant, vous acceptez nos <span className="underline underline-offset-4 cursor-pointer hover:text-foreground">conditions d&apos;utilisation</span>.
+            </p>
+          </div>
         </div>
       </div>
 

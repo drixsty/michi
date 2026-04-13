@@ -19,6 +19,7 @@ const authLink = setContext((_, { headers }) => {
     headers: {
       ...headers,
       authorization: token ? `Bearer ${token}` : '',
+      'apollo-require-preflight': 'true',
     },
   };
 });
@@ -34,7 +35,10 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
       // Si UNAUTHENTICATED, rediriger vers login
       if (code === 'UNAUTHENTICATED' && typeof window !== 'undefined') {
         localStorage.removeItem('michi_token');
-        window.location.href = '/login';
+        // Éviter la boucle de rechargement si on est déjà sur /login
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     });
   }

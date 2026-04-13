@@ -135,12 +135,21 @@ export default function ProductDetailPage() {
           <p className="text-xs text-muted-foreground text-sentence">Analyse prédictive et simulation d'inventaire</p>
         </div>
         {product.supplier && (
-          <div className="ml-auto flex items-center gap-4 px-4 py-2 bg-accent/50 rounded-lg border">
-            <div className="text-right">
-              <p className="text-[10px] font-bold text-muted-foreground tracking-wider">Fournisseur</p>
-              <p className="text-sm font-semibold text-sentence">{product.supplier.name}</p>
+          <div className="ml-auto flex items-center gap-3 px-3 py-1.5 bg-slate-50/50 rounded-lg border border-slate-100">
+            <div className="flex flex-col items-end">
+              <span className="text-[9px] font-bold text-slate-400 leading-none">Fournisseur</span>
+              <span className="text-[11px] font-bold text-slate-900 mt-0.5">{product.supplier.name}</span>
             </div>
-            <div className={`h-8 w-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${product.supplier.reliabilityScore > 0.8 ? 'border-green-500 text-green-600' : 'border-amber-500 text-amber-600'}`}>
+            <div className={cn(
+              "flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-black",
+              product.supplier.reliabilityScore > 0.8 
+                ? "bg-emerald-50 text-emerald-600" 
+                : "bg-amber-50 text-amber-600"
+            )}>
+              <div className={cn(
+                "h-1.5 w-1.5 rounded-full animate-pulse",
+                product.supplier.reliabilityScore > 0.8 ? "bg-emerald-500" : "bg-amber-500"
+              )} />
               {(product.supplier.reliabilityScore * 100).toFixed(0)}%
             </div>
           </div>

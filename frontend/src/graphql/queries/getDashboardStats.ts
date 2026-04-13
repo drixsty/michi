@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const GET_DASHBOARD_STATS = gql`
-  query GetDashboardStats {
-    dashboardKpis {
+  query GetDashboardStats($storeId: ID) {
+    dashboardKpis(storeId: $storeId) {
       totalProducts
       actualStockouts
       urgentAlerts
@@ -13,8 +13,8 @@ export const GET_DASHBOARD_STATS = gql`
 `;
 
 export const GET_REPLENISHMENT_ALERTS = gql`
-  query GetReplenishmentAlerts {
-    replenishmentAlerts {
+  query GetReplenishmentAlerts($storeId: ID) {
+    replenishmentAlerts(storeId: $storeId) {
       productId
       runRate
       daysOfStock

@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const GET_PRODUCT_DETAIL = gql`
-  query GetProductDetail($id: ID!) {
-     productDetail: products(id: $id) {
+  query GetProductDetail($storeId: ID, $id: ID!) {
+     productDetail: products(storeId: $storeId, id: $id) {
       id
       sku
       title
