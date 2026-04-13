@@ -29,6 +29,8 @@ from .algorithms.out_of_stock_correction import correct_out_of_stock_batch
 from .algorithms.outlier_detection import detect_outliers_batch
 from .algorithms.run_rate import calculate_run_rate_batch
 from .algorithms.predictions import predict_stockout_date, calculate_reorder_quantity
+from .algorithms.abc_analysis import calculate_abc_ranks_batch
+from .algorithms.seasonality import detect_seasonality_factor
 
 
 class ForecastingService:
@@ -123,6 +125,7 @@ class ForecastingService:
                 date=row["date"],
                 raw_units_sold=float(row["units_sold"]),
                 corrected_units_sold=float(row["corrected_units_sold"]),
+                inventory_level=int(row["end_of_day_stock"]),
                 is_stockout=bool(row["is_stockout"]),
                 is_outlier=bool(row["is_outlier"]),
                 correction_type=str(row["correction_type"]),
@@ -218,6 +221,13 @@ class ForecastingService:
         # ── 5. Extraire le run_rate du dernier jour par produit ───────────────
         latest = df.sort_values("date").groupby("product_id").last().reset_index()
 
+        # ── 5b. ABC Analysis by Margin (Sprint 15) ─────────────────────────────
+        # On ajoute les données financières au DataFrame pour l'algorithme ABC
+        latest['sale_price'] = latest['product_id'].map(lambda pid: product_map.get(pid).sale_price if product_map.get(pid) else 0)
+        latest['cost_price'] = latest['product_id'].map(lambda pid: product_map.get(pid).cost_price if product_map.get(pid) else 0)
+        
+        latest = calculate_abc_ranks_batch(latest)
+
         # ── 6. Supprimer les anciennes prédictions ────────────────────────────
         await self.db.execute(
             delete(Prediction).where(Prediction.product_id.in_(product_ids))
@@ -228,16 +238,25 @@ class ForecastingService:
         today = date.today()
         predictions = []
 
+        abc_map = {row["product_id"]: (row["abc_rank"], row["annual_gross_profit"]) for _, row in latest.iterrows()}
+
         for _, row in latest.iterrows():
             pid = str(row["product_id"])
             product = product_map.get(pid)
             if product is None:
                 continue
 
-            # Apply Seasonality Boost (US 12.1)
-            # Default to 1.0 if not set (None/null) to avoid TypeError
-            boost = float(product.boost_factor) if product.boost_factor is not None else 1.0
-            run_rate = float(row["run_rate"]) * boost
+            # ── 7b. Seasonality & Boosts (Sprint 15) ──────────────────────────
+            # 1. Manual User Boost (from Product model)
+            manual_boost = float(product.boost_factor) if product.boost_factor is not None else 1.0
+            
+            # 2. Auto Seasonality Factor (ML detection)
+            prod_demand = df[df["product_id"] == pid]
+            auto_season_factor = detect_seasonality_factor(prod_demand)
+            
+            # Combined Final Run Rate (Vectorized base * Manual * Auto)
+            run_rate = float(row["run_rate"]) * manual_boost * auto_season_factor
+            
             current_stock = float(product.current_stock)
             lead_time = int(product.lead_time)
             moq = int(product.moq)
@@ -255,7 +274,6 @@ class ForecastingService:
             )
 
             # Quantité de commande recommandée
-            # Quantité de commande recommandée
             # On injecte le retard fournisseur moyen (Sprint 8)
             avg_delay = product.supplier.average_delay_days if product.supplier else 0.0
             
@@ -268,9 +286,10 @@ class ForecastingService:
             )
 
             # --- US 10.1 MAPE Backtesting (Sprint 10) ---
-            # On mesure la précision en comparant le run rate calculé sur H-7
-            # avec les ventes réelles constatées sur les 7 derniers jours.
             mape_score = self._calculate_mape_backtest(df[df["product_id"] == pid])
+
+            # --- Sprint 15 : ABC Rank ---
+            abc_rank, annual_profit = abc_map.get(pid, ("C", 0.0))
 
             predictions.append(Prediction(
                 product_id=pid,
@@ -282,6 +301,8 @@ class ForecastingService:
                 lead_time_snapshot=lead_time,
                 moq_snapshot=moq,
                 mape_score=mape_score,
+                abc_rank=abc_rank,
+                annual_gross_profit=annual_profit
             ))
 
         self.db.add_all(predictions)

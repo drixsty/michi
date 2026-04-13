@@ -28,6 +28,7 @@ class CleanedDemand(Base):
     date = Column(Date, nullable=False, index=True)
     raw_units_sold = Column(Float, nullable=False)        # valeur brute (sales_log)
     corrected_units_sold = Column(Float, nullable=False)  # valeur finale après pipeline
+    inventory_level = Column(Integer, nullable=True)     # stock fin de journée
 
     is_stockout = Column(Boolean, nullable=False, default=False)
     is_outlier = Column(Boolean, nullable=False, default=False)
@@ -82,6 +83,10 @@ class Prediction(Base):
     # Précision de l'IA (Sprint 10) — Mean Absolute Percentage Error
     # Exprimé en % (ex: 15.5 pour 15.5% d'erreur)
     mape_score = Column(Float, nullable=True)
+
+    # --- Sprint 15 : Analyse ABC par la marge ---
+    abc_rank = Column(String(10), nullable=True) # "A", "B", "C"
+    annual_gross_profit = Column(Float, nullable=True) # Profit annuel estimé
 
     computed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 

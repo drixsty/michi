@@ -47,6 +47,8 @@ class PredictionType:
     lead_time_snapshot: int
     moq_snapshot: int
     mape_score: Optional[float]
+    abc_rank: Optional[str]
+    annual_gross_profit: Optional[float]
     computed_at: datetime
 
 
@@ -88,6 +90,7 @@ class ForecastingQuery:
                 date=r.date,
                 raw_units_sold=r.raw_units_sold,
                 corrected_units_sold=r.corrected_units_sold,
+                inventory_level=r.inventory_level,
                 is_stockout=r.is_stockout,
                 is_outlier=r.is_outlier,
                 correction_type=r.correction_type,
@@ -204,5 +207,7 @@ def _prediction_to_type(r) -> PredictionType:
         lead_time_snapshot=r.lead_time_snapshot,
         moq_snapshot=r.moq_snapshot,
         mape_score=r.mape_score,
+        abc_rank=r.abc_rank,
+        annual_gross_profit=r.annual_gross_profit,
         computed_at=r.computed_at,
     )

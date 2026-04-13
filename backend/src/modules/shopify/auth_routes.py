@@ -38,18 +38,21 @@ async def shopify_callback(
     request: Request, 
     shop: str, 
     code: str, 
-    hmac_val: str = None, 
     db: AsyncSession = Depends(get_db)
 ):
     """
     Étape 2 : Callback Shopify. Échange du code contre un access_token.
     """
-    # 1. Validation HMAC (Sécurité critique)
+    from src.modules.inventory.service import InventoryService
+    
+    # 1. Validation HMAC (Sécurité critique) — Persona #6
     params = dict(request.query_params)
     signature = params.pop("hmac", None)
     
+    if not signature:
+        raise HTTPException(status_code=401, detail="Signature HMAC manquante.")
+
     # Reconstruire la query string pour le calcul HMAC
-    # Normalement on trie les clés alphabétiquement
     sorted_params = sorted(params.items())
     query_string = "&".join([f"{k}={v}" for k, v in sorted_params])
     
@@ -59,11 +62,11 @@ async def shopify_callback(
         hashlib.sha256
     ).hexdigest()
     
-    # Note: En production, on comparerait hmac_val avec computed_hmac
-    # Pour le MVP/Dev on logue la vérification
-    logger.debug(f"[ShopifyAuth] HMAC Check: {signature == computed_hmac}")
+    if not hmac.compare_digest(computed_hmac, signature):
+        logger.warning(f"[ShopifyAuth] Invalid HMAC for shop {shop}")
+        raise HTTPException(status_code=401, detail="Signature HMAC invalide.")
 
-    # 2. Échange du Code contre Access Token
+    # 2. Échange du Code contre Access Token — Persona #1
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"https://{shop}/admin/oauth/access_token",
@@ -83,8 +86,20 @@ async def shopify_callback(
         
         logger.info(f"[ShopifyAuth] Token successfully retrieved for {shop}")
         
-        # 3. Enregistrement en DB (Logique à implémenter dans InventoryService)
-        # await InventoryService(db).register_platform_token(shop, access_token, "shopify")
+        # 3. Enregistrement en DB
+        # On extrait le shop_name simple (ex: ma-boutique-michi) du domaine Shopify
+        shop_name = shop.replace(".myshopify.com", "")
+        success = await InventoryService(db).register_platform_token(
+            shop_name=shop_name,
+            access_token=access_token,
+            platform="SHOPIFY"
+        )
+        
+        if not success:
+             logger.error(f"[ShopifyAuth] Failed to link token to a store record for {shop}")
+             # Optionnel : On pourrait créer le store à la volée ici si on voulait un onboarding automatique complet
 
     # 4. Redirection finale vers le dashboard frontend
-    return RedirectResponse(f"{settings.CORS_ORIGINS}/dashboard?tab=sources&status=connected")
+    # note: settings.CORS_ORIGINS est une liste, on prend le premier pour la redirection
+    redirect_base = settings.cors_origins_list[0] if settings.cors_origins_list else "http://localhost:3000"
+    return RedirectResponse(f"{redirect_base}/dashboard?tab=sources&status=connected")

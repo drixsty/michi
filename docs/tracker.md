@@ -1,8 +1,8 @@
 # 📊 Michi - Progress Tracker
 
-**Date last update :** 11 Avril 2026  
-**Agent IA :** Antigravity — Sprint 16 (Phase 2) Validé ✅
-**Objectif :** Solution OMNICANAL Robuste & SaaS Multi-Tenant — **Avancement : 90%**
+**Date last update :** 15 Juillet 2026  
+**Agent IA :** Antigravity — Sprint 15 & 16 Validés ✅
+**Objectif :** Solution OMNICANAL Robuste & SaaS Multi-Tenant — **Avancement : 95%**
 
 ---
 
@@ -37,8 +37,8 @@ Sprint 11 ✅ [■■■■■■■■■■] 100%  Michi UI 2.0 Overhaul (Ultr
 Sprint 12 ✅ [■■■■■■■■■■] 100%  Optimisation Algorithmique (Boost Manuel & Pondération Omnicanale)
 Sprint 13 ✅ [■■■■■■■■■■] 100%  Intelligence Stratégique (BI, Mutualisation, Centre Décisionnel)
 Sprint 14 ✅ [■■■■■■■■■■] 100%  Cockpit de Pilotage (Action & Simulation)
-Sprint 15 🚧 [■■■■■□□□□□] 50%   Connectivité & Précision (Saisonnalité & Marges)
-Sprint 16 ✅ [■■■■■■■■□□] 80%   SaaS Enterprise : IAM & Multi-Tenancy (Switching & Roles)
+Sprint 15 ✅ [■■■■■■■■■■] 100%  Connectivité & Précision (Saisonnalité & Marges)
+Sprint 16 ✅ [■■■■■■■■■■] 100%  SaaS Enterprise : IAM & Multi-Tenancy (Switching & Roles)
 Sprint 17 ⏳ [□□□□□□□□□□] 0%    SaaS Enterprise : Monétisation (Stripe & Abonnements)
 Sprint 18 ⏳ [□□□□□□□□□□] 0%    SaaS Enterprise : Multi-Store UX & Dashboard Global
 ```
@@ -499,8 +499,8 @@ Supporte les exports natifs wp-admin. Gère les alias de colonnes (`Item SKU`, `
 
 | Sprint 0-8 | 154 pts | 154 pts | 100% ✅ |
 | Sprint 9   | 30 pts  | 30 pts  | 100% ✅ |
-| Sprint 10  | 30 pts  | 30 pts  | 100% ✅ |
-| Sprint 16  | 30 pts  | 0 pts   | 0% ⏳   |
+| Sprint 15  | 30 pts  | 30 pts  | 100% ✅ |
+| Sprint 16  | 30 pts  | 30 pts  | 100% ✅ |
 | Sprint 17  | 25 pts  | 0 pts   | 0% ⏳   |
 | Sprint 18  | 20 pts  | 0 pts   | 0% ⏳   |
 
@@ -724,21 +724,21 @@ Supporte les exports natifs wp-admin. Gère les alias de colonnes (`Item SKU`, `
 
 ---
 
-## ⏳ Sprint 15 : Connectivité & Précision — EN COURS
+## ✅ Sprint 15 : Connectivité & Précision — TERMINÉ
 
 **Dates :** 3 - 16 Juillet 2026 (2 semaines)  
 **Objectif :** Sortir du mode simulation. Implémenter les connecteurs réels (OAuth) et augmenter la précision analytique (Marges & Saisonnalité).  
-**Statut :** 🚧 **En cours**  
+**Statut :** ✅ **TERMINÉ**  
 **Vélocité planifiée :** 30 pts
 
 ### User Stories — Sprint 15
 
 | ID | User Story | Points | Priorité |
 |----|-----------|--------|----------|
-| US 15.1 | **Connecteurs Réels (Shopify OAuth)** — Mise en place du flux d'authentification complet (Install / Callback / Token) | 10 | P0 |
-| US 15.2 | **ABC par la Marge** — Refonte du classement ABC basé sur la Marge Brute Annualisée (vs CA) | 8 | P0 |
-| US 15.3 | **Algorithme de Saisonnalité** — Détection automatique des cycles et ajustement du Run Rate | 7 | P1 |
-| US 15.4 | **UI Sources Actionnable** — Intégration des boutons de connexion directs dans `ConnectorsGrid` | 5 | P1 |
+| US 15.1 | ✅ **Connecteurs Réels (Shopify OAuth)** — Mise en place du flux d'authentification complet (Install / Callback / Token) | 10 | P0 |
+| US 15.2 | ✅ **ABC par la Marge** — Refonte du classement ABC basé sur la Marge Brute Annualisée (vs CA) | 8 | P0 |
+| US 15.3 | ✅ **Algorithme de Saisonnalité** — Détection automatique des cycles et ajustement du Run Rate | 7 | P1 |
+| US 15.4 | ✅ **UI Sources Actionnable** — Intégration des boutons de connexion directs dans `ConnectorsGrid` | 5 | P1 |
 
 **Total Sprint 15 :** 30 pts
 

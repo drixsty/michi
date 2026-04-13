@@ -103,7 +103,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
     },
     {
       accessorKey: 'title',
-      size: 300,
+      size: 250,
       minSize: 150,
       header: ({ column }) => {
         return (
@@ -133,6 +133,37 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
           </div>
         );
       },
+    },
+    {
+      accessorKey: 'abcRank',
+      header: ({ column }) => (
+        <button 
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")} 
+          className="flex items-center mx-auto gap-1.5 text-slate-900 font-extrabold focus:outline-none"
+        >
+          ABC <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
+        </button>
+      ),
+      size: 90,
+      cell: ({ row }) => {
+        const rank = row.original.abcRank ?? row.original.prediction?.abcRank ?? 'C';
+        const styles: any = {
+          'A': "bg-violet-50 text-violet-700 border-violet-200 shadow-sm shadow-violet-100",
+          'B': "bg-blue-50 text-blue-700 border-blue-200",
+          'C': "bg-slate-50 text-slate-600 border-slate-200",
+        };
+        
+        return (
+          <div className="flex justify-center">
+            <span className={cn(
+              "px-3 py-1 rounded-lg text-[11px] font-black border flex items-center gap-1.5 min-w-[34px] justify-center transition-all",
+              styles[rank as keyof typeof styles] || styles['C']
+            )}>
+              {rank}
+            </span>
+          </div>
+        );
+      }
     },
     {
       id: 'sources',
@@ -292,7 +323,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
                   >
                     <div className={cn(
                       "flex items-center",
-                      header.column.id === 'sources' || header.column.id === 'predictedStockoutDate' || header.column.id === 'totalReorderQuantity' || header.column.id === 'totalStock' ? "justify-center" : 
+                      header.column.id === 'sources' || header.column.id === 'predictedStockoutDate' || header.column.id === 'totalReorderQuantity' || header.column.id === 'totalStock' || header.column.id === 'abcRank' ? "justify-center" : 
                       header.column.id === 'actions' || header.column.id === 'select' ? "justify-center" : ""
                     )}>
                       {flexRender(header.column.columnDef.header, header.getContext())}

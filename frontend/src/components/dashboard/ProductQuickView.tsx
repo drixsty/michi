@@ -193,8 +193,8 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
 
   // Prepare chart data
   const chartData = React.useMemo(() => {
-    if (!product?.cleanedDemand) return [];
-    return product.cleanedDemand
+    if (!product?.cleanedDemands) return [];
+    return product.cleanedDemands
       .slice(-30) // Last 30 days
       .map((d: any) => ({
         date: new Date(d.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),

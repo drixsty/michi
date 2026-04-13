@@ -207,9 +207,9 @@ export default function ProductDetailPage() {
           </div>
         </div>
         <div className="h-[320px] flex items-center justify-center bg-slate-50/50 rounded-xl border border-dashed">
-          {product.cleanedDemand && product.cleanedDemand.length > 0 ? (
+          {product.cleanedDemands && product.cleanedDemands.length > 0 ? (
             <SalesChart 
-              data={product.cleanedDemand || []} 
+              data={product.cleanedDemands || []} 
               title="" 
             />
           ) : (

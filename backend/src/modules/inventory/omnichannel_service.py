@@ -63,6 +63,8 @@ class OmnichannelProduct:
     predicted_stockout_date: Optional[date] = None
     total_reorder_quantity: int = 0
     dominant_run_rate: float = 0.0
+    abc_rank: str = 'C'
+    annual_gross_profit: float = 0.0
 
 
 class OmnichannelService:
@@ -159,8 +161,10 @@ class OmnichannelService:
                     omni.predicted_stockout_date = prediction.predicted_stockout_date
 
                 # Run rate dominant = le plus élevé (canal le plus actif)
-                if prediction.run_rate > omni.dominant_run_rate:
+                if prediction.run_rate >= omni.dominant_run_rate:
                     omni.dominant_run_rate = prediction.run_rate
+                    omni.abc_rank = prediction.abc_rank or 'C'
+                    omni.annual_gross_profit = prediction.annual_gross_profit or 0.0
 
                 omni.total_reorder_quantity += prediction.reorder_quantity
 

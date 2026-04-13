@@ -1,11 +1,16 @@
 import csv
 import io
 import strawberry
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING, Annotated
 from datetime import datetime
 import uuid
+from sqlalchemy import select
+
+if TYPE_CHECKING:
+    from src.modules.forecasting.resolvers import CleanedDemandType, PredictionType
 
 from src.core.exceptions import UnauthenticatedException
+from loguru import logger
 from .service import InventoryService
 from .alert_service import AlertService
 from .supplier_service import SupplierService
@@ -43,6 +48,7 @@ class PurchaseOrderType:
 @strawberry.type
 class ProductType:
     id: strawberry.ID
+    store_id: strawberry.ID
     title: str
     sku: str
     lead_time: int
@@ -52,6 +58,153 @@ class ProductType:
     stock_weight: float
     cost_price: Optional[float]
     sale_price: Optional[float]
+    supplier_id: Optional[strawberry.ID] = None
+
+    @strawberry.field(name="cleanedDemands")
+    async def cleaned_demands(self, info) -> List[Annotated["CleanedDemandType", strawberry.lazy("src.modules.forecasting.resolvers")]]:
+        try:
+            from src.modules.forecasting.service import ForecastingService
+            from src.modules.inventory.models import SalesLog
+            from src.modules.forecasting.resolvers import CleanedDemandType
+            from sqlalchemy import select
+            
+            service = ForecastingService(info.context.db)
+            rows = await service.get_cleaned_demand(str(self.id))
+            
+            if not rows:
+                # Fallback: Données brutes si la pipeline forecasting n'a pas encore tourné
+                res = await info.context.db.execute(
+                    select(SalesLog).where(SalesLog.product_id == uuid.UUID(str(self.id))).order_by(SalesLog.date.desc()).limit(90)
+                )
+                raw_logs = res.scalars().all()
+                return [
+                    CleanedDemandType(
+                        id=strawberry.ID(str(r.id)),
+                        product_id=strawberry.ID(str(r.product_id)),
+                        date=r.date,
+                        raw_units_sold=r.units_sold,
+                        corrected_units_sold=r.units_sold,
+                        inventory_level=r.end_of_day_stock,
+                        is_stockout=False,
+                        is_outlier=False,
+                        correction_type="raw",
+                        computed_at=datetime.utcnow()
+                    )
+                    for r in raw_logs
+                ]
+
+            return [
+                CleanedDemandType(
+                    id=strawberry.ID(str(r.id)),
+                    product_id=strawberry.ID(str(r.product_id)),
+                    date=r.date,
+                    raw_units_sold=r.raw_units_sold,
+                    corrected_units_sold=r.corrected_units_sold,
+                    inventory_level=r.inventory_level,
+                    is_stockout=r.is_stockout,
+                    is_outlier=r.is_outlier,
+                    correction_type=r.correction_type,
+                    computed_at=r.computed_at,
+                )
+                for r in rows
+            ]
+        except Exception as e:
+            logger.error(f"[GraphQL] Error in cleanedDemands resolver for {self.sku}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return []
+
+    @strawberry.field
+    async def channels(self, info) -> List[Annotated["ChannelBreakdownType", strawberry.lazy("src.modules.inventory.resolvers")]]:
+        try:
+            from src.modules.inventory.service import InventoryService
+            from src.modules.inventory.models import Store
+            from sqlalchemy import select
+            import uuid
+            
+            db = info.context.db
+            org_id = info.context.org_id
+            if not org_id:
+                return []
+            
+            # 1. Trouver tous les shop_ids de l'org
+            res = await db.execute(
+                select(Store.id).where(Store.organization_id == uuid.UUID(str(org_id)))
+            )
+            shop_ids = [str(sid) for sid in res.scalars().all()]
+            
+            # 2. Trouver tous les produits avec le même SKU dans ces shops (Omnichannel logic)
+            service = InventoryService(db)
+            items = await service.get_products(shop_ids, product_id=self.sku)
+            
+            return [
+                ChannelBreakdownType(
+                    platform=p.source_platform.value if p.source_platform else "UNKNOWN",
+                    product_id=strawberry.ID(str(p.id)),
+                    current_stock=p.current_stock,
+                    lead_time=p.lead_time,
+                    moq=p.moq,
+                    run_rate=p.prediction.run_rate if p.prediction else 0.0,
+                    stock_weight=p.stock_weight
+                )
+                for p in items
+            ]
+        except Exception as e:
+            logger.error(f"[GraphQL] Error in channels resolver for {self.sku}: {e}")
+            return []
+
+    @strawberry.field
+    async def prediction(self, info) -> Optional[Annotated["PredictionType", strawberry.lazy("src.modules.forecasting.resolvers")]]:
+        try:
+            from src.modules.forecasting.resolvers import _prediction_to_type
+            from src.modules.forecasting.service import ForecastingService
+            service = ForecastingService(info.context.db)
+            row = await service.get_prediction_for_product(str(self.id))
+            
+            if not row:
+                return None
+            return _prediction_to_type(row)
+        except Exception as e:
+            logger.error(f"[GraphQL] Error in prediction resolver for {self.sku}: {e}")
+            return None
+
+    @strawberry.field
+    async def supplier(self, info) -> Optional[SupplierType]:
+        try:
+            from src.modules.inventory.models import Supplier
+            from sqlalchemy import select
+            import uuid
+            if not hasattr(self, "supplier_id") or not self.supplier_id:
+                return None
+            
+            s_id = uuid.UUID(str(self.supplier_id))
+            result = await info.context.db.execute(
+                select(Supplier).where(Supplier.id == s_id)
+            )
+            s = result.scalar_one_or_none()
+            if not s:
+                return None
+            return SupplierType(
+                id=strawberry.ID(str(s.id)),
+                name=s.name,
+                contact_email=s.contact_email,
+                reliability_score=s.reliability_score,
+                average_delay_days=s.average_delay_days
+            )
+        except Exception as e:
+            logger.error(f"[GraphQL] Error in supplier resolver for {self.sku}: {e}")
+            return None
+
+    @strawberry.field
+    async def warning_threshold(self, info) -> float:
+        """Seuil d'alerte : run_rate * (lead_time + avg_delay) * 1.5"""
+        pred = await self.prediction(info)
+        supp = await self.supplier(info)
+        if not pred:
+            return 0.0
+        
+        effective_lt = self.lead_time + (supp.average_delay_days if supp else 1)
+        return pred.run_rate * effective_lt * 1.5
 
 @strawberry.type
 class IngestionResult:
@@ -88,16 +241,64 @@ class OmnichannelProductType:
     dominant_run_rate: float
     total_reorder_quantity: int
     predicted_stockout_date: Optional[str]
+    abc_rank: str
+    annual_gross_profit: float
     channels: List[ChannelBreakdownType]
 
 
 @strawberry.type
 class InventoryQuery:
     @strawberry.field
+    async def products(self, info, store_id: Optional[strawberry.ID] = None, id: Optional[strawberry.ID] = None) -> List[ProductType]:
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+
+        db = info.context.db
+        if store_id:
+            shop_ids = [str(store_id)]
+        else:
+            # Fallback omnichannel: tous les stores de l'organisation
+            org_id = info.context.org_id
+            if not org_id:
+                return []
+            
+            from src.modules.inventory.models import Store
+            try:
+                res = await db.execute(
+                    select(Store.id).where(Store.organization_id == uuid.UUID(str(org_id)))
+                )
+                shop_ids = [str(sid) for sid in res.scalars().all()]
+            except Exception as e:
+                return []
+
+        from .service import InventoryService
+        service = InventoryService(db)
+        items = await service.get_products(shop_ids, product_id=str(id) if id else None)
+
+        return [
+            ProductType(
+                id=strawberry.ID(str(p.id)),
+                store_id=strawberry.ID(str(p.store_id)),
+                title=p.title,
+                sku=p.sku,
+                lead_time=p.lead_time,
+                moq=p.moq,
+                current_stock=p.current_stock,
+                boost_factor=p.boost_factor if p.boost_factor is not None else 1.0,
+                stock_weight=p.stock_weight if p.stock_weight is not None else 1.0,
+                cost_price=p.cost_price,
+                sale_price=p.sale_price,
+                supplier_id=strawberry.ID(str(p.supplier_id)) if p.supplier_id else None
+            )
+            for p in items
+        ]
+
+    @strawberry.field
     async def unread_alerts(self, info, store_id: Optional[strawberry.ID] = None) -> List[AlertType]:
         if not info.context.user_id:
             raise UnauthenticatedException()
         
+        from .alert_service import AlertService
         alert_service = AlertService(info.context.db)
         alerts = await alert_service.get_unread_alerts(
             store_id=str(store_id) if store_id else None,
@@ -157,6 +358,8 @@ class InventoryQuery:
                     str(item.predicted_stockout_date)
                     if item.predicted_stockout_date else None
                 ),
+                abc_rank=item.abc_rank,
+                annual_gross_profit=item.annual_gross_profit,
                 channels=[
                     ChannelBreakdownType(
                         platform=ch.platform,

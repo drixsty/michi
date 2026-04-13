@@ -169,3 +169,38 @@ class InventoryService:
         await forecasting_service.run_prediction_pipeline(str(product.store_id))
 
         return product
+
+    async def register_platform_token(
+        self, 
+        shop_name: str, 
+        access_token: str, 
+        platform: str
+    ) -> bool:
+        """
+        Enregistre un token d'accès permanent pour une plateforme donnée (US 15.1).
+        """
+        from .models import Store
+        import json
+        
+        # Trouver la boutique par son nom/URL et sa plateforme
+        stmt = select(Store).where(
+            Store.platform == platform.upper(),
+            Store.name.ilike(f"%{shop_name}%")
+        )
+        result = await self.db.execute(stmt)
+        store = result.scalars().first()
+        
+        if not store:
+            logger.warning(f"[Inventory] No store found for {shop_name} ({platform}) to register token.")
+            return False
+            
+        # Mettre à jour la config JSONB
+        config = dict(store.config) if store.config else {}
+        config["access_token"] = access_token
+        store.config = config
+        store.connected = True
+        store.health_status = "HEALTHY"
+        
+        await self.db.flush()
+        logger.info(f"[Inventory] Access token registered for store {store.id} ({shop_name})")
+        return True

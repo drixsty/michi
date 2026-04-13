@@ -21,10 +21,11 @@ export const GET_PRODUCT_DETAIL = gql`
         predictedStockoutDate
         reorderQuantity
       }
-      cleanedDemand {
+      cleanedDemands {
         date
         rawUnitsSold
         correctedUnitsSold
+        inventoryLevel
         isStockout
         isOutlier
         correctionType

@@ -17,6 +17,11 @@ export const GET_PRODUCTS = gql`
         predictedStockoutDate
         reorderQuantity
       }
+      cleanedDemands {
+        date
+        correctedUnitsSold
+        inventoryLevel
+      }
       supplier {
         id
         name

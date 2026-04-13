@@ -11,6 +11,8 @@ export const GET_OMNICHANNEL_INVENTORY = gql`
       dominantRunRate
       totalReorderQuantity
       predictedStockoutDate
+      abcRank
+      annualGrossProfit
       channels {
         platform
         productId
