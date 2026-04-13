@@ -38,7 +38,7 @@ const DELETE_ALERT = gql`
   }
 `;
 
-export function DashboardContent() {
+function DashboardContent() {
   const [isMounted, setIsMounted] = React.useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -168,10 +168,8 @@ export function DashboardContent() {
     }
   }, [meError, router]);
 
-  // Loading state with beautiful spinner
-  if (!isMounted || (meLoading && !meData)) {
-    return <LoadingState fullScreen message="initialisation michi..." />;
-  }
+  // Initial load refined - handled by MainLayout LoadingOverlay
+  if (!isMounted) return null;
 
   const tabConfigs: Record<string, { title: string; subtitle: string }> = {
     overview: { 

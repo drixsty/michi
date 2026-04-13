@@ -27,6 +27,20 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [stores, setStores] = useState<Store[]>([]);
 
+  // Hydrate from local storage on mount ONLY to avoid hydration mismatch
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('michi_current_org');
+      if (saved) {
+        try {
+          setCurrentOrganization(JSON.parse(saved));
+        } catch (e) {
+          console.error("Failed to parse cached org", e);
+        }
+      }
+    }
+  }, []);
+
   // 1. Fetch User & Organizations memberships
   const { data: userData, loading: userLoading, refetch: refetchUser } = useQuery(GET_ME, {
     skip: isAuthPage,
@@ -38,9 +52,20 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const activeMembership = memberships.find(m => m.organizationId === currentOrgId);
         
         if (activeMembership?.organization) {
-          setCurrentOrganization(activeMembership.organization);
+          const org = activeMembership.organization;
+          setCurrentOrganization(org);
+          // Persist chosen organization metadata for instant UI hydration on next reload
+          localStorage.setItem('michi_current_org', JSON.stringify({
+            id: org.id,
+            name: org.name
+          }));
         } else if (memberships.length > 0 && memberships[0].organization) {
-          setCurrentOrganization(memberships[0].organization);
+          const org = memberships[0].organization;
+          setCurrentOrganization(org);
+          localStorage.setItem('michi_current_org', JSON.stringify({
+            id: org.id,
+            name: org.name
+          }));
         }
       }
     }
@@ -68,10 +93,22 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       
       if (data?.switchOrganization?.token) {
         localStorage.setItem('michi_token', data.switchOrganization.token);
+        
+        // Pre-heat the org cache before reload so the UI shows the NEW org immediately on refresh
+        const targetOrg = (userData?.me?.organizations as OrganizationMember[])?.find(m => m.organizationId === orgId);
+        if (targetOrg?.organization) {
+          localStorage.setItem('michi_current_org', JSON.stringify({
+            id: targetOrg.organization.id,
+            name: targetOrg.organization.name
+          }));
+        }
+
         // Clear active store when switching org to force re-selection
         localStorage.removeItem('activeStoreId');
-        // Reload to refresh all Apollo data with new org context
-        window.location.reload(); 
+        
+        // Redirect to dashboard while reloading to refresh all Apollo data with new org context
+        // and satisfy "repart sur la page dashboard" requirement
+        window.location.href = '/dashboard';
       }
     } catch (err) {
       console.error("Failed to switch organization:", err);

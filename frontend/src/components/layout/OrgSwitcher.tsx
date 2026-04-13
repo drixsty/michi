@@ -6,8 +6,25 @@ import { useStore } from '@/context/StoreContext';
 import { cn } from '@/lib/utils';
 
 export function OrgSwitcher() {
-  const { organizations, currentOrganization, switchOrganization } = useStore();
+  const { organizations, currentOrganization, switchOrganization, loading } = useStore();
   const [isOpen, setIsOpen] = useState(false);
+  const [hasMounted, setHasMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted || (!currentOrganization && loading)) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-1.5 animate-pulse">
+        <div className="w-8 h-8 rounded-lg bg-slate-100" />
+        <div className="hidden lg:block space-y-1">
+          <div className="h-3 w-20 bg-slate-100 rounded" />
+          <div className="h-2 w-12 bg-slate-50 rounded" />
+        </div>
+      </div>
+    );
+  }
 
   if (!currentOrganization) return null;
 
