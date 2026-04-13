@@ -16,8 +16,9 @@ from src.core.exceptions import UnauthenticatedException, MichiException, ErrorC
 class AuthService:
     """Service d'authentification"""
     
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, billing_service=None):
         self.db = db
+        self.billing = billing_service
     
     async def login(self, input_data: LoginInput) -> AuthPayload:
         """
@@ -82,6 +83,13 @@ class AuthService:
         self.db.add(org)
         await self.db.flush()
         
+        # Sync Stripe Customer (US 17.1)
+        if self.billing:
+            stripe_id = await self.billing.create_customer(name=org.name, email=user.email, org_id=str(org.id))
+            if stripe_id:
+                org.stripe_customer_id = stripe_id
+                await self.db.flush()
+        
         # Lier l'utilisateur à l'organisation comme ADMIN
         member = OrganizationMember(
             user_id=user.id, 
@@ -138,6 +146,17 @@ class AuthService:
             self.db.add(member)
             user.current_organization_id = org.id
             await self.db.flush()
+            
+            # Sync Stripe Customer (US 17.1)
+            if self.billing:
+                stripe_id = await self.billing.create_customer(
+                    name=org.name, 
+                    email=user.email, 
+                    org_id=str(org.id)
+                )
+                if stripe_id:
+                    org.stripe_customer_id = stripe_id
+                    await self.db.flush()
 
         # Générer token
         token_data = {

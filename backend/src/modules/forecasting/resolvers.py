@@ -8,6 +8,7 @@ from typing import List, Optional
 from datetime import date, datetime
 
 from src.core.exceptions import UnauthenticatedException
+from src.modules.billing.decorators import require_plan
 from .service import ForecastingService
 
 
@@ -100,6 +101,7 @@ class ForecastingQuery:
         ]
 
     @strawberry.field
+    @require_plan("PRO")
     async def predictions(self, info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -148,6 +150,7 @@ class ForecastingQuery:
         )
 
     @strawberry.field
+    @require_plan("PRO")
     async def replenishment_alerts(self, info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -164,6 +167,7 @@ class ForecastingQuery:
 @strawberry.type
 class ForecastingMutation:
     @strawberry.mutation
+    @require_plan("PRO")
     async def run_cleaning_pipeline(self, info, store_id: strawberry.ID) -> PipelineResultType:
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -181,6 +185,7 @@ class ForecastingMutation:
         )
 
     @strawberry.mutation
+    @require_plan("PRO")
     async def run_prediction_pipeline(self, info, store_id: strawberry.ID) -> PredictionRunResultType:
         if not info.context.user_id:
             raise UnauthenticatedException()

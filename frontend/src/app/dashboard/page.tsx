@@ -159,6 +159,13 @@ function DashboardContent() {
     return { total: 0, urgent: 0, warning: 0, healthy: 0 };
   }, [statsData]);
 
+  const isAdmin = useMemo(() => {
+    const orgs = meData?.me?.organizations || [];
+    const currentOrgId = meData?.me?.currentOrganizationId;
+    const currentOrg = orgs.find((o: any) => o.organizationId === currentOrgId);
+    return currentOrg?.role?.toLowerCase() === 'admin';
+  }, [meData]);
+
 
   // Relaxed Auth check for preview stability
   useEffect(() => {
@@ -406,10 +413,9 @@ function DashboardContent() {
 
         {activeTab === 'sources' && (
           <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-             <div className="bg-white rounded-2xl border border-slate-100 p-6">
-
-                <ConnectorsGrid onImport={handleCSVUpload} />
-             </div>
+              <div className="bg-white rounded-2xl border border-slate-100 p-6">
+                <ConnectorsGrid onImport={handleCSVUpload} isAdmin={isAdmin} />
+              </div>
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-6 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-between">

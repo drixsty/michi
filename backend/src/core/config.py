@@ -45,6 +45,16 @@ class Settings(BaseSettings):
     SHOPIFY_REDIRECT_URI: str = "http://localhost:8000/api/shopify/callback"
     SHOPIFY_SCOPES: str = "read_products,read_orders,read_inventory"
     
+    # Stripe (Sprint 17)
+    STRIPE_API_KEY: str = "sk_test_placeholder"
+    STRIPE_WEBHOOK_SECRET: str = "whsec_placeholder"
+    BILLING_MODE: str = "MOCK" # MOCK or STRIPE
+    
+    # Stripe Prices (Placeholders for dev)
+    STRIPE_PRICE_BASIC: str = "price_Basic123"
+    STRIPE_PRICE_PRO: str = "price_Pro123"
+    STRIPE_PRICE_ENTERPRISE: str = "price_Enterprise123"
+    
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

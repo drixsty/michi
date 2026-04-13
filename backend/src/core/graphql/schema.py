@@ -19,12 +19,14 @@ from src.modules.shopify.resolvers import ShopifyQuery, ShopifyMutation
 from src.modules.forecasting.resolvers import ForecastingQuery, ForecastingMutation
 from src.modules.inventory.resolvers import InventoryQuery, InventoryMutation
 from src.modules.decisions.resolvers import DecisionQuery, DecisionMutation
+from src.modules.billing.resolvers import BillingQuery, BillingMutation
+from src.modules.auth.decorators import require_role
 from src.core.exceptions import UnauthenticatedException, MichiException, ErrorCode
 import requests
 
 
 @strawberry.type
-class Query(ShopifyQuery, ForecastingQuery, InventoryQuery, DecisionQuery):
+class Query(ShopifyQuery, ForecastingQuery, InventoryQuery, DecisionQuery, BillingQuery):
     """Queries GraphQL"""
 
     @strawberry.field
@@ -33,7 +35,7 @@ class Query(ShopifyQuery, ForecastingQuery, InventoryQuery, DecisionQuery):
         if not info.context.user_id:
             raise UnauthenticatedException()
 
-        auth_service = AuthService(info.context.db)
+        auth_service = AuthService(info.context.db, billing_service=info.context.billing)
         user = await auth_service.get_user_by_id(info.context.user_id)
         if not user:
             raise UnauthenticatedException()
@@ -201,13 +203,13 @@ class Query(ShopifyQuery, ForecastingQuery, InventoryQuery, DecisionQuery):
 
 
 @strawberry.type
-class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, DecisionMutation):
+class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, DecisionMutation, BillingMutation):
     """Mutations GraphQL"""
 
     @strawberry.mutation
     async def login(self, info, input: LoginInput) -> AuthPayload:
         """Login SaaS avec support multi-org."""
-        auth_service = AuthService(info.context.db)
+        auth_service = AuthService(info.context.db, billing_service=info.context.billing)
         from src.modules.auth.schemas import LoginInput as LoginInputSchema
         
         result = await auth_service.login(LoginInputSchema(email=input.email, password=input.password))
@@ -250,7 +252,7 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         if not info.context.user_id:
             raise UnauthenticatedException()
             
-        auth_service = AuthService(info.context.db)
+        auth_service = AuthService(info.context.db, billing_service=info.context.billing)
         user = await auth_service.update_user(
             user_id=info.context.user_id,
             current_organization_id=uuid.UUID(str(organization_id))
@@ -303,7 +305,7 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         if not info.context.user_id:
             raise UnauthenticatedException()
 
-        auth_service = AuthService(info.context.db)
+        auth_service = AuthService(info.context.db, billing_service=info.context.billing)
         user = await auth_service.get_user_by_id(info.context.user_id)
         if not user:
             raise UnauthenticatedException()
@@ -340,7 +342,7 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
     @strawberry.mutation
     async def register(self, info, input: RegisterInput) -> AuthPayload:
         """Inscription manuelle."""
-        auth_service = AuthService(info.context.db)
+        auth_service = AuthService(info.context.db, billing_service=info.context.billing)
         result = await auth_service.register(
             email=input.email,
             password=input.password,
@@ -379,7 +381,7 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
             first_name = payload.get("given_name")
             last_name = payload.get("family_name")
             
-            auth_service = AuthService(info.context.db)
+            auth_service = AuthService(info.context.db, billing_service=info.context.billing)
             result = await auth_service.login_with_google(
                 google_id=google_id,
                 email=email,
@@ -406,6 +408,7 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
             raise MichiException(message="Erreur lors de l'authentification Google", code=ErrorCode.UNAUTHENTICATED)
 
     @strawberry.mutation
+    @require_role(["admin"])
     async def updateOrganization(self, info, input: UpdateOrganizationInput) -> OrganizationType:
         """Met à jour les réglages de l'organisation active."""
         if not info.context.user_id or not info.context.org_id:
@@ -453,7 +456,7 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         if not info.context.user_id:
             raise UnauthenticatedException()
 
-        auth_service = AuthService(info.context.db)
+        auth_service = AuthService(info.context.db, billing_service=info.context.billing)
         return await auth_service.change_password(
             user_id=info.context.user_id,
             current_password=input.current_password,
@@ -461,6 +464,7 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         )
 
     @strawberry.mutation(name="toggleSource")
+    @require_role(["admin"])
     async def toggle_source(self, info, platform: str, connected: bool, store_id: Optional[strawberry.ID] = None) -> SourceType:
         """Gère la connexion/déconnexion d'un Store."""
         if not info.context.user_id or not info.context.org_id:
@@ -514,6 +518,7 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         )
 
     @strawberry.mutation(name="inviteMember")
+    @require_role(["admin"])
     async def invite_member(self, info, email: str, role: str) -> InvitationType:
         """Invite un nouveau collaborateur par email."""
         if not info.context.user_id or not info.context.org_id:
@@ -558,6 +563,7 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         return success
 
     @strawberry.mutation(name="deleteInvitation")
+    @require_role(["admin"])
     async def delete_invitation(self, info, invitation_id: strawberry.ID) -> bool:
         """Annule une invitation pendante."""
         if not info.context.user_id:
@@ -570,12 +576,13 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         return success
 
     @strawberry.mutation(name="removeMember")
+    @require_role(["admin"])
     async def remove_member(self, info, user_id: strawberry.ID) -> bool:
         """Retire un membre de l'organisation."""
         if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()
             
-        auth_service = AuthService(info.context.db)
+        auth_service = AuthService(info.context.db, billing_service=info.context.billing)
         success = await auth_service.remove_member(
             organization_id=uuid.UUID(str(info.context.org_id)),
             user_id=uuid.UUID(str(user_id))
@@ -584,13 +591,14 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         return success
 
     @strawberry.mutation(name="updateMemberRole")
+    @require_role(["admin"])
     async def update_member_role(self, info, user_id: strawberry.ID, role: str) -> bool:
         """Met à jour le rôle d'un membre."""
         if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()
             
         from src.modules.auth.models import UserRole
-        auth_service = AuthService(info.context.db)
+        auth_service = AuthService(info.context.db, billing_service=info.context.billing)
         member = await auth_service.update_member_role(
             organization_id=uuid.UUID(str(info.context.org_id)),
             user_id=uuid.UUID(str(user_id)),
@@ -600,12 +608,13 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         return member is not None
 
     @strawberry.mutation(name="toggleUserStatus")
+    @require_role(["admin"])
     async def toggle_user_status(self, info, user_id: strawberry.ID, active: bool) -> bool:
         """Active ou désactive un utilisateur (Ban)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
             
-        auth_service = AuthService(info.context.db)
+        auth_service = AuthService(info.context.db, billing_service=info.context.billing)
         user = await auth_service.toggle_user_status(
             user_id=uuid.UUID(str(user_id)),
             is_active=active

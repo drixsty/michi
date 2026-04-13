@@ -1,8 +1,8 @@
 # 📊 Michi - Progress Tracker
 
-**Date last update :** 15 Juillet 2026  
-**Agent IA :** Antigravity — Sprint 15 & 16 Validés ✅
-**Objectif :** Solution OMNICANAL Robuste & SaaS Multi-Tenant — **Avancement : 95%**
+**Date last update :** 13 Avril 2026  
+**Agent IA :** Antigravity — Sprint 17 Validé ✅
+**Objectif :** Solution OMNICANAL Robuste & SaaS Multi-Tenant Payant — **Avancement : 98%**
 
 ---
 
@@ -39,7 +39,7 @@ Sprint 13 ✅ [■■■■■■■■■■] 100%  Intelligence Stratégique (
 Sprint 14 ✅ [■■■■■■■■■■] 100%  Cockpit de Pilotage (Action & Simulation)
 Sprint 15 ✅ [■■■■■■■■■■] 100%  Connectivité & Précision (Saisonnalité & Marges)
 Sprint 16 ✅ [■■■■■■■■■■] 100%  SaaS Enterprise : IAM & Multi-Tenancy (Switching & Roles)
-Sprint 17 ⏳ [□□□□□□□□□□] 0%    SaaS Enterprise : Monétisation (Stripe & Abonnements)
+Sprint 17 ✅ [■■■■■■■■■■] 100%  SaaS Enterprise : Monétisation (Stripe & Abonnements)
 Sprint 18 ⏳ [□□□□□□□□□□] 0%    SaaS Enterprise : Multi-Store UX & Dashboard Global
 ```
 
@@ -501,7 +501,7 @@ Supporte les exports natifs wp-admin. Gère les alias de colonnes (`Item SKU`, `
 | Sprint 9   | 30 pts  | 30 pts  | 100% ✅ |
 | Sprint 15  | 30 pts  | 30 pts  | 100% ✅ |
 | Sprint 16  | 30 pts  | 30 pts  | 100% ✅ |
-| Sprint 17  | 25 pts  | 0 pts   | 0% ⏳   |
+| Sprint 17  | 25 pts  | 25 pts  | 100% ✅ |
 | Sprint 18  | 20 pts  | 0 pts   | 0% ⏳   |
 
 **Total MVP :** 214 story points — **214 livrés (100%)**
@@ -807,12 +807,12 @@ Ces features sont hors scope MVP mais peuvent être ajoutées après validation 
 
 ---
 
-## 🚧 Sprint 16 : SaaS Enterprise - IAM & Multi-Tenancy — EN COURS
+## ✅ Sprint 16 : SaaS Enterprise - IAM & Multi-Tenancy — TERMINÉ
 
 **Dates :** 6 - 19 Juillet 2026 (2 semaines)  
 **Objectif :** Migration vers une architecture multi-tenant. Switching d'organisation, rôles granulaires et authentification Google.  
-**Statut :** 🚧 **En cours (Backend 100%, Frontend 0%)**  
-**Vélocité planifiée :** 30 pts
+**Statut :** ✅ **TERMINÉ**  
+**Vélocité réalisée :** 30/30 pts (100%)
 
 ### User Stories — Sprint 16
 
@@ -821,8 +821,8 @@ Ces features sont hors scope MVP mais peuvent être ajoutées après validation 
 | US 16.1 | **Modèles Multi-Tenant** — Création `Organization`, `Member` et refonte des FKs backend | 10 | ✅ Done |
 | US 16.3 | **Switching d'Organisation (Backend)** — Logique GQL et mutation `switchOrganization` | 5 | ✅ Done |
 | US 16.5 | **Multi-Store Seed V2** — Script de seed SaaS avec stores Shopify/Amazon/Woo | 2 | ✅ Done |
-| US 16.6 | **Frontend SaaS Alignment** — Refonte Types, Queries & Context (StoreContext) | 7 | 🚧 In Progress |
-| US 16.7 | **Switching UI** — Composants OrgSwitcher & StoreSwitcher dans la sidebar/navbar | 6 | ⏳ To Do |
+| US 16.6 | **Frontend SaaS Alignment** — Refonte Types, Queries & Context (StoreContext) | 7 | ✅ Done |
+| US 16.7 | **Switching UI** — Composants OrgSwitcher & StoreSwitcher dans la sidebar/navbar | 6 | ✅ Done |
 
 ### Checklist Backend (TERMINÉ)
 - [x] Modèles `Organization`, `OrganizationMember`, `Store`
@@ -831,12 +831,43 @@ Ces features sont hors scope MVP mais peuvent être ajoutées après validation 
 - [x] Mutation `switchOrganization` fonctionnelle
 - [x] Script `seed_v2.py` avec données multi-stores
 
-### Checklist Frontend (DÉMARRÉ)
-- [ ] Mettre à jour `User`, `Product`, `Org` interfaces
-- [ ] Créer `StoreContext` pour gérer l'organisation/boutique active
-- [ ] Redesign de la Navbar avec **OrgSwitcher**
-- [ ] Intégration du **StoreSwitcher** dans la sidebar
-- [ ] Injection du `storeId` dans toutes les queries dashboard
+### Checklist Frontend (TERMINÉ)
+- [x] Mettre à jour `User`, `Product`, `Org` interfaces
+- [x] Créer `StoreContext` pour gérer l'organisation/boutique active
+- [x] Redesign de la Navbar avec **OrgSwitcher**
+- [x] Intégration du **StoreSwitcher** dans la sidebar
+- [x] Injection du `storeId` dans toutes les queries dashboard
+
+---
+
+## ✅ Sprint 17 : SaaS Enterprise - Monétisation (Stripe) — TERMINÉ
+**Dates :** 20 Juillet - 2 Août 2026 (2 semaines)  
+**Objectif :** Transformation en SaaS payant. Intégration Stripe, plans d'abonnements, webhooks et feature gating.  
+**Statut :** ✅ **TERMINÉ**  
+**Vélocité réalisée :** 29/29 pts (100%)
+
+### User Stories — Sprint 17
+
+| ID | User Story | Points | Statut |
+|----|-----------|--------|--------|
+| US 17.1 | **Stripe Customer Sync** — Création auto du client Stripe lors du signup Org | 3 | ✅ Done |
+| US 17.2 | **Catalogue de Plans** — Sync des Price IDs (BASIC, PRO, ENT) | 3 | ✅ Done |
+| US 17.3 | **Checkout Flow** — Mutation `createCheckoutSession` | 5 | ✅ Done |
+| US 17.4 | **Stripe Webhooks** — Handler sécurisé pour events asynchrones | 8 | ✅ Done |
+| US 17.5 | **Feature Gating** — Limitation d'accès selon le statut du plan | 5 | ✅ Done |
+| US 17.6 | **Billing Dashboard UI** — Page de gestion d'abonnement utilisateur | 5 | ✅ Done |
+
+### Checklist Backend (COMPLET)
+- [x] Installer SDK `stripe`
+- [x] Configurer `STRIPE_API_KEY`, `STRIPE_WEBHOOK_SECRET` et `BILLING_MODE`
+- [x] Créer `BillingService` avec mode Hybride (Mock/Stripe)
+- [x] Implémenter le décorateur `@require_plan`
+- [x] Tests d'intégration Pytest Validés (2/2 pass)
+
+### Checklist Frontend (COMPLET)
+- [x] Créer la vue d'organisation avec l'onglet "Facturation"
+- [x] Raffinement UI (Radius LG, Flat shadows)
+- [x] Intégrer les mutations de Checkout et les PricingCards
 
 ---
 

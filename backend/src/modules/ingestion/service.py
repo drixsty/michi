@@ -6,6 +6,9 @@ from .base import BaseConnector
 from src.modules.inventory.service import InventoryService
 from src.modules.inventory.alert_service import AlertService
 from src.modules.inventory.models import PlatformSource
+from src.modules.auth.models import Organization
+from sqlalchemy import select
+import uuid
 
 class IngestionService:
     """
@@ -58,7 +61,19 @@ class IngestionService:
             products_data = await connector.fetch_products(kwargs.get("csv_content"), kwargs.get("mapping"))
             sales_data = await connector.fetch_sales_history(kwargs.get("csv_content"), kwargs.get("mapping"))
 
-        # 2. Convertir la plateforme en Enum
+        # 2. Vérifier les limites de l'abonnement (Subscription Guard)
+        from src.modules.auth.models import Organization
+        org_result = await self.db.execute(
+            select(Organization).where(Organization.id == uuid.UUID(str(kwargs.get("organization_id"))))
+        )
+        org = org_result.scalar_one_or_none()
+        
+        if org and org.plan.upper() == "BASIC":
+            if len(products_data) > 100:
+                logger.warning(f"[Subscription Guard] Truncating products for BASIC org {org.id} (found {len(products_data)}, limit 100)")
+                products_data = products_data[:100]
+
+        # 3. Convertir la plateforme en Enum
         # source_platform peut être passé explicitement pour forcer la valeur
         platform_str = kwargs.get("source_platform", platform).lower()
         try:

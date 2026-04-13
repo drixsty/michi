@@ -20,6 +20,9 @@ class GraphQLContext(BaseContext):
     - user_id: ID de l'utilisateur connecté
     - org_id: ID de l'organisation active (contexte de session)
     """
-    db: Optional[AsyncSession] = None # Sérialisé via SerializedAsyncSession pour éviter les conflits GraphQL
+    db: Optional[AsyncSession] = None 
     user_id: Optional[str] = None
     org_id: Optional[str] = None
+    
+    # Services (Sprint 17)
+    billing: Optional[object] = None # BillingService

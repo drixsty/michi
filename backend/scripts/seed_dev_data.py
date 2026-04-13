@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 """
-Script pour seed la DB avec un user de développement
-
-Usage:
-    python scripts/seed_dev_data.py
+Script pour seed la DB avec un user de développement (Version Multi-Tenant Robuste)
 """
 import asyncio
 import sys
@@ -15,202 +12,132 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import select
 
 from src.core.config import settings
 from src.core.security import hash_password
 from src.core.database import Base
 from src.modules.auth.models import User, Organization, OrganizationMember, UserRole
-from src.modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder, Store, PlatformSource
-from src.modules.forecasting.models import CleanedDemand, Prediction
-
+from src.modules.inventory.models import Product, Supplier, Store, PlatformSource
+from src.modules.forecasting.models import Prediction # Important pour SQLAlchemy
 
 async def create_tables():
     """Crée toutes les tables"""
     engine = create_async_engine(settings.DATABASE_URL, echo=True)
-    
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
     await engine.dispose()
     print("Tables creees")
 
-
-async def _create_org_for_user(session: AsyncSession, user: User) -> None:
-    """Crée une organisation par défaut et y rattache l'utilisateur en ADMIN."""
-    org = Organization(
-        name="Michi Dev Corp",
-        slug=f"michi-dev-{uuid.uuid4().hex[:6]}",
-        plan="ENTERPRISE",
-        subscription_status="ACTIVE",
-    )
-    session.add(org)
-    await session.flush()
-
-    member = OrganizationMember(
-        user_id=user.id,
-        organization_id=org.id,
-        role=UserRole.ADMIN,
-        permissions={"all": True},
-    )
-    session.add(member)
-    user.current_organization_id = org.id
-
-    # Créer un store Shopify de démo rattaché à l'org
-    store = Store(
-        organization_id=org.id,
-        name="Shopify Dev Store",
-        platform=PlatformSource.SHOPIFY,
-        connected=True,
-    )
-    session.add(store)
-    await session.flush()
-
-    print(f"   ✅ Organisation '{org.name}' créée (id={org.id})")
-    print(f"   ✅ Membre ADMIN ajouté pour {user.email}")
-
-
-async def seed_dev_user():
-    """Crée un user de développement"""
-    engine = create_async_engine(settings.DATABASE_URL, echo=False)
+async def _ensure_user_with_org(session: AsyncSession, email: str, org_name: str, plan="BASIC", status="ACTIVE"):
+    """Vérifie ou crée un utilisateur avec une organisation et des données de démo"""
+    result = await session.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
     
-    async_session = sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False
-    )
-    
-    async with async_session() as session:
-        # Vérifier si user existe déjà
-        from sqlalchemy import select
-        result = await session.execute(
-            select(User).where(User.email == "dev@michi.com")
-        )
-        existing_user = result.scalar_one_or_none()
-        
-        if existing_user:
-            print("⚠️  User dev@michi.com existe déjà")
-            print(f"   User ID: {existing_user.id}")
-            # Vérifier si l'organisation existe déjà
-            from sqlalchemy import select as sa_select
-            org_result = await session.execute(
-                sa_select(OrganizationMember).where(OrganizationMember.user_id == existing_user.id)
-            )
-            if not org_result.scalar_one_or_none():
-                print("   ⚠️  Aucune organisation — création en cours...")
-                await _create_org_for_user(session, existing_user)
-            return
-
-        # Créer nouveau user
-        shop_id = uuid.uuid4()
+    if not user:
         user = User(
-            email="dev@michi.com",
-            first_name="Dev",
-            last_name="Admin",
+            email=email,
+            first_name=email.split('@')[0].capitalize(),
+            last_name="Test",
             hashed_password=hash_password("password123"),
-            shop_id=shop_id,
+            shop_id=uuid.uuid4()
         )
-
         session.add(user)
         await session.flush()
+        print(f"[USER] {email} cree.")
+    else:
+        print(f"[USER] {email} existe deja.")
 
-        await _create_org_for_user(session, user)
-
-        await session.commit()
-        await session.refresh(user)
+    # Vérifier l'organisation
+    member_result = await session.execute(
+        select(OrganizationMember).where(OrganizationMember.user_id == user.id)
+    )
+    member = member_result.scalars().first()
+    
+    if not member:
+        org = Organization(
+            name=org_name,
+            slug=f"{org_name.lower().replace(' ', '-')}-{uuid.uuid4().hex[:4]}",
+            plan=plan,
+            subscription_status=status,
+            stripe_customer_id=f"cus_mock_{uuid.uuid4().hex[:8]}"
+        )
+        session.add(org)
+        await session.flush()
         
-        # 1. Créer deux fournisseurs de démonstration
-        s1 = Supplier(
-            shop_id=shop_id,
-            name="Fournisseur Premium Co.",
-            contact_email="premium@example.com",
+        member = OrganizationMember(
+            user_id=user.id,
+            organization_id=org.id,
+            role=UserRole.ADMIN
+        )
+        session.add(member)
+        user.current_organization_id = org.id
+        print(f"[ORG] {org_name} ({plan}/{status}) creee pour {email}.")
+        
+        # 1. Créer un Store
+        store = Store(
+            organization_id=org.id,
+            name=f"Boutique {org_name}",
+            platform=PlatformSource.SHOPIFY,
+            connected=True
+        )
+        session.add(store)
+        await session.flush()
+
+        # 2. Créer un Fournisseur
+        supplier = Supplier(
+            store_id=store.id,
+            name=f"Fournisseur Premium {email.split('@')[0]}",
+            contact_email=f"contact@{email.split('@')[0]}.com",
             reliability_score=1.0,
             average_delay_days=0.0
         )
-        s2 = Supplier(
-            shop_id=shop_id,
-            name="Late Supply Logistics",
-            contact_email="late@example.com",
-            reliability_score=0.6,
-            average_delay_days=5.5  # 5.5 jours de retard en moyenne
-        )
-        session.add_all([s1, s2])
+        session.add(supplier)
         await session.flush()
 
-        await session.commit()
-        await session.refresh(user)
-
-        # 3. Créer des produits "Golden Test Cases" (Sprint 12)
-        p1 = Product(
+        # 3. Créer un Produit
+        product = Product(
             id=uuid.uuid4(),
-            shop_id=shop_id,
-            sku="GOLD-001",
-            title="Manteau Laine [DEMO BOOST 2.2x]",
-            current_stock=15,
+            store_id=store.id,
+            sku=f"DEMO-{plan}-{uuid.uuid4().hex[:4]}",
+            title=f"Produit Test {plan}",
+            current_stock=50,
             lead_time=14,
             moq=5,
-            source_platform="shopify",
-            boost_factor=2.2,
-            stock_weight=1.0,
-            supplier_id=s1.id
+            source_platform=PlatformSource.SHOPIFY,
+            supplier_id=supplier.id
         )
-        p2 = Product(
-            id=uuid.uuid4(),
-            shop_id=shop_id,
-            sku="GOLD-002",
-            title="Sneakers [AMAZON PRIORITY]",
-            current_stock=120,
-            lead_time=30,
-            moq=20,
-            source_platform="amazon",
-            boost_factor=1.0,
-            stock_weight=2.0,
-            supplier_id=s1.id
-        )
-        p3 = Product(
-            id=uuid.uuid4(),
-            shop_id=shop_id,
-            sku="GOLD-003",
-            title="Eau Micellaire [OUT OF STOCK TEST]",
-            current_stock=0,
-            lead_time=7,
-            moq=50,
-            source_platform="woocommerce",
-            boost_factor=1.0,
-            stock_weight=1.5,
-            supplier_id=s2.id
-        )
-        session.add_all([p1, p2, p3])
-        await session.flush()
-
-        print(f"Produits Golden crees: {p1.title}, {p2.title}")
-
-        await session.commit()
-        await session.refresh(user)
+        session.add(product)
+        print(f"   [DATA] Store, Supplier et Product crees pour {email}.")
     
-    await engine.dispose()
+    await session.commit()
 
+async def seed_dev_data():
+    """Crée les données de développement (Multi-Tenant & Billing)"""
+    engine = create_async_engine(settings.DATABASE_URL, echo=False)
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    
+    async with async_session() as session:
+        # 1. Cas Standard Dev (ENTERPRISE ACTIVE)
+        await _ensure_user_with_org(session, "dev@michi.com", "Michi Dev Corp", "ENTERPRISE")
+        
+        # 2. Cas Plan BASIC
+        await _ensure_user_with_org(session, "basic@michi.com", "StartUp Essentials", "BASIC")
+        
+        # 3. Cas Plan PRO (Paiement OK)
+        await _ensure_user_with_org(session, "pro@michi.com", "Scale-up Pro", "PRO")
+        
+        # 4. Cas Incident de paiement (PAST_DUE)
+        await _ensure_user_with_org(session, "late@michi.com", "Late Payers Inc", "PRO", "PAST_DUE")
+
+    await engine.dispose()
+    print("\nSeed multi-tenant avec divers abonnements termine !")
 
 async def main():
-    """Main function"""
     print("Seeding database...")
-    print(f"Database: {settings.DATABASE_URL}")
-    print()
-    
-    # Créer tables
     await create_tables()
-    print()
-    
-    # Créer user de dev
-    await seed_dev_user()
-    print()
-    
-    print("Seed termine !")
-    print()
-    print("Vous pouvez maintenant :")
-    print("   1. Lancer le backend : cd backend && uvicorn src.main:app --reload")
-    print("   2. Lancer le frontend : cd frontend && npm run dev")
-    print("   3. Se connecter sur http://localhost:3000/login")
-    print("      Email: dev@michi.com")
-    print("      Password: password123")
-
+    await seed_dev_data()
+    print("\nSeed termine !")
 
 if __name__ == "__main__":
     asyncio.run(main())

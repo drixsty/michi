@@ -12,6 +12,7 @@ class ErrorCode:
     INTERNAL_ERROR = "INTERNAL_ERROR"
     ALREADY_MEMBER = "ALREADY_MEMBER"
     INVITATION_ALREADY_PENDING = "INVITATION_ALREADY_PENDING"
+    SUBSCRIPTION_REQUIRED = "SUBSCRIPTION_REQUIRED"
 
 
 class MichiException(Exception):
@@ -62,3 +63,9 @@ class ValidationException(MichiException):
             ErrorCode.VALIDATION_ERROR,
             {"errors": errors or {}}
         )
+
+class SubscriptionRequiredException(MichiException):
+    """Accès restreint aux abonnés payants"""
+    
+    def __init__(self, message: str = "Un abonnement payant est requis pour cette fonctionnalité"):
+        super().__init__(message, ErrorCode.SUBSCRIPTION_REQUIRED)

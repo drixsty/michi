@@ -14,10 +14,11 @@ from src.modules.auth.models import User
 from src.modules.inventory.models import Product, SalesLog, Supplier, Alert, AlertEmail, PurchaseOrder
 from src.modules.forecasting.models import CleanedDemand, Prediction
 from src.core.security import hash_password
+from src.core.database import get_db
 
 
 # Database de test (utilise une DB séparée)
-TEST_DATABASE_URL = "postgresql+asyncpg://michi:michi123@localhost:5432/michi_test"
+TEST_DATABASE_URL = "postgresql+asyncpg://michi:michi123@localhost:5433/michi_test"
 
 
 @pytest.fixture(scope="session")
@@ -88,7 +89,12 @@ async def auth_token(test_user) -> str:
 
 
 @pytest.fixture(scope="function")
-async def client() -> AsyncGenerator[AsyncClient, None]:
-    """Client HTTP de test"""
+async def client(db_session) -> AsyncGenerator[AsyncClient, None]:
+    """Client HTTP de test avec surcharge DB (Générateur)"""
+    async def _get_db_override():
+        yield db_session
+        
+    app.dependency_overrides[get_db] = _get_db_override
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
+    app.dependency_overrides.clear()

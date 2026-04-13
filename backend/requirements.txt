@@ -38,3 +38,6 @@ redis[hiredis]==5.0.1
 
 # Email (Sprint 10)
 aiosmtplib==3.0.1
+
+# Billing (Sprint 17)
+stripe==8.0.0

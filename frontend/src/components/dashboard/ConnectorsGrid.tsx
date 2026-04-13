@@ -65,9 +65,10 @@ const BG_MAP: Record<string, string> = {
 
 interface ConnectorsGridProps {
   onImport?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  isAdmin?: boolean;
 }
 
-export function ConnectorsGrid({ onImport }: ConnectorsGridProps) {
+export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProps) {
   const [showAddSourcePanel, setShowAddSourcePanel] = React.useState(false);
   const [showSuccess, setShowSuccess] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null);
@@ -160,25 +161,37 @@ export function ConnectorsGrid({ onImport }: ConnectorsGridProps) {
              onChange={onImport} 
            />
            <label 
-             htmlFor="csv-connector-upload"
-             className="w-full py-2.5 rounded-lg text-[10px] font-bold  transition-all bg-primary text-white hover:opacity-90 shadow-none flex items-center justify-center gap-2 cursor-pointer"
+             htmlFor={isAdmin ? "csv-connector-upload" : ""}
+             className={cn(
+               "w-full py-2.5 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-2",
+               isAdmin 
+                ? "bg-primary text-white hover:opacity-90 cursor-pointer" 
+                : "bg-slate-100 text-slate-400 cursor-not-allowed opacity-60"
+             )}
            >
               <Upload className="h-3.5 w-3.5" />
-              Importer
+              {isAdmin ? "Importer" : "Accès restreint"}
            </label>
         </div>
 
         {/* Add Source Button Card */}
         <button 
-          onClick={() => setShowAddSourcePanel(true)}
-          className="group relative bg-slate-50 border border-dashed border-slate-200 rounded-lg p-4 transition-all hover:bg-white hover:border-primary/50 flex flex-col items-center justify-center text-center gap-3 min-h-[160px] focus:ring-0 focus:outline-none"
+          onClick={() => isAdmin && setShowAddSourcePanel(true)}
+          disabled={!isAdmin}
+          className={cn(
+            "group relative bg-slate-50 border border-dashed border-slate-200 rounded-lg p-4 transition-all flex flex-col items-center justify-center text-center gap-3 min-h-[160px] focus:ring-0 focus:outline-none",
+            isAdmin ? "hover:bg-white hover:border-primary/50" : "opacity-50 cursor-not-allowed"
+          )}
         >
-          <div className="p-3 rounded-lg bg-white text-slate-400 group-hover:text-primary transition-colors shadow-sm">
+          <div className={cn(
+            "p-3 rounded-lg bg-white text-slate-400 shadow-sm",
+            isAdmin && "group-hover:text-primary transition-colors"
+          )}>
             <Plus className="h-6 w-6" />
           </div>
           <div className="space-y-1">
             <p className="text-[11px] font-extrabold text-slate-900">Nouvelle source</p>
-            <p className="text-[9px] text-slate-400 font-bold">Connecter un flux API</p>
+            <p className="text-[9px] text-slate-400 font-bold">{isAdmin ? "Connecter un flux API" : "Réservé aux admins"}</p>
           </div>
         </button>
 
@@ -223,11 +236,14 @@ export function ConnectorsGrid({ onImport }: ConnectorsGridProps) {
               </div>
 
               <button 
-                onClick={() => setConfirmDelete(source.platform)}
-                disabled={toggling}
+                onClick={() => isAdmin && setConfirmDelete(source.platform)}
+                disabled={toggling || !isAdmin}
                 className={cn(
-                  "w-full py-2.5 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-2 bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 border border-transparent shadow-sm",
-                  toggling && "opacity-50 cursor-not-allowed"
+                  "w-full py-2.5 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-2 border border-transparent shadow-sm",
+                  isAdmin 
+                    ? "bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600" 
+                    : "bg-slate-50 text-slate-300 cursor-not-allowed",
+                  toggling && "opacity-50"
                 )}
               >
                 {toggling ? (
@@ -235,7 +251,7 @@ export function ConnectorsGrid({ onImport }: ConnectorsGridProps) {
                 ) : (
                    <>
                      <PowerOff className="h-3.5 w-3.5" />
-                     Déconnecter
+                     {isAdmin ? "Déconnecter" : "Lecture seule"}
                    </>
                 )}
               </button>

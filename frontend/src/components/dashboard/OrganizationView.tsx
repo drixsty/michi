@@ -17,13 +17,15 @@ import {
   Settings2,
   Plus,
   ChevronRight,
-  UserCircle
+  UserCircle,
+  CreditCard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoadingState } from '../ui/LoadingState';
 import { CustomSelect } from '../ui/CustomSelect';
 import { InviteMemberPanel } from './InviteMemberPanel';
 import { MemberDetailPanel } from './MemberDetailPanel';
+import { BillingSettings } from './BillingSettings';
 
 const GET_ORG_DATA = gql`
   query GetOrgData {
@@ -52,6 +54,11 @@ const GET_ORG_DATA = gql`
       id
       name
       settings
+      plan
+      subscriptionStatus
+    }
+    me {
+      id
     }
   }
 `;
@@ -63,6 +70,12 @@ const UPDATE_ORGANIZATION = gql`
       name
       settings
     }
+  }
+`;
+
+const CREATE_PORTAL_SESSION = gql`
+  mutation CreatePortalSession($returnUrl: String!) {
+    createBillingPortalSession(returnUrl: $returnUrl)
   }
 `;
 
@@ -81,7 +94,7 @@ const ROLE_LABELS: Record<string, string> = {
   VIEWER: 'Lecteur',
 };
 
-type OrgTabType = 'team' | 'settings';
+type OrgTabType = 'team' | 'settings' | 'billing';
 
 export function OrganizationView() {
   const [activeTab, setActiveTab] = useState<OrgTabType>('team');
@@ -120,6 +133,9 @@ export function OrganizationView() {
     }
   });
 
+  const [createPortal, { loading: creatingPortal }] = useMutation(CREATE_PORTAL_SESSION);
+
+
   const handleUpdateSettings = async () => {
     await updateOrganization({
       variables: {
@@ -135,6 +151,11 @@ export function OrganizationView() {
 
   const members = data?.organizationMembers ?? [];
   const invitations = data?.pendingInvitations ?? [];
+  const currentUserId = data?.me?.id;
+  
+  const currentUserRole = members.find((m: any) => m.user?.id === currentUserId)?.role?.toLowerCase() || 'viewer';
+  const isAdmin = currentUserRole === 'admin';
+  const isManager = currentUserRole === 'manager' || isAdmin;
 
   const filteredMembers = members.filter((m: any) => {
     const email = m.user?.email || '';
@@ -145,7 +166,10 @@ export function OrganizationView() {
 
   const tabs = [
     { id: 'team', label: 'Équipe', icon: Users },
-    { id: 'settings', label: 'Paramètres', icon: Settings2 },
+    ...(isAdmin ? [
+      { id: 'settings', label: 'Paramètres', icon: Settings2 },
+      { id: 'billing', label: 'Facturation', icon: CreditCard }
+    ] : [])
   ] as const;
 
   const openMemberDetail = (m: any) => {
@@ -191,12 +215,12 @@ export function OrganizationView() {
           </div>
         </div>
 
-        {activeTab === 'team' && (
+        {activeTab === 'team' && isAdmin && (
           <button 
             onClick={() => setShowInvitePanel(true)}
-            className="h-9 px-4 bg-primary text-white rounded-lg text-[13px] font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2"
+            className="h-9 px-4 bg-foreground text-background rounded-lg text-[13px] font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm shrink-0"
           >
-            <Plus className="h-4 w-4" />
+            <UserPlus className="h-4 w-4" />
             Inviter un membre
           </button>
         )}
@@ -270,7 +294,21 @@ export function OrganizationView() {
                             <p className="text-[12px] text-muted-foreground">{email}</p>
                           </div>
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground/20 group-hover:text-muted-foreground/50 transition-all" />
+                        <div className="flex items-center gap-2">
+                          {isAdmin && member.user?.id !== currentUserId && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedMember(member);
+                                setShowDetailPanel(true);
+                              }}
+                              className="p-2 hover:bg-muted rounded-lg transition-all text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+                          )}
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/20 group-hover:text-muted-foreground/50 transition-all" />
+                        </div>
                       </div>
                     );
                   }) : (
@@ -391,6 +429,11 @@ export function OrganizationView() {
                   </div>
                 </div>
               </section>
+            </div>
+          )}
+          {activeTab === 'billing' && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-400">
+              <BillingSettings />
             </div>
           )}
         </main>

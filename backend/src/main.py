@@ -15,6 +15,7 @@ from src.core.database import get_db
 from src.core.database_utils import SerializedAsyncSession
 from src.core.middleware.auth import get_current_user_from_token
 from src.modules.shopify.auth_routes import router as shopify_auth_router
+from src.modules.billing.router import router as billing_router
 
 
 @asynccontextmanager
@@ -77,10 +78,15 @@ async def get_context(
     lock = asyncio.Lock()
     serialized_db = SerializedAsyncSession(db, lock)
     
+    # Services globaux (Sprint 17)
+    from src.modules.billing import BillingService
+    billing_service = BillingService()
+    
     return GraphQLContext(
         db=serialized_db,
         user_id=user_id,
         org_id=org_id,
+        billing=billing_service
     )
 
 
@@ -93,6 +99,7 @@ graphql_app = GraphQLRouter(
 
 app.include_router(graphql_app, prefix="/graphql")
 app.include_router(shopify_auth_router)
+app.include_router(billing_router)
 
 
 # Health Check
