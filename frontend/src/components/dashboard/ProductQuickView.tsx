@@ -186,7 +186,8 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
     variables: { 
       id: productId 
     },
-    skip: !productId
+    skip: !productId,
+    fetchPolicy: 'cache-and-network'
   });
 
   const product = data?.products?.[0];

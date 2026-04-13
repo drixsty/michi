@@ -206,7 +206,7 @@ export default function ProductDetailPage() {
             <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-indigo-200" /> Prédiction</div>
           </div>
         </div>
-        <div className="h-[320px] flex items-center justify-center bg-slate-50/50 rounded-xl border border-dashed">
+        <div className="h-[320px] bg-slate-50/50 rounded-xl border border-dashed relative overflow-hidden">
           {product.cleanedDemands && product.cleanedDemands.length > 0 ? (
             <SalesChart 
               data={product.cleanedDemands || []} 
