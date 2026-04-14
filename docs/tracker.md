@@ -1,8 +1,8 @@
 # 📊 Michi - Progress Tracker
 
 **Date last update :** 14 Avril 2026  
-**Agent IA :** Antigravity — Sprint 20 Validé ✅
-**Objectif :** Solution OMNICANAL Robuste & SaaS Multi-Tenant Payant — **Avancement : 100%**
+**Agent IA :** Claude Code — Sprint 21 Planifié 🚀
+**Objectif :** Architecture Hexagonale DDD + Apps Monorepo (api / web / mobile) + Tests + Docs + i18n — **Avancement : Sprint 21 En cours**
 
 ---
 
@@ -43,6 +43,7 @@ Sprint 17 ✅ [■■■■■■■■■■] 100%  SaaS Enterprise : Monétisa
 Sprint 18 ⏳ [□□□□□□□□□□] 0%    SaaS Enterprise : Multi-Store UX & Dashboard Global
 Sprint 19 ✅ [■■■■■■■■■■] 100%  Advanced Multi-Tenant Onboarding & Lifecycle
 Sprint 20 ✅ [■■■■■■■■■■] 100%  Advanced IAM & Granular Permissions (RBAC)
+Sprint 21 🚀 [□□□□□□□□□□]   0%  DDD Hexagonal + Monorepo apps/ (api/web/mobile) + Typage + Tests + Docs + i18n
 ```
 
 ---
@@ -506,21 +507,26 @@ Supporte les exports natifs wp-admin. Gère les alias de colonnes (`Item SKU`, `
 | Sprint 17  | 25 pts  | 25 pts  | 100% ✅ |
 | Sprint 19  | 29 pts  | 29 pts  | 100% ✅ |
 | Sprint 20  | 21 pts  | 21 pts  | 100% ✅ |
+| Sprint 21  | 111 pts | 0 pts   | 0% 🚀 En cours |
 
 **Total MVP :** 214 story points — **214 livrés (100%)**
+**Total Sprint 21 (technique) :** 111 points planifiés — 30 User Stories (dont US 21.30 module `intelligence/`)
 
 > **Note Scrum Master :** Sprint 13 ajouté suite au backlog grooming pour adresser l'intelligence stratégique et la mutualisation cross-canal.
 
 ### Coverage Tests
 
-| Module | Actuel | Objectif | Tests |
-|--------|--------|----------|-------|
-| auth | 100% ✅ | 85% | 9 tests |
+| Module | Actuel | Objectif Sprint 21 | Tests |
+|--------|--------|--------------------|-------|
+| auth | 100% ✅ | 85% (après refacto) | 9 tests → cible 20+ |
 | shopify | 85% ✅ | 75% | 25 tests |
 | forecasting | 90%+ ✅ | 90% | 51 tests (OOS 12, IQR 12, MAPE 6, RunRate 13, Predictions 8) |
-| inventory | 85% ✅ | 85% | 12 tests |
+| inventory | 85% ✅ | 85% | 12 tests → cible 20+ |
 | ingestion | 85% ✅ | 75% | 15 tests |
-| **GLOBAL** | 87% ✅ | 85% | ~112 tests |
+| decisions | 0% ❌ | 80% | 0 tests → cible 10+ |
+| **GLOBAL** | 87% ✅ | **85% post-refacto** | ~112 tests → cible 180+ |
+| Frontend (Vitest) | 0% ❌ | **60%** | 0 tests → cible 25+ |
+| E2E (Playwright) | ~2% ❌ | **100% flux critiques** | 1 spec → cible 12+ specs |
 
 ### Documentation
 
@@ -962,6 +968,485 @@ Ces features sont hors scope MVP mais peuvent être ajoutées après validation 
 ---
 
 **Mis à jour automatiquement à chaque fin de sprint. 道💜**
+
+---
+
+## 🚀 Sprint 21 : DDD Hexagonal + Monorepo apps/ + Typage Strict + Tests + Docs + i18n — EN COURS
+
+**Dates :** Avril 2026 (Sprint 7 du plan Agile V2)
+**Objectif :** Refactorisation architecturale complète vers DDD Hexagonal, création du monorepo `apps/` (api, web, mobile), typage strict bout en bout, couverture de tests 85%+, documentation Docusaurus, et internationalisation FR/EN. Ce sprint est purement technique — aucune feature utilisateur — mais bloque toute l'évolution scalable du produit.
+**Statut :** 🚀 **EN COURS**
+**Vélocité planifiée :** 111 pts (Sprint 21A : 48 pts / Sprint 21B : 63 pts)
+
+---
+
+### Contexte Architecte — Pourquoi ce Sprint est Critique
+
+> **Audit Lead Tech (Avril 2026) :** Le projet atteint ses limites de maintenabilité. `schema.py` fait 760 lignes avec 9 mutations contenant du SQL SQLAlchemy directement dans les resolvers GraphQL. Il n'existe aucune couche Repository. Google OAuth utilise `requests.get()` synchrone dans un contexte async FastAPI (bloque l'event loop). Le frontend n'a aucun test unitaire, aucun i18n, et la documentation est un ensemble de fichiers Markdown bruts impossibles à naviguer. Ce sprint corrige toutes ces dettes avant que le code devienne ingérable.
+
+---
+
+### Règles DDD — Charte Architecturale Sprint 21
+
+Ces règles s'appliquent à **tous les modules** après ce sprint. Elles sont **non-négociables** et font partie de la Definition of Done.
+
+#### Règle 1 — Séparation stricte des couches
+
+```
+Domain     → Entités pures (dataclasses Python), Value Objects, Ports (Protocols)
+Application → Use Cases / Services (reçoivent des Ports, jamais de SQLAlchemy)
+Infrastructure → Repositories SQLAlchemy, adapters Email/Stripe/HTTP
+Adapters   → Resolvers GraphQL MINCES, Routes REST MINCES
+```
+
+#### Règle 2 — La règle de dépendance
+
+> Les couches **internes ne connaissent jamais les couches externes**.
+> Domain ne connaît pas Application. Application ne connaît pas Infrastructure.
+> Tout est inversé via des Protocols (Ports).
+
+```
+Domain ← Application ← Infrastructure
+           ↑                ↑
+        Adapters ───────────┘
+```
+
+#### Règle 3 — Resolvers sans SQL
+
+> Un resolver GraphQL ou une route REST ne doit **jamais** contenir :
+> - `select()`, `execute()`, `delete()`, `update()` (SQLAlchemy)
+> - `import` de models SQLAlchemy
+> - Logique métier (conditions, calculs, orchestration multi-étapes)
+>
+> Un resolver fait exactement **3 choses** : valider l'entrée, appeler le service, mapper la réponse.
+
+#### Règle 4 — Services sans ORM
+
+> Un service de la couche Application ne doit **jamais** importer `sqlalchemy`.
+> Il reçoit des interfaces (`IRepository`) et travaille avec des entités Domain.
+
+#### Règle 5 — Typage strict obligatoire
+
+> Backend : `mypy --strict` doit passer sur chaque module.
+> Frontend : `tsc --noEmit --strict` doit passer sur toute la codebase.
+> Interdit : `Any`, `# type: ignore` non justifié, `as any` côté TS.
+
+#### Règle 6 — Module `intelligence/` isolé
+
+> Tous les algorithmes IA et calculs analytiques vivent dans un module **`intelligence/`** dédié.
+> Ce module est **zéro-dépendance** : pas de SQLAlchemy, pas de FastAPI, pas de HTTP.
+> Il ne reçoit que des DataFrames Pandas ou des primitives Python, et retourne des valeurs typées.
+>
+> - `intelligence/algorithms/` — 6 algos forecasting (run_rate, IQR, OOS, ABC, seasonality, predictions)
+> - `intelligence/analytics/` — calculs BI extraits de `decisions/` (health_score, financial_kpis, risk_scoring)
+> - `intelligence/pipeline/` — orchestration nettoyage pure (sans DB)
+>
+> Les modules `forecasting/` et `decisions/` restent orchestrateurs (DB → appel `intelligence/` → DB).
+
+#### Règle 7 — Structure monorepo `apps/`
+
+> Le projet est structuré en 3 applications indépendantes sous `apps/` :
+> - `apps/api/` — Backend FastAPI (ex `backend/`)
+> - `apps/web/` — Frontend Next.js (ex `frontend/`)
+> - `apps/mobile/` — Application React Native / Expo (nouveau)
+>
+> Les packages partagés vivent dans `packages/` :
+> - `packages/types/` — Types TypeScript partagés (web + mobile)
+> - `packages/ui/` — Composants UI partagés (design system)
+
+---
+
+### Structure Monorepo Cible
+
+```
+michi-app/
+├── apps/
+│   ├── api/                         # 🔄 Renommage backend/ → apps/api/
+│   │   ├── src/
+│   │   │   ├── core/                # ✅ Infrastructure (inchangée)
+│   │   │   └── modules/
+│   │   │       ├── [module]/
+│   │   │       │   ├── domain/
+│   │   │       │   │   ├── entities.py       # 🆕 Entités pures (dataclasses)
+│   │   │       │   │   ├── value_objects.py  # 🆕 Email, Money, SKU...
+│   │   │       │   │   └── ports.py          # 🆕 IRepository Protocols
+│   │   │       │   ├── application/
+│   │   │       │   │   └── service.py        # 🔄 Reçoit Ports, jamais SQLAlchemy
+│   │   │       │   ├── infrastructure/
+│   │   │       │   │   └── repository.py     # 🆕 SQLAlchemy implementations
+│   │   │       │   └── adapters/
+│   │   │       │       └── resolvers.py      # 🔄 Thin resolvers (< 15 lignes chaque)
+│   │   │       │
+│   │   │       └── intelligence/             # 🆕 Bounded context IA — ZÉRO dépendance externe
+│   │   │           ├── algorithms/
+│   │   │           │   ├── run_rate.py       # 🔄 Déplacé depuis forecasting/algorithms/
+│   │   │           │   ├── outlier_detection.py
+│   │   │           │   ├── out_of_stock_correction.py
+│   │   │           │   ├── abc_analysis.py
+│   │   │           │   ├── seasonality.py
+│   │   │           │   └── predictions.py
+│   │   │           ├── analytics/
+│   │   │           │   ├── health_score.py   # 🆕 Extrait de decisions/service.py
+│   │   │           │   ├── financial_kpis.py # 🆕 Capital immobilisé, revenu à risque
+│   │   │           │   └── risk_scoring.py   # 🆕 Top risks, urgence réappro
+│   │   │           ├── pipeline/
+│   │   │           │   └── cleaning_pipeline.py  # 🆕 OOS → IQR → RunRate (DataFrames only)
+│   │   │           ├── domain/
+│   │   │           │   ├── entities.py       # PredictionResult, DemandSignal, RiskScore
+│   │   │           │   └── ports.py          # IIntelligenceEngine (Protocol)
+│   │   │           └── tests/
+│   │   │               ├── test_run_rate.py          # 🔄 Migré depuis forecasting/tests/
+│   │   │               ├── test_outlier_detection.py
+│   │   │               ├── test_out_of_stock_correction.py
+│   │   │               ├── test_abc_analysis.py
+│   │   │               ├── test_predictions.py
+│   │   │               ├── test_health_score.py      # 🆕
+│   │   │               ├── test_financial_kpis.py    # 🆕
+│   │   │               └── test_cleaning_pipeline.py # 🆕
+│   │   ├── tests/
+│   │   ├── alembic/
+│   │   └── pyproject.toml
+│   │
+│   ├── web/                         # 🔄 Renommage frontend/ → apps/web/
+│   │   ├── src/
+│   │   │   ├── app/[locale]/        # 🆕 Routing i18n next-intl
+│   │   │   ├── components/
+│   │   │   ├── modules/
+│   │   │   └── lib/
+│   │   ├── messages/
+│   │   │   ├── fr.json              # 🆕 Traductions françaises
+│   │   │   └── en.json              # 🆕 Traductions anglaises
+│   │   ├── e2e/                     # 🔄 Tests Playwright complets
+│   │   └── package.json
+│   │
+│   └── mobile/                      # 🆕 React Native / Expo
+│       ├── src/
+│       │   ├── app/                 # Expo Router
+│       │   ├── screens/
+│       │   ├── components/
+│       │   └── graphql/             # Apollo Client (partagé avec web)
+│       ├── assets/
+│       └── package.json
+│
+├── packages/
+│   ├── types/                       # 🆕 Types TypeScript partagés
+│   │   ├── src/
+│   │   │   ├── graphql.ts           # Types générés depuis le schema GraphQL
+│   │   │   ├── domain.ts            # User, Product, Organization...
+│   │   │   └── index.ts
+│   │   └── package.json
+│   └── ui/                          # 🆕 Design System partagé (web + mobile)
+│       ├── src/
+│       │   ├── tokens/              # Couleurs, typographie, espacement
+│       │   ├── components/          # Composants agnostiques (Button, Card...)
+│       │   └── index.ts
+│       └── package.json
+│
+├── docs-site/                       # 🆕 Docusaurus 3
+├── docs/                            # Markdown source → migré dans docs-site/
+├── docker-compose.yml               # ✅ Inchangé
+├── Makefile                         # 🔄 Mis à jour (nouvelles commandes apps/)
+└── package.json                     # 🆕 Root workspace (npm workspaces)
+```
+
+---
+
+### User Stories — Sprint 21
+
+#### EPIC A — Monorepo & Restructuration `apps/`
+
+| ID | User Story | Points | Priorité | Statut |
+|----|-----------|--------|----------|--------|
+| US 21.1 | **Monorepo Setup** — Initialiser npm workspaces, renommer `backend/` → `apps/api/`, `frontend/` → `apps/web/`, créer `apps/mobile/` et `packages/` | 5 | P0 | ⬜ Todo |
+| US 21.2 | **Package `types` partagé** — Types TypeScript extraits de `apps/web/` vers `packages/types/`, générés depuis le schema GraphQL | 5 | P0 | ⬜ Todo |
+| US 21.3 | **Package `ui` Design System** — Extraire les tokens (couleurs, typo, spacing) et les composants partagés (Button, Badge, Card) dans `packages/ui/` | 5 | P1 | ⬜ Todo |
+| US 21.4 | **`apps/mobile/` Bootstrap** — Initialiser Expo + Expo Router, Apollo Client, configuration `packages/types` et `packages/ui` | 8 | P1 | ⬜ Todo |
+| US 21.5 | **Mise à jour Makefile & Scripts** — Commandes `make api`, `make web`, `make mobile`, `make test:all`, `make docs` | 3 | P1 | ⬜ Todo |
+
+**Total Epic A :** 26 pts
+
+---
+
+#### EPIC B — Architecture DDD Hexagonale Backend
+
+| ID | User Story | Points | Priorité | Statut |
+|----|-----------|--------|----------|--------|
+| US 21.6 | **Domain Auth** — `entities.py` (UserEntity, OrgEntity), `value_objects.py` (Email, HashedPassword), `ports.py` (IUserRepository, IOrgRepository, IInvitationRepository) | 5 | P0 | ⬜ Todo |
+| US 21.7 | **Infrastructure Auth** — `SQLAlchemyUserRepository`, `SQLAlchemyOrgRepository`, `SQLAlchemyInvitationRepository` — migration de tout le SQL de `schema.py` et `auth/service.py` | 5 | P0 | ⬜ Todo |
+| US 21.8 | **Application Auth** — `AuthService` et `OrgService` refactorisés : reçoivent `IRepository`, pas de SQLAlchemy. Migration de la logique de `schema.py` (create_org, switch_org, invite, permissions) | 5 | P0 | ⬜ Todo |
+| US 21.9 | **Resolvers Auth minces** — `auth/adapters/resolvers.py` : 15 resolvers, chacun < 15 lignes. `schema.py` → < 200 lignes. Zéro `select()` dans les resolvers | 8 | P0 | ⬜ Todo |
+| US 21.10 | **Domain + Infrastructure Inventory** — Ports `IProductRepository`, `IStoreRepository`, `IAlertRepository`. Repositories SQLAlchemy. Service refactorisé | 8 | P0 | ⬜ Todo |
+| US 21.11 | **Domain + Infrastructure Forecasting** — Ports `IPredictionRepository`. Repository SQLAlchemy. Service refactorisé. Algorithmes inchangés (déjà bien isolés) | 5 | P1 | ⬜ Todo |
+| US 21.12 | **DI Container** — `core/di.py` : factory `build_services(db, billing)`. `GraphQLContext` expose les services pré-construits. Resolvers utilisent `info.context.auth_service` | 3 | P1 | ⬜ Todo |
+| US 21.13 | **Fix Google OAuth async** — Remplacer `requests.get()` (sync) par `httpx.AsyncClient` (async) dans `googleLogin` | 2 | P0 | ⬜ Todo |
+
+**Total Epic B :** 41 pts
+
+---
+
+#### EPIC C — Typage Strict Bout en Bout
+
+| ID | User Story | Points | Priorité | Statut |
+|----|-----------|--------|----------|--------|
+| US 21.14 | **Typage Backend `mypy --strict`** — Annoter toutes les fonctions publiques, éliminer les `Any` implicites, configurer `pyproject.toml` avec `[tool.mypy] strict = true` | 5 | P0 | ⬜ Todo |
+| US 21.15 | **Génération types GraphQL Frontend** — Configurer `graphql-codegen` pour générer `packages/types/src/graphql.ts` depuis le schema SDL. Les queries/mutations utilisent les types générés | 5 | P0 | ⬜ Todo |
+| US 21.16 | **Typage Frontend `tsc --strict`** — Éliminer tous les `as any`, les props non typées, activer `"strict": true` dans `tsconfig.json`. Zéro erreur `tsc --noEmit` | 3 | P1 | ⬜ Todo |
+
+**Total Epic C :** 13 pts
+
+---
+
+#### EPIC D — Documentation Docusaurus + API
+
+| ID | User Story | Points | Priorité | Statut |
+|----|-----------|--------|----------|--------|
+| US 21.17 | **Setup Docusaurus 3** — `docs-site/` initialisé, thème Michi (violet), 4 sections (Guide, Architecture, API, Sprints), migration des 7 Markdown existants, `make docs` | 5 | P1 | ⬜ Todo |
+| US 21.18 | **Diagrammes Architecture** — Pages MDX avec Mermaid : architecture hexagonale DDD, flux auth JWT, pipeline forecasting, ERD base de données | 3 | P1 | ⬜ Todo |
+| US 21.19 | **API Reference GraphQL** — Script `export_schema.py`, page Docusaurus avec toutes les queries/mutations documentées avec exemples. REST endpoints (Shopify, Billing) documentés | 5 | P1 | ⬜ Todo |
+| US 21.20 | **Guide Quickstart** — Setup en < 10 min : Docker, migrations, backend, frontend, mobile (optionnel). Toutes les env vars documentées | 3 | P1 | ⬜ Todo |
+| US 21.21 | **Documentation Algorithmes (LaTeX)** — Pages MDX avec formules KaTeX pour les 6 algorithmes de `intelligence/algorithms/` + les 3 analytics `intelligence/analytics/`. Paramètres, edge cases, métriques qualité | 5 | P2 | ⬜ Todo |
+
+**Total Epic D :** 21 pts
+
+---
+
+#### EPIC E — Tests E2E & Core
+
+| ID | User Story | Points | Priorité | Statut |
+|----|-----------|--------|----------|--------|
+| US 21.22 | **E2E Auth** — Playwright : register, login, logout, onboarding wizard, org-switch. Page objects pattern. `.env.test` | 5 | P0 | ⬜ Todo |
+| US 21.23 | **E2E Dashboard & Inventaire** — Playwright : stats cards, product table (filtre/tri/pagination), product detail, connect source, sync, alertes | 5 | P1 | ⬜ Todo |
+| US 21.24 | **Tests Core Backend** — pytest unitaire sur chaque service refactorisé (auth, org, inventory, forecasting, decisions). Repositories avec SQLite in-memory. Coverage ≥ 85% | 5 | P0 | ⬜ Todo |
+| US 21.25 | **Tests Composants Frontend** — Vitest + @testing-library/react : ProductTable, StatsOverview, SalesChart, useAuth hook. Coverage ≥ 60% | 3 | P1 | ⬜ Todo |
+| US 21.26 | **CI/CD GitHub Actions** — Workflow `test-backend.yml` (pytest + PostgreSQL service) et `test-frontend.yml` (vitest + playwright headless). Badge status dans README | 3 | P1 | ⬜ Todo |
+
+**Total Epic E :** 21 pts
+
+---
+
+#### EPIC F — Internationalisation (i18n)
+
+| ID | User Story | Points | Priorité | Statut |
+|----|-----------|--------|----------|--------|
+| US 21.27 | **Setup next-intl** — Installer, configurer `middleware.ts`, migrer toutes les routes sous `app/[locale]/`, `next.config.js` mis à jour, redirections automatiques | 5 | P1 | ⬜ Todo |
+| US 21.28 | **Traductions FR & EN** — `messages/fr.json` + `messages/en.json` complets. Extraction de tous les textes hardcodés des 8 pages et 25+ composants. Validation `grep` | 5 | P1 | ⬜ Todo |
+| US 21.29 | **Sélecteur de langue** — Composant `LanguageSwitcher` dans la Navbar. Switch `/fr/` ↔ `/en/`. Persistence `localStorage`. Responsive | 3 | P2 | ⬜ Todo |
+
+**Total Epic F :** 13 pts
+
+---
+
+#### EPIC G — Module `intelligence/` : Bounded Context IA Dédié
+
+| ID | User Story | Points | Priorité | Statut |
+|----|-----------|--------|----------|--------|
+| US 21.30 | **Création du module `intelligence/`** — Déplacer les 6 algorithmes de `forecasting/algorithms/` vers `intelligence/algorithms/`. Extraire les calculs BI purs de `decisions/service.py` vers `intelligence/analytics/` (health_score, financial_kpis, risk_scoring). Créer `intelligence/pipeline/cleaning_pipeline.py` (orchestration OOS→IQR→RunRate sans DB). Refactorer `forecasting/service.py` et `decisions/service.py` pour déléguer à `intelligence/`. Migrer les 5 tests existants + écrire 3 nouveaux tests analytics | 8 | P0 | ⬜ Todo |
+
+**Critères d'Acceptation US 21.30 :**
+- [ ] `apps/api/src/modules/intelligence/` créé avec les 4 sous-dossiers (`algorithms/`, `analytics/`, `pipeline/`, `domain/`)
+- [ ] Les 6 fichiers d'algorithmes déplacés depuis `forecasting/algorithms/` → `intelligence/algorithms/` (anciens chemins conservés comme re-exports pour compatibilité temporaire)
+- [ ] `intelligence/analytics/health_score.py` — fonction pure `calculate_health_score(efficiency: float, coverage: float) -> int` extraite de `decisions/service.py`
+- [ ] `intelligence/analytics/financial_kpis.py` — fonctions pures `calculate_inventory_value()`, `calculate_revenue_at_risk()` extraites de `decisions/service.py`
+- [ ] `intelligence/analytics/risk_scoring.py` — fonction pure `score_products(products: list[...]) -> list[RiskScore]` extraite de `decisions/service.py`
+- [ ] `intelligence/pipeline/cleaning_pipeline.py` — `run_cleaning_pipeline(df: DataFrame) -> DataFrame` sans aucun import SQLAlchemy
+- [ ] `intelligence/domain/entities.py` — dataclasses : `PredictionResult`, `DemandSignal`, `RiskScore`, `HealthScore`, `FinancialKpis`
+- [ ] `forecasting/service.py` refactorisé : `from intelligence.algorithms import ...` et `from intelligence.pipeline import ...`
+- [ ] `decisions/service.py` refactorisé : `from intelligence.analytics import ...` — ne contient plus aucun calcul inline
+- [ ] `intelligence/` n'importe **jamais** `sqlalchemy`, `fastapi`, `strawberry`, `requests`, `httpx`
+- [ ] `grep -r "import sqlalchemy" apps/api/src/modules/intelligence/` → 0 résultat
+- [ ] 8 fichiers de tests dans `intelligence/tests/` (5 migrés + 3 nouveaux pour analytics)
+- [ ] `pytest intelligence/tests/` → 100% pass
+- [ ] `mypy --strict intelligence/` → 0 erreur
+
+**Total Epic G :** 8 pts
+
+---
+
+### Vue Consolidée Sprint 21
+
+| Epic | US | SP | Dépendances |
+|------|----|----|-------------|
+| A — Monorepo apps/ | 5 US | 26 pts | — |
+| B — DDD Hexagonal Backend | 8 US | 41 pts | A (après renommage dossiers) |
+| C — Typage Strict | 3 US | 13 pts | B (types basés sur les entités domain) |
+| D — Docusaurus + API Docs | 5 US | 21 pts | A (chemin docs-site dans monorepo) |
+| E — Tests E2E & Core | 5 US | 21 pts | B (tests sur les services refactorisés) |
+| F — i18n | 3 US | 13 pts | A (routing dans apps/web/) |
+| **G — Module `intelligence/`** | **1 US** | **8 pts** | **A + B (dépend du renommage et de la structure modules/)** |
+| **TOTAL** | **30 US** | **143 pts** | |
+
+> **Note Scrum Master :** Vélocité planifiée retenue à **111 pts** sur 4 semaines (Sprint 21A 48 pts + Sprint 21B 63 pts). Les US 21.4 (Mobile bootstrap), 21.21 (Algo LaTeX), 21.23 (E2E Dashboard), 21.25 (Tests composants), 21.29 (LanguageSwitcher) sont classées P2 et reportables en Sprint 22 si tension de vélocité. **US 21.30 est P0** — elle doit être livrée dans Sprint 21A car les tests intelligence/ débloquent tous les tests du Sprint 21B.
+
+---
+
+### Ordre de développement recommandé
+
+```
+Semaine 1 (Sprint 21A) :
+  US 21.1  → Monorepo setup (critique — bloque tout)
+  US 21.30 → Module intelligence/ (P0 — débloque tests 21B, parallèle avec 21.1)
+  US 21.6  → Domain Auth (parallèle)
+  US 21.17 → Docusaurus setup (indépendant)
+  US 21.22 → E2E Auth (indépendant)
+
+Semaine 2 (Sprint 21A) :
+  US 21.2  → Package types partagé
+  US 21.7  → Infrastructure Auth (dépend 21.6)
+  US 21.8  → Application AuthService (dépend 21.7)
+  US 21.14 → mypy --strict Backend (valide intelligence/ en premier)
+  US 21.27 → Setup next-intl
+
+Semaine 3 (Sprint 21B) :
+  US 21.9  → Resolvers minces Auth (dépend 21.8)
+  US 21.11 → DDD Forecasting (dépend 21.30 — service.py délègue à intelligence/)
+  US 21.12 → DI Container
+  US 21.13 → Fix Google OAuth async
+  US 21.15 → Génération types GraphQL
+  US 21.18 → Diagrammes Mermaid (inclut diagramme intelligence/)
+  US 21.28 → Traductions FR/EN
+
+Semaine 4 (Sprint 21B) :
+  US 21.10 → DDD Inventory
+  US 21.16 → tsc --strict Frontend
+  US 21.19 → API Reference GraphQL
+  US 21.20 → Guide Quickstart
+  US 21.24 → Tests Core Backend (inclut tests intelligence/analytics/)
+  US 21.26 → CI/CD GitHub Actions
+  US 21.5  → Makefile mis à jour
+```
+
+---
+
+### Checklist Sprint 21 — Backend
+
+**Epic G — Module `intelligence/` :**
+- [ ] `apps/api/src/modules/intelligence/algorithms/run_rate.py` (déplacé + re-export compat)
+- [ ] `apps/api/src/modules/intelligence/algorithms/outlier_detection.py`
+- [ ] `apps/api/src/modules/intelligence/algorithms/out_of_stock_correction.py`
+- [ ] `apps/api/src/modules/intelligence/algorithms/abc_analysis.py`
+- [ ] `apps/api/src/modules/intelligence/algorithms/seasonality.py`
+- [ ] `apps/api/src/modules/intelligence/algorithms/predictions.py`
+- [ ] `apps/api/src/modules/intelligence/analytics/health_score.py`
+- [ ] `apps/api/src/modules/intelligence/analytics/financial_kpis.py`
+- [ ] `apps/api/src/modules/intelligence/analytics/risk_scoring.py`
+- [ ] `apps/api/src/modules/intelligence/pipeline/cleaning_pipeline.py`
+- [ ] `apps/api/src/modules/intelligence/domain/entities.py` (PredictionResult, DemandSignal, RiskScore, FinancialKpis)
+- [ ] `apps/api/src/modules/intelligence/domain/ports.py` (IIntelligenceEngine)
+- [ ] `forecasting/service.py` refactorisé → importe `intelligence/`
+- [ ] `decisions/service.py` refactorisé → importe `intelligence/analytics/`
+- [ ] `grep -r "import sqlalchemy" intelligence/` → 0 résultat ✅
+- [ ] `mypy --strict intelligence/` → 0 erreur
+
+**Epic B — DDD Hexagonal :**
+- [ ] `apps/api/src/modules/auth/domain/entities.py` (UserEntity, OrgEntity, OrgMemberEntity, InvitationEntity)
+- [ ] `apps/api/src/modules/auth/domain/value_objects.py` (Email, HashedPassword)
+- [ ] `apps/api/src/modules/auth/domain/ports.py` (IUserRepository, IOrgRepository, IInvitationRepository, IBillingService)
+- [ ] `apps/api/src/modules/auth/infrastructure/user_repository.py` (SQLAlchemyUserRepository)
+- [ ] `apps/api/src/modules/auth/infrastructure/org_repository.py` (SQLAlchemyOrgRepository)
+- [ ] `apps/api/src/modules/auth/infrastructure/invitation_repository.py`
+- [ ] `apps/api/src/modules/auth/application/service.py` (AuthService sans SQLAlchemy)
+- [ ] `apps/api/src/modules/auth/application/org_service.py` (OrgService — logique extraite de schema.py)
+- [ ] `apps/api/src/modules/auth/adapters/resolvers.py` (15 resolvers, chacun < 15 lignes)
+- [ ] `apps/api/src/core/graphql/schema.py` → < 200 lignes (composition pure)
+- [ ] `apps/api/src/modules/inventory/domain/ports.py` + `infrastructure/repository.py`
+- [ ] `apps/api/src/modules/forecasting/domain/ports.py` + `infrastructure/repository.py`
+- [ ] `apps/api/src/core/di.py` (factory build_services)
+- [ ] Fix `googleLogin` → `httpx.AsyncClient` async
+- [ ] `mypy --strict` passe sur tous les modules
+
+**Epic E — Tests :**
+- [ ] `apps/api/src/modules/intelligence/tests/test_run_rate.py` (migré)
+- [ ] `apps/api/src/modules/intelligence/tests/test_outlier_detection.py` (migré)
+- [ ] `apps/api/src/modules/intelligence/tests/test_out_of_stock_correction.py` (migré)
+- [ ] `apps/api/src/modules/intelligence/tests/test_abc_analysis.py` (migré)
+- [ ] `apps/api/src/modules/intelligence/tests/test_predictions.py` (migré)
+- [ ] `apps/api/src/modules/intelligence/tests/test_health_score.py` (nouveau)
+- [ ] `apps/api/src/modules/intelligence/tests/test_financial_kpis.py` (nouveau)
+- [ ] `apps/api/src/modules/intelligence/tests/test_cleaning_pipeline.py` (nouveau)
+- [ ] `apps/api/src/modules/auth/tests/test_domain_entities.py`
+- [ ] `apps/api/src/modules/auth/tests/test_user_repository.py` (SQLite in-memory)
+- [ ] `apps/api/src/modules/auth/tests/test_auth_service_unit.py` (mock repositories)
+- [ ] `apps/api/src/modules/auth/tests/test_org_service_unit.py`
+- [ ] `apps/api/src/modules/inventory/tests/test_inventory_service_unit.py`
+- [ ] `apps/api/src/modules/forecasting/tests/test_forecasting_service_unit.py`
+- [ ] `apps/api/src/modules/decisions/tests/test_decisions_service.py` (module actuellement sans test)
+- [ ] `pytest --cov=src` → coverage ≥ 85%
+
+---
+
+### Checklist Sprint 21 — Frontend Web
+
+**Epic A — Monorepo :**
+- [ ] `apps/web/` (renommage `frontend/`)
+- [ ] `packages/types/src/graphql.ts` (types générés graphql-codegen)
+- [ ] `packages/ui/src/tokens/` + composants Button, Badge, Card
+- [ ] `tsc --noEmit --strict` → 0 erreur
+
+**Epic F — i18n :**
+- [ ] `apps/web/src/middleware.ts` (next-intl createMiddleware)
+- [ ] `apps/web/src/app/[locale]/` (toutes les routes migrées)
+- [ ] `apps/web/messages/fr.json` (80+ clés)
+- [ ] `apps/web/messages/en.json` (80+ clés)
+- [ ] `LanguageSwitcher` dans Navbar
+- [ ] 0 texte utilisateur hardcodé
+
+**Epic E — Tests :**
+- [ ] `apps/web/e2e/auth/register.spec.ts`
+- [ ] `apps/web/e2e/auth/login.spec.ts`
+- [ ] `apps/web/e2e/auth/onboarding.spec.ts`
+- [ ] `apps/web/e2e/auth/org-switch.spec.ts`
+- [ ] `vitest --coverage` → coverage ≥ 60%
+
+---
+
+### Checklist Sprint 21 — Mobile
+
+**Epic A — Bootstrap :**
+- [ ] `apps/mobile/` initialisé avec Expo + Expo Router
+- [ ] Apollo Client configuré (pointe vers `apps/api/`)
+- [ ] `packages/types` importé
+- [ ] Screens : Login, Dashboard (liste produits), ProductDetail
+- [ ] Authentification JWT (AsyncStorage pour le token)
+- [ ] Navigation bottom tabs (Dashboard, Alertes, Profil)
+
+---
+
+### Checklist Sprint 21 — Documentation
+
+- [ ] `docs-site/` initialisé (Docusaurus 3)
+- [ ] Navigation : Guide | Architecture | API Reference | Sprints | Algorithmes
+- [ ] 7 fichiers Markdown existants migrés en MDX
+- [ ] Diagrammes Mermaid (hexagonal DDD, auth flow, forecasting pipeline, ERD)
+- [ ] Script `export_schema.py` + page API GraphQL générée
+- [ ] Guide Quickstart (setup < 10 min) validé
+- [ ] `npm run build` → 0 warning
+
+---
+
+### Risques Sprint 21
+
+| # | Risque | Mitigation |
+|---|--------|-----------|
+| R-01 | Migration `backend/` → `apps/api/` casse les imports Python relatifs | Lancer `pytest` avant et après le renommage. Corriger les `from src.modules.X` si besoin |
+| R-02 | Resolvers minces cassent des comportements GraphQL existants | Tests d'intégration `test_graphql_integration.py` à exécuter après chaque US Epic B |
+| R-03 | Mobile : Apollo Cache incompatible avec React Native | Utiliser `InMemoryCache` standard — pas de `localStorage`. Configurer `persistCache` via AsyncStorage |
+| R-04 | `next-intl` route `[locale]` incompatible avec certains layouts RSC | Tester chaque page après migration. Vérifier les composants `'use client'` qui utilisent des données locales |
+| R-05 | `graphql-codegen` génère des types incompatibles avec les resolvers Strawberry | Valider le SDL exporté avec `strawberry export-schema` avant de lancer codegen |
+
+---
+
+### Définition of Done — Sprint 21
+
+- [ ] `apps/api/`, `apps/web/`, `apps/mobile/` existent et fonctionnent indépendamment
+- [ ] Zéro `select()` SQLAlchemy dans un resolver ou un service
+- [ ] `mypy --strict` passe sur `apps/api/src/`
+- [ ] `tsc --noEmit --strict` passe sur `apps/web/src/` et `apps/mobile/src/`
+- [ ] Backend coverage ≥ 85% (`pytest --cov`)
+- [ ] Frontend coverage ≥ 60% (`vitest --coverage`)
+- [ ] 0 texte utilisateur hardcodé dans `apps/web/` (validé par grep)
+- [ ] `docs-site/` build réussit sans warning
+- [ ] `apps/mobile/` affiche la liste des produits en se connectant au backend local
+- [ ] CI/CD GitHub Actions : tests verts sur push main
 
 ---
 
