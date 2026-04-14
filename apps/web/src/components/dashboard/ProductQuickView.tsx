@@ -31,7 +31,7 @@ import {
   Line,
   Legend
 } from 'recharts';
-import { GET_PRODUCTS } from '@/graphql/queries/getProducts';
+import { GET_PRODUCT_DETAIL } from '@/graphql/queries/getProductDetail';
 import { UPDATE_PRODUCT_SETTINGS } from '@/graphql/mutations/updateProduct';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
@@ -183,15 +183,15 @@ function WhatIfSimulator({
 export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) {
   const router = useRouter();
   const { user } = useStore();
-  const { data, loading } = useQuery(GET_PRODUCTS, {
-    variables: { 
-      id: productId 
+  const { data, loading } = useQuery(GET_PRODUCT_DETAIL, {
+    variables: {
+      id: productId!
     },
     skip: !productId,
     fetchPolicy: 'cache-and-network'
   });
 
-  const product = data?.products?.[0];
+  const product = data?.productDetail?.[0];
 
   // Prepare chart data
   const chartData = React.useMemo(() => {
@@ -497,10 +497,10 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                   </div>
         
                   {/* ── What-If Simulator (US 14.4) ── */}
-                  {product.prediction?.runRate > 0 && (
-                    <WhatIfSimulator 
+                  {(product.prediction?.runRate ?? 0) > 0 && (
+                    <WhatIfSimulator
                       currentStock={product.currentStock}
-                      runRate={product.prediction.runRate}
+                      runRate={product.prediction!.runRate}
                       leadTime={leadTime}
                       boostFactor={boostFactor}
                       costPrice={costPrice}

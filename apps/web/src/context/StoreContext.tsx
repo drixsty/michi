@@ -2,17 +2,21 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { User, Organization, Store, OrganizationMember } from '@michi/types';
+import type { GetMeQuery, GetSourcesQuery, Organization, Store } from '@michi/types';
 import { GET_ME } from '../graphql/queries/getMe';
 import { SWITCH_ORGANIZATION } from '../graphql/mutations/switchOrganization';
 import { GET_SOURCES } from '../graphql/queries/getSources';
 import { useRouter, usePathname } from 'next/navigation';
 
+type MeUser = GetMeQuery['me'];
+type OrgMember = GetMeQuery['me']['organizations'][number];
+type SourceStore = GetSourcesQuery['sources'][number];
+
 interface StoreContextType {
-  user: User | null;
-  organizations: OrganizationMember[];
+  user: MeUser | null;
+  organizations: OrgMember[];
   currentOrganization: Organization | null;
-  stores: Store[];
+  stores: SourceStore[];
   loading: boolean;
   switchOrganization: (orgId: string) => Promise<void>;
   refreshUser: () => void;
@@ -59,7 +63,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     },
     onCompleted: (data) => {
       if (data?.me) {
-        const memberships = (data.me.organizations || []) as OrganizationMember[];
+        const memberships = (data.me.organizations || []) as OrgMember[];
         const currentOrgId = data.me.currentOrganizationId;
         
         // US 19.2: Redirect to onboarding if no organization found
@@ -114,7 +118,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         localStorage.setItem('michi_token', data.switchOrganization.token);
         
         // Pre-heat the org cache before reload so the UI shows the NEW org immediately on refresh
-        const targetOrg = (userData?.me?.organizations as OrganizationMember[])?.find(m => m.organizationId === orgId);
+        const targetOrg = (userData?.me?.organizations as OrgMember[])?.find(m => m.organizationId === orgId);
         if (targetOrg?.organization) {
           localStorage.setItem('michi_current_org', JSON.stringify({
             id: targetOrg.organization.id,

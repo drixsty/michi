@@ -1,6 +1,10 @@
-import { gql } from '@apollo/client';
+import { gql, TypedDocumentNode } from '@apollo/client';
+import type {
+  GetUnreadAlertsQuery, GetUnreadAlertsQueryVariables,
+  MarkAlertAsReadMutation, MarkAlertAsReadMutationVariables,
+} from '@michi/types';
 
-export const GET_UNREAD_ALERTS = gql`
+export const GET_UNREAD_ALERTS: TypedDocumentNode<GetUnreadAlertsQuery, GetUnreadAlertsQueryVariables> = gql`
   query GetUnreadAlerts($storeId: ID) {
     unreadAlerts(storeId: $storeId) {
       id
@@ -14,7 +18,7 @@ export const GET_UNREAD_ALERTS = gql`
   }
 `;
 
-export const MARK_ALERT_AS_READ = gql`
+export const MARK_ALERT_AS_READ: TypedDocumentNode<MarkAlertAsReadMutation, MarkAlertAsReadMutationVariables> = gql`
   mutation MarkAlertAsRead($alertId: ID!) {
     markAlertAsRead(alertId: $alertId)
   }

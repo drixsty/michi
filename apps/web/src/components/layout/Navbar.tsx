@@ -20,6 +20,7 @@ import { useQuery } from '@apollo/client';
 import { GET_UNREAD_ALERTS } from '@/graphql/queries/getUnreadAlerts';
 import { NotificationPanel } from '../dashboard/NotificationPanel';
 import { OrgSwitcher } from './OrgSwitcher';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { useStore } from '@/context/StoreContext';
 
 const navItems = [
@@ -143,7 +144,9 @@ export function Navbar() {
             </div>
             
             <div className="flex items-center gap-1 shrink-0 ml-2">
-              <button 
+              <LanguageSwitcher />
+
+              <button
                 onClick={() => setIsNotificationOpen(true)}
                 className="p-2 text-muted-foreground hover:text-foreground transition-all relative hover:bg-accent rounded-lg"
               >

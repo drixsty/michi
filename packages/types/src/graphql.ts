@@ -630,7 +630,7 @@ export type GetReplenishmentAlertsQuery = { __typename?: 'Query', replenishmentA
 export type GetMeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetMeQuery = { __typename?: 'Query', me: { __typename?: 'UserType', id: string, email: string, currentOrganizationId?: string | null, createdAt: any, organizations: Array<{ __typename?: 'OrganizationMemberType', organizationId: string, role: string, organization?: { __typename?: 'OrganizationType', id: string, name: string, slug: string } | null }> } };
+export type GetMeQuery = { __typename?: 'Query', me: { __typename?: 'UserType', id: string, email: string, firstName?: string | null, lastName?: string | null, currentOrganizationId?: string | null, createdAt: any, organizations: Array<{ __typename?: 'OrganizationMemberType', organizationId: string, role: string, organization?: { __typename?: 'OrganizationType', id: string, name: string, slug: string } | null }> } };
 
 export type GetOmnichannelInventoryQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -650,7 +650,7 @@ export type GetProductDetailQueryVariables = Exact<{
 }>;
 
 
-export type GetProductDetailQuery = { __typename?: 'Query', productDetail: Array<{ __typename?: 'ProductType', id: string, sku: string, title: string, currentStock: number, leadTime: number, moq: number, boostFactor: number, stockWeight: number, warningThreshold: number, supplier?: { __typename?: 'SupplierType', name: string, reliabilityScore: number } | null, prediction?: { __typename?: 'PredictionType', runRate: number, predictedStockoutDate?: any | null, reorderQuantity: number } | null, cleanedDemands: Array<{ __typename?: 'CleanedDemandType', date: any, rawUnitsSold: number, correctedUnitsSold: number, inventoryLevel?: number | null, isStockout: boolean, isOutlier: boolean, correctionType: string }>, channels: Array<{ __typename?: 'ChannelBreakdownType', platform: string, productId: string, currentStock: number, runRate: number, leadTime: number, moq: number, stockWeight: number }> }> };
+export type GetProductDetailQuery = { __typename?: 'Query', productDetail: Array<{ __typename?: 'ProductType', id: string, sku: string, title: string, currentStock: number, leadTime: number, moq: number, boostFactor: number, stockWeight: number, costPrice?: number | null, salePrice?: number | null, warningThreshold: number, supplier?: { __typename?: 'SupplierType', name: string, reliabilityScore: number } | null, prediction?: { __typename?: 'PredictionType', runRate: number, daysOfStock?: number | null, predictedStockoutDate?: any | null, reorderQuantity: number } | null, cleanedDemands: Array<{ __typename?: 'CleanedDemandType', date: any, rawUnitsSold: number, correctedUnitsSold: number, inventoryLevel?: number | null, isStockout: boolean, isOutlier: boolean, correctionType: string }>, channels: Array<{ __typename?: 'ChannelBreakdownType', platform: string, productId: string, currentStock: number, runRate: number, leadTime: number, moq: number, stockWeight: number }> }> };
 
 export type GetProductsQueryVariables = Exact<{
   storeId?: InputMaybe<Scalars['ID']['input']>;

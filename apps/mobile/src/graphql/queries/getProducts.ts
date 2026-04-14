@@ -1,5 +1,6 @@
-import { gql, TypedDocumentNode } from '@apollo/client';
+import { gql } from '@apollo/client';
 import type { GetProductsQuery, GetProductsQueryVariables } from '@michi/types';
+import type { TypedDocumentNode } from '@apollo/client';
 
 export const GET_PRODUCTS: TypedDocumentNode<GetProductsQuery, GetProductsQueryVariables> = gql`
   query GetProducts($storeId: ID, $id: ID) {
@@ -17,15 +18,6 @@ export const GET_PRODUCTS: TypedDocumentNode<GetProductsQuery, GetProductsQueryV
         daysOfStock
         predictedStockoutDate
         reorderQuantity
-      }
-      cleanedDemands {
-        date
-        correctedUnitsSold
-        inventoryLevel
-      }
-      supplier {
-        id
-        name
       }
     }
   }

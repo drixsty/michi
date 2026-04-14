@@ -30,6 +30,11 @@ export class DashboardPage {
     await expect(this.page.locator('text=Synchronisation réussie')).toBeVisible({ timeout: 15000 });
   }
 
+  async openOrgSwitcher() {
+    await this.page.click('[data-testid="user-menu-button"]');
+    await this.page.click('[data-testid="org-switcher-button"]');
+  }
+
   async openProductDetail(sku: string) {
     await this.page.click(`text=${sku}`);
     await expect(this.page.locator('[data-testid="product-quickview"]')).toBeVisible();

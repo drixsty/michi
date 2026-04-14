@@ -1,5 +1,6 @@
-import { gql, TypedDocumentNode } from '@apollo/client';
+import { gql } from '@apollo/client';
 import type { LoginMutation, LoginMutationVariables } from '@michi/types';
+import type { TypedDocumentNode } from '@apollo/client';
 
 export const LOGIN: TypedDocumentNode<LoginMutation, LoginMutationVariables> = gql`
   mutation Login($input: LoginInput!) {
@@ -8,16 +9,9 @@ export const LOGIN: TypedDocumentNode<LoginMutation, LoginMutationVariables> = g
       user {
         id
         email
+        firstName
+        lastName
         currentOrganizationId
-        organizations {
-          organizationId
-          role
-          organization {
-            id
-            name
-            slug
-          }
-        }
       }
     }
   }

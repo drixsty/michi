@@ -1,6 +1,10 @@
-import { gql } from '@apollo/client';
+import { gql, TypedDocumentNode } from '@apollo/client';
+import type {
+  GetDashboardStatsQuery, GetDashboardStatsQueryVariables,
+  GetReplenishmentAlertsQuery, GetReplenishmentAlertsQueryVariables,
+} from '@michi/types';
 
-export const GET_DASHBOARD_STATS = gql`
+export const GET_DASHBOARD_STATS: TypedDocumentNode<GetDashboardStatsQuery, GetDashboardStatsQueryVariables> = gql`
   query GetDashboardStats($storeId: ID) {
     dashboardKpis(storeId: $storeId) {
       totalProducts
@@ -12,7 +16,7 @@ export const GET_DASHBOARD_STATS = gql`
   }
 `;
 
-export const GET_REPLENISHMENT_ALERTS = gql`
+export const GET_REPLENISHMENT_ALERTS: TypedDocumentNode<GetReplenishmentAlertsQuery, GetReplenishmentAlertsQueryVariables> = gql`
   query GetReplenishmentAlerts($storeId: ID) {
     replenishmentAlerts(storeId: $storeId) {
       productId

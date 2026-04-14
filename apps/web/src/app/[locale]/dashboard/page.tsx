@@ -213,7 +213,7 @@ function DashboardContent() {
       <AnimatePresence>
         {showOnboarding && (
           <OnboardingWizard 
-            userName={meData?.me?.firstName}
+            userName={meData?.me?.firstName ?? undefined}
             onSync={() => triggerSync() as any} 
             onComplete={() => setShowOnboarding(false)} 
           />

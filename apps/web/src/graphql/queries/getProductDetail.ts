@@ -1,6 +1,7 @@
-import { gql } from '@apollo/client';
+import { gql, TypedDocumentNode } from '@apollo/client';
+import type { GetProductDetailQuery, GetProductDetailQueryVariables } from '@michi/types';
 
-export const GET_PRODUCT_DETAIL = gql`
+export const GET_PRODUCT_DETAIL: TypedDocumentNode<GetProductDetailQuery, GetProductDetailQueryVariables> = gql`
   query GetProductDetail($storeId: ID, $id: ID!) {
      productDetail: products(storeId: $storeId, id: $id) {
       id
@@ -11,6 +12,8 @@ export const GET_PRODUCT_DETAIL = gql`
       moq
       boostFactor
       stockWeight
+      costPrice
+      salePrice
       warningThreshold
       supplier {
         name
@@ -18,6 +21,7 @@ export const GET_PRODUCT_DETAIL = gql`
       }
       prediction {
         runRate
+        daysOfStock
         predictedStockoutDate
         reorderQuantity
       }
