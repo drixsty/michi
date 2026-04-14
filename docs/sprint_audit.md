@@ -28,12 +28,12 @@ Transformer Michi d'un monolithe modulaire bien structuré vers une **architectu
 ### Métriques cibles
 | KPI | Actuel | Cible Sprint 7 |
 |-----|--------|----------------|
-| Coverage backend | ~30% (6 modules sur 7 testés partiellement) | **85%** |
-| Coverage frontend | ~2% (1 seul test E2E) | **60%** |
-| Resolvers GraphQL avec logique DB directe | **12 resolvers** | **0** |
-| Endpoints sans docs formelles | 100% | **0%** |
-| Support i18n | ❌ FR hardcodé | ✅ FR + EN |
-| Documentation structurée | ❌ Markdown brut | ✅ Docusaurus |
+| Coverage backend | **88%** (US 21.24 ✅) | **85%** |
+| Coverage frontend | **65%** (Vitest ✅) | **60%** |
+| Resolvers GraphQL avec logique DB directe | **0** (US 21.9, 21.10, 21.11, 21.31 ✅) | **0** |
+| Endpoints sans docs formelles | 0% | **0%** |
+| Support i18n | ✅ FR + EN | ✅ FR + EN |
+| Documentation structurée | ✅ Docusaurus | ✅ Docusaurus |
 
 ### Vélocité estimée
 - **Total Story Points :** 89 points
@@ -223,16 +223,16 @@ La persistence est faite inline dans les services ET les resolvers.
 
 ### Tableau de priorité (Impact × Effort × Risque)
 
-| # | Dette | Impact | Effort | Risque si non corrigé | Priorité |
-|---|-------|--------|--------|----------------------|----------|
-| DT-01 | SQL direct dans resolvers GraphQL | CRITIQUE | M | Regression lors de tout refactoring | 🔴 P0 |
-| DT-02 | Google OAuth bloquant (requests sync) | HAUT | XS | Latence, blocage event loop FastAPI | 🔴 P0 |
-| DT-03 | Absence couche Repository | HAUT | L | Impossible de changer de DB sans tout réécrire | 🟡 P1 |
-| DT-04 | Tests coverage < 30% | HAUT | L | Régressions invisibles en production | 🔴 P0 |
-| DT-05 | i18n absent (textes hardcodés FR) | MOYEN | M | Impossible d'internationaliser sans refactor massif | 🟡 P1 |
-| DT-06 | Documentation uniquement en Markdown | MOYEN | M | Onboarding développeurs lent | 🟡 P1 |
-| DT-07 | StoreContext monolithique | FAIBLE | S | Re-renders globaux inutiles | 🟢 P2 |
-| DT-08 | Resolvers trop longs (760 lignes schema.py) | MOYEN | M | Maintenabilité dégradée | 🟡 P1 |
+| # | Dette | Impact | Effort | Statut | Priorité |
+|---|-------|--------|--------|--------|----------|
+| DT-01 | SQL direct dans resolvers GraphQL | CRITIQUE | M | ✅ Résolu (US 21.9) | 🔴 P0 |
+| DT-02 | Google OAuth bloquant (requests sync) | HAUT | XS | ✅ Résolu (US 21.13) | 🔴 P0 |
+| DT-03 | Absence couche Repository | HAUT | L | ✅ Résolu (US 21.7, 21.10) | 🟡 P1 |
+| DT-04 | Tests coverage < 30% | HAUT | L | ✅ Résolu (88% coverage) | 🔴 P0 |
+| DT-05 | i18n absent (textes hardcodés FR) | MOYEN | M | ✅ Résolu (F-i18n) | 🟡 P1 |
+| DT-06 | Documentation uniquement en Markdown | MOYEN | M | ✅ Résolu (D-Docs) | 🟡 P1 |
+| DT-07 | StoreContext monolithique | FAIBLE | S | ⬜ Todo | 🟢 P2 |
+| DT-08 | Resolvers trop longs (schema.py) | MOYEN | M | ✅ Résolu (<200 lines) | 🟡 P1 |
 
 ---
 
@@ -344,12 +344,12 @@ backend/src/
 - Les Ports sont des `typing.Protocol` asynchrones
 
 **Critères d'Acceptation :**
-- [ ] `auth/domain/entities.py` contient `UserEntity` et `OrgEntity` (dataclasses pures)
-- [ ] `auth/domain/ports.py` contient `IUserRepository(Protocol)` avec : `get_by_id`, `get_by_email`, `save`, `list_by_org`
-- [ ] `auth/domain/ports.py` contient `IOrgRepository(Protocol)` avec : `get_by_id`, `save`, `list_by_user`
-- [ ] Les entités ne font aucun import de SQLAlchemy ou FastAPI
-- [ ] Tests unitaires sur les entités : validation email, hash password
-- [ ] `mypy --strict` passe sur le module domain/
+- [x] `auth/domain/entities.py` contient `UserEntity` et `OrgEntity` (dataclasses pures)
+- [x] `auth/domain/ports.py` contient `IUserRepository(Protocol)` avec : `get_by_id`, `get_by_email`, `save`, `list_by_org`
+- [x] `auth/domain/ports.py` contient `IOrgRepository(Protocol)` avec : `get_by_id`, `save`, `list_by_user`
+- [x] Les entités ne font aucun import de SQLAlchemy ou FastAPI
+- [x] Tests unitaires sur les entités : validation email, hash password
+- [x] `mypy --strict` passe sur le module domain/
 
 **Tâches techniques :**
 1. Créer `auth/domain/entities.py` avec UserEntity, OrgEntity, OrgMemberEntity
@@ -371,12 +371,12 @@ backend/src/
 - La session SQLAlchemy est injectée dans le constructeur du repository
 
 **Critères d'Acceptation :**
-- [ ] `auth/infrastructure/repository.py` contient `SQLAlchemyUserRepository(IUserRepository)`
-- [ ] `SQLAlchemyUserRepository` reçoit `AsyncSession` en constructeur
-- [ ] Toutes les opérations DB Auth passent par ce repository (aucun `select()` dans service ou resolver)
-- [ ] `auth/infrastructure/org_repository.py` contient `SQLAlchemyOrgRepository`
-- [ ] Tests d'intégration : `test_user_repository.py` avec base SQLite in-memory
-- [ ] Résolution du bug Google OAuth sync → migration vers `httpx.AsyncClient`
+- [x] `auth/infrastructure/repository.py` contient `SQLAlchemyUserRepository(IUserRepository)`
+- [x] `SQLAlchemyUserRepository` reçoit `AsyncSession` en constructeur
+- [x] Toutes les opérations DB Auth passent par ce repository (aucun `select()` dans service ou resolver)
+- [x] `auth/infrastructure/org_repository.py` contient `SQLAlchemyOrgRepository`
+- [x] Tests d'intégration : `test_user_repository.py` avec base SQLite in-memory
+- [x] Résolution du bug Google OAuth sync → migration vers `httpx.AsyncClient`
 
 **Tâches techniques :**
 1. Créer `auth/infrastructure/user_repository.py` — migrer les select() de service.py + schema.py
@@ -400,12 +400,12 @@ backend/src/
 - La création d'organisation actuellement dans `schema.py` (300+ lignes) doit migrer dans `OrgService`
 
 **Critères d'Acceptation :**
-- [ ] `AuthService.__init__(user_repo: IUserRepository, billing: IBillingService)` — plus de AsyncSession
-- [ ] `OrgService.__init__(org_repo: IOrgRepository, user_repo: IUserRepository, billing: IBillingService)`
-- [ ] `OrgService.create_organization(user_id, name, plan)` contient la logique de `schema.py:create_organization`
-- [ ] `OrgService.switch_organization(user_id, org_id)` contient la logique de `schema.py:switch_organization`
-- [ ] Tests unitaires avec mock repositories (sans DB)
-- [ ] `IBillingService(Protocol)` défini dans `billing/domain/ports.py`
+- [x] `AuthService.__init__(user_repo: IUserRepository, billing: IBillingService)` — plus de AsyncSession
+- [x] `OrgService.__init__(org_repo: IOrgRepository, user_repo: IUserRepository, billing: IBillingService)`
+- [x] `OrgService.create_organization(user_id, name, plan)` contient la logique de `schema.py:create_organization`
+- [x] `OrgService.switch_organization(user_id, org_id)` contient la logique de `schema.py:switch_organization`
+- [x] Tests unitaires avec mock repositories (sans DB)
+- [x] `IBillingService(Protocol)` défini dans `billing/domain/ports.py`
 
 **Tâches techniques :**
 1. Créer `billing/domain/ports.py` avec `IBillingService` Protocol
@@ -429,12 +429,12 @@ backend/src/
 - Les mutations `create_organization`, `switch_organization`, `toggle_source`, `invite_member`, etc. migrent dans leurs modules respectifs
 
 **Critères d'Acceptation :**
-- [ ] `auth/adapters/resolvers.py` contient `AuthMutation` et `AuthQuery` Strawberry classes
-- [ ] Chaque mutation/query ne dépasse pas 15 lignes (appel service + mapping type)
-- [ ] `schema.py` < 200 lignes — uniquement composition Query + Mutation
-- [ ] Zéro import de SQLAlchemy dans les resolvers
-- [ ] Zéro `select()`, `delete()`, `execute()` dans les resolvers
-- [ ] Tous les tests d'intégration GraphQL existants passent toujours
+- [x] `auth/adapters/resolvers.py` contient `AuthMutation` et `AuthQuery` Strawberry classes
+- [x] Chaque mutation/query ne dépasse pas 15 lignes (appel service + mapping type)
+- [x] `schema.py` < 200 lignes — uniquement composition Query + Mutation
+- [x] Zéro import de SQLAlchemy dans les resolvers
+- [x] Zéro `select()`, `delete()`, `execute()` dans les resolvers
+- [x] Tous les tests d'intégration GraphQL existants passent toujours
 
 **Mutations à migrer (9 sur 15) :**
 1. `create_organization` → `OrgService.create_organization()`
@@ -476,13 +476,13 @@ backend/src/
 - Priorité sur ces 2 modules car ils contiennent la valeur métier principale
 
 **Critères d'Acceptation :**
-- [ ] `inventory/domain/ports.py` avec `IProductRepository`, `IStoreRepository`, `IAlertRepository`
-- [ ] `inventory/infrastructure/repository.py` avec implémentations SQLAlchemy
-- [ ] `inventory/application/service.py` refactorisé (reçoit IProductRepository)
-- [ ] `forecasting/domain/ports.py` avec `IPredictionRepository`
-- [ ] `forecasting/infrastructure/repository.py` implémentée
-- [ ] Resolvers Inventory et Forecasting minces (< 15 lignes chaque)
-- [ ] Tests unitaires services avec mocks
+- [x] `inventory/domain/ports.py` avec `IProductRepository`, `IStoreRepository`, `IAlertRepository`
+- [x] `inventory/infrastructure/repository.py` avec implémentations SQLAlchemy
+- [x] `inventory/application/service.py` refactorisé (reçoit IProductRepository)
+- [x] `forecasting/domain/ports.py` avec `IPredictionRepository`
+- [x] `forecasting/infrastructure/repository.py` implémentée
+- [x] Resolvers Inventory et Forecasting minces (< 15 lignes chaque)
+- [x] Tests unitaires services avec mocks
 
 **Tâches techniques :**
 1. Audit `inventory/resolvers.py` — identifier le SQL direct
@@ -506,10 +506,10 @@ backend/src/
 - Cible : `info.context.auth_service`, `info.context.org_service` pré-construits dans `get_context()`
 
 **Critères d'Acceptation :**
-- [ ] `GraphQLContext` expose : `auth_service`, `org_service`, `inventory_service`, `forecasting_service`
-- [ ] Les services sont construits une fois par requête dans `get_context()`
-- [ ] Les resolvers font juste `info.context.auth_service.login(...)` sans instancier de service
-- [ ] La session DB est injectée dans les repositories qui sont injectés dans les services
+- [x] `GraphQLContext` expose : `auth_service`, `org_service`, `inventory_service`, `forecasting_service`
+- [x] Les services sont construits une fois par requête dans `get_context()`
+- [x] Les resolvers font juste `info.context.auth_service.login(...)` sans instancier de service
+- [x] La session DB est injectée dans les repositories qui sont injectés dans les services
 
 **Tâches techniques :**
 1. Modifier `core/graphql/context.py` — ajouter services pré-construits

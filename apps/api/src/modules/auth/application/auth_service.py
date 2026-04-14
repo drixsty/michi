@@ -26,7 +26,7 @@ from src.modules.auth.infrastructure.repositories import (
     SQLAlchemyOrganizationRepository,
     SQLAlchemyUserRepository,
 )
-from src.modules.auth.models import (
+from src.modules.auth.infrastructure.persistence.models import (
     Organization,
     OrganizationMember,
     User,
@@ -127,9 +127,9 @@ class ApplicationAuthService:
             first_name=first_name,
             last_name=last_name,
             hashed_password=hashed.value,
+            organizations=[],
         )
         await self._users.save(user_model)
-        user_model.organizations = []
 
         token = self._tokens.create_access_token(
             user_id=user_model.id,

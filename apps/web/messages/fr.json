@@ -1,0 +1,149 @@
+{
+  "common": {
+    "loading": "Chargement…",
+    "error": "Une erreur est survenue",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "export": "Exporter",
+    "or": "Ou"
+  },
+  "auth": {
+    "login": {
+      "title": "Bon retour",
+      "subtitle": "Connectez-vous à votre espace Michi.",
+      "emailLabel": "Adresse email",
+      "emailPlaceholder": "nom@exemple.com",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "submitButton": "Se connecter",
+      "orContinueWith": "Ou continuer avec",
+      "noAccount": "Pas encore de compte ?",
+      "registerLink": "S'inscrire gratuitement",
+      "terms": "En continuant, vous acceptez nos conditions d'utilisation.",
+      "termsLink": "conditions d'utilisation",
+      "errorCredentials": "Identifiants incorrects ou problème serveur.",
+      "errorGoogle": "Erreur lors de la connexion avec Google.",
+      "errorGoogleAuth": "Erreur Google Auth"
+    },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Commencez à optimiser vos stocks dès aujourd'hui.",
+      "firstNameLabel": "Prénom",
+      "lastNameLabel": "Nom",
+      "emailLabel": "Adresse email",
+      "passwordLabel": "Mot de passe",
+      "submitButton": "Créer mon compte",
+      "alreadyAccount": "Déjà un compte ?",
+      "loginLink": "Se connecter",
+      "errorExists": "Un compte avec cet email existe déjà.",
+      "errorGeneric": "Erreur lors de la création du compte."
+    },
+    "logout": "Déconnexion"
+  },
+  "onboarding": {
+    "title": "Bienvenue sur Michi 道",
+    "subtitle": "Configurez votre espace en quelques étapes.",
+    "step1": {
+      "title": "Votre organisation",
+      "orgNameLabel": "Nom de l'organisation",
+      "orgNamePlaceholder": "Ma boutique",
+      "currencyLabel": "Devise",
+      "continueButton": "Continuer"
+    },
+    "step2": {
+      "title": "Connectez votre boutique",
+      "shopifyOption": "Shopify",
+      "wooOption": "WooCommerce",
+      "amazonOption": "Amazon",
+      "csvOption": "Import CSV",
+      "skipButton": "Passer cette étape"
+    },
+    "step3": {
+      "title": "C'est prêt !",
+      "subtitle": "Votre espace est configuré. Accédez à votre dashboard.",
+      "goToDashboard": "Accéder au dashboard"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Vue d'ensemble de vos stocks",
+    "kpis": {
+      "totalProducts": "Produits total",
+      "criticalAlerts": "Alertes critiques",
+      "stockoutRisk": "Risque rupture",
+      "forecastAccuracy": "Précision prévision"
+    },
+    "sections": {
+      "alerts": "Alertes stock",
+      "topProducts": "Top produits",
+      "recentActivity": "Activité récente"
+    },
+    "empty": "Aucune donnée disponible",
+    "refreshButton": "Actualiser"
+  },
+  "inventory": {
+    "title": "Inventaire",
+    "searchPlaceholder": "Rechercher un produit…",
+    "table": {
+      "product": "Produit",
+      "sku": "SKU",
+      "stock": "Stock",
+      "status": "Statut",
+      "lastUpdate": "Dernière MAJ",
+      "actions": "Actions"
+    },
+    "status": {
+      "critical": "Critique",
+      "warning": "Tendu",
+      "healthy": "Sain",
+      "neutral": "Neutre"
+    },
+    "empty": "Aucun produit trouvé"
+  },
+  "forecast": {
+    "title": "Prévisions",
+    "subtitle": "Anticipez vos besoins en stocks",
+    "runForecast": "Lancer les prévisions",
+    "lastRun": "Dernière analyse",
+    "accuracy": "Précision",
+    "chart": {
+      "demand": "Demande prévisionnelle",
+      "actual": "Ventes réelles"
+    }
+  },
+  "profile": {
+    "title": "Mon profil",
+    "personalInfo": "Informations personnelles",
+    "firstNameLabel": "Prénom",
+    "lastNameLabel": "Nom",
+    "emailLabel": "Email",
+    "languageLabel": "Langue",
+    "saveButton": "Enregistrer les modifications",
+    "dangerZone": "Zone dangereuse",
+    "deleteAccount": "Supprimer mon compte"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "inventory": "Inventaire",
+    "forecast": "Prévisions",
+    "connectors": "Connecteurs",
+    "settings": "Paramètres",
+    "profile": "Profil",
+    "logout": "Déconnexion"
+  },
+  "brand": {
+    "tagline": "La précision au cœur de votre croissance.",
+    "description": "Automatisez vos prévisions de stocks et réduisez vos ruptures de 40% grâce à notre moteur IA omnicanal.",
+    "stats": {
+      "accuracy": "Fiabilité IA",
+      "stockoutReduction": "Ruptures en moins"
+    }
+  }
+}

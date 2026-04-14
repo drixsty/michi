@@ -1,4 +1,4 @@
-.PHONY: help install dev-backend dev-frontend dev-mobile api web test clean docker-up docker-down seed schema
+.PHONY: help install dev-backend dev-frontend dev-mobile api web mobile docs test test-all test-cov test-ui clean docker-up docker-down seed schema
 
 help: ## Affiche l'aide
 	@echo "Michi 道 - Commandes disponibles:"
@@ -66,18 +66,29 @@ dev-mobile: ## Lance l'application mobile (Expo)
 	@echo "🚀 Démarrage mobile..."
 	cd apps/mobile && npx expo start
 
-test: ## Lance tous les tests (backend + frontend)
+test: ## Lance tous les tests (backend + frontend + ui)
 	@echo "🧪 Tests backend..."
 	cd apps/api && pytest
 	@echo ""
 	@echo "🧪 Tests frontend..."
-	cd apps/web && npm test
+	cd apps/web && npm run test -- --run
+	@echo ""
+	@echo "🧪 Tests packages/ui..."
+	cd packages/ui && npm run test
 
-test-all: test ## Alias pour test
+test-all: test ## Alias pour test (make test:all non supporté en Make)
 
-test-cov: ## Lance les tests avec coverage
+test-ui: ## Lance les tests du Design System packages/ui
+	@echo "🧪 Tests packages/ui..."
+	cd packages/ui && npm run test
+
+test-cov: ## Lance les tests backend avec coverage
 	@echo "🧪 Tests avec coverage..."
 	cd apps/api && pytest --cov=src --cov-report=html --cov-report=term
+
+docs: ## Lance le serveur de documentation Docusaurus
+	@echo "📚 Démarrage documentation..."
+	cd docs-site && npm run start
 
 clean: ## Nettoie les fichiers temporaires
 	@echo "🧹 Nettoyage..."

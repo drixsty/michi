@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.forecasting.domain.entities import CleanedDemandEntity
 from src.modules.forecasting.domain.ports import ICleanedDemandRepository
-from src.modules.forecasting.models import CleanedDemand
+from src.modules.forecasting.infrastructure.persistence.models import CleanedDemand
 
 class SQLAlchemyCleanedDemandRepository(ICleanedDemandRepository):
     def __init__(self, session: AsyncSession):

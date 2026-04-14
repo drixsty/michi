@@ -9,33 +9,44 @@ slug: /architecture/auth-flow
 
 ## Login classique
 
-```
-Client → POST /graphql (mutation login)
-    │
-    ▼ Resolver (thin) → build_auth_service(db)
-    │
-    ▼ ApplicationAuthService.login(email, password)
-    │
-    ├─▶ SQLAlchemyUserRepository.get_model_by_email()
-    ├─▶ BCryptPasswordHasher.verify()
-    └─▶ JwtTokenService.create_access_token()
-    │
-    ▼ AuthPayload { token, user }
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Resolver as Auth Resolver
+    participant Service as AuthService
+    participant Repo as UserRepository
+    participant Security as JWT & Hashing
+
+    Client->>Resolver: login(email, password)
+    Resolver->>Service: login(email, password)
+    Service->>Repo: get_by_email()
+    Repo-->>Service: UserEntity (hashed_password)
+    Service->>Security: verify_password()
+    Security-->>Service: Valid ✅
+    Service->>Security: create_access_token(user_id, org_id)
+    Security-->>Service: token
+    Service-->>Resolver: AuthPayload
+    Resolver-->>Client: { token, user }
 ```
 
 ## Google OAuth
 
-```
-Client → POST /graphql (mutation googleLogin)
-    │
-    ▼ Resolver → await httpx.AsyncClient.get(tokeninfo)
-    │
-    ▼ ApplicationAuthService.login_with_google(google_id, email)
-    │
-    ├─▶ Cherche user par email ou google_id
-    ├─▶ Si absent → crée User + Organization + Membership (ADMIN)
-    ├─▶ Si Stripe activé → billing.create_customer()
-    └─▶ JwtTokenService.create_access_token()
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Resolver as Auth Resolver
+    participant Google as Google APIs
+    participant Service as AuthService
+    participant DB as SQL Database
+
+    Client->>Resolver: googleLogin(idToken)
+    Resolver->>Google: verify idToken
+    Google-->>Resolver: { email, sub, name }
+    Resolver->>Service: login_with_google(email)
+    Service->>DB: find or create user/org
+    DB-->>Service: Success
+    Service-->>Resolver: AuthPayload (Token JWT Michi)
+    Resolver-->>Client: { token, user }
 ```
 
 ## Token JWT

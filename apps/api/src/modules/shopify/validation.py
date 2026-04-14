@@ -44,7 +44,7 @@ class DataValidationService:
 
         # ── Charger produits ──────────────────────────────────────────────────
         products_result = await self.db.execute(
-            select(Product).where(Product.shop_id == shop_id).order_by(Product.sku)
+            select(Product).where(Product.store_id == shop_id).order_by(Product.sku)
         )
         products = list(products_result.scalars().all())
         product_count = len(products)

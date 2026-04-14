@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.inventory.domain.entities import SupplierEntity
 from src.modules.inventory.domain.ports import ISupplierRepository
-from src.modules.inventory.models import Supplier
+from src.modules.inventory.infrastructure.persistence.models import Supplier
 
 class SQLAlchemySupplierRepository(ISupplierRepository):
     def __init__(self, session: AsyncSession):

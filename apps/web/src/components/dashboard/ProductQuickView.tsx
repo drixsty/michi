@@ -15,7 +15,8 @@ import {
   Settings,
   Save,
   Check,
-  Activity
+  Activity,
+  Copy
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { 
@@ -213,6 +214,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
   const [costPrice, setCostPrice] = React.useState<number>(0);
   const [salePrice, setSalePrice] = React.useState<number>(0);
   const [saveStatus, setSaveStatus] = React.useState<'idle' | 'saving' | 'success'>('idle');
+  const [copied, setCopied] = React.useState(false);
 
   const [updateSettings] = useMutation(UPDATE_PRODUCT_SETTINGS, {
     onCompleted: () => {
@@ -270,13 +272,14 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
           />
 
           {/* Drawer */}
-          <motion.div
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 right-0 z-[70] w-full max-w-md bg-white border-l border-slate-100 flex flex-col shadow-none"
-          >
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              data-testid="product-quickview"
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed inset-y-0 right-0 z-[70] w-full max-w-md bg-white border-l border-slate-100 flex flex-col shadow-none"
+            >
             {loading && !product ? (
               <LoadingState className="flex-1" message="Chargement du produit..." />
             ) : product ? (
@@ -286,10 +289,27 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                     <div className="flex items-center gap-2">
                        <h2 className="text-sm font-extrabold text-slate-900 tracking-widest">{product.title}</h2>
                     </div>
-                    <p className="text-[10px] font-bold text-slate-400 tracking-widest">SKU: {product.sku}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">SKU: {product.sku}</p>
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(product.sku);
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className={cn(
+                          "p-1 rounded transition-all",
+                          copied ? "bg-emerald-50 text-emerald-600" : "hover:bg-slate-100 text-slate-300 hover:text-primary"
+                        )}
+                        title="Copier le SKU"
+                      >
+                        {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
+                      </button>
+                    </div>
                   </div>
                   <button 
                     onClick={onClose}
+                    data-testid="close-quickview"
                     className="p-2 hover:bg-slate-50 rounded-full transition-colors"
                   >
                     <X className="h-4 w-4 text-slate-400" />

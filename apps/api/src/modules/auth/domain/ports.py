@@ -33,6 +33,8 @@ class IUserRepository(Protocol):
 
     async def update(self, user: UserEntity) -> UserEntity: ...
 
+    async def get_model_by_email(self, email: str) -> Optional[object]: ...
+
 
 @runtime_checkable
 class IOrganizationRepository(Protocol):
@@ -73,6 +75,10 @@ class IInvitationRepository(Protocol):
     async def update(self, invitation: InvitationEntity) -> InvitationEntity: ...
 
     async def list_for_org(self, org_id: UUID) -> list[InvitationEntity]: ...
+
+    async def get_pending_invitation(self, email: str, org_id: UUID) -> Optional[InvitationEntity]: ...
+
+    async def delete_invitation(self, invitation_id: UUID) -> None: ...
 
 
 @runtime_checkable

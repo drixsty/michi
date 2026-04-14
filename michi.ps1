@@ -6,14 +6,16 @@ param (
 function Show-Help {
     Write-Host "Michi - Commandes disponibles (Windows PowerShell):" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  install        Installe toutes les dependances (backend + frontend)"
+    Write-Host "  install        Installe toutes les dependances (root + api + web)"
     Write-Host "  setup          Setup complet (docker-up + install + seed)"
-    Write-Host "  dev-backend    Lance le backend (port 8000)"
-    Write-Host "  dev-frontend   Lance le frontend (port 3000)"
+    Write-Host "  api            Lance le backend (port 8000)"
+    Write-Host "  web            Lance le frontend (port 3000)"
+    Write-Host "  docs           Lance le serveur de documentation (Docusaurus)"
     Write-Host "  docker-up      Demarre PostgreSQL + Redis"
     Write-Host "  docker-down    Arrete les services Docker"
-    Write-Host "  seed           Seed la DB (cree tables + user de dev)"
-    Write-Host "  test           Lance tous les tests (backend + frontend)"
+    Write-Host "  seed           Seed la DB (migrations + demo data)"
+    Write-Host "  schema         Exporte le schema GraphQL (SDL)"
+    Write-Host "  test           Lance tous les tests (api + web + ui)"
     Write-Host "  clean          Nettoie les fichiers temporaires"
     Write-Host "  help           Affiche cette aide"
     Write-Host ""
@@ -21,10 +23,12 @@ function Show-Help {
 
 switch ($Command) {
     "install" {
-        Write-Host "[INFO] Installation backend..." -ForegroundColor Yellow
-        Set-Location backend; pip install -r requirements.txt; Set-Location ..
-        Write-Host "`n[INFO] Installation frontend..." -ForegroundColor Yellow
-        Set-Location frontend; npm install; Set-Location ..
+        Write-Host "[INFO] Installation root npm..." -ForegroundColor Yellow
+        npm install
+        Write-Host "`n[INFO] Installation API (Python)..." -ForegroundColor Yellow
+        Set-Location apps/api; pip install -r requirements.txt; Set-Location ../..
+        Write-Host "`n[INFO] Installation Web (npm)..." -ForegroundColor Yellow
+        Set-Location apps/web; npm install; Set-Location ../..
         Write-Host "`n[OK] Installation terminee !" -ForegroundColor Green
     }
 
@@ -44,30 +48,45 @@ switch ($Command) {
     }
 
     "seed" {
-        Write-Host "[SEED] Seeding database..." -ForegroundColor Yellow
-        Set-Location backend; python -m alembic upgrade head; python scripts/seed_dev_data.py; Set-Location ..
+        Write-Host "[SEED] Seeding database v2 (SaaS)..." -ForegroundColor Yellow
+        $env:PYTHONPATH="."
+        Set-Location apps/api; python -m alembic upgrade head; python scripts/seed_v2.py; Set-Location ../..
     }
 
-    "dev-backend" {
-        Write-Host "[RUN] Demarrage backend..." -ForegroundColor Cyan
-        Set-Location backend; python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000; Set-Location ..
+    "api" {
+        Write-Host "[RUN] Demarrage API (FastAPI)..." -ForegroundColor Cyan
+        Set-Location apps/api; uvicorn src.main:app --reload --host 0.0.0.0 --port 8000; Set-Location ../..
     }
 
-    "dev-frontend" {
-        Write-Host "[RUN] Demarrage frontend..." -ForegroundColor Cyan
-        Set-Location frontend; npm run dev; Set-Location ..
+    "web" {
+        Write-Host "[RUN] Demarrage Web App (Next.js)..." -ForegroundColor Cyan
+        Set-Location apps/web; npm run dev; Set-Location ../..
+    }
+
+    "docs" {
+        Write-Host "[RUN] Demarrage Documentation (Docusaurus)..." -ForegroundColor Cyan
+        Set-Location docs-site; npm run start; Set-Location ..
+    }
+
+    "schema" {
+        Write-Host "[SDL] Exportation du schema GraphQL..." -ForegroundColor Yellow
+        $env:PYTHONPATH="."
+        Set-Location apps/api; python scripts/export_schema.py | Out-File -FilePath "../../packages/types/schema.graphql" -Encoding utf8; Set-Location ../..
+        Write-Host "[OK] Schéma exporté dans packages/types/schema.graphql" -ForegroundColor Green
     }
 
     "test" {
-        Write-Host "[TEST] Tests backend..." -ForegroundColor Yellow
-        Set-Location backend; pytest; Set-Location ..
-        Write-Host "`n[TEST] Tests frontend..." -ForegroundColor Yellow
-        Set-Location frontend; npm test; Set-Location ..
+        Write-Host "[TEST] Tests API (Pytest)..." -ForegroundColor Yellow
+        Set-Location apps/api; pytest; Set-Location ../..
+        Write-Host "`n[TEST] Tests Web (Vitest)..." -ForegroundColor Yellow
+        Set-Location apps/web; npm test -- --run; Set-Location ../..
+        Write-Host "`n[TEST] Tests UI Package..." -ForegroundColor Yellow
+        Set-Location packages/ui; npm test; Set-Location ../..
     }
 
     "test-cov" {
-        Write-Host "[TEST] Tests avec coverage..." -ForegroundColor Yellow
-        Set-Location backend; pytest --cov=src --cov-report=html --cov-report=term; Set-Location ..
+        Write-Host "[TEST] Tests API avec coverage..." -ForegroundColor Yellow
+        Set-Location apps/api; pytest --cov=src --cov-report=html --cov-report=term; Set-Location ../..
     }
 
     "clean" {
@@ -76,8 +95,8 @@ switch ($Command) {
         Get-ChildItem -Path . -Filter ".pytest_cache" -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
         Get-ChildItem -Path . -Filter "node_modules" -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
         Get-ChildItem -Path . -Filter ".next" -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
-        if (Test-Path "backend/htmlcov") { Remove-Item -Path "backend/htmlcov" -Force -Recurse }
-        if (Test-Path "backend/.coverage") { Remove-Item -Path "backend/.coverage" -Force }
+        if (Test-Path "apps/api/htmlcov") { Remove-Item -Path "apps/api/htmlcov" -Force -Recurse }
+        if (Test-Path "apps/api/.coverage") { Remove-Item -Path "apps/api/.coverage" -Force }
         Write-Host "[OK] Nettoyage termine !" -ForegroundColor Green
     }
 
@@ -85,14 +104,11 @@ switch ($Command) {
         & $PSCommandPath "docker-up"
         & $PSCommandPath "install"
         & $PSCommandPath "seed"
-        Write-Host "`n[DONE] Projet Michi initialise !" -ForegroundColor Green
+        Write-Host "`n[DONE] Projet Michi initialise (Monorepo) !" -ForegroundColor Green
         Write-Host "`n🔗 Prochaines etapes:"
-        Write-Host "  1. Demarrer le backend  : .\michi.ps1 dev-backend"
-        Write-Host "  2. Demarrer le frontend : .\michi.ps1 dev-frontend"
-        Write-Host "  3. Ouvrir http://localhost:3000/login"
-        Write-Host "`n📧 Credentials:"
-        Write-Host "  Email    : dev@michi.com"
-        Write-Host "  Password : password123"
+        Write-Host "  1. Demarrer le backend  : .\michi.ps1 api"
+        Write-Host "  2. Demarrer le frontend : .\michi.ps1 web"
+        Write-Host "  3. Consulter la doc     : .\michi.ps1 docs"
     }
 
     Default {

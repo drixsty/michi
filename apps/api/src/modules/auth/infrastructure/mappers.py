@@ -21,7 +21,7 @@ from src.modules.auth.domain.entities import (
 from src.modules.auth.domain.value_objects import Email, OrgSlug
 
 if TYPE_CHECKING:
-    from src.modules.auth.models import (
+    from .persistence.models import (
         Invitation,
         Organization,
         OrganizationMember,

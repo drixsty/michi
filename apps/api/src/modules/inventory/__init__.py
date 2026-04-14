@@ -1,7 +1,5 @@
-from .models import Product, SalesLog, Alert, PlatformSource, Supplier, PurchaseOrder, AlertEmail
-from .application.inventory_service import InventoryService
-from .application.alert_service import AlertService
-from .application.omnichannel_service import OmnichannelService
-from .adapters.resolvers import InventoryQuery, InventoryMutation
-
-__all__ = ["Product", "SalesLog", "Alert", "PlatformSource", "Supplier", "PurchaseOrder", "AlertEmail", "InventoryService"]
+"""Module Inventory — DDD hexagonal (Sprint 21).
+Les imports explicites ont été retirés pour éviter la double registration SQLAlchemy
+quand pytest scanne src/ et que tests/conftest.py charge l'app en parallèle.
+Importer directement depuis les sous-modules si nécessaire.
+"""

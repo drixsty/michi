@@ -1,73 +1,59 @@
 ---
 id: forecasting-pipeline
-title: Pipeline Forecasting
-sidebar_label: Pipeline Forecasting
-slug: /architecture/forecasting-pipeline
+title: Pipeline de Prévision
+sidebar_label: 📈 Pipeline Prévision
+sidebar_position: 5
 ---
 
 # Pipeline de Prévision
 
-## Vue d'ensemble
+Le cœur de Michi 道 repose sur un pipeline de traitement de données rigoureux pour assurer des prédictions fiables malgré les bruits (ruptures de stock, promotions, anomalies).
 
-```
-données brutes (ventes + stocks)
-    │
-    1. OOS Correction     → corrige les jours de rupture
-    │
-    2. IQR Detection      → détecte les outliers (borne haute uniquement)
-    │
-    3. Run Rate           → calcule le taux de vente journalier adaptatif
-    │
-    4. Predictions        → date de rupture + quantité de réassort
-    │
-    5. ABC Analysis       → rang A/B/C par profit annuel
-```
+## 🔄 Flux de Traitement
 
-## 1. Correction OOS
-
-**Formule :** pour chaque jour `j` avec `end_of_day_stock = 0` :
-
-```
-theoretical_units_sold[j] = median(units_sold[j-14..j-1] où stock > 0)
-```
-
-Si < 4 jours disponibles → médiane globale de la série.
-
-## 2. Détection IQR (borne haute uniquement)
-
-```
-Q3 = 75e percentile (fenêtre glissante 11j, centrée)
-IQR = Q3 - Q1
-borne_haute = Q3 + 1.5 × IQR
-
-outlier si units_sold > borne_haute AND NOT stockout
+```mermaid
+graph TD
+    RAW[Historique Ventes Brut] --> OOS[1. Port d'entrée : Ingestion]
+    OOS --> CLEAN[2. Pipeline de Nettoyage]
+    
+    subgraph "Pipeline Intelligence"
+        CLEAN -->|Pandas| OOSC[OOS Correction]
+        OOSC -->|Moyenne glissante| IQR[Outlier Detection]
+        IQR -->|Filtrage IQR| PROD[Demande Propre]
+    end
+    
+    PROD --> PREDICT[3. Moteur Prédiction]
+    
+    subgraph "Calculs Business"
+        PREDICT --> RR[Run Rate]
+        RR --> SOD[Date de Rupture]
+        SOD --> ROQ[Quantité de Réassort]
+    end
+    
+    ROQ --> FINAL[4. Dashboard Alerts]
 ```
 
-:::info
-Seule la borne haute est utilisée. Les valeurs basses représentent une vraie faible demande — les flaguer comme outliers génère des faux positifs.
+### 1. Correction des Ruptures (Stockout Correction)
+Les ventes réelles tombent à zéro quand le stock est épuisé. Pour prédire la demande future, nous devons injecter une **demande théorique** pour ces jours.
+- **Méthode :** Moyenne glissante des 14 derniers jours de vente connus.
+
+### 2. Détection d'Anomalies (Outlier Detection)
+Les pics de vente inhabituels (ventes flash, influenceurs) ne doivent pas fausser la tendance long terme.
+- **Méthode :** Interquartile Range (IQR). Les valeurs > Q3 + 1.5*IQR sont plafonnées à la médiane.
+
+### 3. Calcul du Run Rate
+Une fois les données nettoyées, nous calculons la cadence de vente actuelle.
+- **Méthode :** Moyenne pondérée des 30 derniers jours nettoyés.
+
+### 4. Projection de Rupture
+Estimation de la date de fin de stock basée sur le stock actuel et le Run Rate.
+- **Formule :**
+  $$DateRupture = DateActuelle + \frac{StockActuel}{RunRate}$$
+
+## 📊 Visualisation
+
+Le pipeline transforme les données brutes (en rouge) en données de demande "propre" (en bleu) prêtes pour l'algorithme de prédiction.
+
+:::tip
+Toutes les formules mathématiques détaillées sont disponibles dans la section [Algorithmes](/algorithms/math).
 :::
-
-## 3. Run Rate adaptatif
-
-```python
-# Momentum = short_term_7j / medium_term_30j
-# Si momentum > 1.2 (croissance > 20%) → fenêtre 7j (réactivité)
-# Sinon → fenêtre 30j (stabilité)
-
-run_rate = median(corrected_units_sold, window=adaptive)
-```
-
-## 4. Prédictions
-
-```
-predicted_stockout_date = today + (current_stock / run_rate)
-reorder_quantity = run_rate × lead_time × safety_factor
-```
-
-## Métriques MAPE (seuils qualité)
-
-| Test | Seuil |
-|------|-------|
-| Pipeline combiné | ≤ 15% |
-| OOS seul | ≤ 25% |
-| IQR seul | ≤ 20% |

@@ -115,36 +115,31 @@ input LoginInput {
 }
 
 type Mutation {
-  triggerMockDataSync(storeId: ID!): SyncResultType!
-  updateProductSettings(id: ID!, leadTime: Int!, moq: Int!): ProductType!
-  runCleaningPipeline(storeId: ID!): PipelineResultType!
-  runPredictionPipeline(storeId: ID!): PredictionRunResultType!
-  ingestCsvData(storeId: ID!, csvContent: String!, skuCol: String! = "sku", dateCol: String! = "date", salesCol: String! = "sales", stockCol: String! = "stock", titleCol: String! = "title"): IngestionResult!
-  markAlertAsRead(alertId: ID!): Boolean!
-  deleteAlert(alertId: ID!): Boolean!
-  createPurchaseOrder(storeId: ID!, productId: ID!, supplierId: ID!, quantity: Int!, expectedDays: Int! = 14): PurchaseOrderType!
-  ingestWoocommerceData(storeId: ID!, productsCsv: String!, ordersCsv: String! = ""): IngestionResult!
-  receivePurchaseOrder(poId: ID!): Boolean!
-  triggerOmnichannelSync(storeId: ID = null): IngestionResult!
-  updateStrategicSettings(currency: String = null, isMutualized: Boolean = null): Boolean!
-  createCheckoutSession(plan: String!, successUrl: String!, cancelUrl: String!): String!
-  createBillingPortalSession(returnUrl: String!): String!
   login(input: LoginInput!): AuthPayload!
-  createOrganization(name: String!, plan: String! = "BASIC"): AuthPayload!
-  switchOrganization(organizationId: ID!): AuthPayload!
-  updateProfile(input: UpdateProfileInput!): UserType!
   register(input: RegisterInput!): AuthPayload!
   googleLogin(input: GoogleLoginInput!): AuthPayload!
-  updateOrganization(input: UpdateOrganizationInput!): OrganizationType!
   changePassword(input: ChangePasswordInput!): Boolean!
-  toggleSource(platform: String!, connected: Boolean!, storeId: ID = null): StoreType!
-  inviteMember(email: String!, role: String!): InvitationType!
-  updateMemberPermissions(userId: ID!, permissions: String!): OrganizationMemberType!
-  acceptInvitation(code: String!): Boolean!
-  deleteInvitation(invitationId: ID!): Boolean!
+  updateProfile(input: UpdateProfileInput!): UserType!
+  createOrganization(name: String!, plan: String! = "BASIC"): AuthPayload!
+  switchOrganization(organizationId: ID!): AuthPayload!
+  updateOrganization(input: UpdateOrganizationInput!): OrganizationType
   removeMember(userId: ID!): Boolean!
   updateMemberRole(userId: ID!, role: String!): Boolean!
-  toggleUserStatus(userId: ID!, active: Boolean!): Boolean!
+  inviteMember(email: String!, role: String!): InvitationType!
+  acceptInvitation(code: String!): Boolean!
+  deleteInvitation(invitationId: ID!): Boolean!
+  markAlertAsRead(alertId: ID!): Boolean!
+  deleteAlert(alertId: ID!): Boolean!
+  toggleSource(platform: String!, connected: Boolean!, storeId: ID = null): StoreType!
+  ingestCsvData(storeId: ID!, csvContent: String!, skuCol: String! = "sku", dateCol: String! = "date", salesCol: String! = "sales", stockCol: String! = "stock", titleCol: String! = "title"): IngestionResult!
+  runCleaningPipeline(storeId: ID!): PipelineResultType!
+  runPredictionPipeline(storeId: ID!): PredictionRunResultType!
+  updateStrategicSettings(currency: String = null, isMutualized: Boolean = null): Boolean!
+  triggerMockDataSync(storeId: ID!, platform: String!): IngestionResult!
+  triggerOmnichannelSync(storeId: ID!): IngestionResult!
+  updateProductSettings(id: ID!, leadTime: Int!, moq: Int!): ProductType!
+  createCheckoutSession(plan: String!, successUrl: String!, cancelUrl: String!): String!
+  createBillingPortalSession(returnUrl: String!): String!
 }
 
 type OmnichannelProductType {
@@ -179,7 +174,6 @@ type OrganizationType {
   subscriptionStatus: String!
   createdAt: DateTime!
   settings: String!
-  invitations: [InvitationType!]
 }
 
 type PipelineResultType {
@@ -238,36 +232,22 @@ type ProductType {
   warningThreshold: Float!
 }
 
-type PurchaseOrderType {
-  id: ID!
-  productId: ID!
-  supplierId: ID!
-  quantity: Int!
-  orderDate: String!
-  expectedArrivalDate: String!
-  actualArrivalDate: String
-  status: String!
-}
-
 type Query {
-  validateMockData(storeId: ID!): ValidationReportType!
-  cleanedDemand(productId: ID!, limit: Int! = 365): [CleanedDemandType!]!
-  predictions(storeId: ID = null): [PredictionType!]!
-  predictionForProduct(productId: ID!): PredictionType
-  dashboardKpis(storeId: ID = null): DashboardKPIType!
-  replenishmentAlerts(storeId: ID = null): [PredictionType!]!
+  me: UserType!
+  currentOrganization: OrganizationType
+  organizationMembers: [OrganizationMemberType!]!
+  pendingInvitations: [InvitationType!]!
   products(storeId: ID = null, id: ID = null): [ProductType!]!
   unreadAlerts(storeId: ID = null): [AlertType!]!
-  suppliers(storeId: ID!): [SupplierType!]!
-  omnichannelInventory: [OmnichannelProductType!]!
-  exportReplenishmentCsv(storeId: ID!): String!
-  financialOverview(storeId: ID = null, channel: String = null): DecisionCenterOverviewType!
-  invoices: [InvoiceType!]!
-  me: UserType!
   sources: [StoreType!]!
-  organizationMembers: [OrganizationMemberType!]
-  pendingInvitations: [InvitationType!]
-  currentOrganization: OrganizationType
+  omnichannelInventory: [OmnichannelProductType!]!
+  cleanedDemand(productId: ID!, limit: Int! = 365): [CleanedDemandType!]!
+  predictions(storeId: ID = null): [PredictionType!]!
+  dashboardKpis(storeId: ID = null): DashboardKPIType!
+  replenishmentAlerts(storeId: ID = null): [PredictionType!]!
+  financialOverview(storeId: ID = null, channel: String = null): DecisionCenterOverviewType!
+  validateMockData(storeId: ID!): ValidationReportType!
+  invoices: [InvoiceType!]!
 }
 
 input RegisterInput {
@@ -293,13 +273,6 @@ type SupplierType {
   contactEmail: String
   reliabilityScore: Float!
   averageDelayDays: Float!
-}
-
-type SyncResultType {
-  success: Boolean!
-  productsCreated: Int!
-  salesLogsCreated: Int!
-  message: String!
 }
 
 type TopRiskType {

@@ -7,13 +7,13 @@ from .repositories import (
     SQLAlchemyMembershipRepository,
     SQLAlchemyInvitationRepository,
 )
-from .security_adapters import BCryptPasswordHasher, JwtTokenService
+from .security_adapters import BcryptPasswordHasher, JwtTokenService
 
 __all__ = [
     "SQLAlchemyUserRepository",
     "SQLAlchemyOrganizationRepository",
     "SQLAlchemyMembershipRepository",
     "SQLAlchemyInvitationRepository",
-    "BCryptPasswordHasher",
+    "BcryptPasswordHasher",
     "JwtTokenService",
 ]

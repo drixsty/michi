@@ -52,6 +52,8 @@ function NavLinks() {
           <Link
             key={item.id}
             href={item.href}
+            data-testid={`nav-${item.id}`}
+            data-tab={item.id}
             className={cn(
               "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all group",
               isActive 
@@ -129,6 +131,7 @@ export function Navbar() {
                 type="text"
                 value={searchValue}
                 onChange={(e) => handleSearch(e.target.value)}
+                data-testid="search-input"
                 placeholder="Rechercher un produit, une commande..."
                 className="w-full h-10 pl-10 pr-4 rounded-lg bg-slate-100/50 border border-transparent text-xs transition-all focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 focus:ring-0 focus:outline-none placeholder:text-muted-foreground/50 shadow-sm"
               />
@@ -152,6 +155,7 @@ export function Navbar() {
               
               <div className="relative group/user">
                 <button 
+                  data-testid="user-menu-button"
                   className="w-9 h-9 rounded-full bg-accent border border-border flex items-center justify-center overflow-hidden cursor-default ml-1"
                 >
                   <User className="h-5 w-5 text-muted-foreground" />
@@ -174,6 +178,7 @@ export function Navbar() {
                       router.push('/login');
                       router.refresh();
                     }}
+                    data-testid="logout-button"
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
                   >
                     <LogOut className="h-4 w-4" />

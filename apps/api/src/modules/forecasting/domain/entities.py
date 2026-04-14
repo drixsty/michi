@@ -2,7 +2,7 @@
 Domain Entities for Forecasting Module
 Pure Python dataclasses (US 2.3 + US 2.8)
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
@@ -14,24 +14,24 @@ class CleanedDemandEntity:
     date: date
     raw_units_sold: float
     corrected_units_sold: float
-    inventory_level: Optional[int]
-    is_stockout: bool
-    is_outlier: bool
-    correction_type: str  # "none" | "stockout" | "outlier" | "stockout+outlier"
-    computed_at: datetime
+    inventory_level: Optional[int] = None
+    is_stockout: bool = False
+    is_outlier: bool = False
+    correction_type: str = "none"  # "none" | "stockout" | "outlier" | "stockout+outlier"
+    computed_at: datetime = field(default_factory=datetime.utcnow)
 
 @dataclass
 class PredictionEntity:
     id: UUID
     product_id: UUID
     run_rate: float
-    days_of_stock: Optional[float]
-    predicted_stockout_date: Optional[date]
-    reorder_quantity: int
-    current_stock_snapshot: float
-    lead_time_snapshot: int
-    moq_snapshot: int
-    mape_score: Optional[float]
-    abc_rank: Optional[str]
-    annual_gross_profit: Optional[float]
-    computed_at: datetime
+    days_of_stock: Optional[float] = None
+    predicted_stockout_date: Optional[date] = None
+    reorder_quantity: int = 0
+    current_stock_snapshot: float = 0.0
+    lead_time_snapshot: int = 14
+    moq_snapshot: int = 1
+    mape_score: Optional[float] = None
+    abc_rank: Optional[str] = None
+    annual_gross_profit: Optional[float] = None
+    computed_at: datetime = field(default_factory=datetime.utcnow)

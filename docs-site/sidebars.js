@@ -9,8 +9,6 @@ const sidebars = {
       collapsed: false,
       items: [
         'guide/quickstart',
-        'guide/installation',
-        'guide/configuration',
       ],
     },
   ],
@@ -23,8 +21,6 @@ const sidebars = {
       items: [
         'architecture/overview',
         'architecture/ddd-hexagonal',
-        'architecture/intelligence-module',
-        'architecture/auth-flow',
         'architecture/forecasting-pipeline',
       ],
     },
@@ -37,10 +33,6 @@ const sidebars = {
       collapsed: false,
       items: [
         'api/graphql',
-        'api/authentication',
-        'api/inventory',
-        'api/forecasting',
-        'api/decisions',
       ],
     },
   ],
@@ -53,6 +45,21 @@ const sidebars = {
       items: [
         'sprints/roadmap',
         'sprints/sprint-21',
+        'sprints/audit-s21',
+      ],
+    },
+  ],
+
+  algorithmsSidebar: [
+    {
+      type: 'category',
+      label: 'Algorithmes',
+      collapsed: false,
+      items: [
+        'algorithms/overview',
+        'algorithms/pipeline',
+        'algorithms/forecasting',
+        'algorithms/analytics',
       ],
     },
   ],

@@ -30,6 +30,7 @@ export function DashboardHeader({
         <div className="flex items-center gap-2">
           <button
             onClick={onExport}
+            data-testid="export-button"
             className="inline-flex h-9 items-center justify-center rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium shadow-none transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <Download className="mr-2 h-4 w-4" />
@@ -38,6 +39,7 @@ export function DashboardHeader({
           <button
             onClick={onSync}
             disabled={syncing}
+            data-testid="sync-button"
             className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-none transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
           >
             <span>{syncing ? 'Synchronisation...' : 'Synchroniser'}</span>

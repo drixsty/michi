@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.inventory.domain.entities import PurchaseOrderEntity
 from src.modules.inventory.domain.ports import IPurchaseOrderRepository
-from src.modules.inventory.models import PurchaseOrder
+from src.modules.inventory.infrastructure.persistence.models import PurchaseOrder
 
 class SQLAlchemyPurchaseOrderRepository(IPurchaseOrderRepository):
     def __init__(self, session: AsyncSession):

@@ -43,9 +43,12 @@ class TestDataValidationServiceRules:
     @pytest.mark.asyncio
     async def test_R1_empty_dataset_returns_invalid(self):
         """R1 — Aucun produit → rapport invalide."""
+        # AsyncMock.return_value est aussi un AsyncMock → scalars() devient coroutine
+        # On force le return_value de execute à être un MagicMock synchrone
+        execute_result = MagicMock()
+        execute_result.scalars.return_value.all.return_value = []
         db = AsyncMock()
-        # scalars().all() → liste vide
-        db.execute.return_value.scalars.return_value.all.return_value = []
+        db.execute.return_value = execute_result
 
         service = DataValidationService(db)
         report = await service.validate("shop-id-empty")

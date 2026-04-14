@@ -1,19 +1,23 @@
+const createNextIntlPlugin = require('next-intl/plugin');
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  
+
   // Environment Variables
   env: {
     NEXT_PUBLIC_GRAPHQL_URL: process.env.NEXT_PUBLIC_GRAPHQL_URL || 'http://localhost:8000/graphql',
   },
-  
+
   // Image Optimization
   images: {
     formats: ['image/avif', 'image/webp'],
     domains: ['cdn.michi.app'],
   },
-  
+
   // Security Headers
   async headers() {
     return [
@@ -38,4 +42,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withNextIntl(nextConfig);

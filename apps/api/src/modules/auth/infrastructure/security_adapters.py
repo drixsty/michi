@@ -17,7 +17,7 @@ from src.core.security import (
 from src.modules.auth.domain.value_objects import HashedPassword, JwtToken
 
 
-class BCryptPasswordHasher:
+class BcryptPasswordHasher:
     """Implémente IPasswordHasher via bcrypt (src.core.security)."""
 
     def hash(self, plain_password: str) -> HashedPassword:

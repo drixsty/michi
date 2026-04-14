@@ -48,7 +48,14 @@ class ForecastingService:
         # 1. Charger les produits du store
         products = await self.product_repo.list_by_store([s_uuid])
         if not products:
-            return PipelineResultSchema(success=False, products_processed=0, rows_written=0, message="Aucun produit trouvé.")
+            return PipelineResultSchema(
+                success=False, 
+                products_processed=0, 
+                rows_written=0, 
+                stockout_corrections=0,
+                outlier_corrections=0,
+                message="Aucun produit trouvé."
+            )
 
         product_ids = [p.id for p in products]
 
@@ -62,7 +69,14 @@ class ForecastingService:
             all_logs.extend(logs)
 
         if not all_logs:
-            return PipelineResultSchema(success=False, products_processed=0, rows_written=0, message="Aucun historique trouvé.")
+            return PipelineResultSchema(
+                success=False, 
+                products_processed=0, 
+                rows_written=0, 
+                stockout_corrections=0,
+                outlier_corrections=0,
+                message="Aucun historique trouvé."
+            )
 
         # 3. DataFrame processing (Keep Pandas logic in application layer for volume handling)
         df = pd.DataFrame([{
@@ -213,3 +227,23 @@ class ForecastingService:
         return []
 
     async def get_dashboard_kpis(self, store_id: Optional[str] = None, organization_id: Optional[str] = None) -> DashboardKPISchema:
+        """Retourne les KPIs agrégés pour le dashboard (store ou organisation)."""
+        if store_id:
+            predictions = await self.prediction_repo.list_by_store(uuid.UUID(store_id))
+        elif organization_id:
+            predictions = await self.prediction_repo.list_by_organization(uuid.UUID(organization_id))
+        else:
+            predictions = []
+
+        total = len(predictions)
+        stockouts = sum(1 for p in predictions if getattr(p, "days_of_stock", 999) == 0)
+        urgent = sum(1 for p in predictions if 0 < getattr(p, "days_of_stock", 999) <= 7)
+        predicted_30d = sum(1 for p in predictions if 0 < getattr(p, "days_of_stock", 999) <= 30)
+
+        return DashboardKPISchema(
+            total_products=total,
+            actual_stockouts=stockouts,
+            urgent_alerts=urgent,
+            predicted_stockouts_30d=predicted_30d,
+            message=f"{total} produits analysés",
+        )

@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from src.modules.inventory.domain.entities import ProductEntity, PlatformSource
 from src.modules.inventory.domain.ports import IProductRepository
-from src.modules.inventory.models import Product
+from src.modules.inventory.infrastructure.persistence.models import Product
 
 class SQLAlchemyProductRepository(IProductRepository):
     def __init__(self, session: AsyncSession):
@@ -82,7 +82,7 @@ class SQLAlchemyProductRepository(IProductRepository):
             model.sale_price = entity.sale_price
             model.supplier_id = entity.supplier_id
         else:
-            from src.modules.inventory.models import PlatformSource as ModelPlatformSource
+            from src.modules.inventory.infrastructure.persistence.models import PlatformSource as ModelPlatformSource
             model = Product(
                 id=entity.id,
                 store_id=entity.store_id,

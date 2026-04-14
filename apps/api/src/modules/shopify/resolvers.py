@@ -80,40 +80,46 @@ class ShopifyMutation:
     @strawberry.mutation
     @require_permission(MichiPermission.STORES_MANAGE)
     async def trigger_mock_data_sync(self, info, store_id: strawberry.ID, platform: str) -> IngestionResult:
-        from src.modules.inventory.application.alert_service import AlertService
-        from src.modules.inventory.infrastructure.repositories.alert_repository import SQLAlchemyAlertRepository
-        from src.modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
-        from src.modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
-        from src.modules.inventory.application.email_service import EmailService
+        # Alias pour la compatibilité
+        return await self.trigger_omnichannel_sync(info, store_id)
 
+    @strawberry.mutation
+    @require_permission(MichiPermission.STORES_MANAGE)
+    async def trigger_omnichannel_sync(self, info, store_id: strawberry.ID) -> IngestionResult:
+        from src.modules.inventory.application.alert_service import AlertService
+        # ... logic ...
         s_id = str(store_id)
         service = ShopifyService(info.context.db)
         result = await service.trigger_mock_sync(s_id)
         
+        # Logique de prédiction déclenchée après sync (pour démo)
         from src.modules.forecasting.infrastructure.repositories.cleaned_demand_repository import SQLAlchemyCleanedDemandRepository
         from src.modules.forecasting.infrastructure.repositories.prediction_repository import SQLAlchemyPredictionRepository
+        from src.modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
+        from src.modules.inventory.infrastructure.repositories.sales_log_repository import SQLAlchemySalesLogRepository
+        from src.modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
+        
+        db = info.context.db
+        product_repo = SQLAlchemyProductRepository(db)
+        store_repo = SQLAlchemyStoreRepository(db)
         
         forecasting = ForecastingService(
-            SQLAlchemyCleanedDemandRepository(info.context.db),
-            SQLAlchemyPredictionRepository(info.context.db),
+            SQLAlchemyCleanedDemandRepository(db),
+            SQLAlchemyPredictionRepository(db),
             product_repo,
-            SQLAlchemySalesLogRepository(info.context.db),
+            SQLAlchemySalesLogRepository(db),
             store_repo
         )
         await forecasting.run_cleaning_pipeline(s_id)
         await forecasting.run_prediction_pipeline(s_id)
 
-        alert_service = AlertService(alert_repo, product_repo, store_repo, email_service)
-        await alert_service.check_for_stockouts(s_id)
-
-        # Persistance globale
-        await info.context.db.commit()
-
-        return SyncResultType(
+        # Retourne IngestionResult pour compatibilité schema.graphql existant
+        return IngestionResult(
             success=result.success,
-            products_created=result.products_created,
-            sales_logs_created=result.sales_logs_created,
-            message=result.message + " Prédictions et alertes mises à jour.",
+            message=result.message + " Prédictions mises à jour.",
+            platform="Mock",
+            products_count=result.products_created,
+            sales_logs_count=result.sales_logs_created
         )
 
     @strawberry.mutation

@@ -95,8 +95,7 @@ class ApplicationOrgService:
         await self._memberships.save(member)
 
         user_model.current_organization_id = org_model.id
-        await self._users._db.flush()
-
+        
         if self._billing:
             stripe_id = await self._billing.create_customer(
                 name=org_model.name,
@@ -105,7 +104,9 @@ class ApplicationOrgService:
             )
             if stripe_id:
                 org_model.stripe_customer_id = stripe_id
-                await self._users._db.flush()
+
+        # Commit global pour assurer que GET_ME (requête suivante) voit l'organisation
+        await self._users._db.commit()
 
         token = self._tokens.create_access_token(
             user_id=user_model.id,
@@ -113,7 +114,7 @@ class ApplicationOrgService:
             email=user_model.email,
         )
 
-        # Recharger user avec orgs à jour
+        # Recharger l'utilisateur pour inclure la nouvelle relation 'organizations' dans le payload GraphQL
         user_model = await self._users.get_model_by_id(user_id)
         return OrgCreationResult(token=token, user_model=user_model, org_model=org_model)
 
@@ -159,17 +160,10 @@ class ApplicationOrgService:
             MichiException(ALREADY_MEMBER): membre actif.
             MichiException(INVITATION_ALREADY_PENDING): invitation en attente non expirée.
         """
-        from sqlalchemy import func, select
-        from src.modules.auth.models import User, Invitation as InvModel, InvitationStatus as IS
-
         email = email.strip().lower()
-        db = self._users._db
 
-        # Vérifier membre existant
-        existing_user_result = await db.execute(
-            select(User).where(func.lower(User.email) == email)
-        )
-        existing_user = existing_user_result.scalar_one_or_none()
+        # 1. Vérifier membre existant via repository
+        existing_user = await self._users.get_model_by_email(email)
         if existing_user:
             memberships = await self._memberships.list_for_user(existing_user.id)
             if any(str(m.organization_id) == str(organization_id) for m in memberships):
@@ -178,25 +172,18 @@ class ApplicationOrgService:
                     code=ErrorCode.ALREADY_MEMBER,
                 )
 
-        # Vérifier invitation en attente
-        result = await db.execute(
-            select(InvModel).where(
-                func.lower(InvModel.email) == email,
-                InvModel.organization_id == organization_id,
-                InvModel.status == IS.PENDING,
-            )
-        )
-        existing = result.scalar_one_or_none()
-        if existing:
-            if existing.expires_at < datetime.utcnow():
-                await db.delete(existing)
-                await db.flush()
+        # 2. Vérifier invitation en attente via repository
+        pending = await self._invitations.get_pending_invitation(email, organization_id)
+        if pending:
+            if pending.expires_at < datetime.utcnow():
+                await self._invitations.delete_invitation(pending.id)
             else:
                 raise MichiException(
                     message=f"Une invitation est déjà en attente pour {email}.",
                     code=ErrorCode.INVITATION_ALREADY_PENDING,
                 )
 
+        # 3. Création
         code = secrets.token_urlsafe(16)
         invitation = Invitation(
             email=email,
@@ -205,6 +192,7 @@ class ApplicationOrgService:
             code=code,
             invited_by_id=invited_by_id,
             expires_at=datetime.utcnow() + timedelta(days=7),
+            status=InvitationStatus.PENDING,
         )
         await self._invitations.save(invitation)
         return invitation

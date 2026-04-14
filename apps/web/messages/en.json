@@ -1,0 +1,149 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "or": "Or"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your Michi workspace.",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "name@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "••••••••",
+      "submitButton": "Sign in",
+      "orContinueWith": "Or continue with",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Sign up for free",
+      "terms": "By continuing, you agree to our terms of service.",
+      "termsLink": "terms of service",
+      "errorCredentials": "Invalid credentials or server error.",
+      "errorGoogle": "Error signing in with Google.",
+      "errorGoogleAuth": "Google Auth error"
+    },
+    "register": {
+      "title": "Create an account",
+      "subtitle": "Start optimizing your inventory today.",
+      "firstNameLabel": "First name",
+      "lastNameLabel": "Last name",
+      "emailLabel": "Email address",
+      "passwordLabel": "Password",
+      "submitButton": "Create my account",
+      "alreadyAccount": "Already have an account?",
+      "loginLink": "Sign in",
+      "errorExists": "An account with this email already exists.",
+      "errorGeneric": "Error creating account."
+    },
+    "logout": "Sign out"
+  },
+  "onboarding": {
+    "title": "Welcome to Michi 道",
+    "subtitle": "Set up your workspace in a few steps.",
+    "step1": {
+      "title": "Your organization",
+      "orgNameLabel": "Organization name",
+      "orgNamePlaceholder": "My store",
+      "currencyLabel": "Currency",
+      "continueButton": "Continue"
+    },
+    "step2": {
+      "title": "Connect your store",
+      "shopifyOption": "Shopify",
+      "wooOption": "WooCommerce",
+      "amazonOption": "Amazon",
+      "csvOption": "CSV Import",
+      "skipButton": "Skip this step"
+    },
+    "step3": {
+      "title": "You're all set!",
+      "subtitle": "Your workspace is configured. Go to your dashboard.",
+      "goToDashboard": "Go to dashboard"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of your inventory",
+    "kpis": {
+      "totalProducts": "Total products",
+      "criticalAlerts": "Critical alerts",
+      "stockoutRisk": "Stockout risk",
+      "forecastAccuracy": "Forecast accuracy"
+    },
+    "sections": {
+      "alerts": "Stock alerts",
+      "topProducts": "Top products",
+      "recentActivity": "Recent activity"
+    },
+    "empty": "No data available",
+    "refreshButton": "Refresh"
+  },
+  "inventory": {
+    "title": "Inventory",
+    "searchPlaceholder": "Search a product…",
+    "table": {
+      "product": "Product",
+      "sku": "SKU",
+      "stock": "Stock",
+      "status": "Status",
+      "lastUpdate": "Last updated",
+      "actions": "Actions"
+    },
+    "status": {
+      "critical": "Critical",
+      "warning": "Low",
+      "healthy": "Healthy",
+      "neutral": "Neutral"
+    },
+    "empty": "No products found"
+  },
+  "forecast": {
+    "title": "Forecasts",
+    "subtitle": "Anticipate your inventory needs",
+    "runForecast": "Run forecasts",
+    "lastRun": "Last run",
+    "accuracy": "Accuracy",
+    "chart": {
+      "demand": "Forecast demand",
+      "actual": "Actual sales"
+    }
+  },
+  "profile": {
+    "title": "My profile",
+    "personalInfo": "Personal information",
+    "firstNameLabel": "First name",
+    "lastNameLabel": "Last name",
+    "emailLabel": "Email",
+    "languageLabel": "Language",
+    "saveButton": "Save changes",
+    "dangerZone": "Danger zone",
+    "deleteAccount": "Delete my account"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "inventory": "Inventory",
+    "forecast": "Forecasts",
+    "connectors": "Connectors",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Sign out"
+  },
+  "brand": {
+    "tagline": "Precision at the heart of your growth.",
+    "description": "Automate your inventory forecasts and reduce stockouts by 40% with our omnichannel AI engine.",
+    "stats": {
+      "accuracy": "AI reliability",
+      "stockoutReduction": "Fewer stockouts"
+    }
+  }
+}

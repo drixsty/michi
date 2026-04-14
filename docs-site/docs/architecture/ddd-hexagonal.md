@@ -1,61 +1,60 @@
 ---
 id: ddd-hexagonal
-title: Architecture DDD Hexagonale
-sidebar_label: DDD Hexagonal
-slug: /architecture/ddd-hexagonal
+title: DDD & Architecture Hexagonale
+sidebar_label: 🧱 DDD & Hexagonale
+sidebar_position: 2
 ---
 
-# Architecture DDD Hexagonale — Sprint 21
+# Domain-Driven Design & Architecture Hexagonale
 
-## Les 4 couches
+Michi 道 applique une architecture hexagonale (Ports & Adapteurs) pour isoler le cœur métier des détails techniques (base de données, APIs externes).
 
-```
-Domain          → Entités pures + Protocols (aucune dépendance)
-Application     → Services métier (reçoivent des Ports par injection)
-Infrastructure  → Repositories SQLAlchemy (implémentent les Ports)
-Adapters        → Resolvers GraphQL minces (< 15 lignes chacun)
-```
+## 🏙️ Structure des Modules
 
-## Règles DDD (Charter Sprint 21)
+Chaque module (auth, inventory, forecasting, etc.) suit cette structure interne :
 
-| Règle | Description |
-|-------|-------------|
-| R1 | Le domaine n'importe jamais SQLAlchemy ni FastAPI |
-| R2 | Les services applicatifs reçoivent des ports (Protocol), pas des sessions DB |
-| R3 | Les repositories sont la seule couche autorisée à faire du SQL |
-| R4 | Les resolvers GraphQL sont minces (< 15 lignes) |
-| R5 | Zéro `select()` dans les resolvers |
-| R6 | `intelligence/` est zero-dependency (pas de SQLAlchemy, FastAPI, HTTP) |
-| R7 | Les imports circulaires sont interdits |
-
-## Structure auth/ (exemple complet)
-
-```
-auth/
-├── domain/
-│   ├── entities.py      # UserEntity, OrgEntity, MembershipEntity
-│   ├── value_objects.py # Email, HashedPassword, OrgSlug, JwtToken
-│   └── ports.py         # IUserRepository, ITokenService, IOAuthProvider
-├── infrastructure/
-│   ├── repositories.py  # SQLAlchemyUserRepository (implémente IUserRepository)
-│   ├── mappers.py       # SQLAlchemy model ↔ Domain entity
-│   └── security_adapters.py  # BCryptPasswordHasher, JwtTokenService
-├── application/
-│   ├── auth_service.py  # ApplicationAuthService (injecte IUserRepository)
-│   ├── org_service.py   # ApplicationOrgService
-│   └── factory.py       # build_auth_service(db) → ApplicationAuthService
-├── models.py            # SQLAlchemy models (User, Organization, ...)
-└── service.py           # Legacy service (à migrer via US 21.9)
+```text
+src/modules/[module_name]/
+├── domain/              # Port (Entities, Value Objects, Repository Interfaces)
+│   ├── entities.py
+│   └── repository.py    # Interface abstraite
+├── application/         # Orchestration (Services)
+│   └── service.py       # Logique métier pure
+├── infrastructure/      # Adapter (Persistence, External APIs)
+│   └── repositories/
+│       └── sqlalchemy.py # Implémentation réelle
+└── adapters/            # Adapter (GraphQL, CLI)
+    └── resolvers.py    # Point d'entrée GraphQL
 ```
 
-## Injection de dépendances
+```mermaid
+sequenceDiagram
+    participant Adapter as Adapter (GraphQL/CLI)
+    participant Service as Application (Service)
+    participant Port as Port (Protocol Interface)
+    participant Repo as Infrastructure (Repository)
+    participant DB as SQL Database
 
-```python
-# factory.py — point d'entrée unique
-from src.modules.auth.application.factory import build_auth_service
-
-auth_svc = build_auth_service(info.context.db, info.context.billing)
-result = await auth_svc.login(email, password)
+    Adapter->>Service: Appel de la méthode métier
+    Service->>Port: Appel de l'interface Domain (Repo)
+    Port-->>Repo: Implémentation via DI
+    Repo->>DB: Requête SQLAlchemy
+    DB-->>Repo: Données SQL
+    Repo-->>Service: Entités Domain
+    Service-->>Adapter: Résultat métier typé
 ```
 
-Les resolvers n'instancient plus rien directement — ils appellent `build_*`.
+## 🔌 Ports et Adapteurs
+
+### Le Port (Domain)
+C'est l'interface définie par le domaine pour interagir avec le monde extérieur.
+Exemple : `IProductRepository` définit que l'on doit pouvoir "récupérer un produit", mais ne sait pas comment.
+
+### L'Adapteur (Infrastructure)
+C'est l'implémentation concrète.
+Exemple : `SQLAlchemyProductRepository` utilise la session DB pour exécuter du SQL.
+
+## ⚖️ Avantages
+1. **Testabilité :** On peut tester les services avec des "FakeRepositories" (en mémoire) sans base de donnée.
+2. **Maintenance :** Changer de base de données ou de framework API n'impacte pas la logique métier.
+3. **Clarté :** La séparation des responsabilités est explicite.

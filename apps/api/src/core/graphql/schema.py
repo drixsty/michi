@@ -17,7 +17,7 @@ from src.modules.forecasting.adapters.resolvers import ForecastingQuery, Forecas
 
 # Other Modules
 from src.modules.shopify.resolvers import ShopifyQuery, ShopifyMutation
-from src.modules.decisions.resolvers import DecisionQuery, DecisionMutation
+from src.modules.decisions.adapters.resolvers import DecisionQuery, DecisionMutation
 from src.modules.billing.resolvers import BillingQuery, BillingMutation
 
 

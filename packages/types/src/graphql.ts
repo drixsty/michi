@@ -145,28 +145,23 @@ export type Mutation = {
   createBillingPortalSession: Scalars['String']['output'];
   createCheckoutSession: Scalars['String']['output'];
   createOrganization: AuthPayload;
-  createPurchaseOrder: PurchaseOrderType;
   deleteAlert: Scalars['Boolean']['output'];
   deleteInvitation: Scalars['Boolean']['output'];
   googleLogin: AuthPayload;
   ingestCsvData: IngestionResult;
-  ingestWoocommerceData: IngestionResult;
   inviteMember: InvitationType;
   login: AuthPayload;
   markAlertAsRead: Scalars['Boolean']['output'];
-  receivePurchaseOrder: Scalars['Boolean']['output'];
   register: AuthPayload;
   removeMember: Scalars['Boolean']['output'];
   runCleaningPipeline: PipelineResultType;
   runPredictionPipeline: PredictionRunResultType;
   switchOrganization: AuthPayload;
   toggleSource: StoreType;
-  toggleUserStatus: Scalars['Boolean']['output'];
-  triggerMockDataSync: SyncResultType;
+  triggerMockDataSync: IngestionResult;
   triggerOmnichannelSync: IngestionResult;
-  updateMemberPermissions: OrganizationMemberType;
   updateMemberRole: Scalars['Boolean']['output'];
-  updateOrganization: OrganizationType;
+  updateOrganization?: Maybe<OrganizationType>;
   updateProductSettings: ProductType;
   updateProfile: UserType;
   updateStrategicSettings: Scalars['Boolean']['output'];
@@ -201,15 +196,6 @@ export type MutationCreateOrganizationArgs = {
 };
 
 
-export type MutationCreatePurchaseOrderArgs = {
-  expectedDays?: Scalars['Int']['input'];
-  productId: Scalars['ID']['input'];
-  quantity: Scalars['Int']['input'];
-  storeId: Scalars['ID']['input'];
-  supplierId: Scalars['ID']['input'];
-};
-
-
 export type MutationDeleteAlertArgs = {
   alertId: Scalars['ID']['input'];
 };
@@ -236,13 +222,6 @@ export type MutationIngestCsvDataArgs = {
 };
 
 
-export type MutationIngestWoocommerceDataArgs = {
-  ordersCsv?: Scalars['String']['input'];
-  productsCsv: Scalars['String']['input'];
-  storeId: Scalars['ID']['input'];
-};
-
-
 export type MutationInviteMemberArgs = {
   email: Scalars['String']['input'];
   role: Scalars['String']['input'];
@@ -256,11 +235,6 @@ export type MutationLoginArgs = {
 
 export type MutationMarkAlertAsReadArgs = {
   alertId: Scalars['ID']['input'];
-};
-
-
-export type MutationReceivePurchaseOrderArgs = {
-  poId: Scalars['ID']['input'];
 };
 
 
@@ -296,25 +270,14 @@ export type MutationToggleSourceArgs = {
 };
 
 
-export type MutationToggleUserStatusArgs = {
-  active: Scalars['Boolean']['input'];
-  userId: Scalars['ID']['input'];
-};
-
-
 export type MutationTriggerMockDataSyncArgs = {
+  platform: Scalars['String']['input'];
   storeId: Scalars['ID']['input'];
 };
 
 
 export type MutationTriggerOmnichannelSyncArgs = {
-  storeId?: InputMaybe<Scalars['ID']['input']>;
-};
-
-
-export type MutationUpdateMemberPermissionsArgs = {
-  permissions: Scalars['String']['input'];
-  userId: Scalars['ID']['input'];
+  storeId: Scalars['ID']['input'];
 };
 
 
@@ -376,7 +339,6 @@ export type OrganizationType = {
   __typename?: 'OrganizationType';
   createdAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
-  invitations?: Maybe<Array<InvitationType>>;
   name: Scalars['String']['output'];
   plan: Scalars['String']['output'];
   settings: Scalars['String']['output'];
@@ -445,36 +407,21 @@ export type ProductType = {
   warningThreshold: Scalars['Float']['output'];
 };
 
-export type PurchaseOrderType = {
-  __typename?: 'PurchaseOrderType';
-  actualArrivalDate?: Maybe<Scalars['String']['output']>;
-  expectedArrivalDate: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  orderDate: Scalars['String']['output'];
-  productId: Scalars['ID']['output'];
-  quantity: Scalars['Int']['output'];
-  status: Scalars['String']['output'];
-  supplierId: Scalars['ID']['output'];
-};
-
 export type Query = {
   __typename?: 'Query';
   cleanedDemand: Array<CleanedDemandType>;
   currentOrganization?: Maybe<OrganizationType>;
   dashboardKpis: DashboardKpiType;
-  exportReplenishmentCsv: Scalars['String']['output'];
   financialOverview: DecisionCenterOverviewType;
   invoices: Array<InvoiceType>;
   me: UserType;
   omnichannelInventory: Array<OmnichannelProductType>;
-  organizationMembers?: Maybe<Array<OrganizationMemberType>>;
-  pendingInvitations?: Maybe<Array<InvitationType>>;
-  predictionForProduct?: Maybe<PredictionType>;
+  organizationMembers: Array<OrganizationMemberType>;
+  pendingInvitations: Array<InvitationType>;
   predictions: Array<PredictionType>;
   products: Array<ProductType>;
   replenishmentAlerts: Array<PredictionType>;
   sources: Array<StoreType>;
-  suppliers: Array<SupplierType>;
   unreadAlerts: Array<AlertType>;
   validateMockData: ValidationReportType;
 };
@@ -491,19 +438,9 @@ export type QueryDashboardKpisArgs = {
 };
 
 
-export type QueryExportReplenishmentCsvArgs = {
-  storeId: Scalars['ID']['input'];
-};
-
-
 export type QueryFinancialOverviewArgs = {
   channel?: InputMaybe<Scalars['String']['input']>;
   storeId?: InputMaybe<Scalars['ID']['input']>;
-};
-
-
-export type QueryPredictionForProductArgs = {
-  productId: Scalars['ID']['input'];
 };
 
 
@@ -520,11 +457,6 @@ export type QueryProductsArgs = {
 
 export type QueryReplenishmentAlertsArgs = {
   storeId?: InputMaybe<Scalars['ID']['input']>;
-};
-
-
-export type QuerySuppliersArgs = {
-  storeId: Scalars['ID']['input'];
 };
 
 
@@ -562,14 +494,6 @@ export type SupplierType = {
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   reliabilityScore: Scalars['Float']['output'];
-};
-
-export type SyncResultType = {
-  __typename?: 'SyncResultType';
-  message: Scalars['String']['output'];
-  productsCreated: Scalars['Int']['output'];
-  salesLogsCreated: Scalars['Int']['output'];
-  success: Scalars['Boolean']['output'];
 };
 
 export type TopRiskType = {
@@ -674,7 +598,7 @@ export type SwitchOrganizationMutationVariables = Exact<{
 export type SwitchOrganizationMutation = { __typename?: 'Mutation', switchOrganization: { __typename?: 'AuthPayload', token: string, user: { __typename?: 'UserType', id: string, email: string, currentOrganizationId?: string | null } } };
 
 export type TriggerOmnichannelSyncMutationVariables = Exact<{
-  storeId?: InputMaybe<Scalars['ID']['input']>;
+  storeId: Scalars['ID']['input'];
 }>;
 
 

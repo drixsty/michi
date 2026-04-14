@@ -1,3 +1,7 @@
+"""
+Script d'export du schéma GraphQL en format SDL (.graphql).
+Utilisé par US 21.15 — Redirect output to file via Makefile.
+"""
 import os
 import sys
 from pathlib import Path
@@ -5,18 +9,13 @@ from pathlib import Path
 # Add src to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from src.core.graphql.schema import schema
-
-def export_schema():
-    target_path = Path(__file__).parent.parent.parent.parent / "docs-site" / "static" / "schema.graphql"
-    print(f"Exporting schema to {target_path}...")
-    
-    sdl = schema.as_str()
-    
-    with open(target_path, "w", encoding="utf-8") as f:
-        f.write(sdl)
-    
-    print("Done.")
-
-if __name__ == "__main__":
-    export_schema()
+try:
+    from src.core.graphql.schema import schema
+    # On utilise print pour permettre la redirection dans le Makefile
+    print(str(schema))
+except ImportError as e:
+    print(f"Erreur d'import : {e}", file=sys.stderr)
+    sys.exit(1)
+except Exception as e:
+    print(f"Erreur lors de l'export : {e}", file=sys.stderr)
+    sys.exit(1)

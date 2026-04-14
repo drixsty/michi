@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ColumnDef,
   flexRender,
@@ -53,6 +53,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [channelFilter, setChannelFilter] = useState('all');
   const [columnSizing, setColumnSizing] = useState<ColumnSizingState>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('michi_column_sizing');
@@ -66,13 +67,35 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
   }, [columnSizing]);
 
   const filteredProducts = React.useMemo(() => {
-    if (!query) return products;
-    const q = query.toLowerCase();
-    return products.filter(p => 
-      p.title.toLowerCase().includes(q) || 
-      p.sku.toLowerCase().includes(q)
-    );
-  }, [products, query]);
+    let result = products;
+    
+    // Search filter
+    if (query) {
+      const q = query.toLowerCase();
+      result = result.filter(p => 
+        p.title.toLowerCase().includes(q) || 
+        p.sku.toLowerCase().includes(q)
+      );
+    }
+
+    // Channel filter
+    if (channelFilter !== 'all') {
+      result = result.filter(p => {
+        const channels = p.channels || [];
+        return channels.some((c: any) => c.platform.toLowerCase() === channelFilter.toLowerCase());
+      });
+    }
+
+    return result;
+  }, [products, query, channelFilter]);
+
+  const availablePlatforms = useMemo(() => {
+    const platforms = new Set<string>();
+    products.forEach(p => {
+      (p.channels || []).forEach((c: any) => platforms.add(c.platform.toLowerCase()));
+    });
+    return Array.from(platforms);
+  }, [products]);
 
   const columns: ColumnDef<any>[] = [
     {
@@ -308,7 +331,52 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
   const selectedCount = Object.keys(rowSelection).length;
 
   return (
-    <div className="relative space-y-2">
+    <div className="relative space-y-4">
+      {/* Table Headers & Global Filters */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-primary/5 rounded-lg">
+             <Layers className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <h3 data-testid="inventory-title" className="text-xs font-bold text-slate-900 tracking-tight">Catalogue Unifié</h3>
+            <p className="text-[10px] text-slate-400 font-medium">{filteredProducts.length} produits affichés</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {availablePlatforms.length > 0 && (
+             <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 p-1 rounded-lg">
+                <button 
+                  onClick={() => setChannelFilter('all')}
+                  className={cn(
+                    "px-2 py-1 text-[9px] font-bold rounded-md transition-all",
+                    channelFilter === 'all' ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"
+                  )}
+                >
+                  Tous
+                </button>
+                {availablePlatforms.map(p => {
+                  const Icon = PLATFORM_ICONS[p as PlatformSource] || Globe;
+                  return (
+                    <button 
+                      key={p}
+                      onClick={() => setChannelFilter(p)}
+                      className={cn(
+                        "flex items-center gap-1.5 px-2 py-1 text-[9px] font-bold rounded-md transition-all",
+                        channelFilter === p ? "bg-white text-primary shadow-sm border-primary/10" : "text-slate-400 hover:text-slate-600"
+                      )}
+                    >
+                      <Icon className="h-2.5 w-2.5" />
+                      {p.charAt(0).toUpperCase() + p.slice(1)}
+                    </button>
+                  )
+                })}
+             </div>
+          )}
+        </div>
+      </div>
+
       <div className="rounded-xl border border-slate-100 bg-white overflow-hidden shadow-none">
         <div className="overflow-x-auto no-scrollbar">
           <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>

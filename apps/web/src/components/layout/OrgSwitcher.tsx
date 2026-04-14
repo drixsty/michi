@@ -32,6 +32,7 @@ export function OrgSwitcher() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        data-testid="org-switcher-button"
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-all border border-transparent hover:border-slate-200 active:scale-95 group focus:ring-0 focus:outline-none"
       >
         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold shadow-sm group-hover:bg-primary/20 transition-colors">

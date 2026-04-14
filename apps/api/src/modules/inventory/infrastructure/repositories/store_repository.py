@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.modules.inventory.domain.entities import StoreEntity, PlatformSource
 from src.modules.inventory.domain.ports import IStoreRepository
-from src.modules.inventory.models import Store
+from src.modules.inventory.infrastructure.persistence.models import Store
 
 class SQLAlchemyStoreRepository(IStoreRepository):
     def __init__(self, session: AsyncSession):

@@ -35,6 +35,9 @@ from src.modules.forecasting.application.forecasting_service import ForecastingS
 from src.modules.forecasting.infrastructure.repositories.cleaned_demand_repository import SQLAlchemyCleanedDemandRepository
 from src.modules.forecasting.infrastructure.repositories.prediction_repository import SQLAlchemyPredictionRepository
 
+# Decisions
+from src.modules.decisions.application.decisions_service import ApplicationDecisionsService
+
 
 @dataclass
 class ServiceContainer:
@@ -45,6 +48,7 @@ class ServiceContainer:
     omnichannel_service: OmnichannelService
     alert_service: AlertService
     forecasting_service: ForecastingService
+    decisions_service: ApplicationDecisionsService
 
 
 def build_services(db: AsyncSession, billing_service: Optional[object] = None) -> ServiceContainer:
@@ -120,11 +124,19 @@ def build_services(db: AsyncSession, billing_service: Optional[object] = None) -
         store_repo=store_repo
     )
 
+    decisions_service = ApplicationDecisionsService(
+        user_repo=user_repo,
+        store_repo=store_repo,
+        product_repo=product_repo,
+        prediction_repo=prediction_repo
+    )
+
     return ServiceContainer(
         auth_service=auth_service,
         org_service=org_service,
         inventory_service=inventory_service,
         omnichannel_service=omnichannel_service,
         alert_service=alert_service,
-        forecasting_service=forecasting_service
+        forecasting_service=forecasting_service,
+        decisions_service=decisions_service
     )

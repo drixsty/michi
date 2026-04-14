@@ -55,6 +55,29 @@ class ForecastingQuery:
             
         return [PredictionType.from_db(r) for r in rows]
 
+    @strawberry.field
+    @require_permission(MichiPermission.FORECASTING_VIEW)
+    async def dashboard_kpis(self, info, store_id: Optional[strawberry.ID] = None) -> DashboardKPIType:
+        service = info.context.services.forecasting_service
+        kpis = await service.get_dashboard_kpis(
+            store_id=str(store_id) if store_id else None,
+            organization_id=str(info.context.org_id) if info.context.org_id else None
+        )
+        return DashboardKPIType(
+            total_products=kpis.total_products,
+            actual_stockouts=kpis.actual_stockouts,
+            urgent_alerts=kpis.urgent_alerts,
+            predicted_stockouts_30d=kpis.predicted_stockouts_30d,
+            message=kpis.message
+        )
+
+    @strawberry.field
+    @require_plan("PRO")
+    @require_permission(MichiPermission.FORECASTING_VIEW)
+    async def replenishment_alerts(self, info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
+        """Alias de predictions pour la compatibilité avec le dashboard frontend."""
+        return await self.predictions(info, store_id=store_id)
+
 @strawberry.type
 class ForecastingMutation:
     @strawberry.mutation

@@ -22,7 +22,7 @@ from src.modules.auth.domain.entities import (
     UserEntity,
 )
 from src.modules.auth.domain.value_objects import Email, HashedPassword, OrgSlug
-from src.modules.auth.models import (
+from .persistence.models import (
     Invitation,
     InvitationStatus,
     Organization,
@@ -261,11 +261,24 @@ class SQLAlchemyInvitationRepository:
         await self._db.flush()
         return invitation_to_entity(model)
 
-    async def list_for_org(self, org_id: UUID) -> list[InvitationEntity]:
-        result = await self._db.execute(
-            select(Invitation).where(Invitation.organization_id == org_id)
-        )
         return [invitation_to_entity(m) for m in result.scalars().all()]
+
+    async def get_pending_invitation(self, email: str, org_id: UUID) -> Optional[InvitationEntity]:
+        result = await self._db.execute(
+            select(Invitation).where(
+                func.lower(Invitation.email) == email.strip().lower(),
+                Invitation.organization_id == org_id,
+                Invitation.status == InvitationStatus.PENDING,
+            )
+        )
+        model = result.scalar_one_or_none()
+        return invitation_to_entity(model) if model else None
+
+    async def delete_invitation(self, invitation_id: UUID) -> None:
+        await self._db.execute(
+            delete(Invitation).where(Invitation.id == invitation_id)
+        )
+        await self._db.flush()
 
     async def delete_by_id(self, invitation_id: UUID) -> bool:
         result = await self._db.execute(

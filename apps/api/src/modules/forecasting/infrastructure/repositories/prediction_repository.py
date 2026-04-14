@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from src.modules.forecasting.domain.entities import PredictionEntity
 from src.modules.forecasting.domain.ports import IPredictionRepository
-from src.modules.forecasting.models import Prediction
+from src.modules.forecasting.infrastructure.persistence.models import Prediction
 from src.modules.inventory.models import Product, Store
 
 class SQLAlchemyPredictionRepository(IPredictionRepository):

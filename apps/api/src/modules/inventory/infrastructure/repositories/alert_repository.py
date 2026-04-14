@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from src.modules.inventory.domain.entities import AlertEntity
 from src.modules.inventory.domain.ports import IAlertRepository
-from src.modules.inventory.models import Alert, Product, Store
+from src.modules.inventory.infrastructure.persistence.models import Alert, Product, Store
 
 class SQLAlchemyAlertRepository(IAlertRepository):
     def __init__(self, session: AsyncSession):
