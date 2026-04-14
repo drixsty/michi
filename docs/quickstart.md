@@ -56,13 +56,19 @@ make dev-frontend
 
 ### Étape 4 : Login
 
-Ouvrir http://localhost:3000/login
+Ouvrir [http://localhost:3000/login](http://localhost:3000/login)
 
-**Credentials :**
-```
-Email    : dev@michi.com
-Password : password123
-```
+**Comptes de Test (Seed Standard) :**
+
+| Email | Mot de Passe | Plan | Rôle |
+|-------|--------------|------|------|
+| `dev@michi.com` | `michi123` / `password123` | ENTERPRISE | ADMIN |
+| `pro@michi.com` | `password123` | PRO | ADMIN |
+| `basic@michi.com` | `password123` | BASIC | ADMIN |
+| `late@michi.com` | `password123` | PRO (Past Due) | ADMIN |
+
+> [!TIP]
+> Si `password123` ne fonctionne pas pour `dev@michi.com`, essayez `michi123` (utilisé dans les scripts SaaS v2).
 
 ---
 

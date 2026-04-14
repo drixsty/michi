@@ -189,12 +189,16 @@ docker-compose logs -f
 ---
 
 ## 🔐 Connexion
+Ouvrir [http://localhost:3000/login](http://localhost:3000/login)
 
-Ouvrir http://localhost:3000/login
+**Comptes de développement (Seed Standard) :**
 
-**Credentials de développement :**
-- Email : `dev@michi.com`
-- Password : `password123`
+| Email | Password | Plan | Rôle |
+|-------|----------|------|------|
+| `dev@michi.com` | `michi123` / `password123` | ENTERPRISE | ADMIN |
+| `pro@michi.com` | `password123` | PRO | ADMIN |
+| `basic@michi.com` | `password123` | BASIC | ADMIN |
+| `late@michi.com` | `password123` | PRO (Past Due) | ADMIN |
 
 Après login, vous serez redirigé vers `/dashboard`.
 

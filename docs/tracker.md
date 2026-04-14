@@ -992,4 +992,13 @@ Ces features sont hors scope MVP mais peuvent être ajoutées après validation 
 - [x] Détails du membre : Grille de permissions par catégorie (Billing, Inventory, Team)
 - [x] Optimistic UI pour le switch des droits
 
+### 🛠️ Stabilité & Robustesse (Septembre 2026)
+
+**Améliorations réalisées pour la stabilisation du Système :**
+
+- **Nettoyage des Logs** : Implémentation d'un filtrage Loguru pour masquer les tracebacks automatiques de `UnauthenticatedException` tout en gardant des messages `[Security]` informatifs.
+- **Header `michi-org-id`** : Support du header personnalisé pour l'identification de l'organisation avant le rafraîchissement du token (fixe les boucles de polling 401).
+- **Apollo Error Link** : Gestion globale des erreurs `UNAUTHENTICATED` pour vider le cache local et rediriger proprement vers `/login`.
+- **Correction Greenlet** : Résolution d'un conflit entre l'interception des logs standard et l'exécution asynchrone de SQLAlchemy (fixe les plantages au Login/Register).
+
 ---

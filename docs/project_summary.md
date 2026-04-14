@@ -299,7 +299,7 @@ make dev-backend
 make dev-frontend
 
 # Ouvrir http://localhost:3000/login
-# Email: dev@michi.com | Password: password123
+# Email: dev@michi.com | Password: michi123 / password123
 ```
 
 ---
