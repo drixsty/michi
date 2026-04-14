@@ -7,7 +7,7 @@ from typing import List, Optional
 from datetime import datetime
 from sqlalchemy import select
 
-from src.core.exceptions import UnauthenticatedException
+from michi_core.exceptions import UnauthenticatedException
 from .service import ShopifyService
 from src.modules.inventory.application.inventory_service import InventoryService
 from src.modules.inventory.application.alert_service import AlertService

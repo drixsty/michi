@@ -1,9 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import { AuthPage } from './pages/AuthPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { DashboardPage } from './pages/DashboardPage';
 
-test.describe.serial('Authentication & Onboarding Flow', () => {
+// We use mode: 'serial' to ensure tests run in order and share the account creation state
+test.describe.configure({ mode: 'serial' });
+
+test.describe('Authentication & Onboarding Flow', () => {
+  // We use a shared page to maintain the session across serial tests
+  let sharedPage: Page;
   let authPage: AuthPage;
   let onboardingPage: OnboardingPage;
   let dashboardPage: DashboardPage;
@@ -16,65 +21,65 @@ test.describe.serial('Authentication & Onboarding Flow', () => {
   };
 
   test.beforeAll(async ({ browser }) => {
-    const page = await browser.newPage();
-    authPage = new AuthPage(page);
-    onboardingPage = new OnboardingPage(page);
-    dashboardPage = new DashboardPage(page);
+    sharedPage = await browser.newPage();
+    authPage = new AuthPage(sharedPage);
+    onboardingPage = new OnboardingPage(sharedPage);
+    dashboardPage = new DashboardPage(sharedPage);
   });
 
-  test('1. Full Registration and Onboarding Flow', async ({ page }) => {
-    authPage = new AuthPage(page);
-    onboardingPage = new OnboardingPage(page);
-    dashboardPage = new DashboardPage(page);
+  test.afterAll(async () => {
+    await sharedPage.close();
+  });
 
+  test('1. Full Registration and Onboarding Flow', async () => {
     await authPage.gotoRegister();
     await authPage.register(testUser.firstName, testUser.lastName, testUser.email, testUser.password);
     
-    await expect(page).toHaveURL(/.*dashboard(\?onboarding=true)?/);
+    // Check we landed on onboarding or dashboard
+    await expect(sharedPage).toHaveURL(/.*(dashboard|onboarding)/, { timeout: 15000 });
     
-    // Complete the Onboarding Wizard
+    // Complete the Onboarding Wizard (both standalone and dashboard parts)
     await onboardingPage.completeWizard();
     
     await dashboardPage.expectLoggedIn();
   });
 
-  test('2. Logout Flow', async ({ page }) => {
-    // Reuse session from previous test if possible, or login again
-    authPage = new AuthPage(page);
-    dashboardPage = new DashboardPage(page);
-    
+  test('2. Logout Flow', async () => {
+    // Session is maintained from test #1
     await dashboardPage.goto();
     await dashboardPage.expectLoggedIn();
     
     await dashboardPage.logout();
-    await expect(page).toHaveURL(/.*login/);
+    await expect(sharedPage).toHaveURL(/.*login/);
   });
 
-  test('3. Successful Login with created user', async ({ page }) => {
-    authPage = new AuthPage(page);
-    dashboardPage = new DashboardPage(page);
-
+  test('3. Successful Login with created user', async () => {
     await authPage.gotoLogin();
     await authPage.login(testUser.email, testUser.password);
     await dashboardPage.expectLoggedIn();
   });
 
-  test('4. Login Failure with wrong password', async ({ page }) => {
-    authPage = new AuthPage(page);
+  test('4. Login Failure with wrong password', async () => {
     await authPage.gotoLogin();
     await authPage.login(testUser.email, 'wrongpassword');
     await authPage.expectError('Identifiants incorrects');
   });
 
-  test.skip('5. Organization Switching', async ({ page }) => {
-    authPage = new AuthPage(page);
-    dashboardPage = new DashboardPage(page);
+  test('5. Registration Failure - Email already exists', async () => {
+    await authPage.gotoRegister();
+    // Use testUser.email which was registered in test #1
+    await authPage.register('Duplicate', 'User', testUser.email, testUser.password);
+    await authPage.expectError('déjà utilisé');
+  });
 
+  test('6. Organization Switching', async () => {
     await authPage.gotoLogin();
     await authPage.login(testUser.email, testUser.password);
     await dashboardPage.expectLoggedIn();
     
     await dashboardPage.openOrgSwitcher();
-    await expect(page.locator('text=Changer d\'organisation')).toBeVisible();
+    // Verify the switcher works
+    await expect(sharedPage.locator('text=Changer d\'organisation')).toBeVisible();
+    await sharedPage.click('text=Fermer'); 
   });
 });

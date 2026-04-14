@@ -7,7 +7,8 @@ from .infrastructure.persistence.models import (
     Organization, 
     OrganizationMember, 
     UserRole, 
-    Invitation
+    Invitation,
+    InvitationStatus
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "OrganizationMember",
     "UserRole",
     "Invitation",
+    "InvitationStatus",
 ]

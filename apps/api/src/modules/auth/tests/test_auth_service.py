@@ -12,7 +12,7 @@ import pytest
 from src.modules.auth.application.auth_service import ApplicationAuthService
 from src.modules.auth.domain.entities import UserEntity
 from src.modules.auth.domain.value_objects import Email
-from src.core.exceptions import MichiException, UnauthenticatedException
+from michi_core.exceptions import MichiException, UnauthenticatedException
 
 from src.modules.auth.tests.fakes import (
     FakeMembershipRepository,

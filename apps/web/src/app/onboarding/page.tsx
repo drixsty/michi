@@ -229,6 +229,7 @@ export default function OnboardingPage() {
                   type="text" 
                   placeholder="ex: Bloom Industries"
                   value={orgName}
+                  data-testid="org-name-input"
                   onChange={(e) => setOrgName(e.target.value)}
                   autoFocus
                   className="w-full h-14 px-6 bg-slate-50/50 border border-slate-200 rounded-xl text-xl text-slate-900 placeholder:text-slate-300 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all font-semibold tracking-tight"
@@ -242,6 +243,7 @@ export default function OnboardingPage() {
               <button 
                 onClick={handleNext}
                 disabled={orgName.trim().length <= 2}
+                data-testid="onboarding-next"
                 className="w-full h-14 bg-slate-900 text-white rounded-xl font-bold text-md hover:bg-slate-800 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-xl shadow-slate-900/10"
               >
                 Continuer
@@ -308,6 +310,7 @@ export default function OnboardingPage() {
                 </button>
                 <button 
                   onClick={handleFinish}
+                  data-testid="onboarding-finish"
                   className="flex-1 h-12 bg-slate-900 text-white rounded-xl font-bold text-[15px] hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-900/10"
                 >
                   {selectedPlan === 'BASIC' ? "Activer l'espace" : "Finaliser sur Stripe"}

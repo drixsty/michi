@@ -65,6 +65,7 @@ export function OrgSwitcher() {
                       }
                       setIsOpen(false);
                     }}
+                    data-testid="org-item"
                     className={cn(
                       "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all focus:ring-0 focus:outline-none",
                       m.organizationId === currentOrganization.id 

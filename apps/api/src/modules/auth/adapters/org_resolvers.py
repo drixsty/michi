@@ -6,7 +6,7 @@ import strawberry
 from typing import Optional, List
 import uuid
 
-from src.core.exceptions import UnauthenticatedException, MichiException, ErrorCode
+from michi_core.exceptions import UnauthenticatedException, MichiException, ErrorCode
 from src.core.graphql.types import (
     OrganizationType, OrganizationMemberType, UpdateOrganizationInput,
     AuthPayload, UserType
@@ -52,7 +52,8 @@ class OrgMutation:
         result = await service.create_organization(
             user_id=uuid.UUID(str(info.context.user_id)),
             name=name,
-            plan=plan
+            plan=plan,
+            email=info.context.email
         )
         
         # On attend commit() si nécessaire, mais le service doit gérer le flush.

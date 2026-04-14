@@ -6,7 +6,6 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ApolloWrapper } from '@/components/providers/ApolloWrapper';
 import { StoreProvider } from '@/context/StoreContext';
-import MainLayout from '@/components/layout/MainLayout';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './globals.css';
 
@@ -31,9 +30,7 @@ export default function RootLayout({
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
           <ApolloWrapper>
             <StoreProvider>
-              <MainLayout>
-                {children}
-              </MainLayout>
+              {children}
             </StoreProvider>
           </ApolloWrapper>
         </GoogleOAuthProvider>

@@ -4,32 +4,27 @@ import { useQuery, useMutation } from '@apollo/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { GET_ME } from '@/graphql/queries/getMe';
-import { GET_PRODUCTS } from '@/graphql/queries/getProducts';
 import { TRIGGER_MOCK_DATA_SYNC } from '@/graphql/mutations/syncInventory';
 import { GET_DASHBOARD_STATS } from '@/graphql/queries/getDashboardStats';
 import { GET_UNREAD_ALERTS } from '@/graphql/queries/getUnreadAlerts';
 import { INGEST_CSV_DATA } from '@/graphql/mutations/ingestCSV';
 import { AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
-import { LayoutDashboard, Package, Layers, Bell, BellOff, AlertCircle, AlertTriangle, Trash2, ExternalLink, Eye, CheckCircle2, Database } from 'lucide-react';
-import Link from 'next/link';
 import { gql } from '@apollo/client';
-import { cn } from '@/lib/utils';
-import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
-import { LoadingState } from '@/components/ui/LoadingState';
 
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { StatsOverview } from '@/components/dashboard/StatsOverview';
-import { ProductTable } from '@/components/dashboard/ProductTable';
-import { ConnectorsGrid } from '@/components/dashboard/ConnectorsGrid';
-import { DecisionsView } from '@/components/dashboard/DecisionsView';
-import { OrganizationView } from '@/components/dashboard/OrganizationView';
-
+import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
 import OnboardingWizard from '@/components/dashboard/OnboardingWizard';
 
+// New Modular Views
+import { OverviewView } from '@/components/dashboard/views/OverviewView';
+import { InventoryView } from '@/components/dashboard/views/InventoryView';
+import { SourcesView } from '@/components/dashboard/views/SourcesView';
+import { DecisionsView } from '@/components/dashboard/views/DecisionsView';
+import { OrganizationView } from '@/components/dashboard/views/OrganizationView';
+
 import { GET_OMNICHANNEL_INVENTORY } from '@/graphql/queries/getOmnichannelInventory';
-import type { Product, OmnichannelProduct } from '@michi/types';
+import type { OmnichannelProduct } from '@michi/types';
 import { useStore } from '@/context/StoreContext';
 
 const DELETE_ALERT = gql`
@@ -166,8 +161,6 @@ function DashboardContent() {
     return currentOrg?.role?.toLowerCase() === 'admin';
   }, [meData]);
 
-
-  // Relaxed Auth check for preview stability
   useEffect(() => {
     if (meError) {
       console.warn("Auth error, redirecting to login...");
@@ -175,7 +168,6 @@ function DashboardContent() {
     }
   }, [meError, router]);
 
-  // Initial load refined - handled by MainLayout LoadingOverlay
   if (!isMounted) return null;
 
   const tabConfigs: Record<string, { title: string; subtitle: string }> = {
@@ -195,10 +187,6 @@ function DashboardContent() {
       title: "Centre de Décision",
       subtitle: "Pilotez l'impact financier de votre inventaire en temps réel"
     },
-    profile: { 
-      title: "Mon Profil", 
-      subtitle: "Gérez vos préférences de notification et sécurité" 
-    },
     organization: {
       title: "Mon Organisation",
       subtitle: "Gérez vos collaborateurs et invitations d'accès"
@@ -209,7 +197,6 @@ function DashboardContent() {
 
   return (
     <div className="space-y-6">
-      {/* Onboarding Wizard */}
       <AnimatePresence>
         {showOnboarding && (
           <OnboardingWizard 
@@ -219,231 +206,53 @@ function DashboardContent() {
           />
         )}
       </AnimatePresence>
- 
-      {/* Toast */}
+  
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-md shadow-lg text-sm bg-primary text-white border border-white/20 animate-in slide-in-from-right-2`}>
           {toast.message}
         </div>
       )}
- 
-      {/* Header */}
+  
       <DashboardHeader 
         title={title}
         subtitle={subtitle}
         syncing={syncing}
-        onSync={() => {
-            triggerSync();
-        }}
+        onSync={() => triggerSync()}
         onExport={activeTab === 'decisions' ? () => {} : handleExport}
         showActions={activeTab === 'inventory' || activeTab === 'decisions'}
       />
 
-      {/* View Content (Routed by tab search param) */}
       <div className="mt-2">
         {activeTab === 'overview' && (
-          <div className="space-y-5 animate-in fade-in duration-500">
-            <StatsOverview stats={kpis} />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {/* Recent Alerts */}
-              <div className="bg-white rounded-xl border p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold">Alertes récentes</h3>
-                  <div className="p-1.5 bg-primary/5 rounded-full">
-                    <Bell className="h-4 w-4 text-primary" />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  {(!alertsData?.unreadAlerts || alertsData.unreadAlerts.length === 0) ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-center min-h-[160px]">
-                       <div className="p-3 bg-slate-50 rounded-full mb-3">
-                          <BellOff className="h-6 w-6 text-slate-300" />
-                       </div>
-                       <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1 uppercase text-balance">Données vides</p>
-                       <p className="text-[10px] text-slate-300 italic">Aucune alerte active pour le moment.</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-slate-50">
-                      {alertsData.unreadAlerts.slice(0, 5).map((a: any) => (
-                        <div 
-                          key={`alert-${a.id}`} 
-                          className="flex gap-3 items-center px-2 py-3 transition-all group relative cursor-pointer hover:bg-slate-50 rounded-lg"
-                        >
-                          <div className={cn(
-                             "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
-                             (a.type === 'CRITICAL_STOCK' || a.type === 'STOCKOUT_CRITICAL') ? "bg-white text-red-500 shadow-sm" :
-                             (a.type === 'STOCKOUT_RISK' || a.type === 'STOCKOUT_RISK_HIGH') ? "bg-white text-orange-500 shadow-sm" :
-                             a.type === 'STOCKOUT_WARNING' ? "bg-white text-amber-500 shadow-sm" :
-                             "bg-slate-50 text-slate-400"
-                          )}>
-                             {(a.type === 'CRITICAL_STOCK' || a.type === 'STOCKOUT_CRITICAL') ? <AlertTriangle className="h-4 w-4" /> :
-                              (a.type === 'STOCKOUT_RISK' || a.type === 'STOCKOUT_RISK_HIGH') ? <AlertCircle className="h-4 w-4" /> :
-                              a.type === 'STOCKOUT_WARNING' ? <Bell className="h-4 w-4" /> :
-                              <AlertCircle className="h-4 w-4" />}
-                          </div>
-                          
-                          <div className="flex-1 min-w-0 pr-16">
-                            <p className="text-[10px] text-slate-400 mb-0.5">
-                               {format(new Date(a.createdAt), 'dd MMM HH:mm', { locale: fr })}
-                            </p>
-                            <p className="text-xs font-medium text-slate-700 leading-snug truncate">
-                               {a.message.replace(/^(alerte|danger|attention)\s*:\s*/i, '')}
-                            </p>
-                          </div>
-
-                          {/* Quick Actions (Hover) */}
-                          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                             <Link 
-                                href={`/dashboard/product/${a.productId}`}
-                                className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-primary transition-all shadow-sm"
-                                title="ouvrir"
-                             >
-                                <ExternalLink className="h-3.5 w-3.5" />
-                             </Link>
-                             <button
-                                onClick={() => deleteAlert({ variables: { id: a.id } })}
-                                className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 transition-all shadow-sm"
-                                title="Supprimer"
-                             >
-                                <Trash2 className="h-3.5 w-3.5" />
-                             </button>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      <div className="pt-2 px-2">
-                        <button 
-                          onClick={() => window.dispatchEvent(new CustomEvent('michi:open-notifications'))}
-                          className="w-full py-2 text-[10px] font-bold text-primary tracking-widest bg-primary/5 hover:bg-primary/10 rounded-lg transition-all"
-                        >
-                          Voir toutes les alertes
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Optimized Stock / Real Products */}
-              <div className="bg-white rounded-xl border p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold">Stock optimisé</h3>
-                  <div className="p-1.5 bg-emerald-50 rounded-full">
-                    <Package className="h-4 w-4 text-emerald-600" />
-                  </div>
-                </div>
-                
-                <div className="space-y-1">
-                  {(!omnichannelData?.omnichannelInventory || omnichannelData.omnichannelInventory.length === 0) ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-center min-h-[160px]">
-                       <div className="p-3 bg-slate-50 rounded-full mb-3">
-                          <Package className="h-6 w-6 text-slate-300" />
-                       </div>
-                       <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1">Données vides</p>
-                       <p className="text-[10px] text-slate-300 italic">Aucun produit synchronisé.</p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-slate-50">
-                        {omnichannelData.omnichannelInventory.slice(0, 5).map((p: any) => (
-                        <div 
-                          key={`prod-${p.id || p.sku}`} 
-                          onClick={() => setSelectedProductId(p.id || p.sku)}
-                          className="group relative flex items-center justify-between px-2 py-3 hover:bg-slate-50 transition-all cursor-pointer rounded-lg"
-                        >
-                          <div className="min-w-0 flex-1 pr-4">
-                            <p className="text-xs font-medium text-foreground truncate">{p.title}</p>
-                            <p className="text-[10px] text-muted-foreground">Sku: {p.sku}</p>
-                          </div>
-                          
-                          <div className="flex items-center gap-3">
-                            <div className="text-right group-hover:opacity-0 transition-opacity">
-                              <p className="text-xs font-bold text-foreground">{p.totalStock}</p>
-                              <p className="text-[9px] text-muted-foreground">Unités</p>
-                            </div>
-                            
-                            {/* Quick Actions (Hover) */}
-                            <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedProductId(p.id || p.sku);
-                                }}
-                                className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-primary transition-all shadow-none flex items-center gap-1.5"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                                <span className="text-[10px] font-bold tracking-widest">Ouvrir</span>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      <div className="pt-2 px-2">
-                        <button 
-                          onClick={() => router.push('/dashboard?tab=inventory')}
-                          className="w-full py-2 text-[10px] font-bold text-emerald-600 tracking-widest bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-all"
-                        >
-                          Gérer l'inventaire
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+           <OverviewView 
+              stats={kpis}
+              alerts={alertsData?.unreadAlerts || []}
+              onDeleteAlert={(id) => deleteAlert({ variables: { id } })}
+              omnichannelInventory={(omnichannelData?.omnichannelInventory || []) as OmnichannelProduct[]}
+              onProductClick={(id) => setSelectedProductId(id)}
+              onOpenInventory={() => router.push('/dashboard?tab=inventory')}
+              onOpenNotifications={() => window.dispatchEvent(new CustomEvent('michi:open-notifications'))}
+           />
         )}
 
         {activeTab === 'inventory' && (
-          <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="space-y-4">
-              {productsLoading && !omnichannelData ? (
-                <LoadingState message="chargement du catalogue..." />
-              ) : (
-                <ProductTable 
-                  products={(omnichannelData?.omnichannelInventory || []) as OmnichannelProduct[]} 
-                  query={searchQuery}
-                  onRowClick={(id) => setSelectedProductId(id)}
-                />
-              )}
-            </div>
-          </div>
+          <InventoryView 
+            loading={productsLoading}
+            data={(omnichannelData?.omnichannelInventory || []) as OmnichannelProduct[]}
+            searchQuery={searchQuery}
+            onRowClick={(id) => setSelectedProductId(id)}
+          />
         )}
 
         {activeTab === 'sources' && (
-          <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <div className="bg-white rounded-2xl border border-slate-100 p-6">
-                <ConnectorsGrid onImport={handleCSVUpload} isAdmin={isAdmin} />
-              </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-6 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                   <div>
-                      <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1 text-balance">État Global</p>
-                      <div className="flex items-center gap-2">
-                         <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                         <span className="text-xs font-bold text-slate-900">Systèmes opérationnels</span>
-                      </div>
-                   </div>
-                   <CheckCircle2 className="h-5 w-5 text-emerald-500/20" />
-                </div>
-                <div className="p-6 bg-slate-50/50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                   <div>
-                      <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1">Flux Automatiques</p>
-                      <p className="text-xs font-bold text-slate-900">Activés (Temps réel)</p>
-                   </div>
-                   <Database className="h-5 w-5 text-primary/20" />
-                </div>
-             </div>
-          </div>
+          <SourcesView 
+            onImport={handleCSVUpload}
+            isAdmin={isAdmin}
+          />
         )}
 
-        {activeTab === 'decisions' && (
-          <DecisionsView />
-        )}
-
-          {activeTab === 'organization' && <OrganizationView />}
+        {activeTab === 'decisions' && <DecisionsView />}
+        {activeTab === 'organization' && <OrganizationView />}
       </div>
 
       <ProductQuickView 

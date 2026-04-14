@@ -6,8 +6,8 @@ import sys
 sys.path.append(os.getcwd())
 
 from sqlalchemy import select
-from src.core.database import AsyncSessionLocal
-from src.core.database_utils import SerializedAsyncSession
+from michi_core.database import AsyncSessionLocal
+from michi_core.database_utils import SerializedAsyncSession
 
 async def test_concurrency():
     print("Démarrage du test de concurrence...")

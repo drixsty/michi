@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Optional
 from uuid import UUID
 
-from src.core.security import (
+from michi_core.security import (
     create_access_token,
     hash_password,
     verify_password,
@@ -47,5 +47,5 @@ class JwtTokenService:
         return JwtToken(raw)
 
     def decode(self, token: JwtToken) -> dict:
-        from src.core.security import decode_access_token
+        from michi_core.security import decode_access_token
         return decode_access_token(token.value)

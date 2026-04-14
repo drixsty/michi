@@ -6,8 +6,8 @@ import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
-from src.core.config import settings
-from src.core.database import get_db
+from michi_core.config import settings
+from michi_core.database import get_db
 
 router = APIRouter(prefix="/api/shopify", tags=["shopify"])
 

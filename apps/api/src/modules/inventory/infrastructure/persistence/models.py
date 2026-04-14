@@ -3,14 +3,13 @@ SQLAlchemy Models — Inventory (Unified Product & Sales History)
 This is the core source of truth for all Michi modules (Forecasting, Alerts, etc.).
 It decouples the store platform (Shopify, Amazon, Woo) from our business logic.
 """
-from sqlalchemy import Column, String, Integer, Float, Date, ForeignKey, DateTime, Enum, Boolean, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, Integer, Float, Date, ForeignKey, DateTime, Enum, Boolean, UniqueConstraint, Uuid, JSON
 from sqlalchemy.orm import relationship
 import enum
 from datetime import datetime
 import uuid
 
-from src.core.database import Base
+from michi_core.database import Base, GUID
 
 class PlatformSource(enum.Enum):
     SHOPIFY = "SHOPIFY"
@@ -21,13 +20,13 @@ class PlatformSource(enum.Enum):
 
 class Store(Base):
     """
-    Modèle Store : Représente une boutique connectée (Shopify, Amazon, etc.) 
-    appartenant à une Organisation.
+    Store Model: Represents a connected store (Shopify, Amazon, etc.)
+    belonging to an Organization.
     """
     __tablename__ = "stores"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    organization_id = Column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    organization_id = Column(GUID, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
     
     name = Column(String(255), nullable=False)
     platform = Column(Enum(PlatformSource), nullable=False)
@@ -38,8 +37,7 @@ class Store(Base):
     health_status = Column(String(50), default="HEALTHY") # HEALTHY, ERROR, UNKNOWN
     
     # Store-specific credentials/config (Sprint 15+)
-    from sqlalchemy.dialects.postgresql import JSONB
-    config = Column(JSONB, default={}, nullable=False)
+    config = Column(JSON, default={}, nullable=False)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -49,7 +47,7 @@ class Store(Base):
     )
 
     # Relationships
-    organization = relationship("src.modules.auth.models.Organization", back_populates="stores")
+    organization = relationship("Organization", back_populates="stores")
     products = relationship("Product", back_populates="store", cascade="all, delete-orphan")
     suppliers = relationship("Supplier", back_populates="store", cascade="all, delete-orphan")
     purchase_orders = relationship("PurchaseOrder", back_populates="store", cascade="all, delete-orphan")
@@ -60,8 +58,8 @@ class Store(Base):
 class Product(Base):
     __tablename__ = "products"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    store_id = Column(UUID(as_uuid=True), ForeignKey("stores.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    store_id = Column(GUID, ForeignKey("stores.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # Agnostic core data
     sku = Column(String(100), nullable=False)
@@ -85,7 +83,7 @@ class Product(Base):
     external_id = Column(String(255), nullable=True) # ID in the source platform
 
     # Supplier link
-    supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id", ondelete="SET NULL"), nullable=True)
+    supplier_id = Column(GUID, ForeignKey("suppliers.id", ondelete="SET NULL"), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
@@ -93,8 +91,8 @@ class Product(Base):
     # Relationships
     store = relationship("Store", back_populates="products")
     sales_logs = relationship("SalesLog", back_populates="product", cascade="all, delete-orphan")
-    prediction = relationship("src.modules.forecasting.models.Prediction", back_populates="product", uselist=False, cascade="all, delete-orphan")
-    cleaned_demands = relationship("src.modules.forecasting.models.CleanedDemand", back_populates="product", cascade="all, delete-orphan")
+    prediction = relationship("Prediction", back_populates="product", uselist=False, cascade="all, delete-orphan")
+    cleaned_demands = relationship("CleanedDemand", back_populates="product", cascade="all, delete-orphan")
     alerts = relationship("Alert", back_populates="product", cascade="all, delete-orphan")
     supplier = relationship("Supplier", back_populates="products")
 
@@ -104,8 +102,8 @@ class Product(Base):
 class Alert(Base):
     __tablename__ = "alerts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    product_id = Column(GUID, ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
     
     type = Column(String(50), nullable=False) 
     message = Column(String(500), nullable=False)
@@ -119,8 +117,8 @@ class Alert(Base):
 class SalesLog(Base):
     __tablename__ = "sales_logs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    product_id = Column(GUID, ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
 
     date = Column(Date, nullable=False, index=True)
     units_sold = Column(Float, nullable=False, default=0.0)
@@ -131,8 +129,8 @@ class SalesLog(Base):
 class Supplier(Base):
     __tablename__ = "suppliers"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    store_id = Column(UUID(as_uuid=True), ForeignKey("stores.id", ondelete="CASCADE"), nullable=False, index=True)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    store_id = Column(GUID, ForeignKey("stores.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     contact_email = Column(String(255), nullable=True)
 
@@ -147,8 +145,8 @@ class Supplier(Base):
 class AlertEmail(Base):
     __tablename__ = "alert_emails"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    product_id = Column(GUID, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
     sent_at = Column(DateTime, default=datetime.utcnow)
     alert_type = Column(String(50), default="stockout_imminent")
 
@@ -157,10 +155,10 @@ class AlertEmail(Base):
 class PurchaseOrder(Base):
     __tablename__ = "purchase_orders"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    store_id = Column(UUID(as_uuid=True), ForeignKey("stores.id", ondelete="CASCADE"), nullable=False, index=True)
-    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
-    supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id", ondelete="CASCADE"), nullable=False)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    store_id = Column(GUID, ForeignKey("stores.id", ondelete="CASCADE"), nullable=False, index=True)
+    product_id = Column(GUID, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    supplier_id = Column(GUID, ForeignKey("suppliers.id", ondelete="CASCADE"), nullable=False)
 
     quantity = Column(Integer, nullable=False)
     order_date = Column(Date, nullable=False, default=datetime.utcnow().date)

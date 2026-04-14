@@ -2,7 +2,7 @@ import pytest
 import uuid
 from httpx import AsyncClient
 from src.modules.auth.models import Organization, OrganizationMember, UserRole
-from src.core.exceptions import ErrorCode
+from michi_core.exceptions import ErrorCode
 
 @pytest.mark.asyncio
 async def test_feature_gating_basic_plan(db_session, test_user):
@@ -40,7 +40,7 @@ async def test_feature_gating_basic_plan(db_session, test_user):
     # On simule l'appel GraphQL (ici on peut utiliser le client de test)
     # Pour ce test, on va simuler le contexte GraphQL manuellement si besoin, 
     # mais passer par le client HTTP est plus réaliste.
-    from src.core.security import create_access_token
+    from michi_core.security import create_access_token
     token = create_access_token({
         "user_id": str(test_user.id),
         "org_id": str(org.id),

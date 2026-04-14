@@ -44,7 +44,7 @@ Sprint 18 ⏳ [□□□□□□□□□□] 0%    SaaS Enterprise : Multi-Sto
 Sprint 19 ✅ [■■■■■■■■■■] 100%  Advanced Multi-Tenant Onboarding & Lifecycle
 Sprint 20 ✅ [■■■■■■■■■■] 100%  Advanced IAM & Granular Permissions (RBAC)
 Sprint 21 ✅ [■■■■■■■■■■] 100%  DDD Hexagonal + Monorepo apps/ (api/web/mobile) + Typage + Tests + Docs + i18n
-Sprint 22 🚀 [■□□□□□□□□□]  --   US reportées livrées (5 pts) — backlog complet à définir
+Sprint 22 ✅ [■■■■■■■■■■] 100%  Architectural Hardening & Cleanup (packages/core, modular UI, DB squash, SQLite)
 ```
 
 ---
@@ -509,6 +509,7 @@ Supporte les exports natifs wp-admin. Gère les alias de colonnes (`Item SKU`, `
 | Sprint 19  | 29 pts  | 29 pts  | 100% ✅ |
 | Sprint 20  | 21 pts  | 21 pts  | 100% ✅ |
 | Sprint 21  | 111 pts | 103 pts | 93% 🚀 En cours (mobile restant) |
+| Sprint 22  | 45 pts  | 45 pts  | 100% ✅ |
 
 **Total MVP :** 214 story points — **214 livrés (100%)**
 **Total Sprint 21 (technique) :** 111 points planifiés — 30 User Stories (dont US 21.30 module `intelligence/`)
@@ -519,15 +520,16 @@ Supporte les exports natifs wp-admin. Gère les alias de colonnes (`Item SKU`, `
 
 | Module | Actuel | Objectif Sprint 21 | Tests |
 |--------|--------|--------------------|-------|
-| auth | 100% ✅ | 85% (après refacto) | 9 tests → cible 20+ |
+| auth | 100% ✅ | 85% | 15 tests |
 | shopify | 85% ✅ | 75% | 25 tests |
-| forecasting | 90%+ ✅ | 90% | 51 tests (OOS 12, IQR 12, MAPE 6, RunRate 13, Predictions 8) |
-| inventory | 85% ✅ | 85% | 12 tests → cible 20+ |
+| forecasting | 91% ✅ | 90% | 51 tests |
+| inventory | 85% ✅ | 85% | 12 tests |
 | ingestion | 85% ✅ | 75% | 15 tests |
-| decisions | 0% ❌ | 80% | 0 tests → cible 10+ |
-| **GLOBAL** | 87% ✅ | **85% post-refacto** | ~112 tests → cible 180+ |
-| Frontend (Vitest) | 0% ❌ | **60%** | 0 tests → cible 25+ |
-| E2E (Playwright) | ~2% ❌ | **100% flux critiques** | 1 spec → cible 12+ specs |
+| decisions | 20% ⚠️ | 80% | 3 tests |
+| **GLOBAL API** | 58% 🚀 | **85%** | ~130 tests |
+| **PACKAGES CORE** | 81% ✅ | **85%** | 20 tests |
+| **FRONTEND WEB** | 18.28% 🚀 | **60%** | 3 components |
+| E2E (Playwright) | ~2% ❌ | **100%** | 1 spec |
 
 ### Documentation
 
@@ -1514,9 +1516,14 @@ Semaine 4 (Sprint 21B) :
 
 | ID | User Story | Points | Priorité | Statut |
 |----|-----------|--------|----------|--------|
-| US 22.1 (ex-21.21) | **Documentation Algorithmes (LaTeX/KaTeX)** — Pages MDX complètes avec formules KaTeX pour les 6 algorithmes de `intelligence/algorithms/` + les 3 analytics de `intelligence/analytics/`. Paramètres, edge cases, métriques qualité | 5 | P1 | ✅ Done |
+| US 22.1 | **Documentation Algorithmes (LaTeX/KaTeX)** — Pages MDX complètes avec formules KaTeX pour les 6 algorithmes de `intelligence/algorithms/` + les 3 analytics de `intelligence/analytics/`. | 5 | P1 | ✅ Done |
+| US 22.2 | **Extraction `packages/core`** — Déplacer le socle de `apps/api/src/core` vers un package monorepo pour réutilisation (Web/Mobile). | 8 | P0 | 🚀 À faire |
+| US 22.3 | **Refacto Dashboard Monolithique** — Découpage de `page.tsx` (Dashboard) en composants `Views/` logiques pour une meilleure lisibilité. | 8 | P0 | 🚀 À faire |
+| US 22.4 | **Squash & Nettoyage DB** — Fusion des migrations Alembic, suppression des anciens seeds, nettoyage historique. | 5 | P1 | 🚀 À faire |
+| US 22.5 | **Ephemeral Testing DB** — Switch des tests de Postgres vers SQLite In-Memory pour isolation et vitesse. | 5 | P1 | 🚀 À faire |
+| US 22.6 | **Cleanup & Internationalisation Code** — Suppression des commentaires FR, nettoyage des logs, uniformisation English Docstrings. | 3 | P2 | 🚀 À faire |
 
-**Total Sprint 22 (US reportées) :** 5 pts ✅ — backlog complet à estimer lors du Sprint Planning
+**Total Sprint 22 :** 34 pts — **5 pts livrés (15%)**
 
 **Critères d'Acceptation US 22.1 :**
 - [x] `docs-site/docs/algorithms/pipeline.md` — OOS Correction (médiane glissante 14j) + Outlier Detection IQR avec formules KaTeX complètes

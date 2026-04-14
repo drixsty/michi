@@ -6,7 +6,7 @@ import strawberry
 from typing import Optional
 import uuid
 
-from src.core.exceptions import UnauthenticatedException, MichiException, ErrorCode
+from michi_core.exceptions import UnauthenticatedException, MichiException, ErrorCode
 from src.core.graphql.types import (
     UserType, LoginInput, AuthPayload, RegisterInput, 
     GoogleLoginInput, ChangePasswordInput, UpdateProfileInput

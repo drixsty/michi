@@ -29,6 +29,7 @@ class GraphQLContext(BaseContext):
     db: Optional[AsyncSession] = None 
     user_id: Optional[str] = None
     org_id: Optional[str] = None
+    email: Optional[str] = None
     
     # Services (Sprint 17 & 21)
     billing: Optional[object] = None  # BillingService

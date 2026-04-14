@@ -13,11 +13,8 @@ interface OnboardingWizardProps {
 
 const STEPS = [
   {
-    id: 'welcome',
-    title: 'Bienvenue sur Michi 道',
-    description: 'Le futur de votre logistique commence ici. Nous allons configurer votre environnement en quelques secondes.',
-    icon: <Sparkles className="text-primary h-12 w-12" />,
     cta: 'Démarrer la configuration',
+    testid: 'wizard-start'
   },
   {
     id: 'connect',
@@ -25,6 +22,7 @@ const STEPS = [
     description: 'Michi a besoin de vos données pour prédire vos besoins. Choisissez votre plateforme principale.',
     icon: <ShoppingBag className="text-blue-500 h-12 w-12" />,
     cta: 'Connecter', // Dynamic
+    testid: 'wizard-next'
   },
   {
     id: 'analysis',
@@ -32,6 +30,7 @@ const STEPS = [
     description: 'Nous analysons vos flux, nettoyons les ruptures historiques et calculons vos modèles de croissance.',
     icon: <Zap className="text-amber-500 h-12 w-12" />,
     cta: 'Finaliser l\'analyse',
+    testid: 'wizard-finish'
   },
   {
     id: 'ready',
@@ -39,6 +38,7 @@ const STEPS = [
     description: 'Votre inventaire est maintenant sous contrôle. Prêt à voir vos premières prévisions ?',
     icon: <CheckCircle2 className="text-emerald-500 h-12 w-12" />,
     cta: 'Entrer dans Michi',
+    testid: 'wizard-enter'
   }
 ];
 
@@ -120,6 +120,7 @@ export default function OnboardingWizard({ userName, onComplete, onSync }: Onboa
                     ].map((plat) => (
                         <button
                             key={plat.id}
+                            data-testid={`wizard-platform-${plat.id}`}
                             onClick={() => setSelectedPlatform(plat.id)}
                             className={cn(
                                 "flex flex-col items-center justify-center p-5 rounded-3xl border-2 transition-all gap-3 group hover:scale-[1.02] active:scale-[0.98]",
@@ -141,6 +142,7 @@ export default function OnboardingWizard({ userName, onComplete, onSync }: Onboa
               <div className="w-full pt-8">
                 <button
                   onClick={handleNext}
+                  data-testid={step.testid}
                   disabled={isSyncing || (currentStep === 1 && !selectedPlatform)}
                   className={cn(
                     "w-full flex items-center justify-center gap-3 py-4 rounded-[20px] text-sm font-bold tracking-widest uppercase transition-all shadow-2xl",

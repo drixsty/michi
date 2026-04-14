@@ -1,6 +1,6 @@
 from functools import wraps
 from typing import List, Union
-from src.core.exceptions import MichiException, UnauthenticatedException, ErrorCode
+from michi_core.exceptions import MichiException, UnauthenticatedException, ErrorCode
 from src.modules.auth.models import OrganizationMember, UserRole
 from src.modules.auth.constants import MichiPermission, ROLE_PERMISSIONS
 from sqlalchemy import select

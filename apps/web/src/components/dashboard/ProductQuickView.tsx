@@ -623,6 +623,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                       router.push(`/dashboard/product/${product.id}`);
                       onClose();
                     }}
+                    data-testid="open-full-detail"
                     className="w-full py-3 bg-slate-900 text-white rounded-lg text-[10px] font-bold tracking-widest hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                   >
                     Voir les détails complets

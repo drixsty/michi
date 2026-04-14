@@ -118,7 +118,7 @@ export default function ProductDetailPage() {
   const impactOnStockout = leadTimeDelta > 0 ? "Risque accru" : "Sécurité améliorée";
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500" data-testid="product-detail-view">
       {/* Header Navigation */}
       <div className="flex items-center gap-4">
         <button 
@@ -516,6 +516,7 @@ export default function ProductDetailPage() {
             <input 
               type="number" 
               value={leadTime} 
+              data-testid="edit-lead-time"
               onChange={(e) => setLeadTime(Math.max(1, parseInt(e.target.value) || 0))}
               className="w-full h-11 px-4 rounded-md border text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all"
             />

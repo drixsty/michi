@@ -1,6 +1,6 @@
 from strawberry.extensions import SchemaExtension
 from loguru import logger
-from src.core.exceptions import MichiException, UnauthenticatedException, ForbiddenException
+from michi_core.exceptions import MichiException, UnauthenticatedException, ForbiddenException
 
 class MichiExceptionExtension(SchemaExtension):
     """

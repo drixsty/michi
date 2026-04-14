@@ -21,33 +21,70 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import select, delete
 
-from src.core.config import settings
-from src.modules.auth.models import User
-from src.modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder
+from michi_core.config import settings
+from src.modules.auth.models import User, Organization, OrganizationMember
+from src.modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder, Store, AlertEmail
 from src.modules.forecasting.models import CleanedDemand, Prediction
-from src.modules.forecasting.service import ForecastingService
-from src.modules.inventory.alert_service import AlertService
+from src.modules.forecasting.application.forecasting_service import ForecastingService
+from src.modules.inventory.application.alert_service import AlertService
 from src.modules.shopify.mock_generator import generate_full_mock_dataset
-from src.core.database import Base
+from michi_core.database import Base
 
 
-async def get_or_create_demo_shop(session: AsyncSession) -> tuple[str, str]:
+async def get_or_create_demo_shop(session: AsyncSession) -> tuple[str, str, str]:
     """
-    Récupère le shop_id de l'utilisateur admin@michi.com (ou dev@michi.com).
-    Retourne (email, shop_id).
+    Récupère ou crée l'utilisateur de démo.
+    Retourne (email, shop_id, organization_id).
     """
-    for email in ("admin@michi.com", "dev@michi.com"):
-        result = await session.execute(select(User).where(User.email == email))
-        user = result.scalar_one_or_none()
-        if user:
-            # Assigner une organization_id si absente (Sprint 13)
-            if not user.organization_id:
-                user.organization_id = uuid.uuid4()
-                await session.flush()
-            return email, str(user.shop_id), str(user.organization_id)
-    raise RuntimeError(
-        "Aucun utilisateur de démo trouvé. Lancez d'abord : make seed"
+    from src.modules.auth.infrastructure.persistence.models import Organization, OrganizationMember, UserRole
+    
+    email = "dev@michi.com"
+    result = await session.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        print(f"   [INFO] Creation utilisateur de demo {email}...")
+        shop_id = uuid.uuid4()
+        from src.modules.auth.infrastructure.persistence.models import User as AuthUser
+        from michi_core.security import hash_password
+        user = AuthUser(
+            email=email,
+            hashed_password=hash_password("password123"),
+            shop_id=shop_id
+        )
+        session.add(user)
+        await session.flush()
+    else:
+        shop_id = user.shop_id
+
+    # S'assurer d'avoir une organisation (Sprint 16+)
+    member_res = await session.execute(
+        select(OrganizationMember).where(OrganizationMember.user_id == user.id)
     )
+    member = member_res.scalar_one_or_none()
+    
+    if not member:
+        print("   [INFO] Creation organisation de demo...")
+        org = Organization(name="Michi Demo Org", slug=f"demo-{uuid.uuid4().hex[:6]}")
+        session.add(org)
+        await session.flush()
+        
+        member = OrganizationMember(
+            organization_id=org.id,
+            user_id=user.id,
+            role=UserRole.ADMIN
+        )
+        session.add(member)
+        user.current_organization_id = org.id
+        await session.flush()
+        org_id = org.id
+    else:
+        org_id = member.organization_id
+        if not user.current_organization_id:
+            user.current_organization_id = org_id
+            await session.flush()
+
+    return email, str(shop_id), str(org_id)
 
 
 async def reset_and_seed(shop_id: str, count: int, session: AsyncSession) -> dict:
@@ -57,7 +94,7 @@ async def reset_and_seed(shop_id: str, count: int, session: AsyncSession) -> dic
     from src.modules.forecasting.models import CleanedDemand, Prediction
     
     # On supprime tout ce qui est lié aux produits de ce shop
-    p_ids_query = select(Product.id).where(Product.shop_id == shop_id)
+    p_ids_query = select(Product.id).where(Product.store_id == shop_id)
     p_ids_res = await session.execute(p_ids_query)
     p_ids = p_ids_res.scalars().all()
     
@@ -72,7 +109,7 @@ async def reset_and_seed(shop_id: str, count: int, session: AsyncSession) -> dic
     await session.flush()
 
     # Générer le nouveau dataset
-    products_data, sales_data = generate_full_mock_dataset(count=count, shop_id=shop_id)
+    products_data, sales_data = generate_full_mock_dataset(count=count, store_id=shop_id)
 
     products = [Product(**p) for p in products_data]
     session.add_all(products)
@@ -105,8 +142,11 @@ async def main(shop_id: str | None, count: int) -> None:
 
     engine = create_async_engine(settings.DATABASE_URL, echo=False)
 
-    # S'assurer que les tables existent
+    # S'assurer que les tables existent (Suppression et recréation pour un clean seed)
     async with engine.begin() as conn:
+        print("[INFO] Suppression des tables existantes...")
+        await conn.run_sync(Base.metadata.drop_all)
+        print("[INFO] Creation des nouvelles tables (OMNICANAL)...")
         await conn.run_sync(Base.metadata.create_all)
 
     AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

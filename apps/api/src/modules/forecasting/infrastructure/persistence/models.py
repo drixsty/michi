@@ -1,25 +1,24 @@
 """
 SQLAlchemy Models — Forecasting (US 2.3 + US 2.8)
 
-CleanedDemand : demande corrigée après pipeline OOS + IQR.
-Prediction     : run rate + prédiction de rupture + recommandation de commande.
+CleanedDemand: Corrected demand after OOS + IQR pipeline.
+Prediction: Run rate + stockout prediction + order recommendation.
 """
-from sqlalchemy import Column, Date, Float, Boolean, String, Integer, ForeignKey, DateTime
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, Date, Float, Boolean, String, Integer, ForeignKey, DateTime, Uuid
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 
-from src.core.database import Base
+from michi_core.database import Base, GUID
 from src.modules.inventory.models import Product  # Import requis pour les relations
 
 
 class CleanedDemand(Base):
     __tablename__ = "cleaned_demand"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
     product_id = Column(
-        UUID(as_uuid=True),
+        GUID,
         ForeignKey("products.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -56,9 +55,9 @@ class Prediction(Base):
     """
     __tablename__ = "predictions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
     product_id = Column(
-        UUID(as_uuid=True),
+        GUID,
         ForeignKey("products.id", ondelete="CASCADE"),
         nullable=False,
         index=True,

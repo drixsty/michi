@@ -32,7 +32,7 @@ from src.modules.auth.infrastructure.persistence.models import (
     User,
     UserRole,
 )
-from src.core.exceptions import ErrorCode, MichiException, UnauthenticatedException
+from michi_core.exceptions import ErrorCode, MichiException, UnauthenticatedException
 
 
 @dataclass
@@ -130,6 +130,10 @@ class ApplicationAuthService:
             organizations=[],
         )
         await self._users.save(user_model)
+        
+        # Explicit commit to ensure user is visible to immediate subsequent requests (e.g., onboarding)
+        await self._users._db.commit()
+        print(f">>> [DEBUG] REGISTERED USER ID: {user_model.id} (EMAIL: {user_model.email}) <<<")
 
         token = self._tokens.create_access_token(
             user_id=user_model.id,

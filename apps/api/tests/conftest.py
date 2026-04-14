@@ -1,65 +1,84 @@
 """
-Fixtures pytest pour les tests
+Fixtures pytest pour les tests Michi - Sprint 22
+Utilise une base SQLite éphémère (in-memory) pour la rapidité et l'isolation.
 """
 import pytest
 import asyncio
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.pool import StaticPool
 from httpx import AsyncClient
 
-from src.core.database import Base
-from src.core.config import settings
+from michi_core.database import Base
+from michi_core.config import settings
+from michi_core.database import get_db
 from src.main import app
-from src.modules.auth.models import User
-from src.modules.inventory.models import Product, SalesLog, Supplier, Alert, AlertEmail, PurchaseOrder
-from src.modules.forecasting.models import CleanedDemand, Prediction
-from src.core.security import hash_password
-from src.core.database import get_db
 
+# Imports des modèles pour enregistrement dans Metadata
+from src.modules.auth.infrastructure.persistence.models import User, Organization, OrganizationMember, Invitation
+from src.modules.inventory.infrastructure.persistence.models import Product, SalesLog, Supplier, Alert, AlertEmail, PurchaseOrder, Store
+from src.modules.forecasting.infrastructure.persistence.models import CleanedDemand, Prediction
+from michi_core.security import hash_password
 
-# Database de test (utilise une DB séparée)
-TEST_DATABASE_URL = "postgresql+asyncpg://michi:michi123@localhost:5433/michi_test"
+# Database de test éphémère (SQLite Async)
+TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
+@pytest.fixture(scope="session")
+def event_loop():
+    """Create an instance of the default event loop for each test case."""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
-
-
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 async def db_engine():
-    """Engine de test (recrée DB à chaque test)"""
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    """Engine de test global pour la session"""
+    # StaticPool est requis pour garder la base SQLite :memory: vivante entre les connexions
+    engine = create_async_engine(
+        TEST_DATABASE_URL, 
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool
+    )
     
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        print(f"[DEBUG] Metadata tables: {list(Base.metadata.tables.keys())}")
         await conn.run_sync(Base.metadata.create_all)
     
     yield engine
     
     await engine.dispose()
 
-
 @pytest.fixture(scope="function")
 async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
-    """Session DB de test"""
+    """Session DB de test isolée par test (via transaction)"""
     async_session = async_sessionmaker(
         db_engine,
         class_=AsyncSession,
         expire_on_commit=False,
     )
     
-    async with async_session() as session:
+    # On utilise une transaction imbriquée pour pouvoir rollback après chaque test
+    async with db_engine.connect() as conn:
+        transaction = await conn.begin()
+        session = AsyncSession(bind=conn, expire_on_commit=False, join_transaction_mode="create_savepoint")
+        
         yield session
-
+        
+        await session.close()
+        await transaction.rollback()
 
 @pytest.fixture(scope="function")
 async def test_user(db_session) -> User:
-    """Créer un user de test et son store associé"""
+    """Créer un user de test et son organisation/store associés"""
     import uuid
     from src.modules.inventory.models import Store, PlatformSource
+    from src.modules.auth.models import Organization, OrganizationMember, UserRole
     
     shop_uuid = uuid.uuid4()
     org_uuid = uuid.uuid4()
+    user_uuid = uuid.uuid4()
     
-    from src.modules.auth.models import Organization
     org = Organization(
         id=org_uuid,
         name="Test Org",
@@ -77,23 +96,31 @@ async def test_user(db_session) -> User:
     db_session.add(store)
     
     user = User(
+        id=user_uuid,
         email="test@michi.com",
         hashed_password=hash_password("testpassword"),
         shop_id=shop_uuid,
         current_organization_id=org_uuid
     )
-    
     db_session.add(user)
+    await db_session.flush()
+
+    member = OrganizationMember(
+        organization_id=org_uuid,
+        user_id=user_uuid,
+        role=UserRole.ADMIN
+    )
+    db_session.add(member)
+    
     await db_session.commit()
     await db_session.refresh(user)
     
     return user
 
-
 @pytest.fixture(scope="function")
 async def auth_token(test_user) -> str:
     """Token JWT pour user de test"""
-    from src.core.security import create_access_token
+    from michi_core.security import create_access_token
     
     token = create_access_token({
         "user_id": str(test_user.id),
@@ -103,10 +130,9 @@ async def auth_token(test_user) -> str:
     
     return token
 
-
 @pytest.fixture(scope="function")
 async def client(db_session) -> AsyncGenerator[AsyncClient, None]:
-    """Client HTTP de test avec surcharge DB (Générateur)"""
+    """Client HTTP de test avec surcharge DB"""
     async def _get_db_override():
         yield db_session
         

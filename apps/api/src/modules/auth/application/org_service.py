@@ -31,7 +31,7 @@ from src.modules.auth.models import (
     OrganizationMember,
     UserRole,
 )
-from src.core.exceptions import ErrorCode, MichiException
+from michi_core.exceptions import ErrorCode, MichiException
 
 
 @dataclass
@@ -71,17 +71,27 @@ class ApplicationOrgService:
         user_id: uuid.UUID,
         name: str,
         plan: str = "BASIC",
+        email: Optional[str] = None
     ) -> OrgCreationResult:
         """
-        Crée une organisation, y lie l'utilisateur comme ADMIN,
-        synchro Stripe si billing actif, et retourne un token rafraîchi.
-
-        Raises:
-            ValueError: si l'utilisateur n'est pas trouvé.
+        Crée une organisation...
         """
+        # Primary lookup by ID
         user_model = await self._users.get_model_by_id(user_id)
+        
+        # Sprint 22 Extension: Primary fallback - retry by ID
         if not user_model:
-            raise ValueError(f"User {user_id} introuvable")
+            import asyncio
+            await asyncio.sleep(1.0)
+            user_model = await self._users.get_model_by_id(user_id)
+            
+        # Sprint 22 Extension: Secondary fallback - lookup by Email
+        if not user_model and email:
+            print(f">>> [DEBUG] USER ID {user_id} NOT FOUND, TRYING EMAIL FALLBACK: {email} <<<")
+            user_model = await self._users.get_model_by_email(email)
+
+        if not user_model:
+            raise ValueError(f"User {user_id} / {email} introuvable")
 
         slug = f"org-{uuid.uuid4().hex[:8]}"
         org_model = Organization(name=name, slug=slug, plan=plan.upper())
@@ -108,14 +118,16 @@ class ApplicationOrgService:
         # Commit global pour assurer que GET_ME (requête suivante) voit l'organisation
         await self._users._db.commit()
 
+        # Sprint 22 Final Hardening: Refresh relationships to break the redirect loop
+        # ensuring UserType.from_db and secondary GET_ME see the new memberships
+        await self._users._db.refresh(user_model, ["organizations"])
+
         token = self._tokens.create_access_token(
             user_id=user_model.id,
             org_id=org_model.id,
             email=user_model.email,
         )
 
-        # Recharger l'utilisateur pour inclure la nouvelle relation 'organizations' dans le payload GraphQL
-        user_model = await self._users.get_model_by_id(user_id)
         return OrgCreationResult(token=token, user_model=user_model, org_model=org_model)
 
     async def switch_organization(

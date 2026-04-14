@@ -1,5 +1,5 @@
 import stripe
-from src.core.config import settings
+from michi_core.config import settings
 from loguru import logger
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession

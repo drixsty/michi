@@ -14,7 +14,7 @@ import pytest
 from src.modules.auth.application.org_service import ApplicationOrgService
 from src.modules.auth.domain.entities import UserEntity
 from src.modules.auth.domain.value_objects import Email
-from src.core.exceptions import MichiException
+from michi_core.exceptions import MichiException
 
 from src.modules.auth.tests.fakes import (
     FakeInvitationRepository,

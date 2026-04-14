@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Request, Header, Depends
-from src.core.database import get_db
+from michi_core.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 from .service import BillingService
-from src.core.exceptions import MichiException
+from michi_core.exceptions import MichiException
 from loguru import logger
 import stripe
 

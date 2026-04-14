@@ -7,16 +7,16 @@ from strawberry.fastapi import GraphQLRouter
 from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.config import settings
+from michi_core.config import settings
 from src.core.graphql.schema import schema
 from src.core.graphql.context import GraphQLContext
 import asyncio
-from src.core.database import get_db
-from src.core.database_utils import SerializedAsyncSession
+from michi_core.database import get_db
+from michi_core.database_utils import SerializedAsyncSession
 from src.core.middleware.auth import get_current_user_from_token
 from src.modules.shopify.auth_routes import router as shopify_auth_router
 from src.modules.billing.router import router as billing_router
-from src.core.exceptions import UnauthenticatedException, ForbiddenException
+from michi_core.exceptions import UnauthenticatedException, ForbiddenException
 from loguru import logger
 import sys
 import logging
@@ -25,7 +25,7 @@ import logging
 def log_filter(record):
     """Filtre pour éviter les tracebacks complets sur les erreurs d'auth attendues"""
     message = record["message"]
-    if "Accès refusé" in message or "UnauthenticatedException" in message:
+    if "Access denied" in message or "UnauthenticatedException" in message:
         if "[Security]" in message:
             return True
         return False
@@ -88,8 +88,8 @@ async def get_context(
     Crée le context GraphQL pour chaque requête.
     Extrait user_id et org_id du token JWT.
     """
-    # Extraire user_id/org_id du token JWT
-    user_id, org_id = await get_current_user_from_token(request)
+    # Extraire user_id/org_id/email du token JWT
+    user_id, org_id, email = await get_current_user_from_token(request)
     
     # Fallback sur le header si org_id n'est pas dans le token (onboarding/switch)
     if user_id and not org_id:
@@ -111,6 +111,7 @@ async def get_context(
         db=serialized_db,
         user_id=user_id,
         org_id=org_id,
+        email=email,
         billing=billing_service,
         services=services_container
     )
@@ -147,7 +148,7 @@ async def health():
 async def root():
     """Root endpoint avec liens utiles"""
     return {
-        "message": "Michi API 道",
+        "message": "Michi API 道 (Omnichannel)",
         "docs": "/docs" if settings.ENVIRONMENT == "development" else None,
         "graphql": "/graphql",
         "health": "/health",

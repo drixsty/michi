@@ -10,7 +10,7 @@ import secrets
 from loguru import logger
 
 from .models import Invitation, InvitationStatus, OrganizationMember, UserRole, User
-from src.core.exceptions import MichiException, ErrorCode
+from michi_core.exceptions import MichiException, ErrorCode
 
 
 class InvitationService:

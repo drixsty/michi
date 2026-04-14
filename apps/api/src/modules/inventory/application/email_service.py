@@ -1,6 +1,6 @@
 import aiosmtplib
 from email.message import EmailMessage
-from src.core.config import settings
+from michi_core.config import settings
 from loguru import logger
 
 class EmailService:

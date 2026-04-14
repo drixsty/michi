@@ -9,7 +9,7 @@ from typing import List, Optional, Annotated
 import uuid
 from loguru import logger
 
-from src.core.exceptions import UnauthenticatedException, MichiException, ErrorCode
+from michi_core.exceptions import UnauthenticatedException, MichiException, ErrorCode
 from src.modules.auth.decorators import require_permission
 from src.modules.auth.constants import MichiPermission
 from src.core.graphql.types import (

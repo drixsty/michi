@@ -1,5 +1,5 @@
 from functools import wraps
-from src.core.exceptions import SubscriptionRequiredException, UnauthenticatedException
+from michi_core.exceptions import SubscriptionRequiredException, UnauthenticatedException
 from src.modules.auth.models import Organization
 from sqlalchemy import select
 import uuid

@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from src.modules.billing.service import BillingService
-from src.core.config import settings
+from michi_core.config import settings
 import uuid
 
 @pytest.fixture

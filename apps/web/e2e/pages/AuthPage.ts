@@ -4,11 +4,11 @@ export class AuthPage {
   constructor(private page: Page) {}
 
   async gotoLogin() {
-    await this.page.goto('/login');
+    await this.page.goto('/fr/login');
   }
 
   async gotoRegister() {
-    await this.page.goto('/register');
+    await this.page.goto('/fr/register');
   }
 
   async login(email: string, password: string) {
@@ -26,8 +26,9 @@ export class AuthPage {
   }
 
   async expectError(message: string) {
-    const error = this.page.locator('div.text-red-600');
-    await expect(error).toBeVisible();
-    await expect(error).toContainText(message);
+    const error = this.page.locator('.text-red-600');
+    await expect(error).toBeVisible({ timeout: 10000 });
+    const text = await error.innerText();
+    expect(text.toLowerCase()).toContain(message.toLowerCase());
   }
 }

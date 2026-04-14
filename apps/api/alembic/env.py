@@ -9,7 +9,7 @@ from alembic import context
 import asyncio
 
 # Import Base et tous les models
-from src.core.database import Base
+from michi_core.database import Base
 from src.modules.auth.models import User, Organization, OrganizationMember, Invitation
 from src.modules.inventory.models import Product, SalesLog, Supplier, Alert, AlertEmail, Store
 from src.modules.forecasting.models import CleanedDemand, Prediction

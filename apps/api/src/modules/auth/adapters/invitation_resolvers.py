@@ -6,7 +6,7 @@ import strawberry
 from typing import Optional, List
 import uuid
 
-from src.core.exceptions import UnauthenticatedException
+from michi_core.exceptions import UnauthenticatedException
 from src.core.graphql.types import InvitationType
 
 @strawberry.type

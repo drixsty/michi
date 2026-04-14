@@ -7,7 +7,7 @@ from typing import List, Optional
 import uuid
 from loguru import logger
 
-from src.core.exceptions import UnauthenticatedException
+from michi_core.exceptions import UnauthenticatedException
 from src.modules.billing.decorators import require_plan
 from src.modules.auth.decorators import require_permission
 from src.modules.auth.constants import MichiPermission

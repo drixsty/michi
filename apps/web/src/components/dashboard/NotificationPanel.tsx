@@ -102,6 +102,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fixed right-0 top-0 h-screen w-full max-w-md bg-white shadow-2xl z-[70] flex flex-col border-l border-slate-200 rounded-tl-xl"
+            data-testid="notification-panel"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b sticky top-0 bg-white z-20">

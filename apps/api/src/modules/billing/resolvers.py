@@ -2,7 +2,7 @@ import strawberry
 import uuid
 from typing import List
 from sqlalchemy import select
-from src.core.exceptions import UnauthenticatedException, MichiException, ErrorCode
+from michi_core.exceptions import UnauthenticatedException, MichiException, ErrorCode
 from src.modules.auth.models import Organization
 from src.modules.auth.decorators import require_permission
 from src.modules.auth.constants import MichiPermission

@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
-from src.modules.decisions.service import DecisionCenterService
+from src.modules.decisions.application.decisions_service import ApplicationDecisionsService
 from src.modules.auth.models import User
 from src.modules.inventory.models import Store, Product, PlatformSource
 from src.modules.forecasting.models import Prediction
@@ -16,7 +16,7 @@ async def test_get_overview_no_user():
     mock_res.scalars.return_value.first.return_value = None
     db.execute.return_value = mock_res
     
-    service = DecisionCenterService(db)
+    service = ApplicationDecisionsService(db, db, db, db)
     with pytest.raises(Exception, match="Utilisateur non trouvé"):
         await service.get_overview(str(uuid4()))
 
@@ -31,7 +31,7 @@ async def test_get_overview_empty_org():
     mock_res.scalars.return_value.first.return_value = user
     db.execute.return_value = mock_res
     
-    service = DecisionCenterService(db)
+    service = ApplicationDecisionsService(db, db, db, db)
     result = await service.get_overview(str(user.id))
     
     assert result.kpis.inventory_value_cost == 0
@@ -67,7 +67,7 @@ async def test_get_overview_with_data():
     # Set side effect to return these mocks in order
     db.execute.side_effect = [mock_user_res, mock_stores_res, mock_data_res]
     
-    service = DecisionCenterService(db)
+    service = ApplicationDecisionsService(db, db, db, db)
     result = await service.get_overview(str(user.id))
     
     assert result.total_stock == 10

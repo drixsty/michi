@@ -1,0 +1,1039 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.3, pytest-7.4.4, pluggy-1.6.0
+rootdir: C:\Users\KevinTSAGUE\michi-app\apps\api
+configfile: pytest.ini
+plugins: anyio-4.13.0, Faker-22.0.0, asyncio-0.23.3, cov-4.1.0
+asyncio: mode=Mode.AUTO
+collected 4 items
+
+tests\test_graphql_integration.py [DEBUG] Metadata tables: ['organizations', 'users', 'organization_members', 'invitations', 'stores', 'products', 'alerts', 'sales_logs', 'suppliers', 'alert_emails', 'purchase_orders', 'cleaned_demand', 'predictions']
+EEEE
+
+=================================== ERRORS ====================================
+____________________ ERROR at setup of test_login_mutation ____________________
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:139: in _compiler_dispatch
+    meth = getter(visitor)
+E   AttributeError: 'SQLiteTypeCompiler' object has no attribute 'visit_UUID'. Did you mean: 'visit_uuid'?
+        getter     = operator.attrgetter('visit_UUID')
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = UUID()
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+
+The above exception was the direct cause of the following exception:
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6522: in visit_create_table
+    processed = self.process(
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        create_column = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        create_table_suffix = ''
+        first_pk   = False
+        kw         = {}
+        preparer   = <sqlalchemy.dialects.sqlite.base.SQLiteIdentifierPreparer object at 0x00000258102D0A10>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        separator  = '\n'
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        text       = '\nCREATE TABLE organizations ('
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:912: in process
+    return obj._compiler_dispatch(self, **kwargs)
+        kwargs     = {'first_pk': True}
+        obj        = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:143: in _compiler_dispatch
+    return meth(self, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_create_column')
+        kw         = {'first_pk': True}
+        meth       = <bound method DDLCompiler.visit_create_column of <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>>
+        self       = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6553: in visit_create_column
+    text = self.get_column_specification(column, first_pk=first_pk)
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        first_pk   = True
+        kw         = {}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\dialects\sqlite\base.py:1534: in get_column_specification
+    coltype = self.dialect.type_compiler_instance.process(
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        kwargs     = {'first_pk': True}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:957: in process
+    return type_._compiler_dispatch(self, **kw)
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+        type_      = UUID()
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:141: in _compiler_dispatch
+    return visitor.visit_unsupported_compilation(self, err, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_UUID')
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = UUID()
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:962: in visit_unsupported_compilation
+    raise exc.UnsupportedCompilationError(self, element) from err
+E   sqlalchemy.exc.UnsupportedCompilationError: Compiler <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID (Background on this error at: https://sqlalche.me/e/20/l7de)
+        element    = UUID()
+        err        = AttributeError("'SQLiteTypeCompiler' object has no attribute 'visit_UUID'")
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+
+The above exception was the direct cause of the following exception:
+..\..\..\AppData\Roaming\Python\Python312\site-packages\pytest_asyncio\plugin.py:337: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+        event_loop = <ProactorEventLoop running=False closed=False debug=False>
+        event_loop_fixture_id = '_session_event_loop'
+        finalizer  = <function _wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.finalizer at 0x00000258107CD760>
+        fixture    = <function db_engine at 0x00000258102BC9A0>
+        fixturedef = <FixtureDef argname='db_engine' scope='session' baseid='tests'>
+        func       = <function db_engine at 0x00000258102BC9A0>
+        gen_obj    = <async_generator object db_engine at 0x000002581030BA60>
+        kwargs     = {}
+        request    = <SubRequest 'db_engine' for <Coroutine test_login_mutation>>
+        setup      = <function _wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.setup at 0x00000258107CD800>
+C:\Python312\Lib\asyncio\base_events.py:687: in run_until_complete
+    return future.result()
+        future     = <Task finished name='Task-1' coro=<_wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.setup() done, de... <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID")>
+        new_task   = True
+        self       = <ProactorEventLoop running=False closed=False debug=False>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\pytest_asyncio\plugin.py:319: in setup
+    res = await gen_obj.__anext__()
+        gen_obj    = <async_generator object db_engine at 0x000002581030BA60>
+tests\conftest.py:46: in db_engine
+    await conn.run_sync(Base.metadata.create_all)
+        conn       = <sqlalchemy.ext.asyncio.engine.AsyncConnection object at 0x00000258108589B0>
+        engine     = <sqlalchemy.ext.asyncio.engine.AsyncEngine object at 0x00000258107ED790>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\ext\asyncio\engine.py:891: in run_sync
+    return await greenlet_spawn(fn, self._proxied, *arg, **kw)
+        arg        = ()
+        fn         = <bound method MetaData.create_all of MetaData()>
+        kw         = {}
+        self       = <sqlalchemy.ext.asyncio.engine.AsyncConnection object at 0x00000258108589B0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\util\_concurrency_py3k.py:202: in greenlet_spawn
+    result = context.switch(value)
+        _require_await = False
+        args       = (<sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>,)
+        context    = <_AsyncIoGreenlet object at 0x00000258108612C0 (otid=0x000002586ABF5710) dead>
+        fn         = <bound method MetaData.create_all of MetaData()>
+        kwargs     = {}
+        result     = <coroutine object Cursor.close at 0x000002581035F640>
+        switch_occurred = True
+        value      = None
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\schema.py:5832: in create_all
+    bind._run_ddl_visitor(
+        bind       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        checkfirst = True
+        self       = MetaData()
+        tables     = None
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:2448: in _run_ddl_visitor
+    visitorcallable(self.dialect, self, **kwargs).traverse_single(element)
+        element    = MetaData()
+        kwargs     = {'checkfirst': True, 'tables': None}
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        visitorcallable = <class 'sqlalchemy.sql.ddl.SchemaGenerator'>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:671: in traverse_single
+    return meth(obj, **kw)
+        kw         = {}
+        meth       = <bound method SchemaGenerator.visit_metadata of <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>>
+        obj        = MetaData()
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        v          = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:919: in visit_metadata
+    self.traverse_single(
+        collection = [(Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, def...olumn('average_delay_days', Float(), table=<suppliers>, default=ScalarElementColumnDefault(0.0)), schema=None))}), ...]
+        event_collection = [Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defa..., Column('average_delay_days', Float(), table=<suppliers>, default=ScalarElementColumnDefault(0.0)), schema=None), ...]
+        fkcs       = set()
+        metadata   = MetaData()
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        seq_coll   = []
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        tables     = [Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defa...000025870053740>), default=CallableColumnDefault(<function datetime.utcnow at 0x00000258700536A0>)), schema=None), ...]
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:671: in traverse_single
+    return meth(obj, **kw)
+        kw         = {'_is_metadata_operation': True, 'create_ok': True, 'include_foreign_key_constraints': set()}
+        meth       = <bound method SchemaGenerator.visit_table of <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>>
+        obj        = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        v          = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:957: in visit_table
+    )._invoke_with(self.connection)
+        _is_metadata_operation = True
+        column     = Column('settings', JSON(), table=<organizations>, nullable=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False))
+        create_ok  = True
+        include_foreign_key_constraints = None
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:315: in _invoke_with
+    return bind.execute(self)
+        bind       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:1416: in execute
+    return meth(
+        distilled_parameters = ()
+        execution_options = None
+        meth       = <bound method ExecutableDDLElement._execute_on_connection of <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>>
+        parameters = None
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        statement  = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:181: in _execute_on_connection
+    return connection._execute_ddl(
+        connection = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        distilled_params = ()
+        execution_options = immutabledict({})
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:1525: in _execute_ddl
+    compiled = ddl.compile(
+        ddl        = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        distilled_parameters = ()
+        event_multiparams = None
+        event_params = None
+        exec_opts  = immutabledict({})
+        execution_options = immutabledict({})
+        schema_translate_map = None
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\elements.py:309: in compile
+    return self._compiler(dialect, **kw)
+        bind       = None
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        kw         = {'schema_translate_map': None}
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:69: in _compiler
+    return dialect.ddl_compiler(dialect, self, **kw)
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        kw         = {'schema_translate_map': None}
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:867: in __init__
+    self.string = self.process(self.statement, **compile_kwargs)
+        compile_kwargs = immutabledict({})
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        render_schema_translate = False
+        schema_translate_map = None
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        statement  = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:912: in process
+    return obj._compiler_dispatch(self, **kwargs)
+        kwargs     = {}
+        obj        = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:143: in _compiler_dispatch
+    return meth(self, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_create_table')
+        kw         = {}
+        meth       = <bound method DDLCompiler.visit_create_table of <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>>
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6532: in visit_create_table
+    raise exc.CompileError(
+E   sqlalchemy.exc.CompileError: (in table 'organizations', column 'id'): Compiler <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        create_column = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        create_table_suffix = ''
+        first_pk   = False
+        kw         = {}
+        preparer   = <sqlalchemy.dialects.sqlite.base.SQLiteIdentifierPreparer object at 0x00000258102D0A10>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        separator  = '\n'
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        text       = '\nCREATE TABLE organizations ('
+________________ ERROR at setup of test_me_query_without_auth _________________
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:139: in _compiler_dispatch
+    meth = getter(visitor)
+E   AttributeError: 'SQLiteTypeCompiler' object has no attribute 'visit_UUID'. Did you mean: 'visit_uuid'?
+        getter     = operator.attrgetter('visit_UUID')
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = UUID()
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+
+The above exception was the direct cause of the following exception:
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6522: in visit_create_table
+    processed = self.process(
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        create_column = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        create_table_suffix = ''
+        first_pk   = False
+        kw         = {}
+        preparer   = <sqlalchemy.dialects.sqlite.base.SQLiteIdentifierPreparer object at 0x00000258102D0A10>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        separator  = '\n'
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        text       = '\nCREATE TABLE organizations ('
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:912: in process
+    return obj._compiler_dispatch(self, **kwargs)
+        kwargs     = {'first_pk': True}
+        obj        = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:143: in _compiler_dispatch
+    return meth(self, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_create_column')
+        kw         = {'first_pk': True}
+        meth       = <bound method DDLCompiler.visit_create_column of <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>>
+        self       = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6553: in visit_create_column
+    text = self.get_column_specification(column, first_pk=first_pk)
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        first_pk   = True
+        kw         = {}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\dialects\sqlite\base.py:1534: in get_column_specification
+    coltype = self.dialect.type_compiler_instance.process(
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        kwargs     = {'first_pk': True}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:957: in process
+    return type_._compiler_dispatch(self, **kw)
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+        type_      = UUID()
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:141: in _compiler_dispatch
+    return visitor.visit_unsupported_compilation(self, err, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_UUID')
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = UUID()
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:962: in visit_unsupported_compilation
+    raise exc.UnsupportedCompilationError(self, element) from err
+E   sqlalchemy.exc.UnsupportedCompilationError: Compiler <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID (Background on this error at: https://sqlalche.me/e/20/l7de)
+        element    = UUID()
+        err        = AttributeError("'SQLiteTypeCompiler' object has no attribute 'visit_UUID'")
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+
+The above exception was the direct cause of the following exception:
+..\..\..\AppData\Roaming\Python\Python312\site-packages\pytest_asyncio\plugin.py:337: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+        event_loop = <ProactorEventLoop running=False closed=False debug=False>
+        event_loop_fixture_id = '_session_event_loop'
+        finalizer  = <function _wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.finalizer at 0x00000258107CD760>
+        fixture    = <function db_engine at 0x00000258102BC9A0>
+        fixturedef = <FixtureDef argname='db_engine' scope='session' baseid='tests'>
+        func       = <function db_engine at 0x00000258102BC9A0>
+        gen_obj    = <async_generator object db_engine at 0x000002581030BA60>
+        kwargs     = {}
+        request    = <SubRequest 'db_engine' for <Coroutine test_login_mutation>>
+        setup      = <function _wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.setup at 0x00000258107CD800>
+C:\Python312\Lib\asyncio\base_events.py:687: in run_until_complete
+    return future.result()
+        future     = <Task finished name='Task-1' coro=<_wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.setup() done, de... <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID")>
+        new_task   = True
+        self       = <ProactorEventLoop running=False closed=False debug=False>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\pytest_asyncio\plugin.py:319: in setup
+    res = await gen_obj.__anext__()
+        gen_obj    = <async_generator object db_engine at 0x000002581030BA60>
+tests\conftest.py:46: in db_engine
+    await conn.run_sync(Base.metadata.create_all)
+        conn       = <sqlalchemy.ext.asyncio.engine.AsyncConnection object at 0x00000258108589B0>
+        engine     = <sqlalchemy.ext.asyncio.engine.AsyncEngine object at 0x00000258107ED790>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\ext\asyncio\engine.py:891: in run_sync
+    return await greenlet_spawn(fn, self._proxied, *arg, **kw)
+        arg        = ()
+        fn         = <bound method MetaData.create_all of MetaData()>
+        kw         = {}
+        self       = <sqlalchemy.ext.asyncio.engine.AsyncConnection object at 0x00000258108589B0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\util\_concurrency_py3k.py:202: in greenlet_spawn
+    result = context.switch(value)
+        _require_await = False
+        args       = (<sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>,)
+        context    = <_AsyncIoGreenlet object at 0x00000258108612C0 (otid=0x000002586ABF5710) dead>
+        fn         = <bound method MetaData.create_all of MetaData()>
+        kwargs     = {}
+        result     = <coroutine object Cursor.close at 0x000002581035F640>
+        switch_occurred = True
+        value      = None
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\schema.py:5832: in create_all
+    bind._run_ddl_visitor(
+        bind       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        checkfirst = True
+        self       = MetaData()
+        tables     = None
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:2448: in _run_ddl_visitor
+    visitorcallable(self.dialect, self, **kwargs).traverse_single(element)
+        element    = MetaData()
+        kwargs     = {'checkfirst': True, 'tables': None}
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        visitorcallable = <class 'sqlalchemy.sql.ddl.SchemaGenerator'>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:671: in traverse_single
+    return meth(obj, **kw)
+        kw         = {}
+        meth       = <bound method SchemaGenerator.visit_metadata of <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>>
+        obj        = MetaData()
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        v          = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:919: in visit_metadata
+    self.traverse_single(
+        collection = [(Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, def...olumn('average_delay_days', Float(), table=<suppliers>, default=ScalarElementColumnDefault(0.0)), schema=None))}), ...]
+        event_collection = [Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defa..., Column('average_delay_days', Float(), table=<suppliers>, default=ScalarElementColumnDefault(0.0)), schema=None), ...]
+        fkcs       = set()
+        metadata   = MetaData()
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        seq_coll   = []
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        tables     = [Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defa...000025870053740>), default=CallableColumnDefault(<function datetime.utcnow at 0x00000258700536A0>)), schema=None), ...]
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:671: in traverse_single
+    return meth(obj, **kw)
+        kw         = {'_is_metadata_operation': True, 'create_ok': True, 'include_foreign_key_constraints': set()}
+        meth       = <bound method SchemaGenerator.visit_table of <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>>
+        obj        = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        v          = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:957: in visit_table
+    )._invoke_with(self.connection)
+        _is_metadata_operation = True
+        column     = Column('settings', JSON(), table=<organizations>, nullable=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False))
+        create_ok  = True
+        include_foreign_key_constraints = None
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:315: in _invoke_with
+    return bind.execute(self)
+        bind       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:1416: in execute
+    return meth(
+        distilled_parameters = ()
+        execution_options = None
+        meth       = <bound method ExecutableDDLElement._execute_on_connection of <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>>
+        parameters = None
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        statement  = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:181: in _execute_on_connection
+    return connection._execute_ddl(
+        connection = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        distilled_params = ()
+        execution_options = immutabledict({})
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:1525: in _execute_ddl
+    compiled = ddl.compile(
+        ddl        = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        distilled_parameters = ()
+        event_multiparams = None
+        event_params = None
+        exec_opts  = immutabledict({})
+        execution_options = immutabledict({})
+        schema_translate_map = None
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\elements.py:309: in compile
+    return self._compiler(dialect, **kw)
+        bind       = None
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        kw         = {'schema_translate_map': None}
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:69: in _compiler
+    return dialect.ddl_compiler(dialect, self, **kw)
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        kw         = {'schema_translate_map': None}
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:867: in __init__
+    self.string = self.process(self.statement, **compile_kwargs)
+        compile_kwargs = immutabledict({})
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        render_schema_translate = False
+        schema_translate_map = None
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        statement  = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:912: in process
+    return obj._compiler_dispatch(self, **kwargs)
+        kwargs     = {}
+        obj        = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:143: in _compiler_dispatch
+    return meth(self, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_create_table')
+        kw         = {}
+        meth       = <bound method DDLCompiler.visit_create_table of <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>>
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6532: in visit_create_table
+    raise exc.CompileError(
+E   sqlalchemy.exc.CompileError: (in table 'organizations', column 'id'): Compiler <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        create_column = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        create_table_suffix = ''
+        first_pk   = False
+        kw         = {}
+        preparer   = <sqlalchemy.dialects.sqlite.base.SQLiteIdentifierPreparer object at 0x00000258102D0A10>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        separator  = '\n'
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        text       = '\nCREATE TABLE organizations ('
+__________________ ERROR at setup of test_me_query_with_auth __________________
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:139: in _compiler_dispatch
+    meth = getter(visitor)
+E   AttributeError: 'SQLiteTypeCompiler' object has no attribute 'visit_UUID'. Did you mean: 'visit_uuid'?
+        getter     = operator.attrgetter('visit_UUID')
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = UUID()
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+
+The above exception was the direct cause of the following exception:
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6522: in visit_create_table
+    processed = self.process(
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        create_column = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        create_table_suffix = ''
+        first_pk   = False
+        kw         = {}
+        preparer   = <sqlalchemy.dialects.sqlite.base.SQLiteIdentifierPreparer object at 0x00000258102D0A10>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        separator  = '\n'
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        text       = '\nCREATE TABLE organizations ('
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:912: in process
+    return obj._compiler_dispatch(self, **kwargs)
+        kwargs     = {'first_pk': True}
+        obj        = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:143: in _compiler_dispatch
+    return meth(self, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_create_column')
+        kw         = {'first_pk': True}
+        meth       = <bound method DDLCompiler.visit_create_column of <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>>
+        self       = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6553: in visit_create_column
+    text = self.get_column_specification(column, first_pk=first_pk)
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        first_pk   = True
+        kw         = {}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\dialects\sqlite\base.py:1534: in get_column_specification
+    coltype = self.dialect.type_compiler_instance.process(
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        kwargs     = {'first_pk': True}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:957: in process
+    return type_._compiler_dispatch(self, **kw)
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+        type_      = UUID()
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:141: in _compiler_dispatch
+    return visitor.visit_unsupported_compilation(self, err, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_UUID')
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = UUID()
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:962: in visit_unsupported_compilation
+    raise exc.UnsupportedCompilationError(self, element) from err
+E   sqlalchemy.exc.UnsupportedCompilationError: Compiler <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID (Background on this error at: https://sqlalche.me/e/20/l7de)
+        element    = UUID()
+        err        = AttributeError("'SQLiteTypeCompiler' object has no attribute 'visit_UUID'")
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+
+The above exception was the direct cause of the following exception:
+..\..\..\AppData\Roaming\Python\Python312\site-packages\pytest_asyncio\plugin.py:337: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+        event_loop = <ProactorEventLoop running=False closed=False debug=False>
+        event_loop_fixture_id = '_session_event_loop'
+        finalizer  = <function _wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.finalizer at 0x00000258107CD760>
+        fixture    = <function db_engine at 0x00000258102BC9A0>
+        fixturedef = <FixtureDef argname='db_engine' scope='session' baseid='tests'>
+        func       = <function db_engine at 0x00000258102BC9A0>
+        gen_obj    = <async_generator object db_engine at 0x000002581030BA60>
+        kwargs     = {}
+        request    = <SubRequest 'db_engine' for <Coroutine test_login_mutation>>
+        setup      = <function _wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.setup at 0x00000258107CD800>
+C:\Python312\Lib\asyncio\base_events.py:687: in run_until_complete
+    return future.result()
+        future     = <Task finished name='Task-1' coro=<_wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.setup() done, de... <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID")>
+        new_task   = True
+        self       = <ProactorEventLoop running=False closed=False debug=False>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\pytest_asyncio\plugin.py:319: in setup
+    res = await gen_obj.__anext__()
+        gen_obj    = <async_generator object db_engine at 0x000002581030BA60>
+tests\conftest.py:46: in db_engine
+    await conn.run_sync(Base.metadata.create_all)
+        conn       = <sqlalchemy.ext.asyncio.engine.AsyncConnection object at 0x00000258108589B0>
+        engine     = <sqlalchemy.ext.asyncio.engine.AsyncEngine object at 0x00000258107ED790>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\ext\asyncio\engine.py:891: in run_sync
+    return await greenlet_spawn(fn, self._proxied, *arg, **kw)
+        arg        = ()
+        fn         = <bound method MetaData.create_all of MetaData()>
+        kw         = {}
+        self       = <sqlalchemy.ext.asyncio.engine.AsyncConnection object at 0x00000258108589B0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\util\_concurrency_py3k.py:202: in greenlet_spawn
+    result = context.switch(value)
+        _require_await = False
+        args       = (<sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>,)
+        context    = <_AsyncIoGreenlet object at 0x00000258108612C0 (otid=0x000002586ABF5710) dead>
+        fn         = <bound method MetaData.create_all of MetaData()>
+        kwargs     = {}
+        result     = <coroutine object Cursor.close at 0x000002581035F640>
+        switch_occurred = True
+        value      = None
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\schema.py:5832: in create_all
+    bind._run_ddl_visitor(
+        bind       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        checkfirst = True
+        self       = MetaData()
+        tables     = None
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:2448: in _run_ddl_visitor
+    visitorcallable(self.dialect, self, **kwargs).traverse_single(element)
+        element    = MetaData()
+        kwargs     = {'checkfirst': True, 'tables': None}
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        visitorcallable = <class 'sqlalchemy.sql.ddl.SchemaGenerator'>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:671: in traverse_single
+    return meth(obj, **kw)
+        kw         = {}
+        meth       = <bound method SchemaGenerator.visit_metadata of <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>>
+        obj        = MetaData()
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        v          = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:919: in visit_metadata
+    self.traverse_single(
+        collection = [(Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, def...olumn('average_delay_days', Float(), table=<suppliers>, default=ScalarElementColumnDefault(0.0)), schema=None))}), ...]
+        event_collection = [Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defa..., Column('average_delay_days', Float(), table=<suppliers>, default=ScalarElementColumnDefault(0.0)), schema=None), ...]
+        fkcs       = set()
+        metadata   = MetaData()
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        seq_coll   = []
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        tables     = [Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defa...000025870053740>), default=CallableColumnDefault(<function datetime.utcnow at 0x00000258700536A0>)), schema=None), ...]
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:671: in traverse_single
+    return meth(obj, **kw)
+        kw         = {'_is_metadata_operation': True, 'create_ok': True, 'include_foreign_key_constraints': set()}
+        meth       = <bound method SchemaGenerator.visit_table of <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>>
+        obj        = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        v          = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:957: in visit_table
+    )._invoke_with(self.connection)
+        _is_metadata_operation = True
+        column     = Column('settings', JSON(), table=<organizations>, nullable=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False))
+        create_ok  = True
+        include_foreign_key_constraints = None
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:315: in _invoke_with
+    return bind.execute(self)
+        bind       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:1416: in execute
+    return meth(
+        distilled_parameters = ()
+        execution_options = None
+        meth       = <bound method ExecutableDDLElement._execute_on_connection of <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>>
+        parameters = None
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        statement  = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:181: in _execute_on_connection
+    return connection._execute_ddl(
+        connection = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        distilled_params = ()
+        execution_options = immutabledict({})
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:1525: in _execute_ddl
+    compiled = ddl.compile(
+        ddl        = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        distilled_parameters = ()
+        event_multiparams = None
+        event_params = None
+        exec_opts  = immutabledict({})
+        execution_options = immutabledict({})
+        schema_translate_map = None
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\elements.py:309: in compile
+    return self._compiler(dialect, **kw)
+        bind       = None
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        kw         = {'schema_translate_map': None}
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:69: in _compiler
+    return dialect.ddl_compiler(dialect, self, **kw)
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        kw         = {'schema_translate_map': None}
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:867: in __init__
+    self.string = self.process(self.statement, **compile_kwargs)
+        compile_kwargs = immutabledict({})
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        render_schema_translate = False
+        schema_translate_map = None
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        statement  = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:912: in process
+    return obj._compiler_dispatch(self, **kwargs)
+        kwargs     = {}
+        obj        = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:143: in _compiler_dispatch
+    return meth(self, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_create_table')
+        kw         = {}
+        meth       = <bound method DDLCompiler.visit_create_table of <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>>
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6532: in visit_create_table
+    raise exc.CompileError(
+E   sqlalchemy.exc.CompileError: (in table 'organizations', column 'id'): Compiler <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        create_column = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        create_table_suffix = ''
+        first_pk   = False
+        kw         = {}
+        preparer   = <sqlalchemy.dialects.sqlite.base.SQLiteIdentifierPreparer object at 0x00000258102D0A10>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        separator  = '\n'
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        text       = '\nCREATE TABLE organizations ('
+___________________ ERROR at setup of test_health_endpoint ____________________
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:139: in _compiler_dispatch
+    meth = getter(visitor)
+E   AttributeError: 'SQLiteTypeCompiler' object has no attribute 'visit_UUID'. Did you mean: 'visit_uuid'?
+        getter     = operator.attrgetter('visit_UUID')
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = UUID()
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+
+The above exception was the direct cause of the following exception:
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6522: in visit_create_table
+    processed = self.process(
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        create_column = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        create_table_suffix = ''
+        first_pk   = False
+        kw         = {}
+        preparer   = <sqlalchemy.dialects.sqlite.base.SQLiteIdentifierPreparer object at 0x00000258102D0A10>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        separator  = '\n'
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        text       = '\nCREATE TABLE organizations ('
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:912: in process
+    return obj._compiler_dispatch(self, **kwargs)
+        kwargs     = {'first_pk': True}
+        obj        = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:143: in _compiler_dispatch
+    return meth(self, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_create_column')
+        kw         = {'first_pk': True}
+        meth       = <bound method DDLCompiler.visit_create_column of <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>>
+        self       = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6553: in visit_create_column
+    text = self.get_column_specification(column, first_pk=first_pk)
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        first_pk   = True
+        kw         = {}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\dialects\sqlite\base.py:1534: in get_column_specification
+    coltype = self.dialect.type_compiler_instance.process(
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        kwargs     = {'first_pk': True}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:957: in process
+    return type_._compiler_dispatch(self, **kw)
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+        type_      = UUID()
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:141: in _compiler_dispatch
+    return visitor.visit_unsupported_compilation(self, err, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_UUID')
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = UUID()
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:962: in visit_unsupported_compilation
+    raise exc.UnsupportedCompilationError(self, element) from err
+E   sqlalchemy.exc.UnsupportedCompilationError: Compiler <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID (Background on this error at: https://sqlalche.me/e/20/l7de)
+        element    = UUID()
+        err        = AttributeError("'SQLiteTypeCompiler' object has no attribute 'visit_UUID'")
+        kw         = {'type_expression': Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))}
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0>
+
+The above exception was the direct cause of the following exception:
+..\..\..\AppData\Roaming\Python\Python312\site-packages\pytest_asyncio\plugin.py:337: in _asyncgen_fixture_wrapper
+    result = event_loop.run_until_complete(setup())
+        event_loop = <ProactorEventLoop running=False closed=False debug=False>
+        event_loop_fixture_id = '_session_event_loop'
+        finalizer  = <function _wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.finalizer at 0x00000258107CD760>
+        fixture    = <function db_engine at 0x00000258102BC9A0>
+        fixturedef = <FixtureDef argname='db_engine' scope='session' baseid='tests'>
+        func       = <function db_engine at 0x00000258102BC9A0>
+        gen_obj    = <async_generator object db_engine at 0x000002581030BA60>
+        kwargs     = {}
+        request    = <SubRequest 'db_engine' for <Coroutine test_login_mutation>>
+        setup      = <function _wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.setup at 0x00000258107CD800>
+C:\Python312\Lib\asyncio\base_events.py:687: in run_until_complete
+    return future.result()
+        future     = <Task finished name='Task-1' coro=<_wrap_asyncgen_fixture.<locals>._asyncgen_fixture_wrapper.<locals>.setup() done, de... <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID")>
+        new_task   = True
+        self       = <ProactorEventLoop running=False closed=False debug=False>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\pytest_asyncio\plugin.py:319: in setup
+    res = await gen_obj.__anext__()
+        gen_obj    = <async_generator object db_engine at 0x000002581030BA60>
+tests\conftest.py:46: in db_engine
+    await conn.run_sync(Base.metadata.create_all)
+        conn       = <sqlalchemy.ext.asyncio.engine.AsyncConnection object at 0x00000258108589B0>
+        engine     = <sqlalchemy.ext.asyncio.engine.AsyncEngine object at 0x00000258107ED790>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\ext\asyncio\engine.py:891: in run_sync
+    return await greenlet_spawn(fn, self._proxied, *arg, **kw)
+        arg        = ()
+        fn         = <bound method MetaData.create_all of MetaData()>
+        kw         = {}
+        self       = <sqlalchemy.ext.asyncio.engine.AsyncConnection object at 0x00000258108589B0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\util\_concurrency_py3k.py:202: in greenlet_spawn
+    result = context.switch(value)
+        _require_await = False
+        args       = (<sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>,)
+        context    = <_AsyncIoGreenlet object at 0x00000258108612C0 (otid=0x000002586ABF5710) dead>
+        fn         = <bound method MetaData.create_all of MetaData()>
+        kwargs     = {}
+        result     = <coroutine object Cursor.close at 0x000002581035F640>
+        switch_occurred = True
+        value      = None
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\schema.py:5832: in create_all
+    bind._run_ddl_visitor(
+        bind       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        checkfirst = True
+        self       = MetaData()
+        tables     = None
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:2448: in _run_ddl_visitor
+    visitorcallable(self.dialect, self, **kwargs).traverse_single(element)
+        element    = MetaData()
+        kwargs     = {'checkfirst': True, 'tables': None}
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        visitorcallable = <class 'sqlalchemy.sql.ddl.SchemaGenerator'>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:671: in traverse_single
+    return meth(obj, **kw)
+        kw         = {}
+        meth       = <bound method SchemaGenerator.visit_metadata of <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>>
+        obj        = MetaData()
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        v          = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:919: in visit_metadata
+    self.traverse_single(
+        collection = [(Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, def...olumn('average_delay_days', Float(), table=<suppliers>, default=ScalarElementColumnDefault(0.0)), schema=None))}), ...]
+        event_collection = [Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defa..., Column('average_delay_days', Float(), table=<suppliers>, default=ScalarElementColumnDefault(0.0)), schema=None), ...]
+        fkcs       = set()
+        metadata   = MetaData()
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        seq_coll   = []
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        tables     = [Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defa...000025870053740>), default=CallableColumnDefault(<function datetime.utcnow at 0x00000258700536A0>)), schema=None), ...]
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:671: in traverse_single
+    return meth(obj, **kw)
+        kw         = {'_is_metadata_operation': True, 'create_ok': True, 'include_foreign_key_constraints': set()}
+        meth       = <bound method SchemaGenerator.visit_table of <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>>
+        obj        = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        v          = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:957: in visit_table
+    )._invoke_with(self.connection)
+        _is_metadata_operation = True
+        column     = Column('settings', JSON(), table=<organizations>, nullable=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False))
+        create_ok  = True
+        include_foreign_key_constraints = None
+        self       = <sqlalchemy.sql.ddl.SchemaGenerator object at 0x0000025810861390>
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:315: in _invoke_with
+    return bind.execute(self)
+        bind       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:1416: in execute
+    return meth(
+        distilled_parameters = ()
+        execution_options = None
+        meth       = <bound method ExecutableDDLElement._execute_on_connection of <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>>
+        parameters = None
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        statement  = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:181: in _execute_on_connection
+    return connection._execute_ddl(
+        connection = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+        distilled_params = ()
+        execution_options = immutabledict({})
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\engine\base.py:1525: in _execute_ddl
+    compiled = ddl.compile(
+        ddl        = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        distilled_parameters = ()
+        event_multiparams = None
+        event_params = None
+        exec_opts  = immutabledict({})
+        execution_options = immutabledict({})
+        schema_translate_map = None
+        self       = <sqlalchemy.engine.base.Connection object at 0x00000258107EA9F0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\elements.py:309: in compile
+    return self._compiler(dialect, **kw)
+        bind       = None
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        kw         = {'schema_translate_map': None}
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\ddl.py:69: in _compiler
+    return dialect.ddl_compiler(dialect, self, **kw)
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        kw         = {'schema_translate_map': None}
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:867: in __init__
+    self.string = self.process(self.statement, **compile_kwargs)
+        compile_kwargs = immutabledict({})
+        dialect    = <sqlalchemy.dialects.sqlite.aiosqlite.SQLiteDialect_aiosqlite object at 0x000002587F66F2C0>
+        render_schema_translate = False
+        schema_translate_map = None
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        statement  = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:912: in process
+    return obj._compiler_dispatch(self, **kwargs)
+        kwargs     = {}
+        obj        = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\visitors.py:143: in _compiler_dispatch
+    return meth(self, **kw)  # type: ignore  # noqa: E501
+        getter     = operator.attrgetter('visit_create_table')
+        kw         = {}
+        meth       = <bound method DDLCompiler.visit_create_table of <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>>
+        self       = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        visitor    = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+..\..\..\AppData\Roaming\Python\Python312\site-packages\sqlalchemy\sql\compiler.py:6532: in visit_create_table
+    raise exc.CompileError(
+E   sqlalchemy.exc.CompileError: (in table 'organizations', column 'id'): Compiler <sqlalchemy.dialects.sqlite.base.SQLiteTypeCompiler object at 0x00000258107EB9E0> can't render element of type UUID
+        column     = Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, default=CallableColumnDefault(<function uuid4 at 0x000002586D9C7060>))
+        create     = <sqlalchemy.sql.ddl.CreateTable object at 0x00000258102D0FE0>
+        create_column = <sqlalchemy.sql.ddl.CreateColumn object at 0x000002581082FAD0>
+        create_table_suffix = ''
+        first_pk   = False
+        kw         = {}
+        preparer   = <sqlalchemy.dialects.sqlite.base.SQLiteIdentifierPreparer object at 0x00000258102D0A10>
+        self       = <sqlalchemy.dialects.sqlite.base.SQLiteDDLCompiler object at 0x0000025810874050>
+        separator  = '\n'
+        table      = Table('organizations', MetaData(), Column('id', UUID(), table=<organizations>, primary_key=True, nullable=False, defau...able=False, default=ScalarElementColumnDefault({}), server_default=DefaultClause('{}', for_update=False)), schema=None)
+        text       = '\nCREATE TABLE organizations ('
+============================== warnings summary ===============================
+..\..\..\..\..\Python312\Lib\functools.py:995: 43 warnings
+  C:\Python312\Lib\functools.py:995: DeprecationWarning: Argument name-based matching of 'info' is deprecated and will be removed in v1.0. Ensure that reserved arguments are annotated their respective types (i.e. use value: 'DirectiveValue[str]' instead of 'value: str' and 'info: Info' instead of a plain 'info').
+    val = self.func(instance)
+
+src\modules\inventory\infrastructure\persistence\models.py:164
+  C:\Users\KevinTSAGUE\michi-app\apps\api\src\modules\inventory\infrastructure\persistence\models.py:164: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    order_date = Column(Date, nullable=False, default=datetime.utcnow().date)
+
+src\modules\forecasting\application\forecasting_service.py:7
+  C:\Users\KevinTSAGUE\michi-app\apps\api\src\modules\forecasting\application\forecasting_service.py:7: DeprecationWarning: 
+  Pyarrow will become a required dependency of pandas in the next major release of pandas (pandas 3.0),
+  (to allow more performant data types, such as the Arrow string type, and better interoperability with other libraries)
+  but was not found to be installed on your system.
+  If this would cause problems for you,
+  please provide us feedback at https://github.com/pandas-dev/pandas/issues/54466
+          
+    import pandas as pd
+
+src\main.py:120
+  C:\Users\KevinTSAGUE\michi-app\apps\api\src\main.py:120: DeprecationWarning: The `graphiql` argument is deprecated in favor of `graphql_ide`
+    graphql_app = GraphQLRouter(
+
+tests/test_graphql_integration.py::test_login_mutation
+  C:\Users\KevinTSAGUE\AppData\Roaming\Python\Python312\site-packages\pytest_asyncio\plugin.py:749: DeprecationWarning: The event_loop fixture provided by pytest-asyncio has been redefined in
+  C:\Users\KevinTSAGUE\michi-app\apps\api\tests\conftest.py:26
+  Replacing the event_loop fixture with a custom implementation is deprecated
+  and will lead to errors in the future.
+  If you want to request an asyncio event loop with a scope other than function
+  scope, use the "scope" argument to the asyncio mark when marking the tests.
+  If you want to return different types of event loops, use the event_loop_policy
+  fixture.
+  
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+---------- coverage: platform win32, python 3.12.3-final-0 -----------
+Name                                                                               Stmts   Miss  Cover   Missing
+----------------------------------------------------------------------------------------------------------------
+src\__init__.py                                                                        0      0   100%
+src\core\di.py                                                                        50     21    58%   60-134
+src\core\graphql\context.py                                                           27      5    81%   42, 47, 52, 57, 62
+src\core\graphql\schema.py                                                            14      0   100%
+src\core\graphql\types.py                                                            286     45    84%   22-23, 45-52, 78-90, 119-120, 142-143, 163-164, 185-186, 214-215, 232-233, 237-238, 242-243, 247-249, 253-257, 288, 328-329, 360-361
+src\core\middleware\auth.py                                                           18     14    22%   22-42
+src\main.py                                                                           62     27    56%   27-32, 42-51, 92-110, 138, 149, 158-160
+src\modules\auth\__init__.py                                                           4      0   100%
+src\modules\auth\adapters\invitation_resolvers.py                                     38     21    45%   17-26, 44-56, 70-74, 82-86
+src\modules\auth\adapters\org_resolvers.py                                            59     36    39%   20-25, 30-41, 48-61, 69-78, 86-95, 100-104, 112-117
+src\modules\auth\adapters\resolvers.py                                                50     29    42%   20-28, 35-38, 46-54, 64, 69-73, 82-104
+src\modules\auth\application\__init__.py                                               3      0   100%
+src\modules\auth\application\auth_service.py                                         110     87    21%   62-67, 76-100, 116-139, 152-203, 207, 217-235, 246-257, 261-266
+src\modules\auth\application\org_service.py                                          110     80    27%   62-67, 82-119, 135-147, 163-198, 202-224, 228, 232-233, 237, 241-252, 256-258, 262-263, 267
+src\modules\auth\constants.py                                                         18      0   100%
+src\modules\auth\decorators.py                                                        61     46    25%   18-61, 74-107
+src\modules\auth\domain\__init__.py                                                    4      0   100%
+src\modules\auth\domain\entities.py                                                   93     13    86%   64-65, 69, 72, 75, 95, 102, 106, 123-125, 146, 150
+src\modules\auth\domain\ports.py                                                      19      0   100%
+src\modules\auth\domain\value_objects.py                                              49     18    63%   34-35, 38, 42, 56-58, 62, 65, 68, 90-91, 97, 111-113, 116, 119
+src\modules\auth\infrastructure\__init__.py                                            3      0   100%
+src\modules\auth\infrastructure\mappers.py                                            19     11    42%   33, 47-53, 66-72, 82-96
+src\modules\auth\infrastructure\persistence\models.py                                 68      2    97%   45, 74
+src\modules\auth\infrastructure\repositories.py                                      130     88    32%   46, 49-59, 62-72, 75-79, 83-92, 96-105, 111-113, 116-125, 132, 135-139, 142-146, 150-152, 155-160, 167, 170-177, 180-182, 185-188, 191-196, 199, 209-220, 227, 230-234, 237-240, 243-245, 248-262, 267-275, 278-281, 284-292
+src\modules\auth\infrastructure\security_adapters.py                                  21     10    52%   24-25, 28, 40-47, 50-51
+src\modules\auth\models.py                                                             2      0   100%
+src\modules\billing\__init__.py                                                        2      0   100%
+src\modules\billing\decorators.py                                                     31     18    42%   20-49
+src\modules\billing\resolvers.py                                                      75     53    29%   18-35, 44-89, 96-136
+src\modules\billing\router.py                                                         23     13    43%   20-38
+src\modules\billing\service.py                                                       127    110    13%   16-18, 32-49, 55-70, 76-91, 97-110, 116-133, 137-161, 167-183, 189-247
+src\modules\billing\types.py                                                          13      0   100%
+src\modules\decisions\adapters\graphql_types.py                                       39      0   100%
+src\modules\decisions\adapters\resolvers.py                                           34     19    44%   29-39, 85-104
+src\modules\decisions\application\decisions_service.py                                76     61    20%   30-33, 44-168, 187
+src\modules\decisions\domain\entities.py                                              35      0   100%
+src\modules\forecasting\__init__.py                                                    0      0   100%
+src\modules\forecasting\adapters\resolvers.py                                         59     22    63%   22-24, 27-29, 41-43, 49-56, 61-66, 79, 87-89, 102-104
+src\modules\forecasting\application\forecasting_service.py                            94     78    17%   35-39, 45-120, 133-215, 223-227, 231-243
+src\modules\forecasting\domain\entities.py                                            31      0   100%
+src\modules\forecasting\domain\ports.py                                               13      0   100%
+src\modules\forecasting\infrastructure\persistence\models.py                          39      2    95%   43, 95
+src\modules\forecasting\infrastructure\repositories\cleaned_demand_repository.py      24     11    54%   15, 18, 32-39, 42-44, 47-62
+src\modules\forecasting\infrastructure\repositories\prediction_repository.py          50     33    34%   17, 20, 37-40, 43-76, 79-81, 84-91, 94-102
+src\modules\forecasting\schemas.py                                                    19      0   100%
+src\modules\intelligence\__init__.py                                                   0      0   100%
+src\modules\intelligence\algorithms\__init__.py                                        7      0   100%
+src\modules\intelligence\algorithms\abc_analysis.py                                   26     23    12%   26-68
+src\modules\intelligence\algorithms\out_of_stock_correction.py                        27     23    15%   61-98, 115-125
+src\modules\intelligence\algorithms\outlier_detection.py                              57     50    12%   95-173, 189-199
+src\modules\intelligence\algorithms\predictions.py                                    21     17    19%   66-75, 112-125
+src\modules\intelligence\algorithms\run_rate.py                                       39     33    15%   38-86, 101-111
+src\modules\intelligence\algorithms\seasonality.py                                    23     18    22%   27-48, 54-60
+src\modules\intelligence\analytics\__init__.py                                         4      0   100%
+src\modules\intelligence\analytics\financial_kpis.py                                  38     25    34%   53-86
+src\modules\intelligence\analytics\health_score.py                                    14     12    14%   52-69
+src\modules\intelligence\analytics\risk_scoring.py                                    42     22    48%   75-132
+src\modules\inventory\__init__.py                                                      0      0   100%
+src\modules\inventory\adapters\resolvers.py                                           90     50    44%   23-37, 50-53, 65-77, 82-87, 93-98, 103-105, 112-113, 118-119, 131-138, 153-172
+src\modules\inventory\application\alert_service.py                                    45     33    27%   26-29, 35-88, 98-109
+src\modules\inventory\application\email_service.py                                    53     46    13%   25-81, 87-127
+src\modules\inventory\application\inventory_service.py                                85     72    15%   24-26, 39-93, 102-119, 129-140, 150-176, 189-203
+src\modules\inventory\application\omnichannel_service.py                              54     22    59%   42-43, 49-101
+src\modules\inventory\domain\entities.py                                              76      0   100%
+src\modules\inventory\domain\ports.py                                                 10      0   100%
+src\modules\inventory\infrastructure\persistence\models.py                           106      2    98%   56, 100
+src\modules\inventory\infrastructure\repositories\alert_repository.py                 57     39    32%   16, 19, 30-33, 36-45, 48-69, 72-84, 87-90, 93-96, 99-105
+src\modules\inventory\infrastructure\repositories\product_repository.py               57     40    30%   16, 19, 39-42, 45-54, 57-67, 70-105, 108-119, 122-124
+src\modules\inventory\infrastructure\repositories\sales_log_repository.py             24     11    54%   15, 18, 27-34, 37-39, 42-52
+src\modules\inventory\infrastructure\repositories\store_repository.py                 44     30    32%   15, 18, 32-35, 38-42, 45-52, 55-80
+src\modules\inventory\models.py                                                        2      0   100%
+src\modules\shopify\__init__.py                                                        0      0   100%
+src\modules\shopify\auth_routes.py                                                    46     32    30%   19-34, 46-105
+src\modules\shopify\mock_generator.py                                                 78     67    14%   78-86, 98-136, 157-207, 219-233
+src\modules\shopify\resolvers.py                                                      75     33    56%   57-63, 84, 89-117, 139-167
+src\modules\shopify\schemas.py                                                        36      0   100%
+src\modules\shopify\service.py                                                        56     45    20%   18, 25-93
+----------------------------------------------------------------------------------------------------------------
+TOTAL                                                                               3394   1718    49%
+Coverage HTML written to dir htmlcov
+
+=========================== short test summary info ===========================
+ERROR tests/test_graphql_integration.py::test_login_mutation - sqlalchemy.exc...
+ERROR tests/test_graphql_integration.py::test_me_query_without_auth - sqlalch...
+ERROR tests/test_graphql_integration.py::test_me_query_with_auth - sqlalchemy...
+ERROR tests/test_graphql_integration.py::test_health_endpoint - sqlalchemy.ex...
+======================= 47 warnings, 4 errors in 12.31s =======================

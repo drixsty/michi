@@ -69,7 +69,13 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         // US 19.2: Redirect to onboarding if no organization found
         const isAuthOrOnboarding = isAuthPage || pathname === '/onboarding';
         if (memberships.length === 0 && !isAuthOrOnboarding) {
-          window.location.href = '/onboarding';
+          console.log("[Store] No organizations found. Waiting 1.5s before redirecting to onboarding...");
+          setTimeout(() => {
+            // Re-check memberships before redirecting (might have updated if refetch happened)
+            if (memberships.length === 0 && !isAuthOrOnboarding) {
+               window.location.href = '/onboarding';
+            }
+          }, 1500);
           return;
         }
 

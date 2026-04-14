@@ -76,6 +76,7 @@ export function Navbar() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const [searchValue, setSearchValue] = React.useState(searchParams.get('q') || '');
+  const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
 
   const { user, currentOrganization } = useStore();
@@ -148,46 +149,69 @@ export function Navbar() {
 
               <button
                 onClick={() => setIsNotificationOpen(true)}
+                data-testid="notification-bell"
                 className="p-2 text-muted-foreground hover:text-foreground transition-all relative hover:bg-accent rounded-lg"
               >
                 <Bell className="h-5 w-5" />
                 {hasUnread && (
-                  <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                  <span 
+                    data-testid="notification-badge"
+                    className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--primary),0.5)]" 
+                  />
                 )}
               </button>
               
-              <div className="relative group/user">
+              <div className="relative">
                 <button 
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   data-testid="user-menu-button"
-                  className="w-9 h-9 rounded-full bg-accent border border-border flex items-center justify-center overflow-hidden cursor-default ml-1"
+                  data-user-loaded={!!user}
+                  className="w-9 h-9 rounded-full bg-accent border border-border flex items-center justify-center overflow-hidden ml-1 hover:bg-accent/80 transition-colors"
                 >
-                  <User className="h-5 w-5 text-muted-foreground" />
+                  <User className={cn("h-5 w-5 transition-colors", isUserMenuOpen ? "text-primary" : "text-muted-foreground")} />
                 </button>
                 
                 {/* User Dropdown */}
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border opacity-0 invisible group-hover/user:opacity-100 group-hover/user:visible transition-all duration-200 transform origin-top-right scale-95 group-hover/user:scale-100 py-1">
-                  <Link href="/dashboard/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>Mon profil</span>
-                  </Link>
-                  <Link href="/dashboard?tab=organization" className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                    <span>Mon organisation</span>
-                  </Link>
-                  <div className="h-px bg-border my-1" />
-                  <button 
-                    onClick={() => {
-                      localStorage.removeItem('michi_token');
-                      router.push('/login');
-                      router.refresh();
-                    }}
-                    data-testid="logout-button"
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Déconnexion</span>
-                  </button>
-                </div>
+                {isUserMenuOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-0" 
+                      onClick={() => setIsUserMenuOpen(false)} 
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border z-10 py-1 animate-in fade-in zoom-in-95 duration-100">
+                      <Link 
+                        href="/dashboard/profile" 
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                      >
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <span>Mon profil</span>
+                      </Link>
+                      <Link 
+                        href="/dashboard?tab=organization" 
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                      >
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                        <span>Mon organisation</span>
+                      </Link>
+                      <div className="h-px bg-border my-1" />
+                      <button 
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          localStorage.removeItem('michi_token');
+                          router.push('/login');
+                          router.refresh();
+                        }}
+                        data-testid="logout-button"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Déconnexion</span>
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
