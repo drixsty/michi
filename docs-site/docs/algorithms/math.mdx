@@ -1,0 +1,64 @@
+# Algorithmes de Prévision
+
+Cette section détaille les fondements mathématiques des algorithmes utilisés par la plateforme Michi pour le nettoyage des données et les prédictions de stocks.
+
+## 1. Run Rate (Taux de Vente Quotidien)
+
+Le **Run Rate** est la mesure de la vitesse à laquelle un produit s'écoule. Contrairement à une simple moyenne, Michi utilise une **médiane glissante adaptative** pour ignorer le bruit et les anomalies.
+
+### Formule de base
+Le run rate à un jour $j$ est calculé sur une fenêtre glissante $W$ (généralement 30 jours) en ne conservant que les jours où le produit était réellement disponible (hors ruptures de stock).
+
+$$
+RR_j = \text{median}\left( \{ \text{sales}_i \mid i \in [j-W+1, j], \text{is\_stockout}_i = \text{False} \} \right)
+$$
+
+### Fenêtre Adaptative (Adaptive Window)
+Pour être réactif aux tendances soudaines (saisonnalité forte, buzz), Michi calcule un **Momentum** :
+
+$$
+\text{Momentum} = \frac{\text{Moyenne}_{7j}}{\text{Moyenne}_{30j}}
+$$
+
+- Si $\text{Momentum} > 1.2$ : On utilise une fenêtre courte de **7 jours** pour capturer l'accélération.
+- Sinon : On utilise la fenêtre standard de **30 jours** pour privilégier la stabilité.
+
+---
+
+## 2. Détection d'Outliers (IQR)
+
+Pour éviter que des erreurs de saisie ou des commandes groupées exceptionnelles ne polluent les prévisions, nous utilisons la méthode de l'**Écart Interquartile (IQR)**.
+
+### Calcul des Bornes
+On définit $Q1$ (25e percentile) et $Q3$ (75e percentile) des ventes sur une période donnée.
+
+$$
+\text{IQR} = Q3 - Q1
+$$
+$$
+\text{Borne Haute} = Q3 + 1.5 \times \text{IQR}
+$$
+
+### Règle de Détection
+Un jour est marqué comme **outlier** si :
+
+$$
+\text{Ventes}_j > \text{Borne Haute} \quad \text{ET} \quad \text{Stock}_j > 0
+$$
+
+> [!NOTE]
+> Michi ne corrige que les **pics hauts**. Les valeurs basses sont conservées car elles représentent une demande réelle faible, et non une anomalie technique.
+
+---
+
+## 3. Quantité de Réapprovisionnement
+
+La quantité suggérée à commander est basée sur le Run Rate et le délai de livraison (Lead Time).
+
+$$
+Q_{\text{reorder}} = \max\left( \text{MOQ}, (RR \times \text{LeadTime}) - \text{Stock}_{\text{actuel}} \right)
+$$
+
+Où :
+- **MOQ** : Minimum Order Quantity (Quantité minimale de commande).
+- **LeadTime** : Délai en jours pour recevoir la marchandise.

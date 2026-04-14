@@ -43,7 +43,7 @@ Sprint 17 ✅ [■■■■■■■■■■] 100%  SaaS Enterprise : Monétisa
 Sprint 18 ⏳ [□□□□□□□□□□] 0%    SaaS Enterprise : Multi-Store UX & Dashboard Global
 Sprint 19 ✅ [■■■■■■■■■■] 100%  Advanced Multi-Tenant Onboarding & Lifecycle
 Sprint 20 ✅ [■■■■■■■■■■] 100%  Advanced IAM & Granular Permissions (RBAC)
-Sprint 21 🚀 [□□□□□□□□□□]   0%  DDD Hexagonal + Monorepo apps/ (api/web/mobile) + Typage + Tests + Docs + i18n
+Sprint 21 🚀 [■■■■■■■■□□]  80%  DDD Hexagonal + Monorepo apps/ (api/web/mobile) + Typage + Tests + Docs + i18n
 ```
 
 ---
@@ -1157,7 +1157,7 @@ michi-app/
 
 | ID | User Story | Points | Priorité | Statut |
 |----|-----------|--------|----------|--------|
-| US 21.1 | **Monorepo Setup** — Initialiser npm workspaces, renommer `backend/` → `apps/api/`, `frontend/` → `apps/web/`, créer `apps/mobile/` et `packages/` | 5 | P0 | ⬜ Todo |
+| US 21.1 | **Monorepo Setup** — Initialiser npm workspaces, renommer `backend/` → `apps/api/`, `frontend/` → `apps/web/`, créer `apps/mobile/` et `packages/` | 5 | P0 | ✅ Done |
 | US 21.2 | **Package `types` partagé** — Types TypeScript extraits de `apps/web/` vers `packages/types/`, générés depuis le schema GraphQL | 5 | P0 | ⬜ Todo |
 | US 21.3 | **Package `ui` Design System** — Extraire les tokens (couleurs, typo, spacing) et les composants partagés (Button, Badge, Card) dans `packages/ui/` | 5 | P1 | ⬜ Todo |
 | US 21.4 | **`apps/mobile/` Bootstrap** — Initialiser Expo + Expo Router, Apollo Client, configuration `packages/types` et `packages/ui` | 8 | P1 | ⬜ Todo |
@@ -1171,14 +1171,14 @@ michi-app/
 
 | ID | User Story | Points | Priorité | Statut |
 |----|-----------|--------|----------|--------|
-| US 21.6 | **Domain Auth** — `entities.py` (UserEntity, OrgEntity), `value_objects.py` (Email, HashedPassword), `ports.py` (IUserRepository, IOrgRepository, IInvitationRepository) | 5 | P0 | ⬜ Todo |
-| US 21.7 | **Infrastructure Auth** — `SQLAlchemyUserRepository`, `SQLAlchemyOrgRepository`, `SQLAlchemyInvitationRepository` — migration de tout le SQL de `schema.py` et `auth/service.py` | 5 | P0 | ⬜ Todo |
-| US 21.8 | **Application Auth** — `AuthService` et `OrgService` refactorisés : reçoivent `IRepository`, pas de SQLAlchemy. Migration de la logique de `schema.py` (create_org, switch_org, invite, permissions) | 5 | P0 | ⬜ Todo |
-| US 21.9 | **Resolvers Auth minces** — `auth/adapters/resolvers.py` : 15 resolvers, chacun < 15 lignes. `schema.py` → < 200 lignes. Zéro `select()` dans les resolvers | 8 | P0 | ⬜ Todo |
-| US 21.10 | **Domain + Infrastructure Inventory** — Ports `IProductRepository`, `IStoreRepository`, `IAlertRepository`. Repositories SQLAlchemy. Service refactorisé | 8 | P0 | ⬜ Todo |
-| US 21.11 | **Domain + Infrastructure Forecasting** — Ports `IPredictionRepository`. Repository SQLAlchemy. Service refactorisé. Algorithmes inchangés (déjà bien isolés) | 5 | P1 | ⬜ Todo |
+| US 21.6 | **Domain Auth** — `entities.py` (UserEntity, OrgEntity), `value_objects.py` (Email, HashedPassword), `ports.py` (IUserRepository, IOrgRepository, IInvitationRepository) | 5 | P0 | ✅ Done |
+| US 21.7 | **Infrastructure Auth** — `SQLAlchemyUserRepository`, `SQLAlchemyOrgRepository`, `SQLAlchemyInvitationRepository` — migration de tout le SQL de `schema.py` et `auth/service.py` | 5 | P0 | ✅ Done |
+| US 21.8 | **Application Auth** — `AuthService` et `OrgService` refactorisés : reçoivent `IRepository`, pas de SQLAlchemy. Migration de la logique de `schema.py` (create_org, switch_org, invite, permissions) | 5 | P0 | ✅ Done |
+| US 21.9 | **Resolvers Auth minces** — `auth/adapters/resolvers.py` : 15 resolvers, chacun < 15 lignes. `schema.py` — < 200 lignes. Zéro `select()` dans les resolvers | 8 | P0 | ✅ Done |
+| US 21.10 | **Domain + Infrastructure Inventory** — Ports `IProductRepository`, `IStoreRepository`, `IAlertRepository`. Repositories SQLAlchemy. Service refactorisé | 8 | P0 | ✅ Done |
+| US 21.11 | **Domain + Infrastructure Forecasting** — Ports `IPredictionRepository`. Repository SQLAlchemy. Service refactorisé. Algorithmes inchangés (déjà bien isolés) | 5 | P1 | ✅ Done |
 | US 21.12 | **DI Container** — `core/di.py` : factory `build_services(db, billing)`. `GraphQLContext` expose les services pré-construits. Resolvers utilisent `info.context.auth_service` | 3 | P1 | ⬜ Todo |
-| US 21.13 | **Fix Google OAuth async** — Remplacer `requests.get()` (sync) par `httpx.AsyncClient` (async) dans `googleLogin` | 2 | P0 | ⬜ Todo |
+| US 21.13 | **Fix Google OAuth async** — Remplacer `requests.get()` (sync) par `httpx.AsyncClient` (async) dans `googleLogin` | 2 | P0 | ✅ Done |
 
 **Total Epic B :** 41 pts
 
@@ -1188,7 +1188,7 @@ michi-app/
 
 | ID | User Story | Points | Priorité | Statut |
 |----|-----------|--------|----------|--------|
-| US 21.14 | **Typage Backend `mypy --strict`** — Annoter toutes les fonctions publiques, éliminer les `Any` implicites, configurer `pyproject.toml` avec `[tool.mypy] strict = true` | 5 | P0 | ⬜ Todo |
+| US 21.14 | **Typage Backend `mypy --strict`** — Annoter toutes les fonctions publiques, éliminer les `Any` implicites, configurer `pyproject.toml` avec `[tool.mypy] strict = true` | 5 | P0 | ✅ Done |
 | US 21.15 | **Génération types GraphQL Frontend** — Configurer `graphql-codegen` pour générer `packages/types/src/graphql.ts` depuis le schema SDL. Les queries/mutations utilisent les types générés | 5 | P0 | ⬜ Todo |
 | US 21.16 | **Typage Frontend `tsc --strict`** — Éliminer tous les `as any`, les props non typées, activer `"strict": true` dans `tsconfig.json`. Zéro erreur `tsc --noEmit` | 3 | P1 | ⬜ Todo |
 
@@ -1214,10 +1214,10 @@ michi-app/
 
 | ID | User Story | Points | Priorité | Statut |
 |----|-----------|--------|----------|--------|
-| US 21.22 | **E2E Auth** — Playwright : register, login, logout, onboarding wizard, org-switch. Page objects pattern. `.env.test` | 5 | P0 | ⬜ Todo |
+| US 21.22 | **E2E Auth** — Playwright : register, login, logout, onboarding wizard, org-switch. Page objects pattern. `.env.test` | 5 | P0 | 🏗️ In Progress |
 | US 21.23 | **E2E Dashboard & Inventaire** — Playwright : stats cards, product table (filtre/tri/pagination), product detail, connect source, sync, alertes | 5 | P1 | ⬜ Todo |
-| US 21.24 | **Tests Core Backend** — pytest unitaire sur chaque service refactorisé (auth, org, inventory, forecasting, decisions). Repositories avec SQLite in-memory. Coverage ≥ 85% | 5 | P0 | ⬜ Todo |
-| US 21.25 | **Tests Composants Frontend** — Vitest + @testing-library/react : ProductTable, StatsOverview, SalesChart, useAuth hook. Coverage ≥ 60% | 3 | P1 | ⬜ Todo |
+| US 21.24 | **Tests Core Backend** — pytest unitaire sur chaque service refactorisé (auth, org, inventory, forecasting, decisions). Repositories avec SQLite in-memory. Coverage ≥ 85% | 5 | P0 | 🏗️ In Progress (60%) |
+| US 21.25 | **Tests Composants Frontend** — Vitest + @testing-library/react : ProductTable, StatsOverview, SalesChart, useAuth hook. Coverage ≥ 60% | 3 | P1 | ✅ Done |
 | US 21.26 | **CI/CD GitHub Actions** — Workflow `test-backend.yml` (pytest + PostgreSQL service) et `test-frontend.yml` (vitest + playwright headless). Badge status dans README | 3 | P1 | ⬜ Todo |
 
 **Total Epic E :** 21 pts
@@ -1240,7 +1240,7 @@ michi-app/
 
 | ID | User Story | Points | Priorité | Statut |
 |----|-----------|--------|----------|--------|
-| US 21.30 | **Création du module `intelligence/`** — Déplacer les 6 algorithmes de `forecasting/algorithms/` vers `intelligence/algorithms/`. Extraire les calculs BI purs de `decisions/service.py` vers `intelligence/analytics/` (health_score, financial_kpis, risk_scoring). Créer `intelligence/pipeline/cleaning_pipeline.py` (orchestration OOS→IQR→RunRate sans DB). Refactorer `forecasting/service.py` et `decisions/service.py` pour déléguer à `intelligence/`. Migrer les 5 tests existants + écrire 3 nouveaux tests analytics | 8 | P0 | ⬜ Todo |
+| US 21.30 | **Création du module `intelligence/`** — Déplacer les 6 algorithmes de `forecasting/algorithms/` vers `intelligence/algorithms/`. Extraire les calculs BI purs de `decisions/service.py` vers `intelligence/analytics/` (health_score, financial_kpis, risk_scoring). Créer `intelligence/pipeline/cleaning_pipeline.py` (orchestration OOS→IQR→RunRate sans DB). Refactorer `forecasting/service.py` et `decisions/service.py` pour déléguer à `intelligence/`. Migrer les 5 tests existants + écrire 3 nouveaux tests analytics | 8 | P0 | ✅ Done |
 
 **Critères d'Acceptation US 21.30 :**
 - [ ] `apps/api/src/modules/intelligence/` créé avec les 4 sous-dossiers (`algorithms/`, `analytics/`, `pipeline/`, `domain/`)
@@ -1413,13 +1413,13 @@ Semaine 4 (Sprint 21B) :
 
 ### Checklist Sprint 21 — Documentation
 
-- [ ] `docs-site/` initialisé (Docusaurus 3)
-- [ ] Navigation : Guide | Architecture | API Reference | Sprints | Algorithmes
-- [ ] 7 fichiers Markdown existants migrés en MDX
-- [ ] Diagrammes Mermaid (hexagonal DDD, auth flow, forecasting pipeline, ERD)
-- [ ] Script `export_schema.py` + page API GraphQL générée
+- [x] `docs-site/` initialisé (Docusaurus 3)
+- [x] Navigation : Guide | Architecture | API Reference | Sprints | Algorithmes
+- [x] 7 fichiers Markdown existants migrés en MDX
+- [x] Diagrammes Mermaid (hexagonal DDD, auth flow, forecasting pipeline, ERD)
+- [x] Script `export_schema.py` + page API GraphQL générée
 - [ ] Guide Quickstart (setup < 10 min) validé
-- [ ] `npm run build` → 0 warning
+- [x] `npm run build` → 0 warning
 
 ---
 

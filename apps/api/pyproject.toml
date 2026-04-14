@@ -1,0 +1,47 @@
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
+# Pandas/NumPy return Any from many operations — allow it
+disallow_any_generics = false
+
+# Test files: relax untyped def requirement
+[[tool.mypy.overrides]]
+module = "src.modules.*.tests.*"
+disallow_untyped_defs = false
+check_untyped_defs = false
+
+# SQLAlchemy classic-style models are untyped (Column[T] → T at runtime)
+# Strict typing requires SQLAlchemy 2.0 mapped_column migration (US post-Sprint 21)
+[[tool.mypy.overrides]]
+module = "src.modules.*.models"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "src.core.*"
+ignore_errors = true
+
+# Auth infrastructure interacts with untyped SQLAlchemy models → Column[T] mismatches
+# Root cause: classic Column() declarations; fix planned with mapped_column() migration
+[[tool.mypy.overrides]]
+module = "src.modules.auth.infrastructure.*"
+ignore_errors = true
+
+# Auth application services call model attributes typed as Column[T] by mypy
+[[tool.mypy.overrides]]
+module = "src.modules.auth.application.*"
+ignore_errors = true
+
+# Legacy auth services — to be replaced by thin resolvers in US 21.9
+# Column[T] mismatches from classic SQLAlchemy style
+[[tool.mypy.overrides]]
+module = "src.modules.auth.service"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "src.modules.auth.invitation_service"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "src.modules.auth.decorators"
+ignore_errors = true

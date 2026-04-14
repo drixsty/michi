@@ -1,4 +1,4 @@
-.PHONY: help install dev-backend dev-frontend test clean docker-up docker-down seed
+.PHONY: help install dev-backend dev-frontend dev-mobile api web test clean docker-up docker-down seed schema
 
 help: ## Affiche l'aide
 	@echo "Michi 道 - Commandes disponibles:"
@@ -6,11 +6,13 @@ help: ## Affiche l'aide
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 install: ## Installe toutes les dépendances (backend + frontend)
+	@echo "📦 Installation root..."
+	npm install
 	@echo "📦 Installation backend..."
-	cd backend && pip install -r requirements.txt
+	cd apps/api && pip install -r requirements.txt
 	@echo ""
 	@echo "📦 Installation frontend..."
-	cd frontend && npm install
+	cd apps/web && npm install
 	@echo ""
 	@echo "✅ Installation terminée !"
 
@@ -29,38 +31,53 @@ docker-down: ## Arrête les services Docker
 
 seed: ## Seed la DB (crée tables + user de dev)
 	@echo "🌱 Seeding database..."
-	cd backend && python -m alembic upgrade head && python scripts/seed_dev_data.py
+	cd apps/api && python -m alembic upgrade head && python scripts/seed_dev_data.py
 
 seed-v2: ## Seed la DB v2 (SaaS Multi-Tenant Enterprise) [S16]
 	@echo "🌱 Seeding database v2 (SaaS)..."
-	cd backend && set PYTHONPATH=. && python scripts/seed_v2.py
+	cd apps/api && set PYTHONPATH=. && python scripts/seed_v2.py
 
 seed-demo: ## Régénère le dataset mock démo (50 produits + 365j historique)
 	@echo "🌱 Seeding demo data..."
-	cd backend && python scripts/seed_demo.py
+	cd apps/api && python scripts/seed_demo.py
 
 seed-demo-small: ## Régénère un dataset mock réduit (10 produits — tests rapides)
 	@echo "🌱 Seeding small demo data..."
-	cd backend && python scripts/seed_demo.py --count 10
+	cd apps/api && python scripts/seed_demo.py --count 10
+
+schema: ## Exporte le schéma GraphQL (SDL)
+	@echo "📡 Exportation du schéma GraphQL..."
+	cd apps/api && set PYTHONPATH=. && python scripts/export_schema.py > ../../packages/types/schema.graphql
+	@echo "✅ Schéma exporté dans packages/types/schema.graphql"
+
+api: dev-backend ## Alias pour dev-backend
+web: dev-frontend ## Alias pour dev-frontend
+mobile: dev-mobile ## Alias pour dev-mobile
 
 dev-backend: ## Lance le backend (port 8000)
 	@echo "🚀 Démarrage backend..."
-	cd backend && uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+	cd apps/api && uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
 dev-frontend: ## Lance le frontend (port 3000)
 	@echo "🚀 Démarrage frontend..."
-	cd frontend && npm run dev
+	cd apps/web && npm run dev
 
-test: ## Lance tous les tests (backend)
+dev-mobile: ## Lance l'application mobile (Expo)
+	@echo "🚀 Démarrage mobile..."
+	cd apps/mobile && npx expo start
+
+test: ## Lance tous les tests (backend + frontend)
 	@echo "🧪 Tests backend..."
-	cd backend && pytest
+	cd apps/api && pytest
 	@echo ""
 	@echo "🧪 Tests frontend..."
-	cd frontend && npm test
+	cd apps/web && npm test
+
+test-all: test ## Alias pour test
 
 test-cov: ## Lance les tests avec coverage
 	@echo "🧪 Tests avec coverage..."
-	cd backend && pytest --cov=src --cov-report=html --cov-report=term
+	cd apps/api && pytest --cov=src --cov-report=html --cov-report=term
 
 clean: ## Nettoie les fichiers temporaires
 	@echo "🧹 Nettoyage..."
@@ -68,7 +85,7 @@ clean: ## Nettoie les fichiers temporaires
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name "node_modules" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".next" -exec rm -rf {} + 2>/dev/null || true
-	rm -rf backend/htmlcov backend/.coverage
+	rm -rf apps/api/htmlcov apps/api/.coverage
 	@echo "✅ Nettoyage terminé !"
 
 setup: docker-up install seed ## Setup complet du projet
@@ -76,8 +93,8 @@ setup: docker-up install seed ## Setup complet du projet
 	@echo "✨ Projet Michi initialisé !"
 	@echo ""
 	@echo "🔗 Prochaines étapes:"
-	@echo "  1. Démarrer le backend  : make dev-backend"
-	@echo "  2. Démarrer le frontend : make dev-frontend"
+	@echo "  1. Démarrer le backend  : make api"
+	@echo "  2. Démarrer le frontend : make web"
 	@echo "  3. Ouvrir http://localhost:3000/login"
 	@echo ""
 	@echo "📧 Credentials:"
