@@ -10,6 +10,8 @@ if TYPE_CHECKING:
     from src.modules.forecasting.resolvers import CleanedDemandType, PredictionType
 
 from src.core.exceptions import UnauthenticatedException
+from src.modules.auth.decorators import require_permission
+from src.modules.auth.constants import MichiPermission
 from loguru import logger
 from .service import InventoryService
 from .alert_service import AlertService
@@ -249,9 +251,8 @@ class OmnichannelProductType:
 @strawberry.type
 class InventoryQuery:
     @strawberry.field
+    @require_permission(MichiPermission.INVENTORY_VIEW)
     async def products(self, info, store_id: Optional[strawberry.ID] = None, id: Optional[strawberry.ID] = None) -> List[ProductType]:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         db = info.context.db
         if store_id:
@@ -294,9 +295,8 @@ class InventoryQuery:
         ]
 
     @strawberry.field
+    @require_permission(MichiPermission.INVENTORY_VIEW)
     async def unread_alerts(self, info, store_id: Optional[strawberry.ID] = None) -> List[AlertType]:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
         
         from .alert_service import AlertService
         alert_service = AlertService(info.context.db)
@@ -318,9 +318,8 @@ class InventoryQuery:
         ]
 
     @strawberry.field
+    @require_permission(MichiPermission.INVENTORY_VIEW)
     async def suppliers(self, info, store_id: strawberry.ID) -> List[SupplierType]:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
         
         service = SupplierService(info.context.db)
         suppliers = await service.get_suppliers(str(store_id))
@@ -336,10 +335,9 @@ class InventoryQuery:
         ]
 
     @strawberry.field
+    @require_permission(MichiPermission.INVENTORY_VIEW)
     async def omnichannel_inventory(self, info) -> List[OmnichannelProductType]:
         """Vue unifiée de l'organisation active (US 9.1 / 9.5)."""
-        if not info.context.user_id or not info.context.org_id:
-            raise UnauthenticatedException()
 
         service = OmnichannelService(info.context.db)
         items = await service.get_omnichannel_inventory(str(info.context.org_id))
@@ -377,10 +375,9 @@ class InventoryQuery:
         ]
 
     @strawberry.field
+    @require_permission(MichiPermission.INVENTORY_VIEW)
     async def export_replenishment_csv(self, info, store_id: strawberry.ID) -> str:
         """Génère le CSV de réapprovisionnement pour un Store."""
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         service = OmnichannelService(info.context.db)
         rows = await service.get_replenishment_export_data(str(store_id))
@@ -396,6 +393,7 @@ class InventoryQuery:
 @strawberry.type
 class InventoryMutation:
     @strawberry.mutation
+    @require_permission(MichiPermission.STORES_MANAGE)
     async def ingest_csv_data(
         self, 
         info, 
@@ -407,8 +405,6 @@ class InventoryMutation:
         stock_col: str = "stock",
         title_col: str = "title"
     ) -> IngestionResult:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         from src.modules.ingestion.service import IngestionService
         from src.modules.ingestion.connectors.csv import CSVConnector
@@ -436,9 +432,8 @@ class InventoryMutation:
         return IngestionResult(success=True, message="Import CSV réussi.", platform="csv", products_count=result["products_count"], sales_logs_count=result["sales_logs_count"])
 
     @strawberry.mutation
+    @require_permission(MichiPermission.INVENTORY_EDIT)
     async def mark_alert_as_read(self, info, alert_id: strawberry.ID) -> bool:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
         
         from sqlalchemy import update
         from .models import Alert
@@ -452,9 +447,8 @@ class InventoryMutation:
         return True
 
     @strawberry.mutation
+    @require_permission(MichiPermission.INVENTORY_EDIT)
     async def delete_alert(self, info, alert_id: strawberry.ID) -> bool:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
         
         from sqlalchemy import delete
         from .models import Alert
@@ -467,9 +461,8 @@ class InventoryMutation:
         return True
 
     @strawberry.mutation
+    @require_permission(MichiPermission.INVENTORY_EDIT)
     async def create_purchase_order(self, info, store_id: strawberry.ID, product_id: strawberry.ID, supplier_id: strawberry.ID, quantity: int, expected_days: int = 14) -> PurchaseOrderType:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
         
         from .models import Product, Supplier, PurchaseOrder
         from datetime import date, timedelta
@@ -489,9 +482,9 @@ class InventoryMutation:
         return PurchaseOrderType(id=strawberry.ID(str(po.id)), product_id=strawberry.ID(str(po.product_id)), supplier_id=strawberry.ID(str(po.supplier_id)), quantity=po.quantity, order_date=str(po.order_date), expected_arrival_date=str(po.expected_arrival_date), actual_arrival_date=None, status=po.status)
 
     @strawberry.mutation
+    @require_permission(MichiPermission.STORES_MANAGE)
     async def ingest_woocommerce_data(self, info, store_id: strawberry.ID, products_csv: str, orders_csv: str = "") -> IngestionResult:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
+        # if not info.context.user_id: ...
 
         from .models import PlatformSource
         from src.modules.ingestion.service import IngestionService
@@ -520,9 +513,8 @@ class InventoryMutation:
         return IngestionResult(success=True, message="Import WooCommerce réussi.", platform="woocommerce", products_count=result.get("products_count", 0), sales_logs_count=result.get("sales_logs_count", 0))
 
     @strawberry.mutation
+    @require_permission(MichiPermission.INVENTORY_EDIT)
     async def receive_purchase_order(self, info, po_id: strawberry.ID) -> bool:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
         
         from .models import PurchaseOrder
         from sqlalchemy import select
@@ -545,6 +537,7 @@ class InventoryMutation:
         return True
 
     @strawberry.mutation
+    @require_permission(MichiPermission.INVENTORY_EDIT)
     async def update_product_settings(
         self,
         info,
@@ -556,8 +549,7 @@ class InventoryMutation:
         cost_price: Optional[float] = None,
         sale_price: Optional[float] = None
     ) -> ProductType:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
+        # if not info.context.user_id: ...
 
         from .service import InventoryService
         service = InventoryService(info.context.db)
@@ -586,12 +578,11 @@ class InventoryMutation:
         )
 
     @strawberry.mutation(name="triggerOmnichannelSync")
+    @require_permission(MichiPermission.STORES_MANAGE)
     async def trigger_omnichannel_sync(self, info, store_id: Optional[strawberry.ID] = None) -> IngestionResult:
         """
         Déclenche la synchronisation pour un Store spécifique ou toute l'organisation.
         """
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         from src.modules.inventory.models import Store
         from src.modules.shopify.service import ShopifyService 

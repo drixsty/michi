@@ -45,16 +45,35 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const { data: userData, loading: userLoading, refetch: refetchUser } = useQuery(GET_ME, {
     skip: isAuthPage,
     fetchPolicy: 'network-only',
+    onError: (error) => {
+      // If we get an unauthenticated error during GET_ME, clear the stale session
+      const isUnauthenticated = error.graphQLErrors.some(e => e.extensions?.code === 'UNAUTHENTICATED');
+      if (isUnauthenticated && !isAuthPage) {
+        console.warn("[Store] Session expired or invalid, clearing context.");
+        localStorage.removeItem('michi_token');
+        localStorage.removeItem('michi_current_org');
+        if (pathname !== '/onboarding') {
+          window.location.href = '/login';
+        }
+      }
+    },
     onCompleted: (data) => {
       if (data?.me) {
+        const memberships = (data.me.organizations || []) as OrganizationMember[];
         const currentOrgId = data.me.currentOrganizationId;
-        const memberships = data.me.organizations as OrganizationMember[];
+        
+        // US 19.2: Redirect to onboarding if no organization found
+        const isAuthOrOnboarding = isAuthPage || pathname === '/onboarding';
+        if (memberships.length === 0 && !isAuthOrOnboarding) {
+          window.location.href = '/onboarding';
+          return;
+        }
+
         const activeMembership = memberships.find(m => m.organizationId === currentOrgId);
         
         if (activeMembership?.organization) {
           const org = activeMembership.organization;
           setCurrentOrganization(org);
-          // Persist chosen organization metadata for instant UI hydration on next reload
           localStorage.setItem('michi_current_org', JSON.stringify({
             id: org.id,
             name: org.name

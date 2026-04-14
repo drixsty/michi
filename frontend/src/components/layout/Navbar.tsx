@@ -20,6 +20,7 @@ import { useQuery } from '@apollo/client';
 import { GET_UNREAD_ALERTS } from '@/graphql/queries/getUnreadAlerts';
 import { NotificationPanel } from '../dashboard/NotificationPanel';
 import { OrgSwitcher } from './OrgSwitcher';
+import { useStore } from '@/context/StoreContext';
 
 const navItems = [
   { id: 'overview', label: 'Aperçu', icon: LayoutDashboard, href: '/dashboard' },
@@ -74,7 +75,10 @@ export function Navbar() {
   const [searchValue, setSearchValue] = React.useState(searchParams.get('q') || '');
   const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
 
+  const { user, currentOrganization } = useStore();
+  
   const { data: alertsData } = useQuery(GET_UNREAD_ALERTS, {
+    skip: !user || !currentOrganization,
     pollInterval: 30000 // Synchronisé avec la page dashboard
   });
 

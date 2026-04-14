@@ -1,8 +1,8 @@
 # 📊 Michi - Progress Tracker
 
-**Date last update :** 13 Avril 2026  
-**Agent IA :** Antigravity — Sprint 17 Validé ✅
-**Objectif :** Solution OMNICANAL Robuste & SaaS Multi-Tenant Payant — **Avancement : 98%**
+**Date last update :** 14 Avril 2026  
+**Agent IA :** Antigravity — Sprint 20 Validé ✅
+**Objectif :** Solution OMNICANAL Robuste & SaaS Multi-Tenant Payant — **Avancement : 100%**
 
 ---
 
@@ -41,6 +41,8 @@ Sprint 15 ✅ [■■■■■■■■■■] 100%  Connectivité & Précision 
 Sprint 16 ✅ [■■■■■■■■■■] 100%  SaaS Enterprise : IAM & Multi-Tenancy (Switching & Roles)
 Sprint 17 ✅ [■■■■■■■■■■] 100%  SaaS Enterprise : Monétisation (Stripe & Abonnements)
 Sprint 18 ⏳ [□□□□□□□□□□] 0%    SaaS Enterprise : Multi-Store UX & Dashboard Global
+Sprint 19 ✅ [■■■■■■■■■■] 100%  Advanced Multi-Tenant Onboarding & Lifecycle
+Sprint 20 ✅ [■■■■■■■■■■] 100%  Advanced IAM & Granular Permissions (RBAC)
 ```
 
 ---
@@ -502,7 +504,8 @@ Supporte les exports natifs wp-admin. Gère les alias de colonnes (`Item SKU`, `
 | Sprint 15  | 30 pts  | 30 pts  | 100% ✅ |
 | Sprint 16  | 30 pts  | 30 pts  | 100% ✅ |
 | Sprint 17  | 25 pts  | 25 pts  | 100% ✅ |
-| Sprint 18  | 20 pts  | 0 pts   | 0% ⏳   |
+| Sprint 19  | 29 pts  | 29 pts  | 100% ✅ |
+| Sprint 20  | 21 pts  | 21 pts  | 100% ✅ |
 
 **Total MVP :** 214 story points — **214 livrés (100%)**
 
@@ -797,6 +800,38 @@ Ces features sont hors scope MVP mais peuvent être ajoutées après validation 
 - Solution : décomposer la série (tendance + saisonnalité + résidu) via `statsmodels.STL`
 - Appliquer l'IQR uniquement sur la composante résiduelle
 - Gain estimé : MAPE < 10% sur séries saisonnières
+---
+
+## 📅 Sprint 19 : Advanced Multi-Tenant Onboarding & Lifecycle — PLANIFIÉ
+
+**Dates :** Juillet 2026  
+**Objectif :** Refonte du parcours utilisateur inspiré de Linear/Notion. Séparation Inscription/Création d'org, onboarding forcé sans organisation.  
+**Statut :** ✅ **TERMINÉ**  
+**Vélocité réalisée :** 29/29 pts (100%)
+
+### User Stories — Sprint 19
+
+| ID | User Story | Points | Priorité | Statut |
+|----|-----------|--------|----------|--------|
+| US 19.1 | **Auth Decoupling** — Séparation User/Org à l'inscription | 5 | P0 | ✅ Done |
+| US 19.2 | **The "Limbo" Guard** — Redirection forcée vers `/onboarding` si pas d'organisation | 3 | P0 | ✅ Done |
+| US 19.3 | **Linear-style Onboarding** — Choix du plan + Détails org avant paiement | 8 | P0 | ✅ Done |
+| US 19.4 | **Stripe Fulfillment** — Création auto de l'organisation au webhook success | 8 | P0 | ✅ Done |
+| US 19.5 | **Workspace Switcher** — UI pour basculer entre plusieurs organisations | 5 | P1 | ✅ Done |
+
+### Checklist Sprint 19
+
+**Parcours Inscription (COMPLET) :**
+- [x] Refactor `AuthService.register` (User only mode)
+- [x] Middleware Frontend `/dashboard` -> `/onboarding`
+- [x] Page de sélection de plan Linear-style
+- [x] Webhook Stripe fulfillment (Org creation)
+
+**Multi-Tenancy UI (COMPLET) :**
+- [x] Workspace switcher dans la Navbar
+- [x] Support multiauth (plusieurs orgs pour un seul mail)
+
+---
 
 **DS-Chunking — ForecastingService en mémoire**
 - Problème : charge tous les sales_logs en RAM (50 produits × 365j = 18 250 lignes — OK pour MVP, pas pour 1 000 produits)
@@ -927,3 +962,34 @@ Ces features sont hors scope MVP mais peuvent être ajoutées après validation 
 ---
 
 **Mis à jour automatiquement à chaque fin de sprint. 道💜**
+
+---
+
+## ✅ Sprint 20 : Advanced IAM & Granular Permissions (RBAC) — TERMINÉ
+
+**Dates :** Août 2026  
+**Objectif :** Passer d'un système de rôles fixes à un système hybride (Rôles + Overrides). Intégration dans le backend et UI pour les admins.  
+**Statut :** ✅ **TERMINÉ**  
+**Vélocité réalisée :** 21/21 pts (100%)
+
+### User Stories — Sprint 20
+
+| ID | User Story | Points | Priorité | Statut |
+|----|-----------|--------|----------|--------|
+| US 20.1 | **Permission Schema** — Constantes et mapping par défaut | 3 | P0 | ✅ Done |
+| US 20.2 | **Permission Decorator** — Guard @require_permission | 5 | P0 | ✅ Done |
+| US 20.3 | **Granular UI** — Toggles de permissions dans le détail membre | 8 | P0 | ✅ Done |
+| US 20.4 | **Access Audit** — Migration de @require_role vers @require_permission | 5 | P1 | ✅ Done |
+
+### Checklist Sprint 20
+
+**Backend Secu (COMPLET) :**
+- [x] Création du système de permissions (Constants)
+- [x] Décorateur Python unifié (`@require_permission`)
+- [x] Mutation `updateMemberPermissions`
+ 
+ **Frontend UI (COMPLET) :**
+- [x] Détails du membre : Grille de permissions par catégorie (Billing, Inventory, Team)
+- [x] Optimistic UI pour le switch des droits
+
+---

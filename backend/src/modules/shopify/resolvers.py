@@ -18,6 +18,8 @@ from src.modules.forecasting.resolvers import (
     CleanedDemandType
 )
 from src.modules.inventory.resolvers import SupplierType, ChannelBreakdownType, ProductType
+from src.modules.auth.decorators import require_permission
+from src.modules.auth.constants import MichiPermission
 
 
 # ── Strawberry Types ──────────────────────────────────────────────────────────
@@ -82,9 +84,8 @@ class ShopifyQuery:
 @strawberry.type
 class ShopifyMutation:
     @strawberry.mutation
+    @require_permission(MichiPermission.STORES_MANAGE)
     async def trigger_mock_data_sync(self, info, store_id: strawberry.ID) -> SyncResultType:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         s_id = str(store_id)
         service = ShopifyService(info.context.db)
@@ -109,6 +110,7 @@ class ShopifyMutation:
         )
 
     @strawberry.mutation
+    @require_permission(MichiPermission.INVENTORY_EDIT)
     async def update_product_settings(
         self, 
         info, 
@@ -120,8 +122,6 @@ class ShopifyMutation:
         Met à jour les paramètres logistiques d'un produit (Lead Time, MOQ).
         Nécessite authentication (JWT).
         """
-        if not info.context.org_id:
-            raise UnauthenticatedException()
 
         service = InventoryService(info.context.db)
         product = await service.update_product_settings(

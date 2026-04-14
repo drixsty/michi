@@ -6,6 +6,7 @@ from typing import List, Optional
 from loguru import logger
 import uuid
 import json
+from sqlalchemy import select
 
 from .types import (
     UserType, LoginInput, AuthPayload, UpdateProfileInput, 
@@ -20,7 +21,8 @@ from src.modules.forecasting.resolvers import ForecastingQuery, ForecastingMutat
 from src.modules.inventory.resolvers import InventoryQuery, InventoryMutation
 from src.modules.decisions.resolvers import DecisionQuery, DecisionMutation
 from src.modules.billing.resolvers import BillingQuery, BillingMutation
-from src.modules.auth.decorators import require_role
+from src.modules.auth.decorators import require_role, require_permission
+from src.modules.auth.constants import MichiPermission
 from src.core.exceptions import UnauthenticatedException, MichiException, ErrorCode
 import requests
 
@@ -247,6 +249,99 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         )
 
     @strawberry.mutation
+    async def create_organization(self, info, name: str, plan: str = "BASIC") -> AuthPayload:
+        """Crée une nouvelle organisation et retourne un nouveau token avec le contexte."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        import uuid
+        from src.modules.auth.models import Organization, OrganizationMember, UserRole
+        from src.modules.auth.service import AuthService
+        from src.modules.auth.schemas import UserSchema
+        from src.core.security import create_access_token
+        
+        # 1. Créer l'organisation
+        slug = f"org-{uuid.uuid4().hex[:8]}"
+        org = Organization(
+            name=name, 
+            slug=slug, 
+            plan=plan.upper()
+        )
+        info.context.db.add(org)
+        await info.context.db.flush()
+        
+        # 2. Lier l'utilisateur
+        user_id = uuid.UUID(str(info.context.user_id))
+        member = OrganizationMember(
+            user_id=user_id,
+            organization_id=org.id,
+            role=UserRole.ADMIN
+        )
+        info.context.db.add(member)
+        
+        # 3. Mettre à jour current_org de l'user
+        auth_service = AuthService(info.context.db, billing_service=info.context.billing)
+        user = await auth_service.get_user_by_id(info.context.user_id)
+        if user:
+            user.current_organization_id = org.id
+            
+        await info.context.db.flush()
+        
+        # 4. Sync Stripe (si activé)
+        if info.context.billing:
+            stripe_id = await info.context.billing.create_customer(
+                name=org.name, 
+                email=user.email, 
+                org_id=str(org.id)
+            )
+            if stripe_id:
+                org.stripe_customer_id = stripe_id
+                await info.context.db.flush()
+        
+        await info.context.db.commit()
+        
+        # 5. Refresh token with new org context
+        token_data = {
+            "user_id": str(user.id),
+            "org_id": str(org.id),
+            "email": user.email
+        }
+        new_token = create_access_token(token_data)
+        
+        # Recharger l'user pour avoir les organizations à jour pour le mapping
+        user = await auth_service.get_user_by_id(info.context.user_id)
+        
+        return AuthPayload(
+            token=new_token,
+            user=UserType(
+                id=strawberry.ID(str(user.id)),
+                email=user.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                current_organization_id=strawberry.ID(str(user.current_organization_id)),
+                created_at=user.created_at,
+                preferences=json.dumps(user.preferences or {}),
+                organizations=[
+                    OrganizationMemberType(
+                        organization_id=strawberry.ID(str(m.organization_id)),
+                        user_id=strawberry.ID(str(m.user_id)),
+                        role=m.role.value if hasattr(m.role, 'value') else str(m.role),
+                        permissions=json.dumps(m.permissions or {}),
+                        organization=OrganizationType(
+                            id=strawberry.ID(str(m.organization.id)),
+                            name=m.organization.name,
+                            slug=m.organization.slug,
+                            plan=m.organization.plan,
+                            subscription_status=m.organization.subscription_status,
+                            created_at=m.organization.created_at,
+                            settings=json.dumps(m.organization.settings or {})
+                        )
+                    ) for m in user.organizations
+                ]
+            )
+        )
+
+    @strawberry.mutation
     async def switch_organization(self, info, organization_id: strawberry.ID) -> AuthPayload:
         """Bascule vers une autre organisation et rafraîchit le token."""
         if not info.context.user_id:
@@ -408,11 +503,9 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
             raise MichiException(message="Erreur lors de l'authentification Google", code=ErrorCode.UNAUTHENTICATED)
 
     @strawberry.mutation
-    @require_role(["admin"])
+    @require_permission(MichiPermission.SETTINGS_EDIT)
     async def updateOrganization(self, info, input: UpdateOrganizationInput) -> OrganizationType:
         """Met à jour les réglages de l'organisation active."""
-        if not info.context.user_id or not info.context.org_id:
-            raise UnauthenticatedException()
             
         from src.modules.auth.models import Organization
         from sqlalchemy import select
@@ -464,11 +557,9 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         )
 
     @strawberry.mutation(name="toggleSource")
-    @require_role(["admin"])
+    @require_permission(MichiPermission.STORES_MANAGE)
     async def toggle_source(self, info, platform: str, connected: bool, store_id: Optional[strawberry.ID] = None) -> SourceType:
         """Gère la connexion/déconnexion d'un Store."""
-        if not info.context.user_id or not info.context.org_id:
-            raise UnauthenticatedException()
             
         from src.modules.inventory.models import Store, PlatformSource, Product
         from sqlalchemy import select, delete
@@ -518,7 +609,7 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         )
 
     @strawberry.mutation(name="inviteMember")
-    @require_role(["admin"])
+    @require_permission(MichiPermission.MEMBERS_INVITE)
     async def invite_member(self, info, email: str, role: str) -> InvitationType:
         """Invite un nouveau collaborateur par email."""
         if not info.context.user_id or not info.context.org_id:
@@ -547,6 +638,47 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
             expires_at=invitation.expires_at
         )
 
+    @strawberry.mutation(name="updateMemberPermissions")
+    @require_permission(MichiPermission.MEMBERS_EDIT_ROLE)
+    async def update_member_permissions(self, info, user_id: strawberry.ID, permissions: str) -> OrganizationMemberType:
+        """Met à jour les permissions granulaires d'un membre."""
+        if not info.context.org_id:
+            raise UnauthenticatedException()
+            
+        import json
+        from src.modules.auth.models import OrganizationMember
+        
+        db = info.context.db
+        org_id = uuid.UUID(str(info.context.org_id))
+        target_user_id = uuid.UUID(str(user_id))
+        
+        # Charger le membre
+        result = await db.execute(
+            select(OrganizationMember).where(
+                OrganizationMember.organization_id == org_id,
+                OrganizationMember.user_id == target_user_id
+            )
+        )
+        member = result.scalar_one_or_none()
+        
+        if not member:
+            raise MichiException(message="Membre non trouvé", code=ErrorCode.NOT_FOUND)
+            
+        # Parser et mettre à jour les permissions
+        try:
+            perms_dict = json.loads(permissions)
+            member.permissions = perms_dict
+            await db.commit()
+        except Exception as e:
+            raise MichiException(message=f"Format JSON invalide : {str(e)}", code=ErrorCode.INVALID_INPUT)
+            
+        return OrganizationMemberType(
+            organization_id=strawberry.ID(str(member.organization_id)),
+            user_id=strawberry.ID(str(member.user_id)),
+            role=member.role.value,
+            permissions=json.dumps(member.permissions)
+        )
+
     @strawberry.mutation(name="acceptInvitation")
     async def accept_invitation(self, info, code: str) -> bool:
         """Accepte une invitation via son code secret."""
@@ -563,11 +695,9 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         return success
 
     @strawberry.mutation(name="deleteInvitation")
-    @require_role(["admin"])
+    @require_permission(MichiPermission.MEMBERS_INVITE)
     async def delete_invitation(self, info, invitation_id: strawberry.ID) -> bool:
         """Annule une invitation pendante."""
-        if not info.context.user_id:
-            raise UnauthenticatedException()
             
         service = InvitationService(info.context.db)
         success = await service.delete_invitation(uuid.UUID(str(invitation_id)))
@@ -576,11 +706,9 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         return success
 
     @strawberry.mutation(name="removeMember")
-    @require_role(["admin"])
+    @require_permission(MichiPermission.MEMBERS_REMOVE)
     async def remove_member(self, info, user_id: strawberry.ID) -> bool:
         """Retire un membre de l'organisation."""
-        if not info.context.user_id or not info.context.org_id:
-            raise UnauthenticatedException()
             
         auth_service = AuthService(info.context.db, billing_service=info.context.billing)
         success = await auth_service.remove_member(
@@ -591,11 +719,9 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         return success
 
     @strawberry.mutation(name="updateMemberRole")
-    @require_role(["admin"])
+    @require_permission(MichiPermission.MEMBERS_EDIT_ROLE)
     async def update_member_role(self, info, user_id: strawberry.ID, role: str) -> bool:
         """Met à jour le rôle d'un membre."""
-        if not info.context.user_id or not info.context.org_id:
-            raise UnauthenticatedException()
             
         from src.modules.auth.models import UserRole
         auth_service = AuthService(info.context.db, billing_service=info.context.billing)
@@ -608,11 +734,9 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         return member is not None
 
     @strawberry.mutation(name="toggleUserStatus")
-    @require_role(["admin"])
+    @require_permission(MichiPermission.MEMBERS_REMOVE)
     async def toggle_user_status(self, info, user_id: strawberry.ID, active: bool) -> bool:
         """Active ou désactive un utilisateur (Ban)."""
-        if not info.context.user_id:
-            raise UnauthenticatedException()
             
         auth_service = AuthService(info.context.db, billing_service=info.context.billing)
         user = await auth_service.toggle_user_status(
@@ -623,9 +747,13 @@ class Mutation(ShopifyMutation, ForecastingMutation, InventoryMutation, Decision
         return user is not None
 
 
+from .extensions import MichiExceptionExtension
+
 # Schema final
 schema = strawberry.Schema(
     query=Query,
     mutation=Mutation,
-    extensions=[],
+    extensions=[
+        MichiExceptionExtension,
+    ],
 )

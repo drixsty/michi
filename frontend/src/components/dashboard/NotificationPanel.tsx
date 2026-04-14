@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { LoadingState } from '../ui/LoadingState';
+import { useStore } from '@/context/StoreContext';
 
 const GET_UNREAD_ALERTS = gql`
   query GetUnreadAlerts {
@@ -49,8 +50,10 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
     setMounted(true);
   }, []);
 
+  const { user, currentOrganization } = useStore();
+  
   const { data, loading, refetch } = useQuery(GET_UNREAD_ALERTS, {
-    skip: !isOpen,
+    skip: !isOpen || !user || !currentOrganization,
     pollInterval: 30000,
   });
 

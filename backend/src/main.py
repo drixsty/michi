@@ -16,6 +16,23 @@ from src.core.database_utils import SerializedAsyncSession
 from src.core.middleware.auth import get_current_user_from_token
 from src.modules.shopify.auth_routes import router as shopify_auth_router
 from src.modules.billing.router import router as billing_router
+from src.core.exceptions import UnauthenticatedException, ForbiddenException
+from loguru import logger
+import sys
+import logging
+
+# Configuration Loguru pour filtrer les tracebacks d'auth bruyants (seulement pour Loguru)
+def log_filter(record):
+    """Filtre pour éviter les tracebacks complets sur les erreurs d'auth attendues"""
+    message = record["message"]
+    if "Accès refusé" in message or "UnauthenticatedException" in message:
+        if "[Security]" in message:
+            return True
+        return False
+    return True
+
+logger.remove()
+logger.add(sys.stderr, filter=log_filter)
 
 
 @asynccontextmanager
@@ -57,12 +74,12 @@ app.add_middleware(
         "Authorization",
         "Apollo-Require-Preflight",
         "X-Requested-With",
-        "Accept"
+        "Accept",
+        "michi-org-id"
     ],
 )
 
 
-# Context factory pour GraphQL
 async def get_context(
     request: Request, 
     db: AsyncSession = Depends(get_db)
@@ -73,6 +90,10 @@ async def get_context(
     """
     # Extraire user_id/org_id du token JWT
     user_id, org_id = await get_current_user_from_token(request)
+    
+    # Fallback sur le header si org_id n'est pas dans le token (onboarding/switch)
+    if user_id and not org_id:
+        org_id = request.headers.get("michi-org-id") or request.headers.get("Michi-Org-Id")
     
     # Sérialiser la session DB pour GraphQL (concurrence inter-résolveurs)
     lock = asyncio.Lock()

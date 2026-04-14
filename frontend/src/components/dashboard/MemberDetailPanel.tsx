@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useMutation, gql } from '@apollo/client';
 import { 
   X, 
@@ -20,29 +20,77 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const UPDATE_MEMBER_PERMISSIONS = gql`
+  mutation UpdateMemberPermissions($userId: ID!, $permissions: String!) {
+    updateMemberPermissions(userId: $userId, permissions: $permissions) {
+      user_id
+      permissions
+    }
+  }
+`;
+
 const REMOVE_MEMBER = gql`
   mutation RemoveMember($userId: ID!) {
-    removeMember(user_id: $userId)
+    removeMember(userId: $userId)
   }
 `;
 
 const UPDATE_MEMBER_ROLE = gql`
   mutation UpdateMemberRole($userId: ID!, $role: String!) {
-    updateMemberRole(user_id: $userId, role: $role)
+    updateMemberRole(userId: $userId, role: $role)
   }
 `;
 
 const TOGGLE_USER_STATUS = gql`
   mutation ToggleUserStatus($userId: ID!, $active: Boolean!) {
-    toggleUserStatus(user_id: $userId, active: $active)
+    toggleUserStatus(userId: $userId, active: $active)
   }
 `;
 
 const DELETE_INVITATION = gql`
-  mutation DeleteInvitation($id: ID!) {
-    deleteInvitation(invitationId: $id)
+  mutation DeleteInvitation($invitationId: ID!) {
+     deleteInvitation(invitationId: $invitationId)
   }
 `;
+
+const PERMISSION_CATEGORIES = [
+  {
+    id: 'members',
+    label: 'Équipe & Membres',
+    perms: [
+      { id: 'members:view', label: 'Voir les membres' },
+      { id: 'members:invite', label: 'Inviter' },
+      { id: 'members:remove', label: 'Supprimer' },
+      { id: 'members:edit_role', label: 'Gérer les rôles' },
+    ]
+  },
+  {
+    id: 'billing',
+    label: 'Facturation',
+    perms: [
+      { id: 'billing:view', label: 'Voir factures' },
+      { id: 'billing:manage', label: 'Modifier abonnement' },
+    ]
+  },
+  {
+    id: 'inventory',
+    label: 'Stocks & Sources',
+    perms: [
+      { id: 'inventory:view', label: 'Voir inventaire' },
+      { id: 'inventory:edit', label: 'Modifier stocks' },
+      { id: 'stores:view', label: 'Voir boutiques' },
+      { id: 'stores:manage', label: 'Gérer connexions' },
+    ]
+  },
+  {
+    id: 'forecasting',
+    label: 'Prévisions IA',
+    perms: [
+      { id: 'forecasting:view', label: 'Voir prévisions' },
+      { id: 'forecasting:run', label: 'Lancer calculs' },
+    ]
+  }
+];
 
 interface MemberDetailPanelProps {
   member?: any;
@@ -50,9 +98,18 @@ interface MemberDetailPanelProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  currentUserId?: string;
+  currentUserRole?: string;
 }
 
-export function MemberDetailPanel({ member, invitation, isOpen, onClose, onSuccess }: MemberDetailPanelProps) {
+export function MemberDetailPanel({ 
+  member, 
+  invitation, 
+  isOpen, 
+  onClose, 
+  onSuccess,
+  currentUserRole = 'viewer'
+}: MemberDetailPanelProps) {
   const [showConfirm, setShowConfirm] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -61,17 +118,34 @@ export function MemberDetailPanel({ member, invitation, isOpen, onClose, onSucce
   const [updateRole, { loading: updatingRole }] = useMutation(UPDATE_MEMBER_ROLE);
   const [toggleStatus, { loading: togglingStatus }] = useMutation(TOGGLE_USER_STATUS);
   const [deleteInvitation, { loading: deletingInvite }] = useMutation(DELETE_INVITATION);
+  const [updatePermissions, { loading: updatingPerms }] = useMutation(UPDATE_MEMBER_PERMISSIONS);
 
   if (!isOpen || (!member && !invitation)) return null;
 
   const data = member || invitation;
   const isMember = !!member;
+  const isAdmin = currentUserRole.toLowerCase() === 'admin';
   
   const email = isMember ? member.user.email : invitation.email;
   const firstName = isMember ? member.user.firstName : '';
   const lastName = isMember ? member.user.lastName : '';
   const name = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : email.split('@')[0];
   const role = data.role.toLowerCase();
+
+  // Permissions logic
+  const currentPerms = useMemo(() => {
+    try {
+      if (!isMember || !member?.permissions) return {};
+      // Handle both string and already parsed object (defensive)
+      if (typeof member.permissions === 'string') {
+        return JSON.parse(member.permissions);
+      }
+      return member.permissions || {};
+    } catch (e) { 
+      console.warn("[MemberDetailPanel] Permissions parse error:", e);
+      return {}; 
+    }
+  }, [member?.permissions, isMember]);
   
   const handleAction = async (action: string) => {
     try {
@@ -112,6 +186,35 @@ export function MemberDetailPanel({ member, invitation, isOpen, onClose, onSucce
         onSuccess();
         setSuccessMsg(null);
       }, 1000);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  const handleTogglePermission = async (permId: string, currentVal: any) => {
+    if (!isAdmin) return;
+    
+    // Toggle: undefined -> true -> false -> undefined (reset)
+    let newVal: any;
+    if (currentVal === undefined) newVal = true;
+    else if (currentVal === true) newVal = false;
+    else newVal = undefined;
+
+    const newPerms = { ...currentPerms };
+    if (newVal === undefined) {
+      delete newPerms[permId];
+    } else {
+      newPerms[permId] = newVal;
+    }
+
+    try {
+      await updatePermissions({
+        variables: {
+          userId: member.userId,
+          permissions: JSON.stringify(newPerms)
+        }
+      });
+      onSuccess();
     } catch (err: any) {
       setErrorMsg(err.message);
     }
@@ -204,7 +307,7 @@ export function MemberDetailPanel({ member, invitation, isOpen, onClose, onSucce
 
           {isMember && (
             <section className="space-y-3">
-              <h3 className="text-[13px] font-semibold text-foreground px-1">Changer le rôle</h3>
+              <h3 className="text-[13px] font-semibold text-foreground px-1 font-bold">Rôle & Accessibilité</h3>
               <div className="grid grid-cols-1 gap-2">
                 {['ADMIN', 'MANAGER', 'VIEWER'].map((r) => (
                   <button
@@ -231,6 +334,52 @@ export function MemberDetailPanel({ member, invitation, isOpen, onClose, onSucce
                   </button>
                 ))}
               </div>
+            </section>
+          )}
+
+          {isMember && role !== 'admin' && isAdmin && (
+            <section className="space-y-4 pt-6 border-t border-dashed border-border">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-[13px] font-bold text-foreground">Permissions granulaires</h3>
+                {updatingPerms && <RefreshCw className="h-3.5 w-3.5 animate-spin text-primary" />}
+              </div>
+              
+              <div className="space-y-6">
+                {PERMISSION_CATEGORIES.map((cat) => (
+                  <div key={cat.id} className="space-y-2">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">{cat.label}</p>
+                    <div className="bg-slate-50/50 rounded-xl border border-slate-100 p-1 divide-y divide-slate-100">
+                       {cat.perms.map((p) => {
+                         const override = currentPerms[p.id];
+                         return (
+                           <div key={p.id} className="flex items-center justify-between p-2.5">
+                             <span className="text-[12px] font-medium text-slate-600">{p.label}</span>
+                             <button
+                               onClick={() => handleTogglePermission(p.id, override)}
+                               className={cn(
+                                 "w-12 h-6 rounded-full transition-all flex items-center px-1 border relative",
+                                 override === true ? "bg-emerald-500 border-emerald-400" :
+                                 override === false ? "bg-red-500 border-red-400" :
+                                 "bg-slate-200 border-slate-300"
+                               )}
+                             >
+                               <div className={cn(
+                                 "w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-200",
+                                 override === true ? "translate-x-6" :
+                                 override === false ? "translate-x-0" :
+                                 "translate-x-3"
+                               )} />
+                             </button>
+                           </div>
+                         );
+                       })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground italic leading-relaxed text-center px-4">
+                Légende : Gauche (Révoqué), Milieu (Défaut du rôle), Droite (Autorisé).
+              </p>
             </section>
           )}
 

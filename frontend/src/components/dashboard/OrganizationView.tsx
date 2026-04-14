@@ -33,6 +33,7 @@ const GET_ORG_DATA = gql`
       organizationId
       userId
       role
+      permissions
       user {
         id
         email
@@ -231,7 +232,7 @@ export function OrganizationView() {
           {tabs.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => setActiveTab(tab.id as OrgTabType)}
               className={cn(
                 "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all",
                 activeTab === tab.id 
@@ -453,6 +454,8 @@ export function OrganizationView() {
         invitation={selectedInvitation}
         onClose={() => setShowDetailPanel(false)}
         onSuccess={refetch}
+        currentUserId={currentUserId}
+        currentUserRole={currentUserRole}
       />
     </div>
   );

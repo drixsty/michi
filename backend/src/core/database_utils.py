@@ -15,6 +15,10 @@ class SerializedAsyncSession:
         self._lock = lock
 
     def __getattr__(self, name: str) -> Any:
+        # Ne pas envelopper les attributs internes (protection SQLA)
+        if name.startswith("_"):
+            return getattr(self._session, name)
+
         # Récupère l'attribut de la session originale
         attr = getattr(self._session, name)
         

@@ -9,6 +9,8 @@ from datetime import date, datetime
 
 from src.core.exceptions import UnauthenticatedException
 from src.modules.billing.decorators import require_plan
+from src.modules.auth.decorators import require_permission
+from src.modules.auth.constants import MichiPermission
 from .service import ForecastingService
 
 
@@ -72,14 +74,13 @@ class DashboardKPIType:
 @strawberry.type
 class ForecastingQuery:
     @strawberry.field
+    @require_permission(MichiPermission.INVENTORY_VIEW)
     async def cleaned_demand(
         self,
         info,
         product_id: strawberry.ID,
         limit: int = 365,
     ) -> List[CleanedDemandType]:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
         rows = await service.get_cleaned_demand(str(product_id), limit=limit)
@@ -102,9 +103,8 @@ class ForecastingQuery:
 
     @strawberry.field
     @require_plan("PRO")
+    @require_permission(MichiPermission.FORECASTING_VIEW)
     async def predictions(self, info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
         rows = await service.get_predictions(
@@ -115,13 +115,12 @@ class ForecastingQuery:
         return [_prediction_to_type(r) for r in rows]
 
     @strawberry.field
+    @require_permission(MichiPermission.FORECASTING_VIEW)
     async def prediction_for_product(
         self,
         info,
         product_id: strawberry.ID,
     ) -> Optional[PredictionType]:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
         row = await service.get_prediction_for_product(str(product_id))
@@ -131,9 +130,8 @@ class ForecastingQuery:
         return _prediction_to_type(row)
 
     @strawberry.field
+    @require_permission(MichiPermission.FORECASTING_VIEW)
     async def dashboard_kpis(self, info, store_id: Optional[strawberry.ID] = None) -> DashboardKPIType:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
         res = await service.get_dashboard_kpis(
@@ -151,9 +149,8 @@ class ForecastingQuery:
 
     @strawberry.field
     @require_plan("PRO")
+    @require_permission(MichiPermission.FORECASTING_VIEW)
     async def replenishment_alerts(self, info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
         rows = await service.get_replenishment_alerts(
@@ -168,9 +165,8 @@ class ForecastingQuery:
 class ForecastingMutation:
     @strawberry.mutation
     @require_plan("PRO")
+    @require_permission(MichiPermission.FORECASTING_RUN)
     async def run_cleaning_pipeline(self, info, store_id: strawberry.ID) -> PipelineResultType:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
         result = await service.run_cleaning_pipeline(str(store_id))
@@ -186,9 +182,8 @@ class ForecastingMutation:
 
     @strawberry.mutation
     @require_plan("PRO")
+    @require_permission(MichiPermission.FORECASTING_RUN)
     async def run_prediction_pipeline(self, info, store_id: strawberry.ID) -> PredictionRunResultType:
-        if not info.context.user_id:
-            raise UnauthenticatedException()
 
         service = ForecastingService(info.context.db)
         result = await service.run_prediction_pipeline(str(store_id))

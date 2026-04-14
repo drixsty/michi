@@ -58,7 +58,8 @@ class AuthService:
     
     async def register(self, email: str, password: str, first_name: str, last_name: str) -> AuthPayload:
         """
-        Crée un nouveau compte utilisateur avec une organisation par défaut.
+        Crée un nouveau compte utilisateur sans organisation associée.
+        L'onboarding (création d'org) sera géré dans une étape suivante.
         """
         email = email.strip().lower()
         
@@ -77,33 +78,15 @@ class AuthService:
         self.db.add(user)
         await self.db.flush()
         
-        # Créer organisation par défaut (US 16.1)
-        org_name = f"Michi de {first_name}"
-        org = Organization(name=org_name, slug=f"org-{uuid.uuid4().hex[:8]}")
-        self.db.add(org)
-        await self.db.flush()
+        # NOTE: La création d'organisation est déportée vers le flux d'onboarding (US 19.4)
         
-        # Sync Stripe Customer (US 17.1)
-        if self.billing:
-            stripe_id = await self.billing.create_customer(name=org.name, email=user.email, org_id=str(org.id))
-            if stripe_id:
-                org.stripe_customer_id = stripe_id
-                await self.db.flush()
+        # Initialiser explicitement les relations pour éviter MissingGreenlet lors de la sérialisation Pydantic
+        user.organizations = []
         
-        # Lier l'utilisateur à l'organisation comme ADMIN
-        member = OrganizationMember(
-            user_id=user.id, 
-            organization_id=org.id, 
-            role=UserRole.ADMIN
-        )
-        self.db.add(member)
-        user.current_organization_id = org.id
-        await self.db.flush()
-        
-        # Générer token
+        # Générer token sans org_id
         token_data = {
             "user_id": str(user.id),
-            "org_id": str(org.id),
+            "org_id": None,
             "email": user.email
         }
         token = create_access_token(token_data)

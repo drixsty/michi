@@ -2,20 +2,74 @@ from functools import wraps
 from typing import List, Union
 from src.core.exceptions import MichiException, UnauthenticatedException, ErrorCode
 from src.modules.auth.models import OrganizationMember, UserRole
+from src.modules.auth.constants import MichiPermission, ROLE_PERMISSIONS
 from sqlalchemy import select
 import uuid
 from loguru import logger
 
+def require_permission(permission: MichiPermission):
+    """
+    Décorateur pour restreindre l'accès selon une permission granulaire.
+    Vérifie les permissions explicites (JSON) et les permissions par défaut du rôle.
+    """
+    def decorator(f):
+        @wraps(f)
+        async def wrapper(self, info, *args, **kwargs):
+            if not info.context.user_id or not info.context.org_id:
+                raise UnauthenticatedException("Accès refusé : session ou organisation non identifiée")
+                
+            db = info.context.db
+            user_id = uuid.UUID(str(info.context.user_id))
+            org_id = uuid.UUID(str(info.context.org_id))
+            
+            # 1. Récupérer uniquement le rôle et les permissions (Selective Fetch pour éviter lazy loading)
+            result = await db.execute(
+                select(OrganizationMember.role, OrganizationMember.permissions).where(
+                    OrganizationMember.organization_id == org_id,
+                    OrganizationMember.user_id == user_id
+                )
+            )
+            row = result.first()
+            
+            if not row:
+                raise MichiException(message="Vous n'êtes pas membre de cette organisation", code=ErrorCode.FORBIDDEN)
+            
+            user_role_enum, member_perms = row
+            user_role = user_role_enum.value if hasattr(user_role_enum, 'value') else str(user_role_enum).lower()
+            
+            # L'ADMIN a toujours tous les droits
+            if user_role == "admin":
+                return await f(self, info, *args, **kwargs)
+                
+            # Vérifier les overrides explicites (JSONB)
+            # ex: {"billing:manage": false} pour retirer un droit par défaut
+            member_perms = member_perms or {}
+            if permission.value in member_perms:
+                if member_perms[permission.value] is True:
+                    return await f(self, info, *args, **kwargs)
+                elif member_perms[permission.value] is False:
+                    logger.warning(f"Accès refusé [Perm Explicit Deny] : User {user_id} tentant {permission}")
+                    raise MichiException(message=f"Action refusée : droit '{permission}' révoqué explicitement", code=ErrorCode.FORBIDDEN)
+
+            # Vérifier les permissions par défaut du rôle
+            default_perms = ROLE_PERMISSIONS.get(user_role, [])
+            if permission in default_perms:
+                return await f(self, info, *args, **kwargs)
+
+            # Sinon refus
+            logger.warning(f"Accès refusé [Perm Guard] : User {user_id} (Role: {user_role}) n'a pas la permission {permission}")
+            raise MichiException(
+                message=f"Cette action nécessite la permission : {permission}", 
+                code=ErrorCode.FORBIDDEN
+            )
+            
+        return wrapper
+    return decorator
+
 def require_role(allowed_roles: Union[str, List[str]]):
     """
-    Décorateur pour restreindre l'accès à un résolveur GraphQL selon le rôle de l'utilisateur.
-    
-    Usage:
-        @require_role("admin")
-        async def my_resolver(self, info): ...
-        
-        @require_role(["admin", "manager"])
-        async def my_resolver(self, info): ...
+    Décorateur classique basé sur le rôle brut.
+    Préférer require_permission pour les nouvelles fonctionnalités.
     """
     if isinstance(allowed_roles, str):
         allowed_roles = [allowed_roles.lower()]
@@ -32,31 +86,21 @@ def require_role(allowed_roles: Union[str, List[str]]):
             user_id = uuid.UUID(str(info.context.user_id))
             org_id = uuid.UUID(str(info.context.org_id))
             
-            # 1. Récupérer le rôle du membre dans l'organisation
             result = await db.execute(
-                select(OrganizationMember).where(
+                select(OrganizationMember.role).where(
                     OrganizationMember.organization_id == org_id,
                     OrganizationMember.user_id == user_id
                 )
             )
-            member = result.scalar_one_or_none()
+            user_role_enum = result.scalar()
             
-            if not member:
-                raise MichiException(
-                    message="Vous n'êtes pas membre de cette organisation", 
-                    code=ErrorCode.FORBIDDEN
-                )
+            if not user_role_enum:
+                raise MichiException(message="Vous n'êtes pas membre de cette organisation", code=ErrorCode.FORBIDDEN)
             
-            # 2. Vérification du rôle
-            # member.role est un enum UserRole
-            user_role = member.role.value if hasattr(member.role, 'value') else str(member.role).lower()
+            user_role = user_role_enum.value if hasattr(user_role_enum, 'value') else str(user_role_enum).lower()
             
             if user_role not in allowed_roles:
-                logger.warning(f"Accès refusé [Role Guard] : User {user_id} (Role: {user_role}) tente d'accéder à une fonction réservée à {allowed_roles}")
-                raise MichiException(
-                    message=f"Cette action nécessite un rôle parmi : {', '.join(allowed_roles)}", 
-                    code=ErrorCode.FORBIDDEN
-                )
+                raise MichiException(message=f"Cette action nécessite un rôle parmi : {', '.join(allowed_roles)}", code=ErrorCode.FORBIDDEN)
             
             return await f(self, info, *args, **kwargs)
         return wrapper

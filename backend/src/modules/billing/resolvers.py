@@ -4,16 +4,16 @@ from typing import List
 from sqlalchemy import select
 from src.core.exceptions import UnauthenticatedException, MichiException, ErrorCode
 from src.modules.auth.models import Organization
-from src.modules.auth.decorators import require_role
+from src.modules.auth.decorators import require_permission
+from src.modules.auth.constants import MichiPermission
 from .types import InvoiceType
 
 @strawberry.type
 class BillingQuery:
     @strawberry.field
+    @require_permission(MichiPermission.BILLING_VIEW)
     async def invoices(self, info) -> List[InvoiceType]:
         """Récupère l'historique des factures de l'organisation."""
-        if not info.context.user_id or not info.context.org_id:
-            raise UnauthenticatedException()
             
         db = info.context.db
         billing_service = info.context.billing
@@ -37,10 +37,9 @@ class BillingQuery:
 @strawberry.type
 class BillingMutation:
     @strawberry.mutation
+    @require_permission(MichiPermission.BILLING_MANAGE)
     async def create_checkout_session(self, info, plan: str, success_url: str, cancel_url: str) -> str:
         # ... logic existante ...
-        if not info.context.user_id or not info.context.org_id:
-            raise UnauthenticatedException()
             
         db = info.context.db
         billing_service = info.context.billing
@@ -90,11 +89,9 @@ class BillingMutation:
         return url
 
     @strawberry.mutation
-    @require_role(["admin"])
+    @require_permission(MichiPermission.BILLING_MANAGE)
     async def create_billing_portal_session(self, info, return_url: str) -> str:
         """Crée une session pour le portail de gestion Stripe."""
-        if not info.context.user_id or not info.context.org_id:
-            raise UnauthenticatedException()
             
         db = info.context.db
         billing_service = info.context.billing

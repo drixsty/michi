@@ -1,24 +1,33 @@
-import strawberry
 from strawberry.extensions import SchemaExtension
-from src.core.database import AsyncSessionLocal
+from loguru import logger
+from src.core.exceptions import MichiException, UnauthenticatedException, ForbiddenException
 
-# class SQLAlchemySessionExtension(SchemaExtension):
-#     """
-#     Extension Strawberry pour gérer le cycle de vie de la session SQLAlchemy.
-#     Garantit que la session est fermée à la fin de chaque exécution GraphQL.
-#     """
-#     
-#     async def on_operation(self):
-#         # Créer la session pour cette opération
-#         print(f"DEBUG: Opening DB session for GraphQL operation...")
-#         session = AsyncSessionLocal()
-#         self.execution_context.context.db = session
-#         
-#         try:
-#             yield
-#         except Exception as e:
-#             print(f"DEBUG: Error during GraphQL operation: {e}")
-#             raise
-#         finally:
-#             print(f"DEBUG: Closing DB session...")
-#             await session.close()
+class MichiExceptionExtension(SchemaExtension):
+    """
+    Extension Strawberry pour gérer les exceptions Michi proprement.
+    Évite les tracebacks polluants dans les logs pour les erreurs attendues (Auth, Permissions).
+    """
+    
+    def on_operation(self):
+        # Avant l'opération
+        yield
+        # Après l'opération
+        
+        result = self.execution_context.result
+        if result and result.errors:
+            # On filtre les erreurs pour éviter de loguer les tracebacks des exceptions métier
+            for error in result.errors:
+                original_error = getattr(error, "original_error", None)
+                
+                if isinstance(original_error, UnauthenticatedException):
+                    # Log minimal pour l'authentification (Silencieux ou info)
+                    logger.info(f"[Security] Unauthenticated access attempt to {self.execution_context.operation_name}")
+                elif isinstance(original_error, ForbiddenException):
+                    logger.warning(f"[Security] Forbidden access attempt to {self.execution_context.operation_name}")
+                elif isinstance(original_error, MichiException):
+                    # Log d'avertissement pour les erreurs métier sans traceback complet
+                    logger.warning(f"[BusinessError] {original_error.code}: {original_error.message}")
+                else:
+                    # Pour les autres erreurs (Bug, DB, etc.), on laisse le comportement par défaut
+                    # (logué par Strawberry/FastAPI)
+                    pass
