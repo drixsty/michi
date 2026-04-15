@@ -49,13 +49,14 @@ switch ($Command) {
 
     "seed" {
         Write-Host "[SEED] Seeding database v2 (SaaS)..." -ForegroundColor Yellow
-        $env:PYTHONPATH="."
+        $env:PYTHONPATH="src"
         Set-Location apps/api; python -m alembic upgrade head; python scripts/seed_v2.py; Set-Location ../..
     }
 
     "api" {
         Write-Host "[RUN] Demarrage API (FastAPI)..." -ForegroundColor Cyan
-        Set-Location apps/api; uvicorn src.main:app --reload --host 0.0.0.0 --port 8000; Set-Location ../..
+        $env:PYTHONPATH = "src"
+        Set-Location apps/api; python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8000; Set-Location ../..
     }
 
     "web" {
@@ -105,7 +106,7 @@ switch ($Command) {
         & $PSCommandPath "install"
         & $PSCommandPath "seed"
         Write-Host "`n[DONE] Projet Michi initialise (Monorepo) !" -ForegroundColor Green
-        Write-Host "`n🔗 Prochaines etapes:"
+        Write-Host "`n[INFO] Prochaines etapes:"
         Write-Host "  1. Demarrer le backend  : .\michi.ps1 api"
         Write-Host "  2. Demarrer le frontend : .\michi.ps1 web"
         Write-Host "  3. Consulter la doc     : .\michi.ps1 docs"

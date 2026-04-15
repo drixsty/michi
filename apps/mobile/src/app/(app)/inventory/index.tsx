@@ -59,7 +59,14 @@ export default function InventoryScreen() {
             return (
               <View style={styles.row}>
                 <View style={styles.rowLeft}>
-                  <Text style={styles.sku}>{item.sku}</Text>
+                  <View style={styles.skuRow}>
+                    <Text style={styles.sku}>{item.sku}</Text>
+                    {item.stockWeight > 0.5 && (
+                      <View style={styles.impactBadge}>
+                        <Text style={styles.impactBadgeText}>Top Impact</Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={styles.titleText} numberOfLines={2}>{item.title}</Text>
                 </View>
                 <View style={styles.rowRight}>
@@ -96,7 +103,10 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 20, paddingBottom: 24, gap: 0 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3, elevation: 1 },
   rowLeft: { flex: 1, marginRight: 12 },
+  skuRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
   sku: { fontSize: 11, color: '#7C3AED', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  impactBadge: { paddingHorizontal: 6, paddingVertical: 2, backgroundColor: '#F59E0B', borderRadius: 4 },
+  impactBadgeText: { fontSize: 8, color: '#fff', fontWeight: '900', textTransform: 'uppercase' },
   titleText: { fontSize: 14, color: '#0F172A', fontWeight: '500', marginTop: 2 },
   rowRight: { alignItems: 'flex-end', gap: 6 },
   stock: { fontSize: 13, fontWeight: '600', color: '#374151' },

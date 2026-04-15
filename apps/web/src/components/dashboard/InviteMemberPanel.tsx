@@ -10,6 +10,7 @@ import {
   AlertCircle,
   AlertTriangle
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { SidePanel } from '../ui/SidePanel';
 
@@ -60,6 +61,14 @@ export function InviteMemberPanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const t = useTranslations('organization.invite');
+  const tRoles = useTranslations('organization.roles');
+
+  const ROLES = [
+    { id: 'ADMIN', label: tRoles('admin'), description: tRoles('adminDesc') },
+    { id: 'MANAGER', label: tRoles('manager'), description: tRoles('managerDesc') },
+    { id: 'VIEWER', label: tRoles('viewer'), description: tRoles('viewerDesc') },
+  ];
 
   // Validation préventive en temps réel
   const conflict = useMemo<ConflictType>(() => {
@@ -113,15 +122,15 @@ export function InviteMemberPanel({
     <SidePanel
       isOpen={isOpen}
       onClose={handleClose}
-      title="Inviter un membre"
-      subtitle="Ajoutez des collaborateurs à votre organisation Michi."
+      title={t('title')}
+      subtitle={t('subtitle')}
       footer={
         <div className="flex gap-3">
           <button
             onClick={handleClose}
             className="flex-1 py-3 px-4 bg-white border border-slate-200 text-slate-600 rounded-lg text-[10px] font-bold hover:bg-slate-50 focus:ring-0 focus:outline-none transition-colors"
           >
-            Annuler
+            {useTranslations('common')('cancel')}
           </button>
           <button
             onClick={handleSubmit}
@@ -135,10 +144,10 @@ export function InviteMemberPanel({
                 : "bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400"
             )}
           >
-            {isSubmitting ? "Envoi..." : success ? (
-              <><CheckCircle2 className="h-3.5 w-3.5" /> Invitation envoyée</>
+            {isSubmitting ? t('sending') : success ? (
+              <><CheckCircle2 className="h-3.5 w-3.5" /> {t('success')}</>
             ) : (
-              <><UserPlus className="h-3.5 w-3.5" /> Envoyer l'invitation</>
+              <><UserPlus className="h-3.5 w-3.5" /> {t('send')}</>
             )}
           </button>
         </div>
@@ -149,7 +158,7 @@ export function InviteMemberPanel({
         <div className="space-y-2">
           <label className="text-[10px] font-bold text-slate-400 flex items-center gap-2">
             <Mail className="h-3 w-3" />
-            Adresse email
+            {t('emailLabel')}
           </label>
           <input
             type="email"
@@ -172,7 +181,7 @@ export function InviteMemberPanel({
             <div className="flex items-start gap-2 px-3 py-2 bg-red-50 border border-red-100 rounded-lg animate-in fade-in zoom-in duration-200">
               <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0 mt-0.5" />
               <p className="text-[9px] font-bold text-red-600 leading-relaxed">
-                Cet utilisateur est déjà membre de l'organisation.
+                {t('alreadyMember')}
               </p>
             </div>
           )}
@@ -180,7 +189,7 @@ export function InviteMemberPanel({
             <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-100 rounded-lg animate-in fade-in zoom-in duration-200">
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
               <p className="text-[9px] font-bold text-amber-600 leading-relaxed">
-                Une invitation est déjà en attente pour cet email. Annulez-la d'abord si vous souhaitez la renouveler.
+                {t('alreadyInvited')}
               </p>
             </div>
           )}
@@ -190,7 +199,7 @@ export function InviteMemberPanel({
         <div className="space-y-3">
           <label className="text-[10px] font-bold text-slate-400 flex items-center gap-2">
             <Shield className="h-3 w-3" />
-            Rôle & permissions
+            {t('roleLabel')}
           </label>
           <div className="grid grid-cols-1 gap-2">
             {ROLES.map((r) => (
@@ -228,7 +237,7 @@ export function InviteMemberPanel({
           <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-3 animate-in fade-in zoom-in duration-300">
             <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-red-700">Erreur d'invitation</p>
+              <p className="text-[10px] font-bold text-red-700">{t('error')}</p>
               <p className="text-[9px] text-red-600 font-medium leading-relaxed">{serverError}</p>
             </div>
           </div>
@@ -237,7 +246,7 @@ export function InviteMemberPanel({
         {/* Info Box */}
         <div className="p-3 bg-slate-50/50 rounded-lg border border-slate-100">
           <p className="text-[9px] text-slate-400 font-bold leading-relaxed">
-            * L'utilisateur recevra un email contenant un lien unique pour rejoindre votre organisation. Ce lien est valable pendant <span className="text-slate-600">7 jours</span>.
+            * {t('info')}
           </p>
         </div>
       </form>

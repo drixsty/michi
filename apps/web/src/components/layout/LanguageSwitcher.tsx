@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useLocale } from 'next-intl';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname } from '@/i18n/navigation';
 import { Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,16 +46,8 @@ export function LanguageSwitcher() {
     // Persist preference
     try { localStorage.setItem('michi_locale', nextLocale); } catch { /* SSR */ }
 
-    // Strip current locale prefix if present, then push with new locale
-    // next-intl's useRouter.replace handles locale switching natively
-    const pathWithoutLocale = pathname.replace(/^\/(fr|en)/, '') || '/';
-
-    if (nextLocale === 'fr') {
-      // Default locale — no prefix
-      router.replace(pathWithoutLocale);
-    } else {
-      router.replace(`/${nextLocale}${pathWithoutLocale}`);
-    }
+    // next-intl's router handles locale prefix automatically
+    router.replace(pathname, { locale: nextLocale });
 
     setOpen(false);
   };

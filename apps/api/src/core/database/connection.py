@@ -6,7 +6,7 @@ from core.config.settings import settings
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.ENVIRONMENT == "development",
-    pool_pre_ping=True,
+    pool_recycle=3600,  # Refresh connections every hour
     pool_size=20,
     max_overflow=30,
 )
@@ -23,7 +23,12 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:
             yield session
-            await session.commit()
+            # Final commit only if session is still active and has uncommitted changes
+            if session.is_active:
+                await session.commit()
         except Exception:
-            await session.rollback()
+            if session.is_active:
+                await session.rollback()
             raise
+        finally:
+            await session.close()

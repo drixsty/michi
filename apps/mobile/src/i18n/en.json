@@ -11,17 +11,28 @@
     "requiredTitle": "Required fields",
     "requiredMessage": "Please enter your email and password."
   },
+  "common": {
+    "allChannels": "All Channels",
+    "viewAll": "View all",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete"
+  },
   "dashboard": {
     "greeting": "Hello",
     "subtitle": "Your dashboard",
-    "logout": "Out.",
+    "logout": "Logout",
+    "financials": {
+      "inventoryValue": "Stock Value",
+      "revenueAtRisk": "Revenue Risk"
+    },
     "kpi": {
       "products": "Products",
       "stockouts": "Stockouts",
-      "urgent": "Urgent (≤14d)"
+      "urgent": "Urgent"
     },
     "recentProducts": "Recent products",
-    "stockout": "Stockout",
+    "stockout": "Out of stock",
     "empty": "No products available.",
     "emptySub": "Sync your sources from the web interface."
   },
@@ -29,7 +40,18 @@
     "title": "Inventory",
     "searchPlaceholder": "Search by SKU or title…",
     "stockout": "Stockout",
-    "empty": "No products found"
+    "empty": "No product found"
+  },
+  "team": {
+    "title": "Team",
+    "members": "Members",
+    "invitations": "Invitations",
+    "invite": "Invite",
+    "role": "Role",
+    "admin": "Admin",
+    "viewer": "Viewer",
+    "remove": "Remove",
+    "removeConfirm": "Are you sure you want to remove this member?"
   },
   "profile": {
     "title": "Profile",

@@ -11,6 +11,8 @@ export const GET_PRODUCTS: TypedDocumentNode<GetProductsQuery, GetProductsQueryV
       leadTime
       moq
       storeId
+      boostFactor
+      stockWeight
       warningThreshold
       prediction {
         runRate
@@ -26,6 +28,8 @@ export const GET_PRODUCTS: TypedDocumentNode<GetProductsQuery, GetProductsQueryV
       supplier {
         id
         name
+        reliabilityScore
+        averageDelayDays
       }
     }
   }

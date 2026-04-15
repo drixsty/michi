@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { GET_ME } from '@/graphql/queries/getMe';
 import { TRIGGER_MOCK_DATA_SYNC } from '@/graphql/mutations/syncInventory';
-import { GET_DASHBOARD_STATS } from '@/graphql/queries/getDashboardStats';
+import { GET_DASHBOARD_STATS, FINANCIAL_OVERVIEW } from '@/graphql/queries/getDashboardStats';
 import { GET_UNREAD_ALERTS } from '@/graphql/queries/getUnreadAlerts';
 import { INGEST_CSV_DATA } from '@/graphql/mutations/ingestCSV';
 import { AnimatePresence } from 'framer-motion';
@@ -69,6 +69,9 @@ function DashboardContent() {
   const { data: statsData, refetch: refetchStats } = useQuery(GET_DASHBOARD_STATS, {
     skip: !currentOrganization || !isAuthReady
   });
+  const { data: financialData, refetch: refetchFinancial } = useQuery(FINANCIAL_OVERVIEW, {
+    skip: !currentOrganization || !isAuthReady
+  });
   const { data: alertsData, refetch: refetchAlerts } = useQuery(GET_UNREAD_ALERTS, {
     skip: !currentOrganization || !isAuthReady,
     pollInterval: 30000
@@ -79,6 +82,7 @@ function DashboardContent() {
       setToast({ message: data.triggerOmnichannelSync.message, type: 'success' });
       refetchProducts();
       refetchStats();
+      refetchFinancial();
       refetchAlerts();
       setTimeout(() => setToast(null), 5000);
     },
@@ -228,6 +232,7 @@ function DashboardContent() {
             alerts={alertsData?.unreadAlerts || []}
             onDeleteAlert={(id) => deleteAlert({ variables: { id } })}
             omnichannelInventory={(omnichannelData?.omnichannelInventory || []) as OmnichannelProduct[]}
+            financialData={financialData?.financialOverview?.kpis}
             onProductClick={(id) => setSelectedProductId(id)}
             onOpenInventory={() => router.push('/dashboard?tab=inventory')}
             onOpenNotifications={() => window.dispatchEvent(new CustomEvent('michi:open-notifications'))}

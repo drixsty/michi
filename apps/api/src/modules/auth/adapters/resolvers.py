@@ -21,7 +21,7 @@ class AuthQuery:
             raise UnauthenticatedException()
 
         service = info.context.services.auth_service
-        user = await service.get_user_by_id(uuid.UUID(str(info.context.user_id)))
+        user = await service.get_user_model_by_id(uuid.UUID(str(info.context.user_id)))
         if not user:
             raise UnauthenticatedException()
 
@@ -102,3 +102,16 @@ class AuthMutation:
         )
 
         return UserType.from_db(updated_user)
+
+    @strawberry.mutation
+    async def toggle_user_status(self, info, user_id: strawberry.ID, active: bool) -> bool:
+        """Active ou désactive un compte utilisateur."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        service = info.context.services.auth_service
+        result = await service.toggle_user_status(
+            user_id=uuid.UUID(str(user_id)),
+            is_active=active
+        )
+        return result is not None

@@ -147,6 +147,12 @@ class ApplicationDecisionsService:
             stockout_count=stockout_count,
             total_skus=len(sku_aggregation),
         )
+        
+        logger.debug(
+            f"Health Score Calculation: score={health_score}, "
+            f"rar={kpis.revenue_at_risk}, rr={kpis.total_run_rate}, "
+            f"cov={avg_coverage}, outs={stockout_count}/{len(sku_aggregation)}"
+        )
 
         top_risks = [
             RiskItem(

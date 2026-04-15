@@ -52,17 +52,27 @@ def calculate_health_score(
     total_potential = forecasted_30d + revenue_at_risk
     avail = 1.0 - (revenue_at_risk / total_potential) if total_potential > 0 else 1.0
 
-    # 2. Composante rotation
-    if avg_coverage_days < 7:
-        rot = avg_coverage_days / 7
-    elif avg_coverage_days <= 45:
-        rot = 1.0
-    elif avg_coverage_days <= 90:
-        rot = 1.0 - (avg_coverage_days - 45) / 45
-    else:
-        rot = max(0.0, 0.5 - (avg_coverage_days - 90) / 180)
-
-    # 3. Composante rupture
+    # 2. Composante rupture (toujours calculée)
     out_ratio = 1.0 - (stockout_count / total_skus) if total_skus > 0 else 1.0
 
-    return max(0, min(100, round((avail * 0.5 + rot * 0.3 + out_ratio * 0.2) * 100)))
+    # 3. Composante rotation & Score Final
+    # Si total_run_rate <= 0, on ne peut pas calculer de rotation fiable.
+    # On neutralise alors 'rot' en distribuant ses points sur avail et out_ratio.
+    has_prediction_data = total_run_rate > 0
+    if has_prediction_data:
+        if avg_coverage_days < 7:
+            rot = avg_coverage_days / 7
+        elif avg_coverage_days <= 45:
+            rot = 1.0
+        elif avg_coverage_days <= 90:
+            rot = 1.0 - (avg_coverage_days - 45) / 45
+        else:
+            rot = max(0.0, 0.5 - (avg_coverage_days - 90) / 180)
+        
+        final_score = (avail * 0.5 + rot * 0.3 + out_ratio * 0.2)
+    else:
+        # En l'absence de prédictions, on se base uniquement sur l'existant réel
+        # Nouvelle pondération (avail: 0.7, out: 0.3)
+        final_score = (avail * 0.7 + out_ratio * 0.3)
+
+    return max(0, min(100, round(final_score * 100)))

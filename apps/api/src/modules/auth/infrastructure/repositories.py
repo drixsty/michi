@@ -195,6 +195,15 @@ class SQLAlchemyMembershipRepository:
         )
         return [membership_to_entity(m) for m in result.scalars().all()]
 
+    async def list_models_for_org(self, org_id: UUID) -> list[OrganizationMember]:
+        """Retourne les modèles SQLAlchemy avec la relation user chargée (pour les resolvers GraphQL)."""
+        result = await self._db.execute(
+            select(OrganizationMember)
+            .where(OrganizationMember.organization_id == org_id)
+            .options(selectinload(OrganizationMember.user))
+        )
+        return list(result.scalars().all())
+
     async def delete(self, org_id: UUID, user_id: UUID) -> None:
         await self._db.execute(
             delete(OrganizationMember).where(
@@ -215,6 +224,22 @@ class SQLAlchemyMembershipRepository:
         model = result.scalar_one_or_none()
         if model:
             model.role = role
+            await self._db.flush()
+            return membership_to_entity(model)
+        return None
+
+    async def update_permissions(
+        self, org_id: UUID, user_id: UUID, permissions: dict
+    ) -> Optional[MembershipEntity]:
+        result = await self._db.execute(
+            select(OrganizationMember).where(
+                OrganizationMember.organization_id == org_id,
+                OrganizationMember.user_id == user_id,
+            )
+        )
+        model = result.scalar_one_or_none()
+        if model:
+            model.permissions = permissions
             await self._db.flush()
             return membership_to_entity(model)
         return None
@@ -261,6 +286,11 @@ class SQLAlchemyInvitationRepository:
         await self._db.flush()
         return invitation_to_entity(model)
 
+    async def list_for_org(self, org_id: UUID) -> list[InvitationEntity]:
+        """Liste toutes les invitations d'une organisation."""
+        result = await self._db.execute(
+            select(Invitation).where(Invitation.organization_id == org_id)
+        )
         return [invitation_to_entity(m) for m in result.scalars().all()]
 
     async def get_pending_invitation(self, email: str, org_id: UUID) -> Optional[InvitationEntity]:

@@ -43,7 +43,8 @@ interface ProductQuickViewProps {
 
 // ── What-If Simulator Component (US 14.4) ───────────────────
 function WhatIfSimulator({
-  currentStock, runRate, leadTime, boostFactor, salePrice, costPrice, demandSigma
+  currentStock, runRate, leadTime, boostFactor, salePrice, costPrice, demandSigma,
+  supplierAvgDelay = 0, supplierSigma = 0
 }: {
   currentStock: number; 
   runRate: number; 
@@ -52,6 +53,8 @@ function WhatIfSimulator({
   costPrice: number; 
   salePrice: number;
   demandSigma: number;
+  supplierAvgDelay?: number;
+  supplierSigma?: number;
 }) {
   const [extraDelay, setExtraDelay] = React.useState(0);
   const [salesMultiplier, setSalesMultiplier] = React.useState(1.0);
@@ -69,9 +72,14 @@ function WhatIfSimulator({
   const simLeadTime = leadTime + extraDelay;
   
   // Calcul statistique du Risque de Rupture (Risk of Stockout)
-  // Demand over LT is normal(Mean*LT, Sigma*sqrt(LT))
+  // Dual-Sigma logic: Combining Quantity variance (demandSigma) and Time variance (supplierSigma)
+  // sigmaCombined = sqrt( (LT * sigma_demand^2) + (RunRate^2 * sigma_LT^2) )
   const meanOverLT = simRunRate * simLeadTime;
-  const sigmaOverLT = demandSigma * Math.sqrt(simLeadTime);
+  const sigmaOverLT = Math.sqrt(
+    (simLeadTime * Math.pow(demandSigma, 2)) + 
+    (Math.pow(simRunRate, 2) * Math.pow(supplierSigma, 2))
+  );
+  
   const ros = sigmaOverLT > 0 
     ? (1 - normalCDF((currentStock - meanOverLT) / sigmaOverLT)) * 100
     : (currentStock < meanOverLT ? 100 : 0);
@@ -109,14 +117,14 @@ function WhatIfSimulator({
   return (
     <div className={cn(
       "p-3 rounded-xl border space-y-3 transition-all",
-      isSimulating ? "bg-amber-50/50 border-amber-200" : "bg-slate-50 border-slate-100"
+      isSimulating ? "bg-indigo-50/30 border-indigo-200" : "bg-slate-50 border-slate-100"
     )}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Activity className="h-3 w-3 text-amber-500" />
-          <h3 className="text-[10px] font-bold text-slate-700 tracking-widest">Simulateur What-if</h3>
+          <Activity className="h-3 w-3 text-primary" />
+          <h3 className="text-[10px] font-bold text-slate-700 tracking-widest uppercase">Simulateur What-if</h3>
           {isSimulating && (
-            <span className="text-[7px] font-black text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200 animate-pulse">
+            <span className="text-[7px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded-full border border-primary/20 animate-pulse">
               Simulation active
             </span>
           )}
@@ -130,6 +138,16 @@ function WhatIfSimulator({
           </button>
         )}
       </div>
+
+      {!isSimulating && supplierAvgDelay > 0 && (
+         <button 
+           onClick={() => setExtraDelay(Math.ceil(supplierAvgDelay))}
+           className="w-full py-1.5 bg-amber-50 border border-amber-100 rounded-lg text-[9px] font-bold text-amber-700 hover:bg-amber-100 transition-all flex items-center justify-center gap-1.5"
+         >
+           <Clock className="h-3 w-3" />
+           Simuler avec retard historique (+{supplierAvgDelay.toFixed(1)}j)
+         </button>
+      )}
 
       {/* Slider: Extra delay */}
       <div className="space-y-1.5">
@@ -558,7 +576,52 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                       costPrice={costPrice}
                       salePrice={salePrice}
                       demandSigma={product.prediction!.demandSigma || 0}
+                      supplierAvgDelay={product.supplier?.averageDelayDays}
+                      supplierSigma={product.supplier?.leadTimeSigma}
                     />
+                  )}
+
+                  {/* Supplier Reliability Section (Dual-Sigma) */}
+                  {product.supplier && (
+                    <div className="p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl space-y-3">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                        <h3 className="text-[10px] font-bold text-emerald-700 tracking-widest uppercase">Performance Fournisseur</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="text-center p-2 bg-white rounded-lg border border-emerald-100 shadow-sm">
+                          <p className="text-[7px] font-bold text-slate-400 mb-0.5 uppercase tracking-tighter">Fiabilité</p>
+                          <p className={cn(
+                            "text-sm font-black",
+                            product.supplier.reliabilityScore < 0.8 ? "text-amber-600" : "text-emerald-600"
+                          )}>
+                            {(product.supplier.reliabilityScore * 100).toFixed(0)}%
+                          </p>
+                        </div>
+                        <div className="text-center p-2 bg-white rounded-lg border border-emerald-100 shadow-sm">
+                          <p className="text-[7px] font-bold text-slate-400 mb-0.5 uppercase tracking-tighter">Retard Moyen</p>
+                          <p className="text-sm font-black text-slate-900">
+                            +{product.supplier.averageDelayDays.toFixed(1)}j.
+                          </p>
+                        </div>
+                        <div className="text-center p-2 bg-white rounded-lg border border-emerald-100 shadow-sm">
+                          <p className="text-[7px] font-bold text-slate-400 mb-0.5 uppercase tracking-tighter">Variabilité</p>
+                          <p className="text-sm font-black text-slate-900">
+                            σ {product.supplier.leadTimeSigma.toFixed(1)}j.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {product.supplier.leadTimeSigma > 2 && (
+                        <div className="flex items-start gap-2 px-1">
+                          <AlertCircle className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
+                          <p className="text-[8px] text-amber-700 font-medium leading-tight italic">
+                            Attention : La variabilité de livraison est élevée. Nous recommandons un stock de sécurité majoré de 15%.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {/* Graph Section — Historical */}

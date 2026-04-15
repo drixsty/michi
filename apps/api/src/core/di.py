@@ -3,7 +3,6 @@ Dependency Injection Container
 Construit et injecte les services avec leurs dépendances (Repositories).
 """
 from dataclasses import dataclass
-from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Auth
@@ -28,6 +27,7 @@ from modules.inventory.infrastructure.repositories.product_repository import SQL
 from modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
 from modules.inventory.infrastructure.repositories.sales_log_repository import SQLAlchemySalesLogRepository
 from modules.inventory.infrastructure.repositories.alert_repository import SQLAlchemyAlertRepository
+from modules.inventory.infrastructure.repositories.supplier_repository import SQLAlchemySupplierRepository
 from modules.inventory.application.email_service import EmailService
 
 # Forecasting
@@ -35,6 +35,9 @@ from modules.forecasting.application.forecasting_service import ForecastingServi
 from modules.forecasting.infrastructure.repositories.cleaned_demand_repository import SQLAlchemyCleanedDemandRepository
 # Decisions
 from modules.forecasting.infrastructure.repositories.prediction_repository import SQLAlchemyPredictionRepository
+
+# Intelligence
+from modules.intelligence.services.supplier_analysis import SupplierAnalysisService
 
 # Decisions
 from modules.decisions.application.decisions_service import ApplicationDecisionsService
@@ -56,6 +59,7 @@ class ServiceContainer:
     forecasting_service: ForecastingService
     decisions_service: ApplicationDecisionsService
     billing_service: ApplicationBillingService
+    supplier_analysis_service: SupplierAnalysisService
 
 
 def build_services(db: AsyncSession) -> ServiceContainer:
@@ -82,12 +86,22 @@ def build_services(db: AsyncSession) -> ServiceContainer:
     # Billing
     billing_repo = SQLAlchemyBillingRepository(db)
 
+    # Inventory (supplier)
+    supplier_repo = SQLAlchemySupplierRepository(db)
+
     # Note: Email service est un service d'infrastructure pur (sans DB en général, mais utilise Config)
     email_service = EmailService()
 
     # 2. Adapters (Infrastructure utils)
     password_hasher = BcryptPasswordHasher()
     token_service = JwtTokenService()
+
+    # Billing service doit être créé avant auth/org qui en dépendent
+    billing_provider = StripeBillingProvider()
+    billing_service = ApplicationBillingService(
+        provider=billing_provider,
+        repository=billing_repo
+    )
 
     # 3. Services (Application)
     auth_service = ApplicationAuthService(
@@ -98,7 +112,7 @@ def build_services(db: AsyncSession) -> ServiceContainer:
         token_service=token_service,
         billing_service=billing_service
     )
-    
+
     org_service = ApplicationOrgService(
         user_repo=user_repo,
         org_repo=org_repo,
@@ -131,23 +145,18 @@ def build_services(db: AsyncSession) -> ServiceContainer:
         prediction_repo=prediction_repo,
         product_repo=product_repo,
         sales_log_repo=sales_log_repo,
-        store_repo=store_repo
+        store_repo=store_repo,
+        supplier_repo=supplier_repo
     )
 
     decisions_service = ApplicationDecisionsService(
         user_repo=user_repo,
         store_repo=store_repo,
         product_repo=product_repo,
-        prediction_repo=prediction_repo,
-        supplier_repo=supplier_repo
+        prediction_repo=prediction_repo
     )
 
-    # Billing
-    billing_provider = StripeBillingProvider()
-    billing_service = ApplicationBillingService(
-        provider=billing_provider,
-        repository=billing_repo
-    )
+    supplier_analysis_service = SupplierAnalysisService(db)
 
     return ServiceContainer(
         auth_service=auth_service,
@@ -157,5 +166,6 @@ def build_services(db: AsyncSession) -> ServiceContainer:
         alert_service=alert_service,
         forecasting_service=forecasting_service,
         decisions_service=decisions_service,
-        billing_service=billing_service
+        billing_service=billing_service,
+        supplier_analysis_service=supplier_analysis_service
     )

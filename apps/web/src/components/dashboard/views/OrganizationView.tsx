@@ -16,6 +16,7 @@ import {
   ChevronRight,
   CreditCard
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { LoadingState } from '../../ui/LoadingState';
 import { CustomSelect } from '../../ui/CustomSelect';
@@ -56,6 +57,7 @@ const GET_ORG_DATA = gql`
     }
     me {
       id
+      isAdmin
     }
   }
 `;
@@ -82,14 +84,7 @@ const ROLE_ICONS: Record<string, any> = {
   viewer: Eye,
 };
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: 'Administrateur',
-  manager: 'Gestionnaire',
-  viewer: 'Lecteur',
-  ADMIN: 'Administrateur',
-  MANAGER: 'Gestionnaire',
-  VIEWER: 'Lecteur',
-};
+// Remove hardcoded labels, use t() instead
 
 type OrgTabType = 'team' | 'settings' | 'billing';
 
@@ -100,6 +95,7 @@ export function OrganizationView() {
   const [currency, setCurrency] = useState('€');
   const [isMutualized, setIsMutualized] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const t = useTranslations('organization');
 
   // State for detail panel
   const [selectedMember, setSelectedMember] = useState<any>(null);
@@ -143,15 +139,19 @@ export function OrganizationView() {
       }
     });
   };
-
-  if (loading && !data) return <LoadingState size="lg" message="Chargement de l'organisation..." />;
+  
+  if (loading && !data) return <LoadingState size="lg" message={t('loading')} />;
 
   const members = data?.organizationMembers ?? [];
   const invitations = data?.pendingInvitations ?? [];
+  const isAdmin = data?.me?.isAdmin ?? false;
   const currentUserId = data?.me?.id;
   
-  const currentUserRole = members.find((m: any) => m.user?.id === currentUserId)?.role?.toLowerCase() || 'viewer';
-  const isAdmin = currentUserRole === 'admin';
+  const currentMember = members.find((m: any) => {
+    const mUserId = m.user?.id || m.userId;
+    return mUserId?.toString() === currentUserId?.toString();
+  });
+  const currentUserRole = currentMember?.role?.toLowerCase() || 'viewer';
 
   const filteredMembers = members.filter((m: any) => {
     const email = m.user?.email || '';
@@ -161,10 +161,10 @@ export function OrganizationView() {
   });
 
   const tabs = [
-    { id: 'team', label: 'Équipe', icon: Users },
+    { id: 'team', label: t('tabs.team'), icon: Users },
     ...(isAdmin ? [
-      { id: 'settings', label: 'Paramètres', icon: Settings2 },
-      { id: 'billing', label: 'Facturation', icon: CreditCard }
+      { id: 'settings', label: t('tabs.settings'), icon: Settings2 },
+      { id: 'billing', label: t('tabs.billing'), icon: CreditCard }
     ] : [])
   ] as const;
 
@@ -186,7 +186,7 @@ export function OrganizationView() {
       {showSuccess && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 bg-foreground text-background rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300 border border-white/10 shadow-lg">
           <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-          <span className="text-[13px] font-medium">Paramètres enregistrés</span>
+          <span className="text-[13px] font-medium">{t('success')}</span>
         </div>
       )}
 
@@ -199,12 +199,12 @@ export function OrganizationView() {
             <div className="flex items-center gap-3">
               <span className="text-[13px] text-muted-foreground flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                {members.length} membres actifs
+                {t('stats.active', { count: members.length })}
               </span>
               {invitations.length > 0 && (
                 <span className="text-[13px] text-muted-foreground flex items-center gap-1.5 border-l border-border pl-3">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  {invitations.length} en attente
+                  {t('stats.pending', { count: invitations.length })}
                 </span>
               )}
             </div>
@@ -217,7 +217,7 @@ export function OrganizationView() {
             className="h-9 px-4 bg-foreground text-background rounded-lg text-[13px] font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm shrink-0"
           >
             <UserPlus className="h-4 w-4" />
-            Inviter un membre
+            {t('invite.button')}
           </button>
         )}
       </div>
@@ -247,12 +247,12 @@ export function OrganizationView() {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 animate-in fade-in duration-300">
               <section className="bg-white rounded-lg border border-border overflow-hidden self-start">
                 <div className="px-5 py-4 border-b border-border flex items-center justify-between bg-muted/20">
-                  <h2 className="text-[13px] font-semibold text-foreground">Équipe</h2>
+                  <h2 className="text-[13px] font-semibold text-foreground">{t('team.title')}</h2>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                     <input 
                       type="text" 
-                      placeholder="Filtrer..." 
+                      placeholder={t('team.filter')}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-9 pr-4 h-8 bg-background border border-border rounded-lg text-[13px] focus:ring-2 focus:ring-primary/10 focus:border-primary/20 outline-none w-64 transition-all"
@@ -284,7 +284,7 @@ export function OrganizationView() {
                               <p className="text-sm font-semibold text-foreground leading-tight">{name}</p>
                               <div className="flex items-center gap-1 px-1.5 py-0.5 bg-muted/50 border border-border rounded-md text-muted-foreground">
                                 <RoleIcon className="h-2.5 w-2.5" />
-                                <span className="text-[10px] font-medium">{ROLE_LABELS[roleKey] || roleKey}</span>
+                                <span className="text-[10px] font-medium">{t(`roles.${roleKey.toLowerCase()}`)}</span>
                               </div>
                             </div>
                             <p className="text-[12px] text-muted-foreground">{email}</p>
@@ -308,8 +308,9 @@ export function OrganizationView() {
                       </div>
                     );
                   }) : (
-                    <div className="p-10 text-center text-muted-foreground bg-muted/5">
-                      <p className="text-[13px]">Aucun membre trouvé</p>
+                    <div className="p-10 text-center text-muted-foreground bg-muted/5 flex flex-col items-center">
+                      <Users className="h-5 w-5 text-muted-foreground/30 mb-2" />
+                      <p className="text-[13px]">{t('team.empty')}</p>
                     </div>
                   )}
                 </div>
@@ -318,7 +319,7 @@ export function OrganizationView() {
               <aside className="space-y-6">
                 <div className="bg-muted/20 border border-border rounded-lg p-5 space-y-4">
                   <h2 className="text-[13px] font-semibold text-foreground flex items-center justify-between">
-                    Invitations
+                    {t('invitations.title')}
                     <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-md text-[11px] font-bold">{invitations.length}</span>
                   </h2>
                   
@@ -326,7 +327,7 @@ export function OrganizationView() {
                     {invitations.length === 0 ? (
                       <div className="py-8 text-center bg-white/50 rounded-lg border border-dashed border-border flex flex-col items-center">
                         <Mail className="h-5 w-5 text-muted-foreground/30 mb-2" />
-                        <p className="text-[12px] text-muted-foreground">Aucune attente</p>
+                        <p className="text-[12px] text-muted-foreground">{t('invitations.empty')}</p>
                       </div>
                     ) : (
                       invitations.map((invite: any) => (
@@ -342,13 +343,13 @@ export function OrganizationView() {
                               </div>
                               <div className="min-w-0">
                                 <p className="text-[12px] font-semibold text-foreground truncate">{invite.email}</p>
-                                <p className="text-[10px] text-muted-foreground font-medium">{ROLE_LABELS[invite.role] || invite.role}</p>
+                                <p className="text-[10px] text-muted-foreground font-medium">{t(`roles.${invite.role.toLowerCase()}`)}</p>
                               </div>
                             </div>
                             <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/20 group-hover:text-amber-500 transition-all" />
                           </div>
                           <div className="flex items-center justify-between text-[10px] pt-1">
-                            <span className="font-semibold text-amber-600">En attente</span>
+                            <span className="font-semibold text-amber-600">{t('invitations.pending')}</span>
                             <span className="text-muted-foreground/60">{new Date(invite.expiresAt).toLocaleDateString()}</span>
                           </div>
                         </div>
@@ -365,21 +366,21 @@ export function OrganizationView() {
               <section className="bg-white rounded-lg border border-border overflow-hidden">
                 <div className="px-5 py-4 border-b border-border bg-muted/20">
                   <h2 className="text-[13px] font-semibold text-foreground flex items-center gap-2">
-                    Configuration stratégique
+                    {t('settings.title')}
                   </h2>
                 </div>
                 <div className="p-5 space-y-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
                     <div className="space-y-0.5">
-                      <p className="text-sm font-semibold text-foreground">Devise de l'organisation</p>
-                      <p className="text-[13px] text-muted-foreground">Utilisée pour les calculs consolidés.</p>
+                      <p className="text-sm font-semibold text-foreground">{t('settings.currencyTitle')}</p>
+                      <p className="text-[13px] text-muted-foreground">{t('settings.currencyDesc')}</p>
                     </div>
                     <CustomSelect 
                       options={[
-                        { value: '€', label: 'Euro (€)' },
-                        { value: '$', label: 'US Dollar ($)' },
-                        { value: '£', label: 'British Pound (£)' },
-                        { value: 'CHF', label: 'Swiss Franc (CHF)' }
+                        { value: '€', label: t('settings.currencies.eur') },
+                        { value: '$', label: t('settings.currencies.usd') },
+                        { value: '£', label: t('settings.currencies.gbp') },
+                        { value: 'CHF', label: t('settings.currencies.chf') }
                       ]}
                       value={currency}
                       onChange={setCurrency}
@@ -389,8 +390,8 @@ export function OrganizationView() {
 
                   <div className="flex items-center justify-between gap-4">
                     <div className="space-y-0.5">
-                      <p className="text-sm font-semibold text-foreground">Mutualisation des stocks</p>
-                      <p className="text-[13px] text-muted-foreground">Fusionner les stocks pour tout SKU identique.</p>
+                      <p className="text-sm font-semibold text-foreground">{t('settings.mutualizationTitle')}</p>
+                      <p className="text-[13px] text-muted-foreground">{t('settings.mutualizationDesc')}</p>
                     </div>
                     <button 
                       type="button"
@@ -418,7 +419,7 @@ export function OrganizationView() {
                       ) : (
                         <>
                           <Save className="h-3.5 w-3.5" />
-                          Sauvegarder les paramètres
+                          {t('settings.save')}
                         </>
                       )}
                     </button>

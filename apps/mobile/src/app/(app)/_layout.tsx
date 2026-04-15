@@ -3,7 +3,7 @@
  * Tab navigator : Dashboard | Inventory | Profile
  */
 import { Tabs } from 'expo-router';
-import { BarChart3, Package, User } from 'lucide-react-native';
+import { BarChart3, Package, User, Users } from 'lucide-react-native';
 
 export default function AppLayout() {
   return (
@@ -16,12 +16,12 @@ export default function AppLayout() {
           borderTopWidth: 1,
           borderTopColor: '#F1F5F9',
           backgroundColor: '#fff',
-          height: 60,
-          paddingBottom: 8,
+          height: 65,
+          paddingBottom: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
+          fontSize: 10,
+          fontWeight: '600',
         },
       }}
     >
@@ -40,6 +40,15 @@ export default function AppLayout() {
           title: 'Inventaire',
           tabBarIcon: ({ color, size }) => (
             <Package color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="team/index"
+        options={{
+          title: 'Équipe',
+          tabBarIcon: ({ color, size }) => (
+            <Users color={color} size={size} />
           ),
         }}
       />

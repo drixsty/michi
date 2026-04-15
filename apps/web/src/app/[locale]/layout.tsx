@@ -15,8 +15,6 @@ interface LocaleLayoutProps {
   params: Promise<{ locale: string }>;
 }
 
-import MainLayout from '@/components/layout/MainLayout';
-
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params;
 
@@ -28,9 +26,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <MainLayout>
-        {children}
-      </MainLayout>
+      {children}
     </NextIntlClientProvider>
   );
 }

@@ -133,6 +133,7 @@ class Supplier(Base):
     # Performance metrics
     reliability_score = Column(Float, default=1.0)
     average_delay_days = Column(Float, default=0.0)
+    lead_time_sigma = Column(Float, default=0.0)
 
     store = relationship("Store", back_populates="suppliers")
     products = relationship("Product", back_populates="supplier")

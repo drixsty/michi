@@ -42,5 +42,5 @@ class DecisionCenterOverview:
     health_score: int
     active_platforms: List[str]
     capital_breakdown: List[Dict[str, Any]]
-    suppliers: List[SupplierEntity] = field(default_factory=list)
     message: str
+    suppliers: List[SupplierEntity] = field(default_factory=list)

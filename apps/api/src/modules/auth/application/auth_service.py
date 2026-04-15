@@ -210,6 +210,10 @@ class ApplicationAuthService:
         """Récupère un utilisateur par son ID."""
         return await self._users.get_by_id(user_id)
 
+    async def get_user_model_by_id(self, user_id: uuid.UUID):
+        """Retourne le modèle SQLAlchemy avec relations (organisations) chargées — pour les resolvers GraphQL."""
+        return await self._users.get_model_by_id(user_id)
+
     async def update_user(self, user_id: uuid.UUID, **kwargs) -> Optional[UserEntity]:
         """
         Met à jour un utilisateur.

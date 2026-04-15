@@ -33,10 +33,24 @@ interface StatsOverviewProps {
     warning: number;
     healthy: number;
   };
+  financial?: {
+    inventoryValueCost: number;
+    revenueAtRisk: number;
+    currency: string;
+  };
 }
 
-export function StatsOverview({ stats }: StatsOverviewProps) {
+export function StatsOverview({ stats, financial }: StatsOverviewProps) {
   const t = useTranslations('stats');
+
+  const formatValue = (val: number) => {
+    if (!financial) return val;
+    return new Intl.NumberFormat(undefined, { 
+      style: 'currency', 
+      currency: 'EUR',
+      maximumFractionDigits: 0
+    }).format(val).replace('€', financial.currency);
+  };
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -46,20 +60,40 @@ export function StatsOverview({ stats }: StatsOverviewProps) {
         sub={t('totalProductsSub')}
         units={t('units')}
       />
-      <StatCard
-        label={t('criticalStockouts')}
-        value={stats.urgent}
-        sub={t('criticalStockoutsSub')}
-        units={t('units')}
-        accent="text-red-500"
-      />
-      <StatCard
-        label={t('toWatch')}
-        value={stats.warning}
-        sub={t('toWatchSub')}
-        units={t('units')}
-        accent="text-amber-500"
-      />
+      {financial ? (
+        <StatCard
+          label={t('inventoryValue')}
+          value={formatValue(financial.inventoryValueCost)}
+          sub={t('inventoryValueSub')}
+          units=""
+          accent="text-primary"
+        />
+      ) : (
+        <StatCard
+          label={t('criticalStockouts')}
+          value={stats.urgent}
+          sub={t('criticalStockoutsSub')}
+          units={t('units')}
+          accent="text-red-500"
+        />
+      )}
+      {financial ? (
+        <StatCard
+          label={t('revenueAtRisk')}
+          value={formatValue(financial.revenueAtRisk)}
+          sub={t('revenueAtRiskSub')}
+          units=""
+          accent="text-red-500"
+        />
+      ) : (
+        <StatCard
+          label={t('toWatch')}
+          value={stats.warning}
+          sub={t('toWatchSub')}
+          units={t('units')}
+          accent="text-amber-500"
+        />
+      )}
       <StatCard
         label={t('healthy')}
         value={stats.healthy}

@@ -7,7 +7,8 @@ import { X, Bell, AlertTriangle, AlertCircle, Info, CheckCircle2, Trash2, Extern
 import Link from 'next/link';
 import { useQuery, useMutation, gql } from '@apollo/client';
 import { formatDistanceToNow } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, enGB } from 'date-fns/locale';
+import { useTranslations, useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { LoadingState } from '../ui/LoadingState';
 import { useStore } from '@/context/StoreContext';
@@ -56,6 +57,10 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
     onCompleted: () => refetch(),
   });
 
+  const t = useTranslations('notifications');
+  const locale = useLocale();
+  const dateLocale = locale === 'fr' ? fr : enGB;
+
   const alerts = data?.unreadAlerts || [];
 
   const getIcon = (type: string) => {
@@ -100,10 +105,10 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-primary/5 rounded-lg">
                     <Bell className="h-4 w-4 text-primary" />
-                  </div>
+                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-slate-900 lowercase">notifications</h2>
-                    <p className="text-[10px] text-slate-400 font-medium lowercase tracking-wide">suivi des stocks en temps réel</p>
+                    <h2 className="text-lg font-bold text-slate-900 lowercase">{t('title')}</h2>
+                    <p className="text-[10px] text-slate-400 font-medium lowercase tracking-wide">{t('subtitle')}</p>
                   </div>
                 </div>
                 <button 
@@ -115,17 +120,17 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3 bg-white">
+             <div className="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3 bg-white">
               {loading ? (
-                <LoadingState className="h-64" message="chargement..." />
+                <LoadingState className="h-64" message={t('loading')} />
               ) : alerts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-4 px-8">
                   <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center text-slate-300">
                      <CheckCircle2 className="h-8 w-8" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-slate-900 font-semibold">Tout est sous contrôle</p>
-                    <p className="text-sm text-slate-500">Aucune alerte critique pour le moment.</p>
+                    <p className="text-slate-900 font-semibold">{t('emptyTitle')}</p>
+                    <p className="text-sm text-slate-500">{t('emptyDesc')}</p>
                   </div>
                 </div>
               ) : (
@@ -156,7 +161,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <p className="text-[10px] font-medium text-slate-400 whitespace-nowrap">
-                            {formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true, locale: fr })}
+                            {formatDistanceToNow(new Date(alert.createdAt), { addSuffix: true, locale: dateLocale })}
                           </p>
                         </div>
                         <p className="text-xs text-slate-600 leading-snug font-medium lowercase break-words">
@@ -167,20 +172,20 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       {/* Action Overlays (Hover) - Fixed Positioning */}
                       <div className="shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0">
                          <Link 
-                            href={`/dashboard/product/${alert.productId}`}
-                            onClick={onClose}
-                            className="h-8 w-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-primary hover:border-primary/30 transition-all shadow-sm"
-                            title="ouvrir"
-                         >
-                            <ExternalLink className="h-4 w-4" />
-                         </Link>
-                         <button
-                            onClick={() => deleteAlert({ variables: { id: alert.id } })}
-                            className="h-8 w-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 hover:border-red-200 transition-all shadow-sm"
-                            title="supprimer"
-                         >
-                            <Trash2 className="h-4 w-4" />
-                         </button>
+                             href={`/dashboard/product/${alert.productId}`}
+                             onClick={onClose}
+                             className="h-8 w-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-primary hover:border-primary/30 transition-all shadow-sm"
+                             title={t('open')}
+                          >
+                             <ExternalLink className="h-4 w-4" />
+                          </Link>
+                          <button
+                             onClick={() => deleteAlert({ variables: { id: alert.id } })}
+                             className="h-8 w-8 flex items-center justify-center bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 hover:border-red-200 transition-all shadow-sm"
+                             title={t('delete')}
+                          >
+                             <Trash2 className="h-4 w-4" />
+                          </button>
                       </div>
                     </motion.div>
                   ))}
@@ -195,7 +200,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                   onClick={onClose}
                   className="w-full h-11 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-100 transition-all active:scale-[0.98] lowercase"
                 >
-                  fermer
+                  {t('close')}
                 </button>
               </div>
             )}

@@ -18,6 +18,8 @@ export const GET_PRODUCT_DETAIL: TypedDocumentNode<GetProductDetailQuery, GetPro
       supplier {
         name
         reliabilityScore
+        averageDelayDays
+        leadTimeSigma
       }
       prediction {
         runRate

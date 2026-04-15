@@ -34,10 +34,7 @@ class OrgQuery:
             return []
 
         service = info.context.services.org_service
-        members = await service.get_members(uuid.UUID(str(info.context.org_id)))
-        
-        # Note: On a besoin d'inclure les users, donc on s'assure que le service/repo charge les relations
-        # En Hexagonal, le repo SQL devrait utiliser selectinload
+        members = await service.get_members_with_users(uuid.UUID(str(info.context.org_id)))
         return [OrganizationMemberType.from_db(m, include_user=True) for m in members]
 
 @strawberry.type
@@ -120,3 +117,34 @@ class OrgMutation:
             user_id=uuid.UUID(str(user_id)),
             role=UserRole(role.upper())
         )
+
+    @strawberry.mutation
+    async def update_member_permissions(self, info, user_id: strawberry.ID, permissions: str) -> Optional[OrganizationMemberType]:
+        """Met à jour les permissions granulaires d'un membre (permissions passées en string JSON)."""
+        if not info.context.user_id or not info.context.org_id:
+            raise UnauthenticatedException()
+            
+        import json
+        try:
+            perms_dict = json.loads(permissions)
+        except json.JSONDecodeError:
+            raise MichiException(message="Format JSON invalide pour les permissions", code=ErrorCode.BAD_REQUEST)
+
+        service = info.context.services.org_service
+        org_id = uuid.UUID(str(info.context.org_id))
+        target_user_id = uuid.UUID(str(user_id))
+        
+        success = await service.update_member_permissions(
+            org_id=org_id,
+            user_id=target_user_id,
+            permissions=perms_dict
+        )
+        
+        if not success:
+            return None
+            
+        # Récupération du membre mis à jour pour le cache Apollo
+        members = await service.get_members_with_users(org_id)
+        member = next((m for m in members if m.user_id == target_user_id), None)
+        
+        return OrganizationMemberType.from_db(member, include_user=True) if member else None

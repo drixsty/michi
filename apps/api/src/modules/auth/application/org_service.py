@@ -239,6 +239,10 @@ class ApplicationOrgService:
         """Liste les membres d'une organisation."""
         return await self._memberships.list_for_org(org_id)
 
+    async def get_members_with_users(self, org_id: uuid.UUID) -> list:
+        """Liste les membres avec la relation user chargée — pour les resolvers GraphQL."""
+        return await self._memberships.list_models_for_org(org_id)
+
     async def get_pending_invitations(self, org_id: uuid.UUID) -> list[InvitationEntity]:
         """Liste les invitations en attente d'une organisation."""
         all_invitations = await self._invitations.list_for_org(org_id)
@@ -272,6 +276,11 @@ class ApplicationOrgService:
     async def update_member_role(self, org_id: uuid.UUID, user_id: uuid.UUID, role: UserRole) -> bool:
         """Change le rôle d'un membre."""
         membership = await self._memberships.update_role(org_id, user_id, role)
+        return membership is not None
+
+    async def update_member_permissions(self, org_id: uuid.UUID, user_id: uuid.UUID, permissions: dict) -> bool:
+        """Met à jour les permissions granulaires d'un membre."""
+        membership = await self._memberships.update_permissions(org_id, user_id, permissions)
         return membership is not None
 
     async def delete_invitation(self, invitation_id: uuid.UUID) -> bool:

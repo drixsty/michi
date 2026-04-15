@@ -11,14 +11,26 @@
     "requiredTitle": "Champs requis",
     "requiredMessage": "Veuillez saisir votre email et votre mot de passe."
   },
+  },
+  "common": {
+    "allChannels": "Omnicanal",
+    "viewAll": "Voir tout",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer"
+  },
   "dashboard": {
     "greeting": "Bonjour",
     "subtitle": "Votre tableau de bord",
     "logout": "Déco.",
+    "financials": {
+      "inventoryValue": "Valeur Stock",
+      "revenueAtRisk": "Risque Revenu"
+    },
     "kpi": {
       "products": "Produits",
       "stockouts": "Ruptures",
-      "urgent": "Urgents (≤14j)"
+      "urgent": "Urgents"
     },
     "recentProducts": "Produits récents",
     "stockout": "Rupture",
@@ -30,6 +42,17 @@
     "searchPlaceholder": "Rechercher par SKU ou titre…",
     "stockout": "Rupture",
     "empty": "Aucun produit trouvé"
+  },
+  "team": {
+    "title": "Équipe",
+    "members": "Membres",
+    "invitations": "Invitations",
+    "invite": "Inviter",
+    "role": "Rôle",
+    "admin": "Administrateur",
+    "viewer": "Lecteur",
+    "remove": "Retirer",
+    "removeConfirm": "Voulez-vous vraiment retirer ce membre ?"
   },
   "profile": {
     "title": "Profil",

@@ -55,8 +55,15 @@ class Settings(BaseSettings):
     STRIPE_PRICE_PRO: str
     STRIPE_PRICE_ENTERPRISE: str
     
+    # Intelligence Worker (Sprint 24)
+    INTELLIGENCE_WORKER_INTERVAL_HOURS: int = 6
+    INTELLIGENCE_FORCE_ON_START: bool = True
+    
     model_config = SettingsConfigDict(
-        case_sensitive=False
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
     )
     
     @property

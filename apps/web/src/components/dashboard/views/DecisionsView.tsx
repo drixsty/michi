@@ -1,23 +1,25 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQuery, gql } from '@apollo/client';
-import { 
-  Wallet, 
-  Euro, 
-  AlertTriangle, 
+import {
+  Wallet,
+  Euro,
+  AlertTriangle,
   Clock,
   ArrowRight,
   LayoutDashboard,
   Calendar,
-  ShieldCheck
+  ShieldCheck,
+  PieChart as PieChartIcon
 } from 'lucide-react';
-import { 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip as RechartsTooltip, 
+import {
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   Cell,
   AreaChart,
@@ -32,7 +34,6 @@ import { cn } from '@/lib/utils';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
 import { RisksReportPanel } from '@/components/dashboard/RisksReportPanel';
-import { SupplierCard } from '@/components/dashboard/SupplierCard';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 const GET_FINANCIAL_OVERVIEW = gql`
   query GetFinancialOverview($storeId: ID, $channel: String) {
@@ -63,16 +64,9 @@ const GET_FINANCIAL_OVERVIEW = gql`
       totalStock
       healthScore
       activePlatforms
-      capital_breakdown {
+      capitalBreakdown {
         platform
         value
-      }
-      suppliers {
-        id
-        name
-        reliabilityScore
-        averageDelayDays
-        leadTimeSigma
       }
       message
     }
@@ -84,7 +78,7 @@ function StatCard({ label, value, sub, accent, icon: Icon }: {
   label: string; value: string; sub?: string; accent?: string; icon: React.ElementType;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-border p-3.5 transition-shadow hover:shadow-sm">
+    <div className="bg-white rounded-2xl border border-border p-3.5 transition-shadow hover:shadow-sm">
       <div className="flex items-center gap-2.5 mb-2">
         <div className={cn("p-1.5 rounded-lg", accent === 'destructive' ? 'bg-destructive/10 text-destructive' : accent === 'emerald' ? 'bg-emerald-50 text-emerald-600' : accent === 'amber' ? 'bg-amber-50 text-amber-600' : 'bg-primary/10 text-primary')}>
           <Icon className="h-3.5 w-3.5" />
@@ -98,15 +92,15 @@ function StatCard({ label, value, sub, accent, icon: Icon }: {
 }
 
 // ── Health Score Gauge ───────────────────────────────────────
-function HealthGauge({ score }: { score: number }) {
+function HealthGauge({ score, t }: { score: number; t: ReturnType<typeof useTranslations> }) {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const progress = (score / 100) * circumference;
-  
-  const config = score >= 80 ? { color: 'hsl(var(--primary))', label: 'Optimal', className: 'text-primary bg-primary/10' }
-    : score >= 60 ? { color: '#3b82f6', label: 'Sain', className: 'text-blue-600 bg-blue-50' }
-    : score >= 40 ? { color: 'hsl(var(--ring))', label: 'Tendu', className: 'text-amber-600 bg-amber-50' }
-    : { color: 'hsl(var(--destructive))', label: 'Critique', className: 'text-destructive bg-destructive/10' };
+
+  const config = score >= 80 ? { color: 'hsl(var(--primary))', label: t('health.optimal'), className: 'text-primary bg-primary/10' }
+    : score >= 60 ? { color: '#3b82f6', label: t('health.healthy'), className: 'text-blue-600 bg-blue-50' }
+      : score >= 40 ? { color: 'hsl(var(--ring))', label: t('health.tense'), className: 'text-amber-600 bg-amber-50' }
+        : { color: 'hsl(var(--destructive))', label: t('health.critical'), className: 'text-destructive bg-destructive/10' };
 
   return (
     <div className="flex items-center gap-3">
@@ -124,8 +118,8 @@ function HealthGauge({ score }: { score: number }) {
         </div>
       </div>
       <div>
-        <p className="text-xs font-medium text-muted-foreground">Santé inventaire</p>
-        <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1 inline-block", config.className)}>{config.label}</span>
+        <p className="text-xs font-medium text-muted-foreground">{t('health.label')}</p>
+        <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-lg mt-1 inline-block", config.className)}>{config.label}</span>
       </div>
     </div>
   );
@@ -172,7 +166,7 @@ function ABCParetoChart({ risks }: { risks: any[] }) {
 }
 
 // ── Capital by Channel Donut ────────────────────────────────
-function ChannelDonut({ breakdown }: { kpis: any, breakdown: any[] }) {
+function ChannelDonut({ breakdown, t }: { breakdown: any[], t: ReturnType<typeof useTranslations> }) {
   const channelData = useMemo(() => {
     if (!breakdown || breakdown.length === 0) return [];
     return breakdown.map(item => {
@@ -181,8 +175,18 @@ function ChannelDonut({ breakdown }: { kpis: any, breakdown: any[] }) {
       return { name, value: item.value };
     }).sort((a, b) => b.value - a.value);
   }, [breakdown]);
+  
   const total = channelData.reduce((acc, d) => acc + d.value, 0) || 1;
   const COLORS = ['hsl(262, 83%, 58%)', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
+
+  if (channelData.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center w-full py-8 opacity-30 text-center">
+        <PieChartIcon className="h-10 w-10 mb-2" />
+        <p className="text-[10px] font-medium">{t('channelCapital.empty')}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center gap-4 w-full">
@@ -207,7 +211,7 @@ function ChannelDonut({ breakdown }: { kpis: any, breakdown: any[] }) {
                   <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
                   <span className="text-xs font-medium text-foreground">{entry.name}</span>
                 </div>
-                <span className="text-xs font-semibold text-foreground">{entry.value.toLocaleString('fr-FR')}€</span>
+                <span className="text-xs font-semibold text-foreground">{entry.value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}€</span>
               </div>
               <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                 <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: COLORS[i % COLORS.length] }} />
@@ -221,6 +225,7 @@ function ChannelDonut({ breakdown }: { kpis: any, breakdown: any[] }) {
 }
 
 export function DecisionsView() {
+  const t = useTranslations('decisions');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [showReport, setShowReport] = useState(false);
   const [period, setPeriod] = useState('all');
@@ -232,13 +237,13 @@ export function DecisionsView() {
     setIsMounted(true);
   }, []);
 
-  const { data: data, loading, error } = useQuery(GET_FINANCIAL_OVERVIEW, { 
-    variables: { 
-      channel: channel === 'all' ? null : channel 
+  const { data: data, loading, error } = useQuery(GET_FINANCIAL_OVERVIEW, {
+    variables: {
+      channel: channel === 'all' ? null : channel
     },
     errorPolicy: 'all',
     fetchPolicy: 'cache-and-network',
-    pollInterval: 30000 
+    pollInterval: 30000
   });
 
   if (error) {
@@ -259,7 +264,7 @@ export function DecisionsView() {
   const risks = useMemo(() => allRisks.filter((r: any) => {
     const platformStr = (r.sourcePlatform || "").toLowerCase();
     const currentChannel = channel.toLowerCase();
-    
+
     if (currentChannel !== 'all' && !platformStr.split(',').map((s: string) => s.trim().toLowerCase()).includes(currentChannel)) return false;
     if (statusFilter === 'critical' && r.daysOfStock >= 14) return false;
     if (statusFilter === 'tense' && (r.daysOfStock < 14 || r.daysOfStock >= 30)) return false;
@@ -272,7 +277,7 @@ export function DecisionsView() {
   }), [allRisks, channel, statusFilter, period]);
 
   const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val).replace('€', currency);
+    new Intl.NumberFormat(undefined, { style: 'currency', currency: 'EUR' }).format(val).replace('€', currency);
 
   const projectionData = useMemo(() => {
     if (totalStock <= 0 || totalRunRate <= 0) return [];
@@ -289,19 +294,19 @@ export function DecisionsView() {
     return totalRunRate * avgLead * (kpis?.inventoryValueCost / Math.max(1, totalStock) || 0);
   }, [totalRunRate, totalStock, kpis]);
 
-  if ((loading && !data) || !isMounted) return <LoadingState fullScreen message="Génération des indicateurs stratégiques..." />;
+  if ((loading && !data) || !isMounted) return <LoadingState fullScreen message={t('loading')} />;
 
   const periods = [
-    { value: 'all', label: 'Tout' },
-    { value: '7', label: '7j' },
-    { value: '30', label: '30j' },
-    { value: '90', label: '90j' },
+    { value: 'all', label: t('filters.period.all') },
+    { value: '7', label: t('filters.period.7') },
+    { value: '30', label: t('filters.period.30') },
+    { value: '90', label: t('filters.period.90') },
   ];
   const statuses = [
-    { value: 'all', label: 'Tous' },
-    { value: 'critical', label: 'Critique' },
-    { value: 'tense', label: 'Tendu' },
-    { value: 'healthy', label: 'Sain' },
+    { value: 'all', label: t('filters.status.all') },
+    { value: 'critical', label: t('filters.status.critical') },
+    { value: 'tense', label: t('filters.status.tense') },
+    { value: 'healthy', label: t('filters.status.healthy') },
   ];
 
   const risksWithValue = risks.filter((r: any) => r.riskValue > 0);
@@ -319,12 +324,12 @@ export function DecisionsView() {
           ))}
         </div>
 
-        <CustomSelect 
+        <CustomSelect
           options={[
-            { value: 'all', label: 'Tous les canaux' },
-            ...platforms.map(p => ({ 
-              value: p.toLowerCase(), 
-              label: p.toLowerCase().charAt(0).toUpperCase() + p.toLowerCase().slice(1) 
+            { value: 'all', label: t('filters.allChannels') },
+            ...platforms.map(p => ({
+              value: p.toLowerCase(),
+              label: p.toLowerCase().charAt(0).toUpperCase() + p.toLowerCase().slice(1)
             }))
           ]}
           value={channel}
@@ -338,82 +343,57 @@ export function DecisionsView() {
               className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
                 statusFilter === s.value
                   ? s.value === 'critical' ? "bg-destructive/10 text-destructive shadow-sm"
-                  : s.value === 'tense' ? "bg-amber-50 text-amber-600 shadow-sm"
-                  : s.value === 'healthy' ? "bg-emerald-50 text-emerald-600 shadow-sm"
-                  : "bg-accent text-accent-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                    : s.value === 'tense' ? "bg-amber-50 text-amber-600 shadow-sm"
+                      : s.value === 'healthy' ? "bg-emerald-50 text-emerald-600 shadow-sm"
+                        : "bg-accent text-accent-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               )}>{s.label}</button>
           ))}
         </div>
       </div>
-      
+
       {/* DS v2 Confidence Banner */}
-      <div className="bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-center justify-between">
+      <div className="bg-primary/5 border border-primary/10 rounded-2xl p-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
             <ShieldCheck className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-slate-900">Moteur Statistique Michi v2 Actif</h4>
-            <p className="text-[10px] text-muted-foreground font-medium">Réapprovisionnement basé sur un intervalle de confiance de 95% ($\sigma$ dynamique).</p>
+            <h4 className="text-xs font-bold text-slate-900">{t('banner.title')}</h4>
+            <p className="text-[10px] text-muted-foreground font-medium">{t('banner.subtitle')}</p>
           </div>
         </div>
         <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-white rounded-lg border border-primary/10 shadow-sm">
-          <span className="text-[9px] font-black text-primary uppercase tracking-widest">Niveau de Service : 95%</span>
+          <span className="text-[9px] font-black text-primary tracking-widest">{t('banner.serviceLevel')}</span>
         </div>
       </div>
 
       {/* KPIs Row — compact 2-column layout + health gauge */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <StatCard icon={Wallet} label="Capital immobilisé" value={formatCurrency(kpis?.inventoryValueCost || 0)} accent="primary" />
-        <StatCard icon={Euro} label="Valeur marchande" value={formatCurrency(kpis?.inventoryValueSale || 0)} accent="emerald" />
-        <StatCard icon={AlertTriangle} label="Revenue at risk" value={formatCurrency(kpis?.revenueAtRisk || 0)} sub="Perte estimée (30j)" accent="destructive" />
-        <StatCard icon={Clock} label="Couverture moyenne" value={`${kpis?.stockCoverageAvgDays || 0} jours`} accent="amber" />
-        <div className="bg-white rounded-xl border border-border p-3.5 flex items-center justify-center transition-shadow hover:shadow-sm">
-          <HealthGauge score={healthScore} />
+        <StatCard icon={Wallet} label={t('kpis.immobilized')} value={formatCurrency(kpis?.inventoryValueCost || 0)} accent="primary" />
+        <StatCard icon={Euro} label={t('kpis.marketValue')} value={formatCurrency(kpis?.inventoryValueSale || 0)} accent="emerald" />
+        <StatCard icon={AlertTriangle} label={t('kpis.revenueAtRisk')} value={formatCurrency(kpis?.revenueAtRisk || 0)} sub={t('kpis.lossEstimate')} accent="destructive" />
+        <StatCard icon={Clock} label={t('kpis.avgCoverage')} value={`${kpis?.stockCoverageAvgDays || 0} ${t('kpis.days')}`} accent="amber" />
+        <div className="bg-white rounded-2xl border border-border p-3.5 flex items-center justify-center transition-shadow hover:shadow-sm">
+          <HealthGauge score={healthScore} t={t} />
         </div>
       </div>
 
-      {/* Supplier Performance Section */}
-      {overview?.suppliers && overview.suppliers.length > 0 && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              Répertoire de Performance Fournisseurs
-            </h2>
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">
-              {overview.suppliers.length} Partenaires
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {overview.suppliers.map((s: any) => (
-              <SupplierCard 
-                key={s.id}
-                name={s.name}
-                reliability={s.reliabilityScore}
-                avgDelay={s.averageDelayDays}
-                ltSigma={s.leadTimeSigma}
-              />
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left Column — Charts */}
         <div className="lg:col-span-2 space-y-5">
           {/* Projection Chart */}
-          <section className="bg-white rounded-xl border border-border p-4 transition-shadow hover:shadow-sm">
+          <section className="bg-white rounded-2xl border border-border p-4 transition-shadow hover:shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h2 className="text-sm font-semibold text-foreground">Projection du stock</h2>
-                <p className="text-[10px] text-muted-foreground font-medium">Run rate IA : {totalRunRate.toFixed(1)} unités/jour.</p>
+                <h2 className="text-sm font-semibold text-foreground">{t('projection.title')}</h2>
+                <p className="text-[10px] text-muted-foreground font-medium">{t('projection.subtitle', { value: totalRunRate.toFixed(1) })}</p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5"><div className="w-2 h-0.5 bg-primary rounded-full" /><span className="text-[9px] font-medium text-muted-foreground">Stock</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-4 h-0 border-t border-dashed border-destructive" /><span className="text-[9px] font-medium text-muted-foreground">Seuil</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-2 h-0.5 bg-primary rounded-full" /><span className="text-[9px] font-medium text-muted-foreground">{t('projection.stock')}</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-4 h-0 border-t border-dashed border-destructive" /><span className="text-[9px] font-medium text-muted-foreground">{t('projection.threshold')}</span></div>
               </div>
             </div>
             <div className="h-48 w-full">
@@ -421,12 +401,12 @@ export function DecisionsView() {
                 <AreaChart data={projectionData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorProjection" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(262, 83%, 58%)" stopOpacity={0.12}/>
-                      <stop offset="95%" stopColor="hsl(262, 83%, 58%)" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="hsl(262, 83%, 58%)" stopOpacity={0.12} />
+                      <stop offset="95%" stopColor="hsl(262, 83%, 58%)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 9, fill: 'hsl(var(--muted-foreground))'}} />
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
                   <YAxis hide />
                   <RechartsTooltip contentStyle={{ borderRadius: 'var(--radius)', border: '1px solid hsl(var(--border))', boxShadow: 'none', fontSize: '10px' }} />
                   <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorProjection)" />
@@ -438,25 +418,25 @@ export function DecisionsView() {
 
           {/* ABC + Channel — side by side, compact */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <section className="bg-white rounded-xl border border-border p-4 transition-shadow hover:shadow-sm">
-              <h2 className="text-sm font-semibold text-foreground mb-1">Analyse ABC</h2>
-              <p className="text-[10px] text-muted-foreground font-medium mb-3">Classement par valeur annualisée.</p>
+            <section className="bg-white rounded-2xl border border-border p-4 transition-shadow hover:shadow-sm">
+              <h2 className="text-sm font-semibold text-foreground mb-1">{t('abc.title')}</h2>
+              <p className="text-[10px] text-muted-foreground font-medium mb-3">{t('abc.subtitle')}</p>
               <ABCParetoChart risks={risks} />
               <div className="flex items-center gap-3 mt-2 justify-center">
-                {[{l:'A (80%)', c:'hsl(262, 83%, 58%)'}, {l:'B (15%)', c:'#f59e0b'}, {l:'C (5%)', c:'#cbd5e1'}].map(x => (
+                {[{ l: t('abcCategories.a'), c: 'hsl(262, 83%, 58%)' }, { l: t('abcCategories.b'), c: '#f59e0b' }, { l: t('abcCategories.c'), c: '#cbd5e1' }].map(x => (
                   <div key={x.l} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-sm" style={{backgroundColor: x.c}} />
+                    <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: x.c }} />
                     <span className="text-[9px] font-medium text-muted-foreground">{x.l}</span>
                   </div>
                 ))}
               </div>
             </section>
 
-            <section className="bg-white rounded-xl border border-border p-4 flex flex-col transition-shadow hover:shadow-sm">
-              <h2 className="text-sm font-semibold text-foreground mb-1">Capital par canal</h2>
-              <p className="text-[10px] text-muted-foreground font-medium mb-3">Répartition par plateforme.</p>
+            <section className="bg-white rounded-2xl border border-border p-4 flex flex-col transition-shadow hover:shadow-sm">
+              <h2 className="text-sm font-semibold text-foreground mb-1">{t('channelCapital.title')}</h2>
+              <p className="text-[10px] text-muted-foreground font-medium mb-3">{t('channelCapital.subtitle')}</p>
               <div className="flex-1 flex items-center">
-                <ChannelDonut kpis={kpis} breakdown={overview?.capitalBreakdown || []} />
+                <ChannelDonut breakdown={overview?.capitalBreakdown || []} t={t} />
               </div>
             </section>
           </div>
@@ -464,10 +444,10 @@ export function DecisionsView() {
 
         {/* Right Column — Risks */}
         <div>
-          <section className="bg-white rounded-xl border border-border p-4 flex flex-col h-full transition-shadow hover:shadow-sm">
+          <section className="bg-white rounded-2xl border border-border p-4 flex flex-col h-full transition-shadow hover:shadow-sm">
             <h2 className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
               <AlertTriangle className="h-3 w-3 text-destructive" />
-              Risques financiers ({risksWithValue.length})
+              {t('risks.title', { count: risksWithValue.length })}
             </h2>
 
             <div className="space-y-2.5 flex-1 max-h-[520px] overflow-y-auto no-scrollbar">
@@ -476,18 +456,18 @@ export function DecisionsView() {
                   className="group p-3 bg-background rounded-lg border border-transparent hover:border-border transition-all cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-1">
-                    <span className="text-[9px] font-semibold text-muted-foreground tracking-wide">Sku : {risk.sku}</span>
+                    <span className="text-[9px] font-semibold text-muted-foreground tracking-wide">{t('risks.sku')} {risk.sku}</span>
                     <span className="text-[10px] font-bold text-destructive">{formatCurrency(risk.riskValue)}</span>
                   </div>
                   <h4 className="text-xs font-semibold text-foreground mb-1.5 group-hover:text-primary transition-colors truncate">{risk.title}</h4>
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1 text-[9px] font-medium text-muted-foreground">
                       <Calendar className="h-2.5 w-2.5" />
-                      {risk.stockoutDate ? new Date(risk.stockoutDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—'}
+                      {risk.stockoutDate ? new Date(risk.stockoutDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '—'}
                     </div>
                     {risk.reorderQuantity > 0 && (
                       <span className="text-[8px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                        Cmd: {risk.reorderQuantity} u.
+                        {t('risks.order', { qty: risk.reorderQuantity })}
                       </span>
                     )}
                   </div>
@@ -495,7 +475,7 @@ export function DecisionsView() {
               )) : (
                 <div className="flex flex-col items-center justify-center text-center py-12 opacity-30">
                   <LayoutDashboard className="h-10 w-10 mb-3" />
-                  <p className="text-xs font-medium">Aucun risque identifié</p>
+                  <p className="text-xs font-medium">{t('risks.empty')}</p>
                 </div>
               )}
             </div>
@@ -503,7 +483,7 @@ export function DecisionsView() {
             <button onClick={() => setShowReport(true)}
               className="mt-3 w-full inline-flex h-9 items-center justify-center rounded-lg border border-input bg-background text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground gap-2"
             >
-              Rapport complet <ArrowRight className="h-3 w-3" />
+              {t('risks.report')} <ArrowRight className="h-3 w-3" />
             </button>
           </section>
         </div>

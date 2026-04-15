@@ -1,8 +1,8 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import Link from 'next/link';
-import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+import { usePathname, useRouter, Link } from '@/i18n/navigation';
+import { useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   Package,

@@ -28,9 +28,11 @@ import {
   Layers,
   ExternalLink,
   ShieldCheck,
+  ShieldAlert,
   Zap,
   Activity,
-  Info
+  Info,
+  Clock
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -194,7 +196,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
       size: 110,
       header: ({ column }) => (
         <div className="flex items-center justify-center gap-1.5 text-slate-900 font-extrabold cursor-help group">
-          Volatilité
+          {t('volatility')}
           <Info className="h-3 w-3 text-slate-300 group-hover:text-primary transition-colors" />
         </div>
       ),
@@ -206,18 +208,58 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
         
         const cv = sigma / rr;
         
-        let label = "Stable";
+        let label = t('volatility.stable');
         let colorClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
         let Icon = ShieldCheck;
         
         if (cv > 0.5) {
-          label = "Élevée";
+          label = t('volatility.high');
           colorClass = "bg-red-50 text-red-700 border-red-100";
           Icon = Activity;
         } else if (cv > 0.2) {
-          label = "Modérée";
+          label = t('volatility.moderate');
           colorClass = "bg-amber-50 text-amber-700 border-amber-100";
           Icon = Zap;
+        }
+        
+        return (
+          <div className="flex justify-center">
+            <span className={cn(
+              "px-2 py-0.5 rounded-full text-[9px] font-bold border flex items-center gap-1 transition-all shadow-sm",
+              colorClass
+            )}>
+              <Icon className="h-2.5 w-2.5" />
+              {label}
+            </span>
+          </div>
+        );
+      }
+    },
+    {
+      id: 'reliability',
+      size: 110,
+      header: ({ column }) => (
+        <div className="flex items-center justify-center gap-1.5 text-slate-900 font-extrabold cursor-help group">
+          {t('reliability')}
+          <Info className="h-3 w-3 text-slate-300 group-hover:text-primary transition-colors" />
+        </div>
+      ),
+      cell: ({ row }) => {
+        const score = row.original.supplier?.reliabilityScore ?? 1.0;
+        const avgDelay = row.original.supplier?.averageDelayDays ?? 0;
+        
+        let label = tInventory('reliability.stable');
+        let colorClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
+        let Icon = ShieldCheck;
+        
+        if (score < 0.7 || avgDelay > 5) {
+          label = tInventory('reliability.unstable');
+          colorClass = "bg-red-50 text-red-700 border-red-100";
+          Icon = ShieldAlert;
+        } else if (score < 0.9 || avgDelay > 2) {
+          label = tInventory('reliability.moderate');
+          colorClass = "bg-amber-50 text-amber-700 border-amber-100";
+          Icon = Clock;
         }
         
         return (
@@ -280,7 +322,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
       header: t('stockout'),
       cell: ({ row }) => {
         const dateStr = row.original.predictedStockoutDate || row.original.prediction?.predictedStockoutDate;
-        if (!dateStr) return <div className="text-center"><span className="text-muted-foreground italic text-[10px]">Calcul...</span></div>;
+        if (!dateStr) return <div className="text-center"><span className="text-muted-foreground italic text-[10px]">{t('volatility.calculating')}</span></div>;
 
         const predictedDate = new Date(dateStr);
         const today = new Date();
@@ -298,7 +340,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
               isUrgent ? "bg-red-50 text-red-600" :
               "bg-amber-50 text-amber-600"
             )}>
-              {predictedDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+              {predictedDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
             </span>
             <span className="text-[9px] text-muted-foreground mt-1">
               J-{daysUntil}
@@ -396,7 +438,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
                   channelFilter === 'all' ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"
                 )}
               >
-                {t('all')}
+                {tInventory('all')}
               </button>
               {availablePlatforms.map(p => {
                 const Icon = PLATFORM_ICONS[p as PlatformSource] || Globe;
@@ -433,7 +475,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
                     >
                       <div className={cn(
                         "flex items-center",
-                        header.column.id === 'sources' || header.column.id === 'predictedStockoutDate' || header.column.id === 'totalReorderQuantity' || header.column.id === 'totalStock' || header.column.id === 'abcRank' || header.column.id === 'volatility' ? "justify-center" :
+                         header.column.id === 'sources' || header.column.id === 'predictedStockoutDate' || header.column.id === 'totalReorderQuantity' || header.column.id === 'totalStock' || header.column.id === 'abcRank' || header.column.id === 'volatility' || header.column.id === 'reliability' ? "justify-center" :
                         header.column.id === 'actions' || header.column.id === 'select' ? "justify-center" : ""
                       )}>
                         {flexRender(header.column.columnDef.header, header.getContext())}

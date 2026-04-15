@@ -7,9 +7,15 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 import asyncio
+import sys
+from pathlib import Path
 
-# Import Base et tous les models
-from database import Base
+# Ajouter src/ au path pour les imports du projet
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+
+# Import Base et tous les models (nécessaire pour autogenerate)
+from core.database import Base
+import core.database.models  # noqa: F401 — enregistre tous les modèles dans Base.metadata
 
 # Alembic Config object
 config = context.config

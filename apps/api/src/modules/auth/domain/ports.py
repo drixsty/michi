@@ -63,6 +63,10 @@ class IMembershipRepository(Protocol):
 
     async def delete(self, org_id: UUID, user_id: UUID) -> None: ...
 
+    async def update_role(self, org_id: UUID, user_id: UUID, role: UserRole) -> Optional[MembershipEntity]: ...
+
+    async def update_permissions(self, org_id: UUID, user_id: UUID, permissions: dict) -> Optional[MembershipEntity]: ...
+
 
 @runtime_checkable
 class IInvitationRepository(Protocol):

@@ -21,8 +21,8 @@ class SerializedAsyncSession:
         # Récupère l'attribut de la session originale
         attr = getattr(self._session, name)
         
-        # Si c'est une coroutine, on l'enveloppe dans le lock
-        if asyncio.iscoroutinefunction(attr):
+        # Si c'est une coroutine ou une méthode asynchrone, on l'enveloppe dans le lock
+        if asyncio.iscoroutinefunction(attr) or name in ['execute', 'commit', 'rollback', 'flush', 'refresh', 'get', 'scalar', 'scalars', 'begin']:
             async def wrapped(*args, **kwargs):
                 async with self._lock:
                     return await attr(*args, **kwargs)

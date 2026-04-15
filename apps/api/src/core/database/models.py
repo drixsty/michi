@@ -81,3 +81,14 @@ class OrganizationMember(Base):
     # Relationships
     organization = relationship("Organization", back_populates="members")
     user = relationship("User", back_populates="organizations")
+
+
+# Importer tous les autres modèles pour enregistrer les relations SQLAlchemy
+# Ces imports doivent rester en bas pour éviter les imports circulaires
+from modules.auth.infrastructure.persistence.models import Invitation  # noqa: F401, E402
+from modules.inventory.infrastructure.persistence.models import (  # noqa: F401, E402
+    Store, Product, Alert, SalesLog, Supplier, AlertEmail, PurchaseOrder
+)
+from modules.forecasting.infrastructure.persistence.models import (  # noqa: F401, E402
+    CleanedDemand, Prediction
+)

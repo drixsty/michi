@@ -14,17 +14,24 @@ class OrganizationType:
     plan: str
     subscription_status: str
     created_at: datetime
-    settings: str # Keep as JSON string for now to avoid frontend breaking, but centralize mapping
+    settings: str
 
     @classmethod
     def from_db(cls, org):
         import json
+
+        def _val(v) -> str:
+            """Extrait la valeur string d'un enum, value object ou string brut."""
+            if hasattr(v, 'value'):
+                return str(v.value)
+            return str(v) if v is not None else ''
+
         return cls(
             id=strawberry.ID(str(org.id)),
             name=org.name,
-            slug=org.slug,
-            plan=org.plan,
-            subscription_status=org.subscription_status,
+            slug=_val(org.slug),
+            plan=_val(org.plan),
+            subscription_status=_val(org.subscription_status),
             created_at=org.created_at,
             settings=json.dumps(org.settings or {})
         )
@@ -38,7 +45,6 @@ class OrganizationMemberType:
     permissions: str # JSON string
     organization: Optional[OrganizationType] = None
     user: Optional['UserType'] = None
-    supplier: Optional["SupplierType"] = strawberry.field(resolver=get_supplier_for_product)
 
     @classmethod
     def from_db(cls, member, include_org=True, include_user=False):
@@ -52,7 +58,7 @@ class OrganizationMemberType:
         return cls(
             organization_id=strawberry.ID(str(member.organization_id)),
             user_id=strawberry.ID(str(member.user_id)),
-            role=str(role_val),
+            role=str(role_val).lower(),
             permissions=json.dumps(member.permissions or {}),
             organization=OrganizationType.from_db(member.organization) if (include_org and getattr(member, 'organization', None)) else None,
             user=UserType.from_db(member.user, include_orgs=False) if (include_user and getattr(member, 'user', None)) else None
@@ -72,6 +78,18 @@ class UserType:
     
     # List of organizations the user belongs to
     organizations: List[OrganizationMemberType]
+
+    @strawberry.field
+    async def is_admin(self, info) -> bool:
+        """Détecte si l'utilisateur est admin dans l'organisation active."""
+        if not info.context.org_id: return False
+        active_org_id = str(info.context.org_id)
+        
+        # Check in the already loaded organizations list
+        for m in self.organizations:
+            if str(m.organization_id) == active_org_id:
+                return m.role.lower() == "admin"
+        return False
 
     @classmethod
     def from_db(cls, user, include_orgs=True):

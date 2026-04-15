@@ -20,6 +20,11 @@ interface OverviewViewProps {
   alerts: any[];
   onDeleteAlert: (id: string) => void;
   omnichannelInventory: OmnichannelProduct[];
+  financialData?: {
+    inventoryValueCost: number;
+    revenueAtRisk: number;
+    currency: string;
+  };
   onProductClick: (id: string) => void;
   onOpenInventory: () => void;
   onOpenNotifications: () => void;
@@ -30,6 +35,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   alerts,
   onDeleteAlert,
   omnichannelInventory,
+  financialData,
   onProductClick,
   onOpenInventory,
   onOpenNotifications
@@ -38,7 +44,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500">
-      <StatsOverview stats={stats} />
+      <StatsOverview stats={stats} financial={financialData} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Recent Alerts */}
@@ -55,7 +61,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                 <div className="p-3 bg-slate-50 rounded-full mb-3">
                   <BellOff className="h-6 w-6 text-slate-300" />
                 </div>
-                <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1 uppercase text-balance">{t('emptyTitle')}</p>
+                <p className="text-[10px] font-bold text-slate-400 tracking-widest mb-1 text-balance">{t('emptyTitle')}</p>
                 <p className="text-[10px] text-slate-300 italic">{t('noAlerts')}</p>
               </div>
             ) : (
@@ -68,14 +74,14 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                     <div className={cn(
                       "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
                       (a.type === 'CRITICAL_STOCK' || a.type === 'STOCKOUT_CRITICAL') ? "bg-white text-red-500 shadow-sm" :
-                      (a.type === 'STOCKOUT_RISK' || a.type === 'STOCKOUT_RISK_HIGH') ? "bg-white text-orange-500 shadow-sm" :
-                      a.type === 'STOCKOUT_WARNING' ? "bg-white text-amber-500 shadow-sm" :
-                      "bg-slate-50 text-slate-400"
+                        (a.type === 'STOCKOUT_RISK' || a.type === 'STOCKOUT_RISK_HIGH') ? "bg-white text-orange-500 shadow-sm" :
+                          a.type === 'STOCKOUT_WARNING' ? "bg-white text-amber-500 shadow-sm" :
+                            "bg-slate-50 text-slate-400"
                     )}>
                       {(a.type === 'CRITICAL_STOCK' || a.type === 'STOCKOUT_CRITICAL') ? <AlertTriangle className="h-4 w-4" /> :
-                       (a.type === 'STOCKOUT_RISK' || a.type === 'STOCKOUT_RISK_HIGH') ? <AlertCircle className="h-4 w-4" /> :
-                       a.type === 'STOCKOUT_WARNING' ? <Bell className="h-4 w-4" /> :
-                       <AlertCircle className="h-4 w-4" />}
+                        (a.type === 'STOCKOUT_RISK' || a.type === 'STOCKOUT_RISK_HIGH') ? <AlertCircle className="h-4 w-4" /> :
+                          a.type === 'STOCKOUT_WARNING' ? <Bell className="h-4 w-4" /> :
+                            <AlertCircle className="h-4 w-4" />}
                     </div>
 
                     <div className="flex-1 min-w-0 pr-16">

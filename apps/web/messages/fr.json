@@ -64,7 +64,7 @@
       "loginLink": "Se connecter",
       "termsLink": "conditions",
       "privacyLink": "confidentialité",
-      "termsText": "En continuant, vous acceptez nos {termsLink} et notre {privacyLink}.",
+      "termsText": "En continuant, vous acceptez nos <termsLink>conditions</termsLink> et notre <privacyLink>politique de confidentialité</privacyLink>.",
       "errorExists": "Un compte avec cet email existe déjà.",
       "errorGeneric": "Erreur lors de la création du compte.",
       "errorRegistration": "Erreur lors de l'inscription.",
@@ -151,7 +151,6 @@
       "generic": "Une erreur est survenue."
     },
     "wizard": {
-      " привет": "Salut, {name} !",
       "welcome": "Salut, {name} !",
       "syncing": "Analyse des flux...",
       "skip": "Passer la configuration (Expert)",
@@ -200,6 +199,12 @@
       "decisions": { "title": "Centre de Décision", "subtitle": "Pilotez l'impact financier de votre inventaire en temps réel" },
       "organization": { "title": "Mon Organisation", "subtitle": "Gérez vos collaborateurs et invitations d'accès" }
     },
+    "sources": {
+      "globalStatus": "État Global",
+      "operational": "Systèmes opérationnels",
+      "automation": "Flux Automatiques",
+      "realtime": "Activés (Temps réel)"
+    },
     "header": {
       "export": "Exporter",
       "syncing": "Synchronisation...",
@@ -209,6 +214,7 @@
       "manual": "Manuel",
       "available": "Disponible",
       "lastImport": "Dernier import",
+      "lastSyncAt": "Dernière synchro",
       "disconnect": "Déconnecter",
       "restricted": "Accès restreint",
       "newSource": "Nouvelle source",
@@ -217,6 +223,12 @@
       "apiHealth": "Santé API",
       "readonly": "Lecture seule",
       "updating": "Mise à jour du canal...",
+      "status": "Statut",
+      "cancel": "Annuler",
+      "confirm": "Confirmer",
+      "header": {
+        "export": "Exporter"
+      },
       "success": {
         "title": "Source Connectée !",
         "subtitle": "Vos données sont en cours de synchronisation",
@@ -226,6 +238,44 @@
       "confirmDelete": {
         "title": "Supprimer les données ?",
         "description": "En déconnectant {platform}, vous perdrez instantanément tous les produits et l'historique de ventes associés à ce canal. Cette action est irréversible."
+      },
+      "add": {
+        "title": "Nouvelle Source",
+        "subtitle": "Choisissez une plateforme pour synchroniser vos données.",
+        "configTitle": "Configuration {name}",
+        "configSubtitle": "Étape 2 sur 2 : Paramètres de connexion",
+        "connect": "Finaliser la connexion",
+        "connecting": "Connexion...",
+        "success": "Source connectée",
+        "empty": "Toutes les sources sont connectées",
+        "emptyDesc": "Votre écosystème est totalement synchronisé.",
+        "testData": "Utiliser des données de test",
+        "shopify": {
+          "title": "Identification Shopify",
+          "desc": "Import automatique de vos produits, variantes et historique de ventes.",
+          "guide": "Saisissez l'URL de votre boutique. Nous vous redirigerons vers l'interface sécurisée Shopify pour autoriser Michi.",
+          "label": "Domaine de la boutique",
+          "placeholder": "ma-boutique-direct",
+          "error": "Veuillez saisir l'URL de votre boutique."
+        },
+        "amazon": {
+          "title": "Amazon Seller Central",
+          "desc": "Connexion via Seller Central MWS pour synchroniser votre inventaire.",
+          "guide": "Connectez-vous à Seller Central pour récupérer votre Seller ID et votre Token MWS Michigan v2.",
+          "sellerId": "Seller ID",
+          "token": "MWS Auth Token"
+        },
+        "woocommerce": {
+          "title": "API REST WooCommerce",
+          "desc": "Utilisez vos clés API Consumer/Secret pour lier votre boutique.",
+          "guide": "Générez vos clés API Consumer dans WooCommerce > Réglages > Avancé > API REST.",
+          "url": "URL de la boutique",
+          "key": "Consumer Key",
+          "secret": "Consumer Secret"
+        },
+        "errors": {
+          "title": "Erreur de connexion"
+        }
       }
     }
   },
@@ -238,12 +288,143 @@
     "toWatchSub": "Stock < 20u.",
     "healthy": "Sains",
     "healthySub": "Stock optimisé",
+    "inventoryValue": "Valeur stock",
+    "inventoryValueSub": "Prix d'achat (CAPEX)",
+    "revenueAtRisk": "Revenu à risque",
+    "revenueAtRiskSub": "Manque à gagner (30j)",
     "units": "Unités"
+  },
+  "decisions": {
+    "loading": "Génération des indicateurs stratégiques...",
+    "health": {
+      "label": "Santé inventaire",
+      "optimal": "Optimal",
+      "healthy": "Sain",
+      "tense": "Tendu",
+      "critical": "Critique"
+    },
+    "filters": {
+      "allChannels": "Tous les canaux",
+      "period": { "all": "Tout", "7": "7j", "30": "30j", "90": "90j" },
+      "status": { "all": "Tous", "critical": "Critique", "tense": "Tendu", "healthy": "Sain" }
+    },
+    "banner": {
+      "title": "Moteur Statistique Michi v2 Actif",
+      "subtitle": "Réapprovisionnement basé sur un intervalle de confiance de 95% (σ dynamique).",
+      "serviceLevel": "Niveau de Service : 95%"
+    },
+    "kpis": {
+      "immobilized": "Capital immobilisé",
+      "marketValue": "Valeur marchande",
+      "revenueAtRisk": "Revenue at risk",
+      "lossEstimate": "Perte estimée (30j)",
+      "avgCoverage": "Couverture moyenne",
+      "days": "jours"
+    },
+    "projection": {
+      "title": "Projection du stock",
+      "subtitle": "Run rate IA : {value} unités/jour.",
+      "stock": "Stock",
+      "threshold": "Seuil"
+    },
+    "abc": {
+      "title": "Analyse ABC",
+      "subtitle": "Classement par valeur annualisée."
+    },
+    "channelCapital": {
+      "title": "Capital par canal",
+      "subtitle": "Répartition par plateforme.",
+      "empty": "Données de capital indisponibles"
+    },
+    "risks": {
+      "title": "Risques financiers ({count})",
+      "sku": "SKU :",
+      "empty": "Aucun risque identifié",
+      "report": "Rapport complet",
+      "order": "Cmd: {qty} u."
+    },
+    "abcCategories": {
+      "a": "A (80%)",
+      "b": "B (15%)",
+      "c": "C (5%)"
+    }
+  },
+  "overview": {
+    "recentAlerts": "Alertes récentes",
+    "emptyTitle": "Aucune donnée",
+    "noAlerts": "Aucune alerte active pour le moment.",
+    "seeAllAlerts": "Voir toutes les alertes",
+    "optimizedStock": "Stock optimisé",
+    "noProducts": "Aucun produit synchronisé.",
+    "units": "Unités",
+    "open": "Ouvrir",
+    "manageInventory": "Gérer l'inventaire"
+  },
+  "forecast": {
+    "title": "Prévisions",
+    "subtitle": "Anticipez vos besoins en stock",
+    "runForecast": "Lancer les prévisions",
+    "lastRun": "Dernier calcul",
+    "accuracy": "Précision",
+    "chart": {
+      "demand": "Demande prévue",
+      "actual": "Ventes réelles"
+    }
+  },
+  "profile": {
+    "title": "Mon profil",
+    "loading": "Chargement du profil...",
+    "settings": "Paramètres du profil",
+    "settingsSubtitle": "Gérez vos informations personnelles et votre sécurité.",
+    "logout": "Se déconnecter",
+    "personalInfo": "Informations personnelles",
+    "firstNameLabel": "Prénom",
+    "firstNamePlaceholder": "Votre prénom",
+    "lastNameLabel": "Nom",
+    "lastNamePlaceholder": "Votre nom",
+    "emailLabel": "Adresse email",
+    "languageLabel": "Langue",
+    "save": "Enregistrer",
+    "saveButton": "Enregistrer les modifications",
+    "updateSuccess": "Profil mis à jour avec succès",
+    "updateError": "Erreur lors de la mise à jour",
+    "dangerZone": "Zone dangereuse",
+    "deleteAccount": "Supprimer mon compte",
+    "tabs": {
+      "profile": "Profil",
+      "security": "Sécurité",
+      "notifications": "Notifications"
+    },
+    "security": {
+      "title": "Sécurité du compte",
+      "currentPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "hidePasswords": "Masquer",
+      "showPasswords": "Afficher",
+      "updateButton": "Mettre à jour le mot de passe",
+      "passwordSuccess": "Mot de passe mis à jour avec succès",
+      "passwordError": "Erreur lors du changement",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "incorrectPassword": "Mot de passe actuel incorrect"
+    },
+    "notifications": {
+      "title": "Centre de notifications",
+      "emailAlerts": "Alertes email",
+      "emailAlertsDesc": "Recevez un récapitulatif quotidien de vos alertes critiques.",
+      "minSeverity": "Sévérité minimale",
+      "minSeverityDesc": "Niveau d'urgence requis pour déclencher un email.",
+      "standard": "Standard",
+      "urgent": "Urgent",
+      "critical": "Critique"
+    }
   },
   "inventory": {
     "title": "Inventaire",
     "searchPlaceholder": "Rechercher un produit…",
     "loadingCatalog": "Chargement du catalogue...",
+    "all": "Tous",
+    "groupedActions": "Actions groupées",
     "table": {
       "product": "Produit unifié",
       "sku": "SKU",
@@ -255,8 +436,140 @@
       "stockout": "Rupture prévue",
       "reorder": "À commander",
       "catalogTitle": "Catalogue Unifié",
-      "productsShown": "produits affichés"
+      "productsShown": "produits affichés",
+      "reliability": "Fiabilité",
+      "volatility": "Volatilité"
+    },
+    "reliability": {
+      "moderate": "Modérée",
+      "high": "Élevée",
+      "unstable": "Instable",
+      "frequentDelays": "Retards fréquents"
+    },
+    "volatility": {
+      "stable": "Stable",
+      "moderate": "Modérée",
+      "high": "Élevée",
+      "calculating": "Calcul..."
+    },
+    "supplier": {
+      "performance": "Performance Fournisseur",
+      "reliability": "Fiabilité Fournisseur",
+      "avgDelay": "Retard moyen",
+      "variability": "Variabilité (Sigma LT)",
+      "days": "{days} j."
     },
     "emptySubtitle": "Aucun produit ne correspond à votre sélection."
+  },
+  "organization": {
+    "loading": "Chargement de l'organisation...",
+    "success": "Paramètres enregistrés",
+    "stats": {
+      "active": "{count} membres actifs",
+      "pending": "{count} en attente"
+    },
+    "tabs": {
+      "team": "Équipe",
+      "settings": "Paramètres",
+      "billing": "Facturation"
+    },
+    "invite": {
+      "button": "Inviter un membre",
+      "title": "Inviter un membre",
+      "subtitle": "Ajoutez des collaborateurs à votre organisation Michi.",
+      "emailLabel": "Adresse email",
+      "roleLabel": "Rôle & permissions",
+      "send": "Envoyer l'invitation",
+      "sending": "Envoi...",
+      "success": "Invitation envoyée",
+      "alreadyMember": "Cet utilisateur est déjà membre de l'organisation.",
+      "alreadyInvited": "Une invitation est déjà en attente pour cet email.",
+      "info": "L'utilisateur recevra un email contenant un lien unique valable pendant 7 jours.",
+      "error": "Erreur d'invitation"
+    },
+    "memberDetail": {
+      "details": "Détails",
+      "email": "Email",
+      "arrival": "Arrivée",
+      "inviteSent": "Invitation envoyée",
+      "roleAccess": "Rôle & Accessibilité",
+      "active": "Actif",
+      "pending": "En attente",
+      "permissions": "Permissions granulaires",
+      "permissionsLegend": "Légende : Gauche (Révoqué), Milieu (Défaut du rôle), Droite (Autorisé).",
+      "dangerZone": "Zone de danger",
+      "remove": "Retirer de l'organisation",
+      "ban": "Bannir le compte",
+      "cancelInvite": "Annuler l'invitation",
+      "confirmTitle": "Confirmation requise",
+      "confirmRemove": "L'accès de cet utilisateur sera révoqué immédiatement.",
+      "confirmBan": "L'utilisateur ne pourra plus se connecter à aucun service Michi.",
+      "confirmCancel": "Cette invitation sera invalidée.",
+      "successRemove": "Membre retiré avec succès",
+      "successCancel": "Invitation annulée",
+      "successBan": "Utilisateur banni",
+      "successUnban": "Bannissement levé",
+      "successRole": "Rôle mis à jour : {role}"
+    },
+    "roles": {
+      "admin": "Administrateur",
+      "manager": "Gestionnaire",
+      "viewer": "Lecteur",
+      "adminDesc": "Accès complet à tous les réglages",
+      "managerDesc": "Gestion des stocks et commandes",
+      "viewerDesc": "Accès en lecture seule"
+    },
+    "permissions": {
+      "team": "Équipe & Membres",
+      "team_view": "Voir les membres",
+      "team_invite": "Inviter",
+      "team_remove": "Supprimer",
+      "team_edit_role": "Gérer les rôles",
+      "billing": "Facturation",
+      "billing_view": "Voir factures",
+      "billing_manage": "Modifier abonnement",
+      "inventory": "Stocks & Sources",
+      "inventory_view": "Voir inventaire",
+      "inventory_edit": "Modifier stocks",
+      "stores_view": "Voir boutiques",
+      "stores_manage": "Gérer connexions",
+      "forecasting": "Prévisions IA",
+      "forecasting_view": "Voir prévisions",
+      "forecasting_run": "Lancer calculs"
+    },
+    "team": {
+      "title": "Équipe",
+      "filter": "Filtrer...",
+      "empty": "Aucun membre trouvé"
+    },
+    "invitations": {
+      "title": "Invitations",
+      "empty": "Aucune attente",
+      "pending": "En attente"
+    },
+    "settings": {
+      "title": "Configuration stratégique",
+      "currencyTitle": "Devise de base",
+      "currencyDesc": "Utilisée pour les calculs consolidés.",
+      "currencies": {
+        "eur": "Euro (€)",
+        "usd": "Dollar US ($)",
+        "gbp": "Livre Sterling (£)",
+        "chf": "Franc Suisse (CHF)"
+      },
+      "mutualizationTitle": "Mutualisation des stocks",
+      "mutualizationDesc": "Fusionner les stocks pour tout SKU identique.",
+      "save": "Sauvegarder les paramètres"
+    }
+  },
+  "notifications": {
+    "title": "notifications",
+    "subtitle": "suivi des stocks en temps réel",
+    "emptyTitle": "Tout est sous contrôle",
+    "emptyDesc": "Aucune alerte critique pour le moment.",
+    "loading": "chargement...",
+    "close": "fermer",
+    "open": "ouvrir",
+    "delete": "supprimer"
   }
 }

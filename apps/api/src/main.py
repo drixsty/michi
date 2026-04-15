@@ -23,6 +23,7 @@ from core.middleware.auth import get_current_user_from_token
 from modules.shopify.adapters.auth_routes import router as shopify_auth_router
 from modules.billing.adapters.router import router as billing_router
 from core.exceptions import UnauthenticatedException, ForbiddenException
+from modules.intelligence.application.worker import worker as intelligence_worker
 from loguru import logger
 import sys
 
@@ -50,6 +51,9 @@ async def lifespan(_app: FastAPI):
     print(f"[INFO] Environment: {settings.ENVIRONMENT}")
     print(f"[INFO] CORS Origins: {settings.cors_origins_list}")
     
+    # Lancement du Worker d'Intelligence (Backround Task)
+    asyncio.create_task(intelligence_worker.start())
+    
     yield
     
     # Shutdown
@@ -68,20 +72,20 @@ app = FastAPI(
 
 
 # CORS Middleware (Configuration standard FastAPI optimisée)
+# En dev, on autorise explicitement localhost:3000 avec credentials pour Apollo Client
+CORS_ALLOWED_ORIGINS = settings.cors_origins_list
+if "http://localhost:3000" not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append("http://localhost:3000")
+if "http://127.0.0.1:3000" not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append("http://127.0.0.1:3000")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=[
-        "Content-Type",
-        "Authorization",
-        "Apollo-Require-Preflight",
-        "X-Requested-With",
-        "Accept",
-        "michi-org-id"
-    ],
+    allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 

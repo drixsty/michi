@@ -13,12 +13,13 @@ import {
   Calendar,
   RefreshCw
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 const UPDATE_MEMBER_PERMISSIONS = gql`
   mutation UpdateMemberPermissions($userId: ID!, $permissions: String!) {
     updateMemberPermissions(userId: $userId, permissions: $permissions) {
-      user_id
+      userId
       permissions
     }
   }
@@ -108,6 +109,49 @@ export function MemberDetailPanel({
   const [showConfirm, setShowConfirm] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  
+  const t = useTranslations('organization.memberDetail');
+  const tRoles = useTranslations('organization.roles');
+  const tPerms = useTranslations('organization.permissions');
+
+  const PERMISSION_CATEGORIES = [
+    {
+      id: 'members',
+      label: tPerms('team'),
+      perms: [
+        { id: 'members:view', label: tPerms('team_view') },
+        { id: 'members:invite', label: tPerms('team_invite') },
+        { id: 'members:remove', label: tPerms('team_remove') },
+        { id: 'members:edit_role', label: tPerms('team_edit_role') },
+      ]
+    },
+    {
+      id: 'billing',
+      label: tPerms('billing'),
+      perms: [
+        { id: 'billing:view', label: tPerms('billing_view') },
+        { id: 'billing:manage', label: tPerms('billing_manage') },
+      ]
+    },
+    {
+      id: 'inventory',
+      label: tPerms('inventory'),
+      perms: [
+        { id: 'inventory:view', label: tPerms('inventory_view') },
+        { id: 'inventory:edit', label: tPerms('inventory_edit') },
+        { id: 'stores:view', label: tPerms('stores_view') },
+        { id: 'stores:manage', label: tPerms('stores_manage') },
+      ]
+    },
+    {
+      id: 'forecasting',
+      label: tPerms('forecasting'),
+      perms: [
+        { id: 'forecasting:view', label: tPerms('forecasting_view') },
+        { id: 'forecasting:run', label: tPerms('forecasting_run') },
+      ]
+    }
+  ];
 
   const [removeMember, { loading: removing }] = useMutation(REMOVE_MEMBER);
   const [updateRole] = useMutation(UPDATE_MEMBER_ROLE);
@@ -148,17 +192,17 @@ export function MemberDetailPanel({
         const userId = isMember ? member.userId : null;
         if (userId) {
           await removeMember({ variables: { userId } });
-          setSuccessMsg("Membre retiré avec succès");
+          setSuccessMsg(t("successRemove"));
         }
       } else if (action === 'delete_invite') {
         await deleteInvitation({ variables: { id: invitation.id } });
-        setSuccessMsg("Invitation annulée");
+        setSuccessMsg(t("successCancel"));
       } else if (action === 'ban') {
         await toggleStatus({ variables: { userId: member.userId, active: false } });
-        setSuccessMsg("Utilisateur banni");
+        setSuccessMsg(t("successBan"));
       } else if (action === 'unban') {
         await toggleStatus({ variables: { userId: member.userId, active: true } });
-        setSuccessMsg("Bannissement levé");
+        setSuccessMsg(t("successUnban"));
       }
       
       setTimeout(() => {
@@ -176,7 +220,7 @@ export function MemberDetailPanel({
   const handleChangeRole = async (newRole: string) => {
     try {
       await updateRole({ variables: { userId: member.userId, role: newRole } });
-      setSuccessMsg(`Rôle mis à jour : ${newRole}`);
+      setSuccessMsg(t('successRole', { role: tRoles(newRole.toLowerCase()) }));
       setTimeout(() => {
         onSuccess();
         setSuccessMsg(null);
@@ -246,22 +290,22 @@ export function MemberDetailPanel({
           <div className="flex gap-2">
              <span className={cn(
                "text-[11px] font-bold px-2.5 py-1 rounded-md border tracking-tight",
-               role === 'admin' ? "bg-red-50 text-red-600 border-red-100" :
-               role === 'manager' ? "bg-amber-50 text-amber-600 border-amber-100" :
-               "bg-emerald-50 text-emerald-600 border-emerald-100"
-             )}>
-               {role.charAt(0).toUpperCase() + role.slice(1)}
-             </span>
-             {isMember && (
-               <span className="text-[11px] font-bold px-2.5 py-1 rounded-md border text-muted-foreground bg-muted/50 border-border tracking-tight">
-                 Actif
-               </span>
-             )}
-             {!isMember && (
-               <span className="text-[11px] font-bold px-2.5 py-1 rounded-md border text-amber-600 bg-amber-50 border-amber-100 tracking-tight">
-                 En attente
-               </span>
-             )}
+                role === 'admin' ? "bg-red-50 text-red-600 border-red-100" :
+                role === 'manager' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                "bg-emerald-50 text-emerald-600 border-emerald-100"
+              )}>
+                {tRoles(role)}
+              </span>
+              {isMember && (
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-md border text-muted-foreground bg-muted/50 border-border tracking-tight">
+                  {t('active')}
+                </span>
+              )}
+              {!isMember && (
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-md border text-amber-600 bg-amber-50 border-amber-100 tracking-tight">
+                  {t('pending')}
+                </span>
+              )}
           </div>
         </div>
 
@@ -279,22 +323,22 @@ export function MemberDetailPanel({
           )}
 
           <section className="space-y-3">
-            <h3 className="text-[13px] font-semibold text-foreground px-1">Détails</h3>
+            <h3 className="text-[13px] font-semibold text-foreground px-1">{t('details')}</h3>
             <div className="space-y-3 bg-muted/10 rounded-lg p-4 border border-border">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 text-muted-foreground">
                   <Mail className="h-3.5 w-3.5" />
-                  <span className="text-[13px] font-medium">Email</span>
+                  <span className="text-[13px] font-medium">{t('email')}</span>
                 </div>
                 <span className="text-[13px] font-semibold text-foreground truncate max-w-[180px]">{email}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 text-muted-foreground">
                   <Calendar className="h-3.5 w-3.5" />
-                  <span className="text-[13px] font-medium">{isMember ? 'Arrivée' : 'Invitation envoyée'}</span>
+                  <span className="text-[13px] font-medium">{isMember ? t('arrival') : t('inviteSent')}</span>
                 </div>
                 <span className="text-[13px] font-semibold text-foreground">
-                  {new Date(data.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  {new Date(data.createdAt).toLocaleDateString(t('locale') === 'fr' ? 'fr-FR' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </span>
               </div>
             </div>
@@ -302,7 +346,7 @@ export function MemberDetailPanel({
 
           {isMember && (
             <section className="space-y-3">
-              <h3 className="text-[13px] font-semibold text-foreground px-1 font-bold">Rôle & Accessibilité</h3>
+              <h3 className="text-[13px] font-semibold text-foreground px-1 font-bold">{t('roleAccess')}</h3>
               <div className="grid grid-cols-1 gap-2">
                 {['ADMIN', 'MANAGER', 'VIEWER'].map((r) => (
                   <button
@@ -317,12 +361,10 @@ export function MemberDetailPanel({
                   >
                     <div>
                       <p className={cn("text-[13px] font-semibold", role === r.toLowerCase() ? "text-primary" : "text-foreground")}>
-                        {r === 'ADMIN' ? 'Administrateur' : r === 'MANAGER' ? 'Gestionnaire' : 'Lecteur'}
+                        {tRoles(r.toLowerCase())}
                       </p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {r === 'ADMIN' ? 'Accès complet à tous les réglages' : 
-                         r === 'MANAGER' ? 'Gestion des stocks et commandes' : 
-                         'Accès en lecture seule'}
+                        {tRoles(`${r.toLowerCase()}Desc`)}
                       </p>
                     </div>
                     {role === r.toLowerCase() && <CheckCircle2 className="h-4 w-4 text-primary" />}
@@ -335,7 +377,7 @@ export function MemberDetailPanel({
           {isMember && role !== 'admin' && isAdmin && (
             <section className="space-y-4 pt-6 border-t border-dashed border-border">
               <div className="flex items-center justify-between px-1">
-                <h3 className="text-[13px] font-bold text-foreground">Permissions granulaires</h3>
+                <h3 className="text-[13px] font-bold text-foreground">{t('permissions')}</h3>
                 {updatingPerms && <RefreshCw className="h-3.5 w-3.5 animate-spin text-primary" />}
               </div>
               
@@ -373,13 +415,13 @@ export function MemberDetailPanel({
                 ))}
               </div>
               <p className="text-[10px] text-muted-foreground italic leading-relaxed text-center px-4">
-                Légende : Gauche (Révoqué), Milieu (Défaut du rôle), Droite (Autorisé).
+                {t('permissionsLegend')}
               </p>
             </section>
           )}
 
           <section className="space-y-3 pt-6 border-t border-border">
-            <h3 className="text-[13px] font-semibold text-red-500 px-1">Zone de danger</h3>
+            <h3 className="text-[13px] font-semibold text-red-500 px-1">{t('dangerZone')}</h3>
             
             <div className="space-y-2">
               {isMember ? (
@@ -390,7 +432,7 @@ export function MemberDetailPanel({
                   >
                     <div className="flex items-center gap-3">
                       <Trash2 className="h-4 w-4" />
-                      Retirer de l'organisation
+                      {t('remove')}
                     </div>
                   </button>
 
@@ -400,7 +442,7 @@ export function MemberDetailPanel({
                   >
                     <div className="flex items-center gap-3">
                       <Ban className="h-4 w-4" />
-                      Bannir le compte
+                      {t('ban')}
                     </div>
                   </button>
                 </>
@@ -411,7 +453,7 @@ export function MemberDetailPanel({
                 >
                   <div className="flex items-center gap-3">
                     <Trash2 className="h-4 w-4" />
-                    Annuler l'invitation
+                    {t('cancelInvite')}
                   </div>
                 </button>
               )}
@@ -425,11 +467,11 @@ export function MemberDetailPanel({
             <div className="w-12 h-12 rounded-3xl bg-red-100 flex items-center justify-center text-red-600 mb-4">
               <ShieldAlert className="h-6 w-6" />
             </div>
-            <h4 className="text-lg font-bold text-foreground mb-2">Confirmation requise</h4>
+            <h4 className="text-lg font-bold text-foreground mb-2">{t('confirmTitle')}</h4>
             <p className="text-[13px] text-muted-foreground mb-8">
-              {showConfirm === 'remove' ? "L'accès de cet utilisateur sera révoqué immédiatement." : 
-               showConfirm === 'ban' ? "L'utilisateur ne pourra plus se connecter à aucun service Michi." :
-               "Cette invitation sera invalidée."}
+              {showConfirm === 'remove' ? t('confirmRemove') : 
+               showConfirm === 'ban' ? t('confirmBan') :
+               t('confirmCancel')}
             </p>
             <div className="flex flex-col w-full gap-2 px-10">
               <button 
@@ -439,13 +481,13 @@ export function MemberDetailPanel({
               >
                 {removing || deletingInvite || togglingStatus ? (
                   <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : "Confirmer"}
+                ) : useTranslations('common')('confirm')}
               </button>
               <button 
                 onClick={() => setShowConfirm(null)}
                 className="w-full h-10 bg-muted text-foreground rounded-lg text-sm font-bold hover:bg-border transition-all"
               >
-                Annuler
+                {useTranslations('common')('cancel')}
               </button>
             </div>
           </div>
