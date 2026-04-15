@@ -41,7 +41,7 @@ export function CustomSelect({ options, value, onChange, className, placeholder 
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between w-full h-9 px-3 py-2 text-xs font-semibold text-foreground bg-white border border-border rounded-lg hover:border-primary/30 hover:bg-slate-50 transition-all focus:outline-none focus:ring-2 focus:ring-primary/10"
       >
-        <span className="truncate">{selectedOption ? selectedOption.label : placeholder || 'Sélectionner...'}</span>
+        <span className="truncate">{selectedOption ? selectedOption.label : placeholder || 'Select...'}</span>
         <ChevronDown className={cn("ml-2 h-3.5 w-3.5 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} />
       </button>
 

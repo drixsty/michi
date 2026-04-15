@@ -2,6 +2,7 @@
 Types GraphQL avec Strawberry
 """
 import strawberry
+import asyncio
 from typing import Optional, List
 from datetime import datetime, date
 
@@ -49,19 +50,44 @@ class OrganizationMemberType:
     @classmethod
     def from_db(cls, member, include_org=True, include_user=False):
         import json
+        if not member: return None
         
         # Determine role string
-        role_val = member.role
-        if hasattr(role_val, 'value'):
-            role_val = role_val.value
+        try:
+            role_val = getattr(member, 'role', 'viewer')
+            if hasattr(role_val, 'value'):
+                role_val = role_val.value
+        except Exception:
+            role_val = 'viewer'
             
+        # Safety for organization link
+        loaded_org = None
+        if include_org:
+            try:
+                # Check if already loaded
+                org_model = getattr(member, 'organization', None)
+                if org_model and not asyncio.iscoroutine(org_model):
+                    loaded_org = OrganizationType.from_db(org_model)
+            except Exception:
+                loaded_org = None
+
+        # Safety for user link
+        loaded_user = None
+        if include_user:
+            try:
+                user_model = getattr(member, 'user', None)
+                if user_model and not asyncio.iscoroutine(user_model):
+                    loaded_user = UserType.from_db(user_model, include_orgs=False)
+            except Exception:
+                loaded_user = None
+
         return cls(
-            organization_id=strawberry.ID(str(member.organization_id)),
-            user_id=strawberry.ID(str(member.user_id)),
+            organization_id=strawberry.ID(str(getattr(member, 'organization_id', ''))),
+            user_id=strawberry.ID(str(getattr(member, 'user_id', ''))),
             role=str(role_val).lower(),
-            permissions=json.dumps(member.permissions or {}),
-            organization=OrganizationType.from_db(member.organization) if (include_org and getattr(member, 'organization', None)) else None,
-            user=UserType.from_db(member.user, include_orgs=False) if (include_user and getattr(member, 'user', None)) else None
+            permissions=json.dumps(getattr(member, 'permissions', {})),
+            organization=loaded_org,
+            user=loaded_user
         )
 
 @strawberry.type
@@ -72,7 +98,6 @@ class UserType:
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     current_organization_id: Optional[strawberry.ID] = None
-    shop_id: Optional[strawberry.ID] = None
     created_at: datetime
     preferences: str
     
@@ -97,7 +122,7 @@ class UserType:
         if not user: return None
         
         # Handle dict preferences vs object
-        prefs = user.preferences
+        prefs = getattr(user, 'preferences', {})
         if isinstance(prefs, dict):
             prefs_str = json.dumps(prefs)
         elif isinstance(prefs, str):
@@ -105,18 +130,30 @@ class UserType:
         else:
             prefs_str = json.dumps(prefs or {})
 
+        # Safety check for organizations relationship to avoid DetachedInstanceError
+        orgs_list = []
+        if include_orgs:
+            try:
+                # Si on est dans un contexte async avec SQLAlchemy, l'accès à une 
+                # relation non chargée peut lever DetachedInstanceError ou une coroutine.
+                raw_orgs = getattr(user, 'organizations', [])
+                if isinstance(raw_orgs, (list, tuple)):
+                    orgs_list = [OrganizationMemberType.from_db(m) for m in raw_orgs]
+                else:
+                    # Probablement une coroutine ou un objet lazy non chargé
+                    orgs_list = []
+            except Exception:
+                orgs_list = []
+
         return cls(
             id=strawberry.ID(str(user.id)),
             email=user.email,
             first_name=user.first_name,
             last_name=user.last_name,
             current_organization_id=strawberry.ID(str(user.current_organization_id)) if user.current_organization_id else None,
-            shop_id=strawberry.ID(str(user.shop_id)) if getattr(user, 'shop_id', None) else None,
             created_at=user.created_at,
             preferences=prefs_str,
-            organizations=[
-                OrganizationMemberType.from_db(m) for m in getattr(user, 'organizations', [])
-            ] if include_orgs else []
+            organizations=orgs_list
         )
 
 from typing import Annotated
@@ -184,8 +221,9 @@ class SupplierType:
             id=strawberry.ID(str(supplier.id)),
             name=supplier.name,
             contact_email=supplier.contact_email,
-            reliability_score=supplier.reliability_score,
-            average_delay_days=supplier.average_delay_days
+            reliability_score=float(supplier.reliability_score or 1.0),
+            average_delay_days=float(supplier.average_delay_days or 0.0),
+            lead_time_sigma=float(getattr(supplier, 'lead_time_sigma', 0.0) or 0.0)
         )
 
 @strawberry.type

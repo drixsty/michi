@@ -29,7 +29,6 @@ const GET_ME = gql`
       email
       firstName
       lastName
-      shopId
       preferences
     }
   }

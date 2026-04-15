@@ -19,13 +19,7 @@ from core.graphql.types import (
 
 # Helper functions for ProductType field resolvers
 async def resolve_product_channels(info, sku: str):
-    from modules.inventory.application.omnichannel_service import OmnichannelService
-    from modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
-    from modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
-    
-    product_repo = SQLAlchemyProductRepository(info.context.db)
-    store_repo = SQLAlchemyStoreRepository(info.context.db)
-    service = OmnichannelService(product_repo, store_repo)
+    service = info.context.services.omnichannel_service
     
     org_id = info.context.org_id
     if not org_id: return []
@@ -46,9 +40,8 @@ async def resolve_product_channels(info, sku: str):
     ]
 
 async def resolve_product_supplier(info, supplier_id: str):
-    from modules.inventory.infrastructure.repositories.supplier_repository import SQLAlchemySupplierRepository
-    repo = SQLAlchemySupplierRepository(info.context.db)
-    s = await repo.get_by_id(uuid.UUID(supplier_id))
+    service = info.context.services.inventory_service
+    s = await service.supplier_repo.get_by_id(uuid.UUID(supplier_id))
     return SupplierType.from_db(s)
 
 @strawberry.type
@@ -72,7 +65,11 @@ class InventoryQuery:
             stores = await service.store_repo.list_by_organization(uuid.UUID(str(org_id)))
             shop_ids = [str(s.id) for s in stores]
 
+        from loguru import logger
+        logger.debug(f"[Inventory] Querying products store_id={store_id}, id={id}, org_id={info.context.org_id}")
+        
         items = await service.get_products(shop_ids, product_id=str(id) if id else None)
+        logger.debug(f"[Inventory] Found {len(items)} products")
         return [ProductType.from_db(p) for p in items]
 
     @strawberry.field
@@ -109,13 +106,45 @@ class InventoryMutation:
     @require_permission(MichiPermission.INVENTORY_EDIT)
     async def mark_alert_as_read(self, info, alert_id: strawberry.ID) -> bool:
         service = info.context.services.alert_service
-        return await service.alert_repo.mark_as_read(uuid.UUID(str(alert_id)))
+        res = await service.alert_repo.mark_as_read(uuid.UUID(str(alert_id)))
+        await info.context.db.commit()
+        return res
+
+    @strawberry.mutation
+    @require_permission(MichiPermission.INVENTORY_EDIT)
+    async def update_product_settings(
+        self,
+        info,
+        id: strawberry.ID,
+        lead_time: Optional[int] = None,
+        moq: Optional[int] = None,
+        boost_factor: Optional[float] = None,
+        stock_weight: Optional[float] = None,
+        cost_price: Optional[float] = None,
+        sale_price: Optional[float] = None
+    ) -> ProductType:
+        service = info.context.services.inventory_service
+        
+        # Prepare kwargs for update_settings
+        updates = {}
+        if lead_time is not None: updates["lead_time"] = lead_time
+        if moq is not None: updates["moq"] = moq
+        if boost_factor is not None: updates["boost_factor"] = boost_factor
+        if stock_weight is not None: updates["stock_weight"] = stock_weight
+        if cost_price is not None: updates["cost_price"] = cost_price
+        if sale_price is not None: updates["sale_price"] = sale_price
+
+        updated_p = await service.update_product_settings(str(id), **updates)
+        await info.context.db.commit()
+        return ProductType.from_db(updated_p)
 
     @strawberry.mutation
     @require_permission(MichiPermission.INVENTORY_EDIT)
     async def delete_alert(self, info, alert_id: strawberry.ID) -> bool:
         service = info.context.services.alert_service
-        return await service.alert_repo.delete(uuid.UUID(str(alert_id)))
+        res = await service.alert_repo.delete(uuid.UUID(str(alert_id)))
+        await info.context.db.commit()
+        return res
 
     @strawberry.mutation(name="toggleSource")
     @require_permission(MichiPermission.STORES_MANAGE)
@@ -134,6 +163,7 @@ class InventoryMutation:
             connected=connected,
             store_id=uuid.UUID(str(store_id)) if store_id else None
         )
+        await info.context.db.commit()
         return StoreType.from_db(saved_store)
 
     @strawberry.mutation
@@ -167,6 +197,8 @@ class InventoryMutation:
             forecasting_service=info.context.services.forecasting_service,
             alert_service=info.context.services.alert_service
         )
+        
+        await info.context.db.commit()
         
         return IngestionResult(
             success=True, 

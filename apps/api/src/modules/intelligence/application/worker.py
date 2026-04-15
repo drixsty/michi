@@ -8,7 +8,7 @@ from loguru import logger
 from sqlalchemy import select
 
 from core.database.connection import AsyncSessionLocal
-from core.database.session import SerializedAsyncSession
+from core.database import SerializedAsyncSession, ReentrantAsyncLock
 from core.di import build_services
 from core.config import settings
 from modules.inventory.infrastructure.persistence.models import Store
@@ -73,7 +73,7 @@ class IntelligenceWorker:
         # On utilise une session dédiée et isolée par store pour éviter les sessions trop longues
         async with AsyncSessionLocal() as db:
             # Sérialisation indispensable pour la concurrence des services si nécessaire
-            lock = asyncio.Lock()
+            lock = ReentrantAsyncLock()
             serialized_db = SerializedAsyncSession(db, lock)
             
             # Rebuild DI container for this session

@@ -34,6 +34,7 @@ class AuthMutation:
         """Authentification par email/password."""
         service = info.context.services.auth_service
         result = await service.login(email=input.email, password=input.password)
+        await info.context.db.commit()
         
         return AuthPayload(
             token=result.token.value,
@@ -50,6 +51,7 @@ class AuthMutation:
             first_name=input.first_name,
             last_name=input.last_name
         )
+        await info.context.db.commit()
         
         return AuthPayload(
             token=result.token.value,
@@ -70,11 +72,13 @@ class AuthMutation:
             raise UnauthenticatedException()
             
         service = info.context.services.auth_service
-        return await service.change_password(
+        res = await service.change_password(
             user_id=uuid.UUID(str(info.context.user_id)),
             current_password=input.current_password,
             new_password=input.new_password
         )
+        await info.context.db.commit()
+        return res
 
     @strawberry.mutation
     async def update_profile(self, info, input: UpdateProfileInput) -> UserType:
@@ -100,7 +104,7 @@ class AuthMutation:
             last_name=input.last_name,
             preferences=prefs
         )
-
+        await info.context.db.commit()
         return UserType.from_db(updated_user)
 
     @strawberry.mutation
@@ -114,4 +118,5 @@ class AuthMutation:
             user_id=uuid.UUID(str(user_id)),
             is_active=active
         )
+        await info.context.db.commit()
         return result is not None

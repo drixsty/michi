@@ -26,7 +26,8 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const pathname = usePathname();
-  const isAuthPage = pathname === '/login' || pathname === '/register';
+  // Support both root paths and localized paths (e.g. /fr/login)
+  const isAuthPage = pathname.endsWith('/login') || pathname.endsWith('/register');
   
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [stores, setStores] = useState<Store[]>([]);

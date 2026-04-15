@@ -19,6 +19,7 @@ from modules.forecasting.adapters.resolvers import (
 )
 from modules.auth.adapters.decorators import require_permission
 from modules.auth.domain.constants import MichiPermission
+from modules.shopify.domain.validation import DataValidationService
 
 
 # ── Strawberry Types ──────────────────────────────────────────────────────────
@@ -79,47 +80,78 @@ class ShopifyQuery:
 class ShopifyMutation:
     @strawberry.mutation
     @require_permission(MichiPermission.STORES_MANAGE)
-    async def trigger_mock_data_sync(self, info, store_id: strawberry.ID, platform: str) -> IngestionResult:
-        # Alias pour la compatibilité
+    async def trigger_mock_data_sync(self, info, store_id: Optional[strawberry.ID] = None, platform: str = "shopify") -> IngestionResult:
+        """Alias pour la compatibilité avec l'ancien schéma."""
         return await self.trigger_omnichannel_sync(info, store_id)
 
     @strawberry.mutation
     @require_permission(MichiPermission.STORES_MANAGE)
-    async def trigger_omnichannel_sync(self, info, store_id: strawberry.ID) -> IngestionResult:
-        from modules.inventory.application.alert_service import AlertService
-        # ... logic ...
-        s_id = str(store_id)
-        service = ShopifyService(info.context.db)
-        result = await service.trigger_mock_sync(s_id)
-        
-        # Logique de prédiction déclenchée après sync (pour démo)
+    async def trigger_omnichannel_sync(self, info, store_id: Optional[strawberry.ID] = None) -> IngestionResult:
+        from modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
+        from modules.forecasting.application.forecasting_service import ForecastingService
         from modules.forecasting.infrastructure.repositories.cleaned_demand_repository import SQLAlchemyCleanedDemandRepository
         from modules.forecasting.infrastructure.repositories.prediction_repository import SQLAlchemyPredictionRepository
         from modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
         from modules.inventory.infrastructure.repositories.sales_log_repository import SQLAlchemySalesLogRepository
-        from modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
-        
+        from modules.inventory.infrastructure.repositories.supplier_repository import SQLAlchemySupplierRepository
+        import uuid
+
         db = info.context.db
-        product_repo = SQLAlchemyProductRepository(db)
         store_repo = SQLAlchemyStoreRepository(db)
+        shopify_service = ShopifyService(db)
         
+        # Déterminer quels stores synchroniser
+        target_store_ids = []
+        if store_id:
+            target_store_ids = [str(store_id)]
+        else:
+            if not info.context.org_id:
+                raise UnauthenticatedException("Organisation non identifiée")
+            # All connected stores for the organization
+            stores = await store_repo.list_by_organization(uuid.UUID(str(info.context.org_id)))
+            target_store_ids = [str(s.id) for s in stores if s.connected]
+
+        if not target_store_ids:
+            return IngestionResult(
+                success=True,
+                message="Aucune boutique connectée à synchroniser.",
+                platform="Omnichannel",
+                products_count=0,
+                sales_logs_count=0
+            )
+
+        total_products = 0
+        total_sales = 0
+        
+        # Initialiser le service de prévision (shared for better perf)
         forecasting = ForecastingService(
             SQLAlchemyCleanedDemandRepository(db),
             SQLAlchemyPredictionRepository(db),
-            product_repo,
+            SQLAlchemyProductRepository(db),
             SQLAlchemySalesLogRepository(db),
-            store_repo
+            store_repo,
+            SQLAlchemySupplierRepository(db)
         )
-        await forecasting.run_cleaning_pipeline(s_id)
-        await forecasting.run_prediction_pipeline(s_id)
 
-        # Retourne IngestionResult pour compatibilité schema.graphql existant
+        for s_id in target_store_ids:
+            # 1. Sync Mock Data
+            result = await shopify_service.trigger_mock_sync(s_id)
+            total_products += result.products_created
+            total_sales += result.sales_logs_created
+            
+            # 2. Run Forecasting Pipeline
+            await forecasting.run_cleaning_pipeline(s_id)
+            await forecasting.run_prediction_pipeline(s_id)
+
+        # Commit explicit maintenant que get_db ne le fait plus automatiquement (plus sûr avec SerializedAsyncSession)
+        await db.commit()
+
         return IngestionResult(
-            success=result.success,
-            message=result.message + " Prédictions mises à jour.",
-            platform="Mock",
-            products_count=result.products_created,
-            sales_logs_count=result.sales_logs_created
+            success=True,
+            message=f"Sync Omnicanal réussie pour {len(target_store_ids)} boutique(s). Prédictions mises à jour.",
+            platform="Omnichannel",
+            products_count=total_products,
+            sales_logs_count=total_sales
         )
 
     @strawberry.mutation

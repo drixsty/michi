@@ -111,13 +111,20 @@ class InventoryService:
             except ValueError:
                 p_sku = str(product_id)
  
+        logger.debug(f"[InventoryService] get_products: p_uuid={p_uuid}, p_sku={p_sku}, shop_ids_count={len(s_uuids)}")
+
         if p_uuid:
             p = await self.product_repo.get_by_id(p_uuid)
+            if not p:
+                logger.warning(f"[InventoryService] Product ID {p_uuid} not found in repository")
             return [p] if p else []
         elif p_sku:
-            return await self.product_repo.get_by_sku(p_sku, s_uuids)
+            items = await self.product_repo.get_by_sku(p_sku, s_uuids)
+            logger.debug(f"[InventoryService] Found {len(items)} products for SKU {p_sku} in {len(s_uuids)} stores")
+            return items
         else:
-            return await self.product_repo.list_by_store(s_uuids)
+            items = await self.product_repo.list_by_store(s_uuids)
+            return items
 
     async def update_product_settings(
         self, 

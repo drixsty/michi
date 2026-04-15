@@ -83,13 +83,14 @@ def calculate_reorder_quantity(
     sigma: float = 0.0,
     service_level: float = 0.95,
     average_delay: float = 0.0,
+    lead_time_sigma: float = 0.0,
 ) -> int:
     """
     Calcule la quantité de commande recommandée via modèle statistique (Sprint 22).
 
-    Formule (Service Level driven) :
-        SafetyStock = Z * Sigma * sqrt(LeadTime)
-        Target      = (RunRate * LeadTime) + SafetyStock
+    Formule (Service Level driven) avec variabilité combinée :
+        SafetyStock = Z * sqrt( LT * σ_demand² + RunRate² * σ_lt² )
+        Target      = (RunRate * LT_effective) + SafetyStock
         Reorder     = ceil(max(0, Target - CurrentStock) / MOQ) * MOQ
 
     Args:
@@ -97,9 +98,10 @@ def calculate_reorder_quantity(
         lead_time: Délai de livraison théorique en jours (>= 1).
         moq: Quantité minimum de commande (>= 1).
         current_stock: Stock actuel.
-        sigma: Écart-type de la demande (volatilité). Si 0, pas de stock de sécurité lié à la variance.
+        sigma: Écart-type de la demande (volatilité).
         service_level: Probabilité de ne pas être en rupture (défaut: 0.95).
         average_delay: Retard moyen constaté du fournisseur.
+        lead_time_sigma: Écart-type du délai de livraison (incertitude fournisseur).
 
     Returns:
         Quantité à commander (multiple de moq).
@@ -110,18 +112,17 @@ def calculate_reorder_quantity(
     moq = max(1, moq)
     effective_lead_time = lead_time + average_delay
     
-    # 1. Calcul du coefficient Z (approximation pour les niveaux standards)
-    # 95% -> 1.645, 99% -> 2.326, 90% -> 1.282
-    # On utilise 1.645 par défaut comme demandé.
+    # 1. Calcul du coefficient Z
     z_map = {0.90: 1.282, 0.95: 1.645, 0.99: 2.326}
     z_score = z_map.get(service_level, 1.645)
 
     # 2. Calcul du besoin de fond (Cycle Stock)
     cycle_stock = run_rate * effective_lead_time
     
-    # 3. Calcul du Stock de Sécurité Statistique
-    # Formule : Z * Sigma * sqrt(LT)
-    safety_stock = z_score * sigma * math.sqrt(effective_lead_time)
+    # 3. Calcul du Stock de Sécurité Statistique (Variabilité combinée)
+    # Formule : Z * sqrt( (LT * σ_d²) + (D² * σ_lt²) )
+    combined_variance = (effective_lead_time * (sigma ** 2)) + ((run_rate ** 2) * (lead_time_sigma ** 2))
+    safety_stock = z_score * math.sqrt(combined_variance)
     
     # 4. Cible de stock et calcul de commande
     target_stock = cycle_stock + safety_stock

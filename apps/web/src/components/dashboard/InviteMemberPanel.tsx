@@ -41,11 +41,6 @@ interface InviteMemberPanelProps {
   pendingInvitations?: PendingInvitation[];
 }
 
-const ROLES = [
-  { id: 'ADMIN', label: 'Administrateur', description: "Accès total à l'organisation et aux paramètres." },
-  { id: 'MANAGER', label: 'Gestionnaire', description: 'Gère les fournisseurs et l\'inventaire.' },
-  { id: 'VIEWER', label: 'Lecteur', description: 'Consultation uniquement.' },
-];
 
 type ConflictType = 'already_member' | 'already_invited' | null;
 
@@ -164,7 +159,7 @@ export function InviteMemberPanel({
             type="email"
             value={email}
             onChange={(e) => { setEmail(e.target.value); setServerError(null); }}
-            placeholder="exemple@michi.com"
+            placeholder={t('emailPlaceholder')}
             className={cn(
               "w-full h-11 px-4 bg-slate-100/50 border rounded-lg text-xs transition-all focus:bg-white focus:ring-4 focus:ring-primary/5 focus:ring-0 focus:outline-none placeholder:text-muted-foreground/50 font-medium text-slate-900",
               conflict === 'already_member'

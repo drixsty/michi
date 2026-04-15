@@ -53,6 +53,8 @@ class InvitationMutation:
             invited_by_id=uuid.UUID(str(info.context.user_id))
         )
         
+        await info.context.db.commit()
+        
         return InvitationType(
             id=strawberry.ID(str(invitation.id)),
             email=invitation.email,
@@ -71,10 +73,12 @@ class InvitationMutation:
             raise UnauthenticatedException()
             
         service = info.context.services.org_service
-        return await service.accept_invitation(
+        res = await service.accept_invitation(
             code=code,
             user_id=uuid.UUID(str(info.context.user_id))
         )
+        await info.context.db.commit()
+        return res
 
     @strawberry.mutation
     async def delete_invitation(self, info, invitation_id: strawberry.ID) -> bool:
@@ -83,4 +87,6 @@ class InvitationMutation:
             raise UnauthenticatedException()
             
         service = info.context.services.org_service
-        return await service.delete_invitation(uuid.UUID(str(invitation_id)))
+        res = await service.delete_invitation(uuid.UUID(str(invitation_id)))
+        await info.context.db.commit()
+        return res

@@ -52,7 +52,7 @@ class DecisionQuery:
                     sku=r.sku,
                     title=r.title,
                     risk_value=r.risk_value,
-                    stockout_date=r.stockout_date, # Assuming frontend handles string or it's formatted
+                    stockout_date=str(r.stockout_date) if r.stockout_date else None,
                     reorder_quantity=r.reorder_quantity,
                     days_of_stock=r.days_of_stock,
                     run_rate=r.run_rate,
@@ -102,4 +102,5 @@ class DecisionMutation:
             
         # 2. Sauvegarder via le service Auth
         await auth_service.update_user(user_id, preferences=prefs)
+        await info.context.db.commit()
         return True

@@ -44,6 +44,8 @@ class BillingMutation:
             cancel_url=cancel_url
         )
         
+        await info.context.db.commit()
+        
         if not url:
             raise MichiException(message="Impossible de générer le lien de paiement", code=ErrorCode.INTERNAL_ERROR)
             
@@ -59,6 +61,8 @@ class BillingMutation:
             org_id=org_id,
             return_url=return_url
         )
+        
+        await info.context.db.commit()
         
         if not url:
             raise MichiException(message="Impossible de générer le lien vers le portail", code=ErrorCode.INTERNAL_ERROR)

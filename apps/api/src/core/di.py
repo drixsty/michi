@@ -130,7 +130,8 @@ def build_services(db: AsyncSession) -> ServiceContainer:
     
     omnichannel_service = OmnichannelService(
         product_repo=product_repo,
-        store_repo=store_repo
+        store_repo=store_repo,
+        prediction_repo=prediction_repo
     )
     
     alert_service = AlertService(

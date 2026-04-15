@@ -23,12 +23,14 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:
             yield session
-            # Final commit only if session is still active and has uncommitted changes
-            if session.is_active:
-                await session.commit()
         except Exception:
             if session.is_active:
                 await session.rollback()
             raise
         finally:
-            await session.close()
+            try:
+                await session.close()
+            except Exception as e:
+                # Éviter de crasher la requête si la clôture échoue (déjà loggué par SQLAlchemy)
+                import logging
+                logging.getLogger("uvicorn.error").warning(f"Error closing session: {e}")

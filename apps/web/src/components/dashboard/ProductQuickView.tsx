@@ -8,6 +8,7 @@ import {
   ArrowRight, 
   TrendingUp, 
   AlertCircle, 
+  Clock,
   Box, 
   Calendar,
   Settings,
@@ -36,6 +37,8 @@ import { UPDATE_PRODUCT_SETTINGS } from '@/graphql/mutations/updateProduct';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { LoadingState } from '../ui/LoadingState';
+import { useTranslations } from 'next-intl';
+
 interface ProductQuickViewProps {
   productId: string | null;
   onClose: () => void;
@@ -56,7 +59,9 @@ function WhatIfSimulator({
   supplierAvgDelay?: number;
   supplierSigma?: number;
 }) {
+  const t = useTranslations('inventory.quickview');
   const [extraDelay, setExtraDelay] = React.useState(0);
+
   const [salesMultiplier, setSalesMultiplier] = React.useState(1.0);
   const isSimulating = extraDelay > 0 || salesMultiplier !== 1.0;
 
@@ -89,7 +94,7 @@ function WhatIfSimulator({
   
   // Coût de détention (Holding Cost) estimé à 20% par an si on sur-stocke
   const safetyStockLevel = Math.max(0, currentStock - meanOverLT);
-  const annualHoldingCost = safety_stock_value => safety_stock_value * 0.20;
+  const annualHoldingCost = (safety_stock_value: number) => safety_stock_value * 0.20;
   const dailyHoldingCost = annualHoldingCost(safetyStockLevel * costPrice) / 365;
 
   const simRevenueAtRisk = Math.max(0, (simRunRate * Math.max(0, simLeadTime - simDaysOfStock)) * (salePrice || 0));
@@ -122,10 +127,10 @@ function WhatIfSimulator({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="h-3 w-3 text-primary" />
-          <h3 className="text-[10px] font-bold text-slate-700 tracking-widest uppercase">Simulateur What-if</h3>
+          <h3 className="text-[10px] font-bold text-slate-700 tracking-widest uppercase">{t('whatIfSimulator')}</h3>
           {isSimulating && (
             <span className="text-[7px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded-full border border-primary/20 animate-pulse">
-              Simulation active
+              {t('simulationActive')}
             </span>
           )}
         </div>
@@ -134,7 +139,7 @@ function WhatIfSimulator({
             onClick={() => { setExtraDelay(0); setSalesMultiplier(1.0); }}
             className="text-[8px] font-bold text-slate-400 hover:text-slate-600 transition-colors"
           >
-            Réinitialiser
+            {t('reset')}
           </button>
         )}
       </div>
@@ -145,18 +150,19 @@ function WhatIfSimulator({
            className="w-full py-1.5 bg-amber-50 border border-amber-100 rounded-lg text-[9px] font-bold text-amber-700 hover:bg-amber-100 transition-all flex items-center justify-center gap-1.5"
          >
            <Clock className="h-3 w-3" />
-           Simuler avec retard historique (+{supplierAvgDelay.toFixed(1)}j)
+           {t('simulateHistoricalDelay', { delay: supplierAvgDelay.toFixed(1) })}
          </button>
       )}
 
       {/* Slider: Extra delay */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-[9px] font-bold text-slate-500">Retard fournisseur</span>
+          <span className="text-[9px] font-bold text-slate-500">{t('supplierDelay')}</span>
           <span className={cn("text-[9px] font-black", extraDelay > 0 ? "text-amber-600" : "text-slate-400")}>
-            +{extraDelay} jours
+            +{extraDelay} {t('days')}
           </span>
         </div>
+
         <input 
           type="range" min="0" max="30" step="1" value={extraDelay}
           onChange={(e) => setExtraDelay(parseInt(e.target.value))}
@@ -168,7 +174,7 @@ function WhatIfSimulator({
       {/* Slider: Sales multiplier */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-[9px] font-bold text-slate-500">Pic de ventes</span>
+          <span className="text-[9px] font-bold text-slate-500">{t('salesPeak')}</span>
           <span className={cn("text-[9px] font-black", salesMultiplier !== 1.0 ? "text-amber-600" : "text-slate-400")}>
             ×{salesMultiplier.toFixed(1)}
           </span>
@@ -229,30 +235,33 @@ function WhatIfSimulator({
       {/* Results */}
       <div className="grid grid-cols-3 gap-2">
         <div className="text-center p-2 bg-white rounded-lg border border-slate-100">
-          <p className="text-[7px] font-bold text-slate-400 mb-0.5">Risque Rupture</p>
+          <p className="text-[7px] font-bold text-slate-400 mb-0.5">{t('stockoutRisk')}</p>
           <p className={cn("text-sm font-black transition-colors", ros > 5 ? "text-red-600" : "text-emerald-600")}>
             {ros.toFixed(1)}%
           </p>
         </div>
         <div className="text-center p-2 bg-white rounded-lg border border-slate-100">
-          <p className="text-[7px] font-bold text-slate-400 mb-0.5">Rupture (Date)</p>
+          <p className="text-[7px] font-bold text-slate-400 mb-0.5">{t('stockoutDate')}</p>
           <p className={cn("text-[9px] font-black", simDaysOfStock < simLeadTime ? "text-red-600" : "text-slate-900")}>
-            {simStockoutDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+            {simStockoutDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
           </p>
         </div>
         <div className="text-center p-2 bg-white rounded-lg border border-slate-100">
-          <p className="text-[7px] font-bold text-slate-400 mb-0.5">Coût Surstock</p>
+          <p className="text-[7px] font-bold text-slate-400 mb-0.5">{t('holdingCost')}</p>
           <p className={cn("text-[9px] font-black", dailyHoldingCost > 1 ? "text-amber-600" : "text-slate-500")}>
-            {dailyHoldingCost > 0.01 ? `${dailyHoldingCost.toFixed(2)}€/j` : "—"}
+            {dailyHoldingCost > 0.01 ? t('currencyPerDay', { amount: dailyHoldingCost.toFixed(2) }) : "—"}
           </p>
         </div>
       </div>
+
     </div>
   );
 }
 
 export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) {
+  const t = useTranslations('inventory.quickview');
   const router = useRouter();
+
   const { data, loading } = useQuery(GET_PRODUCT_DETAIL, {
     variables: {
       id: productId!
@@ -269,11 +278,12 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
     return product.cleanedDemands
       .slice(-30) // Last 30 days
       .map((d: any) => ({
-        date: new Date(d.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+        date: new Date(d.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }),
         sales: d.correctedUnitsSold,
         stock: d.inventoryLevel ?? 0
       }));
   }, [product]);
+
 
   // Client-side portal target check
   const [mounted, setMounted] = React.useState(false);
@@ -351,8 +361,9 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
               className="fixed inset-y-0 right-0 z-[70] w-full max-w-md bg-white border-l border-slate-100 flex flex-col shadow-none"
             >
             {loading && !product ? (
-              <LoadingState className="flex-1" message="Chargement du produit..." />
+              <LoadingState className="flex-1" message={t('loading')} />
             ) : product ? (
+
               <>
                 <div className="p-4 border-b border-slate-50 flex items-start justify-between sticky top-0 bg-white z-10">
                   <div className="space-y-1">
@@ -360,7 +371,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                        <h2 className="text-sm font-extrabold text-slate-900 tracking-widest">{product.title}</h2>
                     </div>
                     <div className="flex items-center gap-2">
-                      <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">SKU: {product.sku}</p>
+                      <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t('sku')}: {product.sku}</p>
                       <button 
                         onClick={() => {
                           navigator.clipboard.writeText(product.sku);
@@ -371,7 +382,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                           "p-1 rounded transition-all",
                           copied ? "bg-emerald-50 text-emerald-600" : "hover:bg-slate-100 text-slate-300 hover:text-primary"
                         )}
-                        title="Copier le SKU"
+                        title={t('copySku')}
                       >
                         {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
                       </button>
@@ -393,29 +404,29 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                     <div className="p-3 bg-slate-50/50 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-2 mb-2">
                         <Box className="h-3.5 w-3.5 text-slate-400" />
-                        <span className="text-[9px] font-bold text-slate-400 tracking-widest">Stock actuel</span>
+                        <span className="text-[9px] font-bold text-slate-400 tracking-widest">{t('currentStock')}</span>
                       </div>
-                      <p className="text-xl font-bold text-slate-900">{product.currentStock} <span className="text-xs font-medium text-slate-400">Unités</span></p>
+                      <p className="text-xl font-bold text-slate-900">{product.currentStock} <span className="text-xs font-medium text-slate-400">{t('units')}</span></p>
                     </div>
                     <div className="p-4 bg-slate-50/50 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-2 mb-2">
                         <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                        <span className="text-[9px] font-bold text-slate-400 tracking-widest">Rupture prévue</span>
+                        <span className="text-[9px] font-bold text-slate-400 tracking-widest">{t('predictedStockout')}</span>
                       </div>
                       <p className="text-xl font-bold text-emerald-600">
                         {product.prediction?.predictedStockoutDate 
-                          ? new Date(product.prediction.predictedStockoutDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-                          : "N/A"}
+                          ? new Date(product.prediction.predictedStockoutDate).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+                          : t('notAvailable')}
                       </p>
                     </div>
                   </div>
                   
                   {/* Seasonality Boost (US 12.1) */}
-                  <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-3">
+                  <div className="p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-3 mx-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="h-3 w-3 text-indigo-500" />
-                        <h3 className="text-[10px] font-bold text-indigo-500 tracking-widest">Boost de saisonnalité</h3>
+                        <h3 className="text-[10px] font-bold text-indigo-500 tracking-widest">{t('seasonalityBoost')}</h3>
                       </div>
                       <span className="text-[10px] font-bold text-indigo-600 bg-white px-2 py-0.5 rounded-md border border-indigo-100 shadow-sm">
                         × {boostFactor.toFixed(2)}
@@ -467,8 +478,8 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                       </div>
                       <div className="flex items-center gap-4 bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100/30">
                          <div className="flex-1">
-                            <p className="text-[8px] font-bold text-indigo-900 uppercase tracking-wider mb-0.5">Ratio de boost</p>
-                            <p className="text-[8px] text-indigo-600/70 italic leading-tight">Accélère la demande de {((boostFactor - 1) * 100).toFixed(0)}%</p>
+                            <p className="text-[8px] font-bold text-indigo-900 uppercase tracking-wider mb-0.5">{t('boostRatio')}</p>
+                            <p className="text-[8px] text-indigo-600/70 italic leading-tight">{t('accelerateDemand', { percent: ((boostFactor - 1) * 100).toFixed(0) })}</p>
                          </div>
                          <input 
                            type="number"
@@ -480,17 +491,17 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                          />
                       </div>
                       <p className="text-[8px] text-slate-400 font-medium italic px-1">
-                        * Ce coefficient multiplie directement la demande statistique moyenne pour anticiper les pics.
+                        {t('boostNote')}
                       </p>
                     </div>
                   </div>
 
                   {/* Settings Grid (Inventory + Weighting) */}
-                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
+                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-3 mx-4 mt-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Settings className="h-3 w-3 text-slate-400" />
-                        <h3 className="text-[10px] font-bold text-slate-400 tracking-widest">Paramètres d'inventaire</h3>
+                        <h3 className="text-[10px] font-bold text-slate-400 tracking-widest">{t('inventorySettings')}</h3>
                       </div>
                       <button 
                         onClick={handleQuickSave}
@@ -502,17 +513,17 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                           "bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm"
                         )}
                       >
-                        {saveStatus === 'saving' ? "..." : saveStatus === 'success' ? (
-                          <><Check className="h-2.5 w-2.5" /> Enregistré</>
+                        {saveStatus === 'saving' ? t('saving') : saveStatus === 'success' ? (
+                          <><Check className="h-2.5 w-2.5" /> {t('saved')}</>
                         ) : (
-                          <><Save className="h-2.5 w-2.5" /> Sauver</>
+                          <><Save className="h-2.5 w-2.5" /> {t('save')}</>
                         )}
                       </button>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <p className="text-[9px] font-bold text-slate-400 ml-0.5">Délai (jours)</p>
+                        <p className="text-[9px] font-bold text-slate-400 ml-0.5">{t('leadTime')}</p>
                         <input 
                           type="number"
                           value={leadTime}
@@ -521,7 +532,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <p className="text-[9px] font-bold text-slate-400 ml-0.5">MOQ (unités)</p>
+                        <p className="text-[9px] font-bold text-slate-400 ml-0.5">{t('moq')}</p>
                         <input 
                           type="number"
                           value={moq}
@@ -529,8 +540,8 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                           className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900"
                         />
                       </div>
-                      <div className="col-span-1 space-y-1.5">
-                        <p className="text-[9px] font-bold text-slate-400 ml-0.5">Coût d'achat (€)</p>
+                       <div className="col-span-1 space-y-1.5">
+                         <p className="text-[9px] font-bold text-slate-400 ml-0.5">{t('purchasePrice')}</p>
                         <input 
                           type="number"
                           step="0.01"
@@ -539,8 +550,8 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                           className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900"
                         />
                       </div>
-                      <div className="col-span-1 space-y-1.5">
-                        <p className="text-[9px] font-bold text-slate-400 ml-0.5">Prix de vente (€)</p>
+                       <div className="col-span-1 space-y-1.5">
+                         <p className="text-[9px] font-bold text-slate-400 ml-0.5">{t('sellingPrice')}</p>
                         <input 
                           type="number"
                           step="0.01"
@@ -549,8 +560,8 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                           className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900"
                         />
                       </div>
-                      <div className="col-span-2 space-y-1.5">
-                        <p className="text-[9px] font-bold text-slate-400 ml-0.5">Pondération du canal (Priorité)</p>
+                       <div className="col-span-2 space-y-1.5">
+                         <p className="text-[9px] font-bold text-slate-400 ml-0.5">{t('channelWeight')}</p>
                         <div className="flex items-center gap-3">
                            <input 
                             type="number"
@@ -560,7 +571,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                             onChange={(e) => setStockWeight(parseFloat(e.target.value) || 1.0)}
                             className="flex-1 h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900"
                           />
-                          <p className="text-[8px] text-slate-400 leading-tight italic">Allocation stock en cas de rupture.</p>
+                           <p className="text-[8px] text-slate-400 leading-tight italic">{t('stockAllocation')}</p>
                         </div>
                       </div>
                     </div>
@@ -568,30 +579,32 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
         
                   {/* ── What-If Simulator (US 14.4) ── */}
                   {(product.prediction?.runRate ?? 0) > 0 && (
-                    <WhatIfSimulator
-                      currentStock={product.currentStock}
-                      runRate={product.prediction!.runRate}
-                      leadTime={leadTime}
-                      boostFactor={boostFactor}
-                      costPrice={costPrice}
-                      salePrice={salePrice}
-                      demandSigma={product.prediction!.demandSigma || 0}
-                      supplierAvgDelay={product.supplier?.averageDelayDays}
-                      supplierSigma={product.supplier?.leadTimeSigma}
-                    />
+                    <div className="px-4">
+                      <WhatIfSimulator
+                        currentStock={product.currentStock}
+                        runRate={product.prediction!.runRate}
+                        leadTime={leadTime}
+                        boostFactor={boostFactor}
+                        costPrice={costPrice}
+                        salePrice={salePrice}
+                        demandSigma={product.prediction!.demandSigma || 0}
+                        supplierAvgDelay={product.supplier?.averageDelayDays}
+                        supplierSigma={product.supplier?.leadTimeSigma}
+                      />
+                    </div>
                   )}
 
                   {/* Supplier Reliability Section (Dual-Sigma) */}
                   {product.supplier && (
-                    <div className="p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl space-y-3">
+                    <div className="p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl space-y-3 mx-4">
                       <div className="flex items-center gap-2">
                         <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-                        <h3 className="text-[10px] font-bold text-emerald-700 tracking-widest uppercase">Performance Fournisseur</h3>
+                        <h3 className="text-[10px] font-bold text-emerald-700 tracking-widest uppercase">{t('supplierPerformance')}</h3>
                       </div>
                       
                       <div className="grid grid-cols-3 gap-2">
                         <div className="text-center p-2 bg-white rounded-lg border border-emerald-100 shadow-sm">
-                          <p className="text-[7px] font-bold text-slate-400 mb-0.5 uppercase tracking-tighter">Fiabilité</p>
+                          <p className="text-[7px] font-bold text-slate-400 mb-0.5 uppercase tracking-tighter">{t('reliability')}</p>
                           <p className={cn(
                             "text-sm font-black",
                             product.supplier.reliabilityScore < 0.8 ? "text-amber-600" : "text-emerald-600"
@@ -600,13 +613,13 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                           </p>
                         </div>
                         <div className="text-center p-2 bg-white rounded-lg border border-emerald-100 shadow-sm">
-                          <p className="text-[7px] font-bold text-slate-400 mb-0.5 uppercase tracking-tighter">Retard Moyen</p>
+                          <p className="text-[7px] font-bold text-slate-400 mb-0.5 uppercase tracking-tighter">{t('averageDelay')}</p>
                           <p className="text-sm font-black text-slate-900">
                             +{product.supplier.averageDelayDays.toFixed(1)}j.
                           </p>
                         </div>
                         <div className="text-center p-2 bg-white rounded-lg border border-emerald-100 shadow-sm">
-                          <p className="text-[7px] font-bold text-slate-400 mb-0.5 uppercase tracking-tighter">Variabilité</p>
+                          <p className="text-[7px] font-bold text-slate-400 mb-0.5 uppercase tracking-tighter">{t('variability')}</p>
                           <p className="text-sm font-black text-slate-900">
                             σ {product.supplier.leadTimeSigma.toFixed(1)}j.
                           </p>
@@ -617,7 +630,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                         <div className="flex items-start gap-2 px-1">
                           <AlertCircle className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
                           <p className="text-[8px] text-amber-700 font-medium leading-tight italic">
-                            Attention : La variabilité de livraison est élevée. Nous recommandons un stock de sécurité majoré de 15%.
+                            {t('variabilityAlert')}
                           </p>
                         </div>
                       )}
@@ -625,17 +638,17 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                   )}
 
                   {/* Graph Section — Historical */}
-                  <div className="space-y-3">
+                  <div className="space-y-3 p-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-[10px] font-bold text-slate-400 tracking-widest">Historique &amp; tendances</h3>
+                      <h3 className="text-[10px] font-bold text-slate-400 tracking-widest">{t('historicalTrends')}</h3>
                       <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
                              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                             <span className="text-[9px] font-bold text-slate-500">Ventes</span>
+                             <span className="text-[9px] font-bold text-slate-500">{t('sales')}</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                              <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />
-                             <span className="text-[9px] font-bold text-slate-500">Stock</span>
+                             <span className="text-[9px] font-bold text-slate-500">{t('stock')}</span>
                           </div>
                       </div>
                     </div>
@@ -690,15 +703,15 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
-                    <p className="text-[10px] text-slate-400 italic text-center">Évolution du stock (pointillés) et ventes quotidiennes corrigées sur 30j.</p>
+                    <p className="text-[10px] text-slate-400 italic text-center">{t('stockEvolutionNote')}</p>
                   </div>
 
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3 mx-4 mb-4">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 bg-primary/10 rounded-lg">
                         <TrendingUp className="h-3.5 w-3.5 text-primary" />
                       </div>
-                      <span className="text-[10px] font-black text-slate-900 tracking-widest">Analyse prédictive</span>
+                      <span className="text-[10px] font-black text-slate-900 tracking-widest">{t('predictiveAnalysis')}</span>
                     </div>
                     
                     <div className="space-y-3">
@@ -707,7 +720,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                           </div>
                            <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                             Votre rythme de vente actuel est de <span className="text-slate-900 font-bold">{(product.prediction?.runRate || 0).toFixed(2)} Unit./jour</span>.
+                             {t('currentRunRate', { value: (product.prediction?.runRate || 0).toFixed(2) })}
                            </p>
                        </div>
 
@@ -722,10 +735,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                              )} />
                           </div>
                            <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                             Le stock actuel couvre environ <span className={cn(
-                                "font-bold",
-                                (product.prediction?.daysOfStock || 0) < product.leadTime ? "text-red-600" : "text-slate-900"
-                             )}>{Math.round(product.prediction?.daysOfStock || 0)} jours</span> d'activité.
+                             {t('stockCoverage', { days: Math.round(product.prediction?.daysOfStock || 0) })}
                            </p>
                        </div>
                     </div>
@@ -742,15 +752,16 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                     data-testid="open-full-detail"
                     className="w-full py-3 bg-slate-900 text-white rounded-lg text-[10px] font-bold tracking-widest hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                   >
-                    Voir les détails complets
+                    {t('viewFullDetails')}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>
+
                 </div>
               </>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-4">
                 <AlertCircle className="h-8 w-8 text-slate-200" />
-                <p className="text-xs text-slate-500">Impossible de charger les détails du produit.</p>
+                <p className="text-xs text-slate-500">{t('error')}</p>
               </div>
             )}
           </motion.div>

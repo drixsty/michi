@@ -208,16 +208,16 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
         
         const cv = sigma / rr;
         
-        let label = t('volatility.stable');
+        let label = tInventory('volatility.stable');
         let colorClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
         let Icon = ShieldCheck;
         
         if (cv > 0.5) {
-          label = t('volatility.high');
+          label = tInventory('volatility.high');
           colorClass = "bg-red-50 text-red-700 border-red-100";
           Icon = Activity;
         } else if (cv > 0.2) {
-          label = t('volatility.moderate');
+          label = tInventory('volatility.moderate');
           colorClass = "bg-amber-50 text-amber-700 border-amber-100";
           Icon = Zap;
         }
@@ -322,7 +322,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
       header: t('stockout'),
       cell: ({ row }) => {
         const dateStr = row.original.predictedStockoutDate || row.original.prediction?.predictedStockoutDate;
-        if (!dateStr) return <div className="text-center"><span className="text-muted-foreground italic text-[10px]">{t('volatility.calculating')}</span></div>;
+        if (!dateStr) return <div className="text-center"><span className="text-muted-foreground italic text-[10px]">{tInventory('volatility.calculating')}</span></div>;
 
         const predictedDate = new Date(dateStr);
         const today = new Date();

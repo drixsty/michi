@@ -22,17 +22,20 @@ def require_permission(permission: MichiPermission):
             user_id = uuid.UUID(str(info.context.user_id))
             org_id = uuid.UUID(str(info.context.org_id))
             
-            # 1. Récupérer uniquement le rôle et les permissions (Selective Fetch pour éviter lazy loading)
-            result = await db.execute(
-                select(OrganizationMember.role, OrganizationMember.permissions).where(
-                    OrganizationMember.organization_id == org_id,
-                    OrganizationMember.user_id == user_id
-                )
+            # 1. Récupérer uniquement le rôle et les permissions (Selective Fetch)
+            # Utilisation de scalar pour être plus atomique et profiter du verrouillage du wrapper
+            stmt = select(OrganizationMember.role, OrganizationMember.permissions).where(
+                OrganizationMember.organization_id == org_id,
+                OrganizationMember.user_id == user_id
             )
+            result = await db.execute(stmt)
             row = result.first()
             
             if not row:
+                logger.warning(f"Access Denied: OrgMember not found (Org: {org_id}, User: {user_id})")
                 raise MichiException(message="Vous n'êtes pas membre de cette organisation", code=ErrorCode.FORBIDDEN)
+            
+            logger.debug(f"Auth Success: User {user_id} in Org {org_id} (Role: {row[0]})")
             
             user_role_enum, member_perms = row
             user_role = user_role_enum.value if hasattr(user_role_enum, 'value') else str(user_role_enum).lower()

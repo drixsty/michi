@@ -56,6 +56,8 @@ class OrgMutation:
         # On attend commit() si nécessaire, mais le service doit gérer le flush.
         # En Strawberry/FastAPI, le middleware gère le commit en fin de requête.
         
+        await info.context.db.commit()
+        
         return AuthPayload(
             token=result.token.value,
             user=UserType.from_db(result.user_model)
@@ -73,6 +75,8 @@ class OrgMutation:
             organization_id=uuid.UUID(str(organization_id))
         )
         
+        await info.context.db.commit()
+        
         return AuthPayload(
             token=token.value,
             user=UserType.from_db(user_model)
@@ -80,16 +84,23 @@ class OrgMutation:
 
     @strawberry.mutation
     async def update_organization(self, info, input: UpdateOrganizationInput) -> Optional[OrganizationType]:
-        """Met à jour les informations de l'organisation."""
+        """Met à jour les informations de l'organisation (Nom, Devise, Mutualisation)."""
         if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()
             
+        settings_dict = {}
+        if input.currency is not None:
+            settings_dict["currency"] = input.currency
+        if input.is_mutualized is not None:
+            settings_dict["is_mutualized"] = input.is_mutualized
+
         service = info.context.services.org_service
         updated_org = await service.update_organization(
             org_id=uuid.UUID(str(info.context.org_id)),
             name=input.name,
-            # settings=... (mapping si nécessaire)
+            settings=settings_dict if settings_dict else None
         )
+        await info.context.db.commit()
         return OrganizationType.from_db(updated_org) if updated_org else None
 
     @strawberry.mutation
@@ -99,10 +110,12 @@ class OrgMutation:
             raise UnauthenticatedException()
             
         service = info.context.services.org_service
-        return await service.remove_member(
+        res = await service.remove_member(
             org_id=uuid.UUID(str(info.context.org_id)),
             user_id=uuid.UUID(str(user_id))
         )
+        await info.context.db.commit()
+        return res
 
     @strawberry.mutation
     async def update_member_role(self, info, user_id: strawberry.ID, role: str) -> bool:
@@ -112,11 +125,13 @@ class OrgMutation:
             
         from core.database.models import UserRole
         service = info.context.services.org_service
-        return await service.update_member_role(
+        res = await service.update_member_role(
             org_id=uuid.UUID(str(info.context.org_id)),
             user_id=uuid.UUID(str(user_id)),
             role=UserRole(role.upper())
         )
+        await info.context.db.commit()
+        return res
 
     @strawberry.mutation
     async def update_member_permissions(self, info, user_id: strawberry.ID, permissions: str) -> Optional[OrganizationMemberType]:
@@ -139,6 +154,8 @@ class OrgMutation:
             user_id=target_user_id,
             permissions=perms_dict
         )
+        
+        await info.context.db.commit()
         
         if not success:
             return None

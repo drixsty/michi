@@ -49,44 +49,6 @@ const DELETE_INVITATION = gql`
   }
 `;
 
-const PERMISSION_CATEGORIES = [
-  {
-    id: 'members',
-    label: 'Équipe & Membres',
-    perms: [
-      { id: 'members:view', label: 'Voir les membres' },
-      { id: 'members:invite', label: 'Inviter' },
-      { id: 'members:remove', label: 'Supprimer' },
-      { id: 'members:edit_role', label: 'Gérer les rôles' },
-    ]
-  },
-  {
-    id: 'billing',
-    label: 'Facturation',
-    perms: [
-      { id: 'billing:view', label: 'Voir factures' },
-      { id: 'billing:manage', label: 'Modifier abonnement' },
-    ]
-  },
-  {
-    id: 'inventory',
-    label: 'Stocks & Sources',
-    perms: [
-      { id: 'inventory:view', label: 'Voir inventaire' },
-      { id: 'inventory:edit', label: 'Modifier stocks' },
-      { id: 'stores:view', label: 'Voir boutiques' },
-      { id: 'stores:manage', label: 'Gérer connexions' },
-    ]
-  },
-  {
-    id: 'forecasting',
-    label: 'Prévisions IA',
-    perms: [
-      { id: 'forecasting:view', label: 'Voir prévisions' },
-      { id: 'forecasting:run', label: 'Lancer calculs' },
-    ]
-  }
-];
 
 interface MemberDetailPanelProps {
   member?: any;
@@ -113,6 +75,7 @@ export function MemberDetailPanel({
   const t = useTranslations('organization.memberDetail');
   const tRoles = useTranslations('organization.roles');
   const tPerms = useTranslations('organization.permissions');
+  const tCommon = useTranslations('common');
 
   const PERMISSION_CATEGORIES = [
     {
@@ -159,18 +122,9 @@ export function MemberDetailPanel({
   const [deleteInvitation, { loading: deletingInvite }] = useMutation(DELETE_INVITATION);
   const [updatePermissions, { loading: updatingPerms }] = useMutation(UPDATE_MEMBER_PERMISSIONS);
 
-  if (!isOpen || (!member && !invitation)) return null;
-
   const data = member || invitation;
   const isMember = !!member;
-  const isAdmin = currentUserRole.toLowerCase() === 'admin';
   
-  const email = isMember ? member.user.email : invitation.email;
-  const firstName = isMember ? member.user.firstName : '';
-  const lastName = isMember ? member.user.lastName : '';
-  const name = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : email.split('@')[0];
-  const role = data.role.toLowerCase();
-
   // Permissions logic
   const currentPerms = useMemo(() => {
     try {
@@ -185,6 +139,16 @@ export function MemberDetailPanel({
       return {}; 
     }
   }, [member?.permissions, isMember]);
+
+  if (!isOpen || (!member && !invitation)) return null;
+
+  const isAdmin = currentUserRole.toLowerCase() === 'admin';
+  
+  const email = isMember ? member.user.email : invitation.email;
+  const firstName = isMember ? member.user.firstName : '';
+  const lastName = isMember ? member.user.lastName : '';
+  const name = (firstName || lastName) ? `${firstName} ${lastName}`.trim() : email.split('@')[0];
+  const role = data.role.toLowerCase();
   
   const handleAction = async (action: string) => {
     try {
@@ -481,13 +445,13 @@ export function MemberDetailPanel({
               >
                 {removing || deletingInvite || togglingStatus ? (
                   <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : useTranslations('common')('confirm')}
+                ) : tCommon('confirm')}
               </button>
               <button 
                 onClick={() => setShowConfirm(null)}
                 className="w-full h-10 bg-muted text-foreground rounded-lg text-sm font-bold hover:bg-border transition-all"
               >
-                {useTranslations('common')('cancel')}
+                {tCommon('cancel')}
               </button>
             </div>
           </div>

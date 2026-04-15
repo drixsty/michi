@@ -92,7 +92,7 @@ export function OrganizationView() {
   const [activeTab, setActiveTab] = useState<OrgTabType>('team');
   const [showInvitePanel, setShowInvitePanel] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [currency, setCurrency] = useState('€');
+  const [currency, setCurrency] = useState('EUR');
   const [isMutualized, setIsMutualized] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const t = useTranslations('organization');
@@ -109,7 +109,16 @@ export function OrganizationView() {
       if (data?.currentOrganization?.settings) {
         try {
           const settings = JSON.parse(data.currentOrganization.settings);
-          if (settings.currency) setCurrency(settings.currency);
+          if (settings.currency) {
+            // Map legacy symbol values to ISO codes if needed
+            const legacyMap: Record<string, string> = {
+              '€': 'EUR',
+              '$': 'USD',
+              '£': 'GBP',
+              'CHF': 'CHF'
+            };
+            setCurrency(legacyMap[settings.currency] || settings.currency);
+          }
           if (settings.is_mutualized !== undefined) setIsMutualized(settings.is_mutualized);
         } catch (e) {
           console.error("Failed to parse organization settings", e);
@@ -377,13 +386,14 @@ export function OrganizationView() {
                     </div>
                     <CustomSelect 
                       options={[
-                        { value: '€', label: t('settings.currencies.eur') },
-                        { value: '$', label: t('settings.currencies.usd') },
-                        { value: '£', label: t('settings.currencies.gbp') },
+                        { value: 'EUR', label: t('settings.currencies.eur') },
+                        { value: 'USD', label: t('settings.currencies.usd') },
+                        { value: 'GBP', label: t('settings.currencies.gbp') },
                         { value: 'CHF', label: t('settings.currencies.chf') }
                       ]}
                       value={currency}
                       onChange={setCurrency}
+                      placeholder={t('settings.currencyPlaceholder')}
                       className="w-full sm:w-48"
                     />
                   </div>

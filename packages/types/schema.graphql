@@ -1,0 +1,336 @@
+﻿type AlertType {
+  id: ID!
+  productId: ID!
+  type: String!
+  message: String!
+  isRead: Boolean!
+  severity: Int!
+  createdAt: DateTime!
+}
+
+type AuthPayload {
+  token: String!
+  user: UserType!
+}
+
+input ChangePasswordInput {
+  currentPassword: String!
+  newPassword: String!
+}
+
+type ChannelBreakdownType {
+  platform: String!
+  productId: ID!
+  currentStock: Int!
+  leadTime: Int!
+  moq: Int!
+  runRate: Float!
+  stockWeight: Float!
+}
+
+type CleanedDemandType {
+  id: ID!
+  productId: ID!
+  date: Date!
+  rawUnitsSold: Float!
+  correctedUnitsSold: Float!
+  inventoryLevel: Int
+  isStockout: Boolean!
+  isOutlier: Boolean!
+  correctionType: String!
+  computedAt: DateTime!
+}
+
+type DashboardKPIType {
+  totalProducts: Int!
+  actualStockouts: Int!
+  urgentAlerts: Int!
+  predictedStockouts30d: Int!
+  message: String!
+}
+
+"""Date (isoformat)"""
+scalar Date
+
+"""Date with time (isoformat)"""
+scalar DateTime
+
+type DecisionCenterOverviewType {
+  kpis: FinancialKpiType!
+  topRisks: [TopRiskType!]!
+  totalRunRate: Float!
+  totalStock: Int!
+  healthScore: Int!
+  activePlatforms: [String!]!
+  capitalBreakdown: [PlatformCapitalType!]!
+  message: String
+}
+
+type FinancialKpiType {
+  inventoryValueCost: Float!
+  inventoryValueSale: Float!
+  revenueAtRisk: Float!
+  stockCoverageAvgDays: Float!
+  currency: String!
+  isMutualized: Boolean!
+}
+
+input GoogleLoginInput {
+  idToken: String!
+}
+
+type IngestionResult {
+  success: Boolean!
+  message: String!
+  platform: String!
+  productsCount: Int!
+  salesLogsCount: Int!
+}
+
+type InvitationType {
+  id: ID!
+  email: String!
+  organizationId: ID!
+  role: String!
+  status: String!
+  code: String
+  createdAt: DateTime!
+  expiresAt: DateTime!
+}
+
+type InvoiceType {
+  id: String!
+  number: String!
+  amount: Float!
+  currency: String!
+  status: String!
+  date: DateTime!
+  pdfUrl: String
+  hostedUrl: String
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type Mutation {
+  login(input: LoginInput!): AuthPayload!
+  register(input: RegisterInput!): AuthPayload!
+  googleLogin(input: GoogleLoginInput!): AuthPayload!
+  changePassword(input: ChangePasswordInput!): Boolean!
+  updateProfile(input: UpdateProfileInput!): UserType!
+  toggleUserStatus(userId: ID!, active: Boolean!): Boolean!
+  createOrganization(name: String!, plan: String! = "BASIC"): AuthPayload!
+  switchOrganization(organizationId: ID!): AuthPayload!
+  updateOrganization(input: UpdateOrganizationInput!): OrganizationType
+  removeMember(userId: ID!): Boolean!
+  updateMemberRole(userId: ID!, role: String!): Boolean!
+  updateMemberPermissions(userId: ID!, permissions: String!): OrganizationMemberType
+  inviteMember(email: String!, role: String!): InvitationType!
+  acceptInvitation(code: String!): Boolean!
+  deleteInvitation(invitationId: ID!): Boolean!
+  markAlertAsRead(alertId: ID!): Boolean!
+  deleteAlert(alertId: ID!): Boolean!
+  toggleSource(platform: String!, connected: Boolean!, storeId: ID = null): StoreType!
+  ingestCsvData(storeId: ID!, csvContent: String!, skuCol: String! = "sku", dateCol: String! = "date", salesCol: String! = "sales", stockCol: String! = "stock", titleCol: String! = "title"): IngestionResult!
+  runCleaningPipeline(storeId: ID!): PipelineResultType!
+  runPredictionPipeline(storeId: ID!): PredictionRunResultType!
+  updateStrategicSettings(currency: String = null, isMutualized: Boolean = null): Boolean!
+  triggerMockDataSync(storeId: ID = null, platform: String! = "shopify"): IngestionResult!
+  triggerOmnichannelSync(storeId: ID = null): IngestionResult!
+  updateProductSettings(id: ID!, leadTime: Int!, moq: Int!): ProductType!
+  createCheckoutSession(plan: String!, successUrl: String!, cancelUrl: String!): String!
+  createBillingPortalSession(returnUrl: String!): String!
+}
+
+type OmnichannelProductType {
+  id: ID!
+  sku: String!
+  title: String!
+  totalStock: Int!
+  channelCount: Int!
+  hasConflict: Boolean!
+  dominantRunRate: Float!
+  totalReorderQuantity: Int!
+  predictedStockoutDate: String
+  abcRank: String!
+  annualGrossProfit: Float!
+  channels: [ChannelBreakdownType!]!
+}
+
+type OrganizationMemberType {
+  organizationId: ID!
+  userId: ID!
+  role: String!
+  permissions: String!
+  organization: OrganizationType
+  user: UserType
+}
+
+type OrganizationType {
+  id: ID!
+  name: String!
+  slug: String!
+  plan: String!
+  subscriptionStatus: String!
+  createdAt: DateTime!
+  settings: String!
+}
+
+type PipelineResultType {
+  success: Boolean!
+  productsProcessed: Int!
+  rowsWritten: Int!
+  stockoutCorrections: Int!
+  outlierCorrections: Int!
+  message: String!
+}
+
+type PlatformCapitalType {
+  platform: String!
+  value: Float!
+}
+
+type PredictionRunResultType {
+  success: Boolean!
+  productsProcessed: Int!
+  message: String!
+}
+
+type PredictionType {
+  id: ID!
+  productId: ID!
+  runRate: Float!
+  daysOfStock: Float
+  predictedStockoutDate: Date
+  reorderQuantity: Int!
+  currentStockSnapshot: Float!
+  leadTimeSnapshot: Int!
+  moqSnapshot: Int!
+  mapeScore: Float
+  abcRank: String
+  annualGrossProfit: Float
+  demandSigma: Float!
+  computedAt: DateTime!
+}
+
+type ProductType {
+  id: ID!
+  storeId: ID!
+  title: String!
+  sku: String!
+  leadTime: Int!
+  moq: Int!
+  currentStock: Int!
+  boostFactor: Float!
+  stockWeight: Float!
+  costPrice: Float
+  salePrice: Float
+  supplierId: ID
+  cleanedDemands: [CleanedDemandType!]!
+  channels: [ChannelBreakdownType!]!
+  prediction: PredictionType
+  supplier: SupplierType
+  warningThreshold: Float!
+}
+
+type Query {
+  me: UserType!
+  currentOrganization: OrganizationType
+  organizationMembers: [OrganizationMemberType!]!
+  pendingInvitations: [InvitationType!]!
+  products(storeId: ID = null, id: ID = null): [ProductType!]!
+  unreadAlerts(storeId: ID = null): [AlertType!]!
+  sources: [StoreType!]!
+  omnichannelInventory: [OmnichannelProductType!]!
+  cleanedDemand(productId: ID!, limit: Int! = 365): [CleanedDemandType!]!
+  predictions(storeId: ID = null): [PredictionType!]!
+  dashboardKpis(storeId: ID = null): DashboardKPIType!
+  replenishmentAlerts(storeId: ID = null): [PredictionType!]!
+  financialOverview(storeId: ID = null, channel: String = null): DecisionCenterOverviewType!
+  validateMockData(storeId: ID!): ValidationReportType!
+  invoices: [InvoiceType!]!
+}
+
+input RegisterInput {
+  email: String!
+  password: String!
+  firstName: String!
+  lastName: String!
+}
+
+type StoreType {
+  id: ID!
+  name: String!
+  platform: String!
+  connected: Boolean!
+  lastSyncAt: DateTime
+  healthStatus: String
+  organizationId: ID
+}
+
+type SupplierType {
+  id: ID!
+  name: String!
+  contactEmail: String
+  reliabilityScore: Float!
+  averageDelayDays: Float!
+  leadTimeSigma: Float!
+}
+
+type TopRiskType {
+  productId: ID!
+  sku: String!
+  title: String!
+  riskValue: Float!
+  stockoutDate: String
+  reorderQuantity: Int!
+  daysOfStock: Float!
+  runRate: Float!
+  supplierId: ID
+  sourcePlatform: String
+  costPrice: Float!
+  salePrice: Float!
+}
+
+input UpdateOrganizationInput {
+  name: String = null
+  currency: String = null
+  isMutualized: Boolean = null
+}
+
+input UpdateProfileInput {
+  email: String = null
+  firstName: String = null
+  lastName: String = null
+  emailAlertsEnabled: Boolean = null
+  minSeverity: Int = null
+}
+
+type UserType {
+  id: ID!
+  email: String!
+  firstName: String
+  lastName: String
+  currentOrganizationId: ID
+  createdAt: DateTime!
+  preferences: String!
+  organizations: [OrganizationMemberType!]!
+  isAdmin: Boolean!
+}
+
+type ValidationIssueType {
+  rule: String!
+  severity: String!
+  detail: String!
+}
+
+type ValidationReportType {
+  isValid: Boolean!
+  productCount: Int!
+  salesLogCount: Int!
+  stockoutRatio: Float!
+  issues: [ValidationIssueType!]!
+  summary: String!
+}

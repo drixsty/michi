@@ -16,6 +16,8 @@ from core.graphql.types import (
     DashboardKPIType
 )
 
+
+
 # Helpers for cross-module field resolution
 async def resolve_cleaned_demands(info, product_id: str, sku: str) -> List[CleanedDemandType]:
     service = info.context.services.forecasting_service
@@ -85,6 +87,7 @@ class ForecastingMutation:
     async def run_cleaning_pipeline(self, info, store_id: strawberry.ID) -> PipelineResultType:
         service = info.context.services.forecasting_service
         result = await service.run_cleaning_pipeline(str(store_id))
+        await info.context.db.commit()
         return PipelineResultType(
             success=result.success,
             products_processed=result.products_processed,
@@ -100,6 +103,7 @@ class ForecastingMutation:
     async def run_prediction_pipeline(self, info, store_id: strawberry.ID) -> PredictionRunResultType:
         service = info.context.services.forecasting_service
         result = await service.run_prediction_pipeline(str(store_id))
+        await info.context.db.commit()
         return PredictionRunResultType(
             success=result.success,
             products_processed=result.products_processed,

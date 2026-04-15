@@ -1,7 +1,1 @@
-{
-  "query": "query GetFinancialOverview($storeId: ID, $channel: String) { financialOverview(storeId: $storeId, channel: $channel) { kpis { inventoryValueCost } topRisks { sku sourcePlatform } activePlatforms capitalBreakdown { platform value } message } }",
-  "variables": {
-    "storeId": null,
-    "channel": "amazon"
-  }
-}
+{"query":"mutation Login($input: LoginInput!) { login(input: $input) { token user { id email currentOrganizationId organizations { organizationId role organization { id name slug } } } } }", "variables": {"input": {"email": "dev@michi.com", "password": "password123"}}}

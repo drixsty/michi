@@ -26,7 +26,10 @@ const CREATE_PORTAL_SESSION = gql`
   }
 `;
 
+import { useTranslations } from 'next-intl';
+
 export function BillingSettings() {
+  const t = useTranslations('organization.billing');
   const { data, loading } = useQuery(GET_CURRENT_ORG);
   const [createPortal, { loading: creatingPortal }] = useMutation(CREATE_PORTAL_SESSION);
 
@@ -42,7 +45,7 @@ export function BillingSettings() {
       }
     } catch (err) {
       console.error("Portal error:", err);
-      alert("Erreur lors de l'accès au portail Stripe.");
+      alert(t('portalError'));
     }
   };
 
@@ -61,13 +64,13 @@ export function BillingSettings() {
       <section className="bg-white rounded-lg border border-border overflow-hidden">
         <div className="px-5 py-4 border-b border-border bg-muted/20 flex items-center justify-between">
           <div className="space-y-0.5">
-            <h2 className="text-[13px] font-semibold text-foreground">Abonnement & Facturation</h2>
-            <p className="text-[11px] text-muted-foreground">Gérez votre plan Michi et vos informations de paiement Stripe.</p>
+            <h2 className="text-[13px] font-semibold text-foreground">{t('title')}</h2>
+            <p className="text-[11px] text-muted-foreground">{t('subtitle')}</p>
           </div>
           {isActive && (
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
               <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-              Actif
+              {t('active')}
             </div>
           )}
         </div>
@@ -85,12 +88,15 @@ export function BillingSettings() {
               
               <div className="space-y-1">
                 <h3 className="text-sm font-bold text-foreground">
-                  Plan {org?.plan?.charAt(0) + org?.plan?.slice(1).toLowerCase() || 'Basic'}
+                  {org?.plan 
+                    ? t('plan', { name: org.plan.charAt(0) + org.plan.slice(1).toLowerCase() })
+                    : t('plan', { name: 'Basic' }) // Fallback to 'Basic' but ideally we'd have a translation here
+                  }
                 </h3>
                 <p className="text-[13px] text-muted-foreground leading-relaxed max-w-[400px]">
                   {isPro 
-                    ? "Votre organisation bénéficie actuellement du plan Premium pour ses prévisions et alertes IA."
-                    : "Le plan gratuit est limité à 100 SKUs et un utilisateur unique. Idéal pour débuter."
+                    ? t('proDesc')
+                    : t('freeDesc')
                   }
                 </p>
               </div>
@@ -106,7 +112,7 @@ export function BillingSettings() {
               ) : (
                 <>
                   <CreditCard className="h-3.5 w-3.5" />
-                  Accéder au portail sécurisé
+                  {t('portalButton')}
                   <ArrowRight className="h-3 w-3 opacity-50 ml-1" />
                 </>
               )}
@@ -115,20 +121,20 @@ export function BillingSettings() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border">
             <div className="p-4 rounded-xl border border-border bg-muted/5 space-y-1">
-              <p className="text-[11px] font-semibold text-muted-foreground tracking-widest px-0.5">Mode de facturation</p>
+              <p className="text-[11px] font-semibold text-muted-foreground tracking-widest px-0.5">{t('method')}</p>
               <p className="text-[13px] font-medium text-foreground flex items-center gap-2">
-                Externalisé via Stripe 
+                {t('externalStripe')}
                 <ExternalLink className="h-3 w-3 text-muted-foreground/40" />
               </p>
             </div>
             
             <div className="p-4 rounded-xl border border-border bg-muted/5 space-y-1">
-              <p className="text-[11px] font-semibold text-muted-foreground tracking-widest px-0.5">Moyens de paiement</p>
+              <p className="text-[11px] font-semibold text-muted-foreground tracking-widest px-0.5">{t('paymentMethods')}</p>
               <button 
                 onClick={handleManageSubscription}
                 className="text-[13px] font-medium text-primary hover:underline text-left flex items-center gap-1.5"
               >
-                Gérer sur Stripe
+                {t('manageStripe')}
                 <ArrowRight className="h-3 w-3" />
               </button>
             </div>

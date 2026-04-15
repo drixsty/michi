@@ -17,28 +17,29 @@ from core.graphql.schema import schema
 from core.graphql.context import GraphQLContext
 from core.di import build_services
 import asyncio
+import uuid
 from core.database import get_db
-from core.database import SerializedAsyncSession
+from core.database import SerializedAsyncSession, ReentrantAsyncLock
 from core.middleware.auth import get_current_user_from_token
 from modules.shopify.adapters.auth_routes import router as shopify_auth_router
 from modules.billing.adapters.router import router as billing_router
-from core.exceptions import UnauthenticatedException, ForbiddenException
+from core.exceptions import UnauthenticatedException, ForbiddenException, MichiException
 from modules.intelligence.application.worker import worker as intelligence_worker
 from loguru import logger
 import sys
 
-# Configuration Loguru pour filtrer les tracebacks d'auth bruyants (seulement pour Loguru)
+# Configuration Loguru pour filtrer les tracebacks d'auth bruyants
 def log_filter(record):
     """Filtre pour éviter les tracebacks complets sur les erreurs d'auth attendues"""
-    message = record["message"]
-    if "Access denied" in message or "UnauthenticatedException" in message:
-        if "[Security]" in message:
-            return True
-        return False
+    msg = record["message"].lower()
+    # On masque les UnauthenticatedException et les "Authentication required" du flux standard
+    if "unauthenticatedexception" in msg or "authentication required" in msg:
+        # On ne garde que si c'est taggué [Security] explicitement (audit)
+        return "[security]" in msg
     return True
 
 logger.remove()
-logger.add(sys.stderr, filter=log_filter)
+logger.add(sys.stderr, filter=log_filter, level="INFO")
 
 
 @asynccontextmanager
@@ -104,8 +105,13 @@ async def get_context(
     if user_id and not org_id:
         org_id = request.headers.get("michi-org-id") or request.headers.get("Michi-Org-Id")
     
+    # Initialiser l'ID de flux unique pour cette requête
+    from core.database.session import session_flow_id
+    flow_id = str(uuid.uuid4())
+    session_flow_id.set(flow_id)
+    
     # Sérialiser la session DB pour GraphQL (concurrence inter-résolveurs)
-    lock = asyncio.Lock()
+    lock = ReentrantAsyncLock()
     serialized_db = SerializedAsyncSession(db, lock)
     
     # DI Container (Sprint 21)
@@ -121,12 +127,35 @@ async def get_context(
     )
 
 
+from graphql import GraphQLError
+
+def custom_process_errors(errors: list[GraphQLError], execution_context=None):
+    """
+    Masque les traces d'erreurs Python pour les MichiException.
+    Retourne une erreur propre au client et évite de logger la stacktrace complète.
+    """
+    processed_errors = []
+    for error in errors:
+        orig = error.original_error
+        # Si c'est une MichiException, on logue juste une ligne propre
+        if isinstance(orig, MichiException):
+            logger.warning(f"[GraphQL] {orig.__class__.__name__}: {orig.message}")
+        elif error.path:
+            # Pour les autres erreurs avec un chemin, on logue l'erreur standard
+            logger.error(f"[GraphQL Error] Path: {error.path} | Message: {error.message}")
+            
+        processed_errors.append(error.formatted)
+    return processed_errors
+
 # GraphQL Router
 graphql_app = GraphQLRouter(
     schema,
     graphiql=settings.ENVIRONMENT == "development",
     context_getter=get_context,
 )
+
+# On injecte la gestion d'erreurs personnalisée
+graphql_app.process_errors = custom_process_errors
 
 app.include_router(graphql_app, prefix="/graphql")
 app.include_router(shopify_auth_router)
