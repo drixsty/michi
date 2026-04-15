@@ -4,7 +4,6 @@ Entités du domaine intelligence/ — Sprint 21.
 Définit les value objects et entités pures du bounded context Intelligence.
 Aucune dépendance externe (pas de SQLAlchemy, pas de Pydantic v2 imposé).
 """
-from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date

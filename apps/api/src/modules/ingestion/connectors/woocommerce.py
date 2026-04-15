@@ -1,3 +1,4 @@
+import pandas as pd
 """
 WooCommerce CSV Connector — US 9.2 (Sprint 9)
 
@@ -23,7 +24,6 @@ Différence avec CSVConnector générique :
     - Filtre automatique sur les commandes `completed`
 """
 import io
-import pandas as pd
 from typing import List, Dict, Any
 from datetime import datetime
 

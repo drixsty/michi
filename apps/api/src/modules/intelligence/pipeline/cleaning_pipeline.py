@@ -13,7 +13,6 @@ Sortie  : DataFrame enrichi + run_rate (float)
 
 Performance : O(n) — pipeline vectorisé.
 """
-from __future__ import annotations
 
 import pandas as pd
 

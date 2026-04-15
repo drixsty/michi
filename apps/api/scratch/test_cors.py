@@ -1,5 +1,4 @@
 import requests
-import json
 
 def test_cors():
     url = "http://localhost:8000/graphql"

@@ -1,10 +1,10 @@
+import pandas as pd
 """
 ForecastingService — Application Layer
 Pipeline de nettoyage + prédictions opérationnelles (Agnostique Michi).
 """
 from datetime import date, datetime
 from typing import Optional, List, Dict
-import pandas as pd
 import uuid
 from loguru import logger
 
@@ -12,7 +12,7 @@ from src.modules.forecasting.domain.entities import CleanedDemandEntity, Predict
 from src.modules.forecasting.domain.ports import ICleanedDemandRepository, IPredictionRepository
 from src.modules.inventory.domain.ports import IProductRepository, ISalesLogRepository, IStoreRepository
 
-from src.modules.forecasting.schemas import PipelineResultSchema, PredictionRunResultSchema, DashboardKPISchema
+from src.modules.forecasting.domain.schemas import PipelineResultSchema, PredictionRunResultSchema, DashboardKPISchema
 from src.modules.intelligence.algorithms import (
     correct_out_of_stock_batch,
     detect_outliers_batch,

@@ -58,3 +58,7 @@ Thumbs.db
 
 # --- Docker ---
 .docker-compose.override.yml
+
+# --- Michi Cleanup ---
+apps/api/*.txt
+apps/api/logs/

@@ -13,21 +13,27 @@ Michi 道 utilise une architecture moderne découplée, optimisée pour la perfo
 
 ```mermaid
 graph TD
-    subgraph Frontend
-        WEB[Next.js 14 App Router]
+    subgraph Frontend_App
+        WEB[Next.js 14 Web]
+        MOBILE[React Native Mobile]
         APOLLO[Apollo Client]
     end
 
-    subgraph Backend
+    subgraph Backend_App
         FAST[FastAPI Gateway]
         STRAW[Strawberry GraphQL]
         
-        subgraph Modules
-            AUTH[Auth Module]
-            INV[Inventory Module]
-            FORE[Forecasting Module]
-            SUP[Suppliers Module]
+        subgraph Modules_DDD
+            direction TB
+            DOMAIN[Domain Layer: Entities, Ports]
+            APP[Application Layer: Services]
+            INFRA[Infrastructure Layer: Adapters]
         end
+    end
+
+    subgraph Shared_Kernel_Packages
+        CORE[packages/core: DB, Security, Config]
+        TYPES[packages/types: shared interfaces]
     end
 
     subgraph Persistence
@@ -36,14 +42,16 @@ graph TD
     end
 
     WEB -->|GraphQL| FAST
+    MOBILE -->|GraphQL| FAST
     FAST --> STRAW
-    STRAW --> AUTH
-    STRAW --> INV
-    STRAW --> FORE
-    STRAW --> SUP
+    STRAW --> APP
+    APP --> DOMAIN
+    INFRA --> DOMAIN
+    APP --> INFRA
     
-    Modules --> PG
-    FORE --> REDIS
+    Modules_DDD -.-> CORE
+    Modules_DDD --> PG
+    APP --> REDIS
 ```
 
 ### 1.1 Stack Technique

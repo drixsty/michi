@@ -4,7 +4,6 @@ Ports du domaine Auth — Sprint 21.
 Interfaces (Protocol) que les adaptateurs infrastructure implémentent.
 Aucune dépendance externe — pure abstraction Python.
 """
-from __future__ import annotations
 
 from typing import Optional, Protocol, runtime_checkable
 from uuid import UUID

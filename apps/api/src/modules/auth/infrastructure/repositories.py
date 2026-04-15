@@ -6,7 +6,6 @@ Ces classes sont la seule couche autorisée à toucher SQLAlchemy pour le module
 
 Chaque repository implémente le Protocol correspondant défini dans auth/domain/ports.py.
 """
-from __future__ import annotations
 
 from typing import Optional
 from uuid import UUID
@@ -251,7 +250,7 @@ class SQLAlchemyInvitationRepository:
         model = result.scalar_one_or_none()
         if not model:
             raise ValueError(f"Invitation {entity.id} introuvable")
-        from src.modules.auth.models import InvitationStatus as ModelStatus
+        from src.modules.auth.infrastructure.models import InvitationStatus as ModelStatus
         status_map = {
             InvitationStatus.PENDING: ModelStatus.PENDING,
             InvitationStatus.ACCEPTED: ModelStatus.ACCEPTED,

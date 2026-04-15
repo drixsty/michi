@@ -9,14 +9,9 @@ import enum
 from datetime import datetime
 import uuid
 
-from michi_core.database import Base, GUID
+from database import Base, GUID
 
-class PlatformSource(enum.Enum):
-    SHOPIFY = "SHOPIFY"
-    WOOCOMMERCE = "WOOCOMMERCE"
-    AMAZON = "AMAZON"
-    CSV = "CSV"
-    CUSTOM = "CUSTOM"
+from src.modules.inventory.domain.entities import PlatformSource
 
 class Store(Base):
     """

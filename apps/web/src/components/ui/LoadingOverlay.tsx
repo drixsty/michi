@@ -1,12 +1,13 @@
-'use client';
-
-import React from 'react';
+import { useTranslations } from 'next-intl';
 
 interface LoadingOverlayProps {
   message?: string;
 }
 
-export function LoadingOverlay({ message = "Préparation de votre espace Michi..." }: LoadingOverlayProps) {
+export function LoadingOverlay({ message }: LoadingOverlayProps) {
+  const t = useTranslations('common');
+  const displayMessage = message || t('loading');
+
   return (
     <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/70 backdrop-blur-2xl animate-in fade-in duration-700">
       <div className="relative mb-10">
@@ -22,7 +23,7 @@ export function LoadingOverlay({ message = "Préparation de votre espace Michi..
       
       <div className="space-y-3 text-center px-6">
         <p className="text-[11px] font-bold text-slate-900 tracking-wider leading-loose">
-          {message}
+          {displayMessage}
         </p>
         
         {/* Indicateur de progression minimaliste */}

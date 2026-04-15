@@ -5,12 +5,10 @@ Thin resolvers delegating to Application Services.
 import strawberry
 from typing import List, Optional
 import uuid
-from loguru import logger
 
-from michi_core.exceptions import UnauthenticatedException
-from src.modules.billing.decorators import require_plan
-from src.modules.auth.decorators import require_permission
-from src.modules.auth.constants import MichiPermission
+from src.modules.billing.adapters.decorators import require_plan
+from src.modules.auth.adapters.decorators import require_permission
+from src.modules.auth.domain.constants import MichiPermission
 from src.core.graphql.types import (
     CleanedDemandType, PredictionType, 
     PipelineResultType, PredictionRunResultType, 

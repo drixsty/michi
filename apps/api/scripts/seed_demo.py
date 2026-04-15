@@ -21,14 +21,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import select, delete
 
-from michi_core.config import settings
+from config import settings
 from src.modules.auth.models import User, Organization, OrganizationMember
 from src.modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder, Store, AlertEmail
 from src.modules.forecasting.models import CleanedDemand, Prediction
 from src.modules.forecasting.application.forecasting_service import ForecastingService
 from src.modules.inventory.application.alert_service import AlertService
 from src.modules.shopify.mock_generator import generate_full_mock_dataset
-from michi_core.database import Base
+from database import Base
 
 
 async def get_or_create_demo_shop(session: AsyncSession) -> tuple[str, str, str]:
@@ -46,7 +46,7 @@ async def get_or_create_demo_shop(session: AsyncSession) -> tuple[str, str, str]
         print(f"   [INFO] Creation utilisateur de demo {email}...")
         shop_id = uuid.uuid4()
         from src.modules.auth.infrastructure.persistence.models import User as AuthUser
-        from michi_core.security import hash_password
+        from security import hash_password
         user = AuthUser(
             email=email,
             hashed_password=hash_password("password123"),

@@ -1,3 +1,4 @@
+import pandas as pd
 """
 ABC Analysis Algorithm (Sprint 15)
 Persona: #2 Data Scientist / ML Engineer
@@ -10,7 +11,6 @@ Règle :
 
 Formule de Profit Brut Annuel : (sale_price - cost_price) * (run_rate * 365)
 """
-import pandas as pd
 from loguru import logger
 
 def calculate_abc_ranks_batch(df: pd.DataFrame) -> pd.DataFrame:

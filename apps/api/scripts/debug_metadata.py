@@ -4,10 +4,8 @@ from pathlib import Path
 # Ajouter src au path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from michi_core.database import Base
+from database import Base
 # Imports explicit
-from src.modules.auth.models import User, Organization, OrganizationMember
-from src.modules.inventory.models import Product, Store
 
 print("Tables in Base.metadata:")
 for table in Base.metadata.tables.keys():

@@ -17,7 +17,6 @@ Formule de rotation (rot) :
 
 Performance : O(1) — fonction pure.
 """
-from __future__ import annotations
 
 
 def calculate_health_score(

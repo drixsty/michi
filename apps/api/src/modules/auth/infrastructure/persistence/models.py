@@ -4,17 +4,9 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 
-from michi_core.database import Base, GUID
+from database import Base, GUID
 
-class UserRole(enum.Enum):
-    ADMIN = "admin"
-    MANAGER = "manager"
-    VIEWER = "viewer"
-
-class InvitationStatus(enum.Enum):
-    PENDING = "pending"
-    ACCEPTED = "accepted"
-    EXPIRED = "expired"
+from src.modules.auth.domain.entities import UserRole, InvitationStatus
 
 class Organization(Base):
     """

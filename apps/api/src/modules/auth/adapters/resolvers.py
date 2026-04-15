@@ -3,10 +3,9 @@ Auth Resolvers — Adapters Layer
 Thin resolvers delegating to Application Services.
 """
 import strawberry
-from typing import Optional
 import uuid
 
-from michi_core.exceptions import UnauthenticatedException, MichiException, ErrorCode
+from exceptions import UnauthenticatedException, MichiException, ErrorCode
 from src.core.graphql.types import (
     UserType, LoginInput, AuthPayload, RegisterInput, 
     GoogleLoginInput, ChangePasswordInput, UpdateProfileInput

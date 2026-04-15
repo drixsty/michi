@@ -1,3 +1,4 @@
+import pandas as pd
 """
 Ports du domaine intelligence/ — Sprint 21.
 
@@ -6,11 +7,9 @@ pour fournir des données au moteur intelligence.
 
 Aucune dépendance externe — pure abstraction Python.
 """
-from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
-import pandas as pd
 
 from .entities import DemandSignal, PredictionResult, InventoryHealthReport
 

@@ -1,6 +1,6 @@
 import logging
 from .base import BaseConnector
-from .service import IngestionService
+from .application.service import IngestionService
 
 logger = logging.getLogger(__name__)
 

@@ -83,6 +83,7 @@ def detect_outliers(df: pd.DataFrame, iqr_window: int | None = None) -> pd.DataF
 
     Example:
         >>> import pandas as pd
+import numpy as np
         >>> df = pd.DataFrame({
         ...     "date": pd.date_range("2025-01-01", periods=10),
         ...     "units_sold": [5.0]*9 + [500.0],   # outlier évident

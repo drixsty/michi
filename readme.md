@@ -89,10 +89,10 @@ git clone https://github.com/votreuser/michi.git
 cd michi
 ```
 
-### 2. Backend Setup
+### 2. Backend Setup (`apps/api`)
 
 ```bash
-cd backend
+cd apps/api
 
 # Créer environnement virtuel
 python -m venv venv
@@ -103,15 +103,12 @@ pip install -r requirements.txt
 
 # Copier .env
 cp .env.example .env
-
-# Éditer .env si nécessaire
-nano .env
 ```
 
-### 3. Frontend Setup
+### 3. Frontend Setup (`apps/web`)
 
 ```bash
-cd ../frontend
+cd apps/web
 
 # Installer dépendances
 npm install
@@ -135,7 +132,7 @@ docker-compose ps
 ### 5. Initialiser la Database
 
 ```bash
-cd backend
+cd apps/api
 
 # Créer tables + seed user de dev
 python scripts/seed_dev_data.py
@@ -158,7 +155,7 @@ python scripts/seed_dev_data.py
 ### Terminal 1 : Backend
 
 ```bash
-cd backend
+cd apps/api
 source venv/bin/activate
 uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ```
@@ -172,7 +169,7 @@ uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 ### Terminal 2 : Frontend
 
 ```bash
-cd frontend
+cd apps/web
 npm run dev
 ```
 
@@ -210,28 +207,23 @@ Après login, vous serez redirigé vers `/dashboard`.
 
 ```
 michi-app/
-├── backend/
-│   ├── src/
-│   │   ├── core/              # Infrastructure (config, DB, GraphQL)
-│   │   ├── modules/
-│   │   │   ├── auth/          # Authentification JWT
-│   │   │   ├── shopify/       # Mock Shopify + Future API
-│   │   │   ├── inventory/     # Gestion produits
-│   │   │   └── forecasting/   # Algorithmes Data Science
-│   │   └── main.py            # FastAPI app
-│   ├── tests/                 # Tests unitaires + e2e
-│   ├── scripts/               # Scripts utilitaires
-│   └── alembic/               # Migrations DB
+├── apps/
+│   ├── api/                   # Backend (FastAPI + DDD)
+│   │   ├── src/
+│   │   │   ├── core/          # Infrastructure Partagée
+│   │   │   ├── modules/       # Domaines métiers isolés
+│   │   │   │   ├── domain/        # Entities, Ports, Logic
+│   │   │   │   ├── application/   # Services, Use Cases
+│   │   │   │   └── infrastructure/# Persistence, Adapters
+│   │   │   └── main.py
+│   │   └── tests/
+│   ├── web/                   # Frontend (Next.js 14)
+│   └── mobile/                # Application Mobile (React Native/Expo)
 │
-├── frontend/
-│   ├── src/
-│   │   ├── app/               # Next.js pages (App Router)
-│   │   ├── components/        # UI components (shadcn/ui)
-│   │   ├── modules/           # Composants métier
-│   │   ├── graphql/           # Queries & Mutations
-│   │   ├── lib/               # Utilitaires
-│   │   └── types/             # TypeScript types
-│   └── public/                # Assets statiques
+├── packages/
+│   ├── core/                  # Shared Kernel (DB, Types, Utils)
+│   ├── types/                 # Typages TypeScript partagés
+│   └── ui/                    # Design System (shadcn/ui)
 │
 ├── docker-compose.yml         # Services (PostgreSQL + Redis)
 └── README.md
@@ -308,34 +300,25 @@ mutation {
 ### Backend (pytest)
 
 ```bash
-cd backend
+cd apps/api
 
 # Tous les tests
-pytest
+python -m pytest tests/unit
 
 # Avec coverage
-pytest --cov=src --cov-report=html
-
-# Tests spécifiques
-pytest src/modules/auth/tests/
-
-# Tests rapides uniquement (skip slow tests)
-pytest -m "not slow"
+python -m pytest tests/unit --cov=src --cov-report=html
 ```
 
 ### Frontend (Vitest + Playwright)
 
 ```bash
-cd frontend
+cd apps/web
 
 # Unit tests
 npm test
 
 # E2E tests
 npm run test:e2e
-
-# E2E headed mode (voir le browser)
-npm run test:e2e -- --headed
 ```
 
 ### Coverage Targets

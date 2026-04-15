@@ -2,7 +2,6 @@
 Script d'export du schéma GraphQL en format SDL (.graphql).
 Utilisé par US 21.15 — Redirect output to file via Makefile.
 """
-import os
 import sys
 from pathlib import Path
 

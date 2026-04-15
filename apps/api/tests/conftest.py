@@ -4,21 +4,48 @@ Utilise une base SQLite éphémère (in-memory) pour la rapidité et l'isolation
 """
 import pytest
 import asyncio
+import os
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 from httpx import AsyncClient
 
-from michi_core.database import Base
-from michi_core.config import settings
-from michi_core.database import get_db
+# --- Mock environment variables for Pydantic Settings ---
+# This ensures API tests can run without a .env file (Hexagonal logic)
+os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost:5432/db"
+os.environ["SECRET_KEY"] = "test-secret-key-12345"
+os.environ["ENVIRONMENT"] = "testing"
+
+# SMTP
+os.environ["SMTP_HOST"] = "localhost"
+os.environ["SMTP_PORT"] = "1025"
+os.environ["SMTP_USER"] = "test"
+os.environ["SMTP_PASSWORD"] = "test"
+os.environ["EMAIL_FROM"] = "test@michi.io"
+
+# Shopify
+os.environ["SHOPIFY_API_KEY"] = "test_key"
+os.environ["SHOPIFY_API_SECRET"] = "test_secret"
+os.environ["SHOPIFY_REDIRECT_URI"] = "http://localhost/callback"
+os.environ["SHOPIFY_SCOPES"] = "read_products"
+
+# Stripe
+os.environ["STRIPE_API_KEY"] = "sk_test_api"
+os.environ["STRIPE_WEBHOOK_SECRET"] = "whsec_test"
+os.environ["BILLING_MODE"] = "MOCK"
+os.environ["STRIPE_PRICE_BASIC"] = "price_1"
+os.environ["STRIPE_PRICE_PRO"] = "price_2"
+os.environ["STRIPE_PRICE_ENTERPRISE"] = "price_3"
+# --- End of Mock ---
+
+from database import Base
+from database import get_db
 from src.main import app
 
-# Imports des modèles pour enregistrement dans Metadata
+# Imports des modèles pour enregistrement dans Metadata (Updated paths after refactor)
 from src.modules.auth.infrastructure.persistence.models import User, Organization, OrganizationMember, Invitation
 from src.modules.inventory.infrastructure.persistence.models import Product, SalesLog, Supplier, Alert, AlertEmail, PurchaseOrder, Store
-from src.modules.forecasting.infrastructure.persistence.models import CleanedDemand, Prediction
-from michi_core.security import hash_password
+from security import hash_password
 
 # Database de test éphémère (SQLite Async)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -61,6 +88,7 @@ async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
     # On utilise une transaction imbriquée pour pouvoir rollback après chaque test
     async with db_engine.connect() as conn:
         transaction = await conn.begin()
+        # Initialisation de la session sur la connexion avec transaction
         session = AsyncSession(bind=conn, expire_on_commit=False, join_transaction_mode="create_savepoint")
         
         yield session
@@ -72,8 +100,11 @@ async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
 async def test_user(db_session) -> User:
     """Créer un user de test et son organisation/store associés"""
     import uuid
-    from src.modules.inventory.models import Store, PlatformSource
-    from src.modules.auth.models import Organization, OrganizationMember, UserRole
+    from src.modules.inventory.domain.entities import PlatformSource
+    from src.modules.auth.domain.entities import UserRole
+    # Models are in infrastructure
+    from src.modules.auth.infrastructure.persistence.models import Organization, OrganizationMember, User
+    from src.modules.inventory.infrastructure.persistence.models import Store
     
     shop_uuid = uuid.uuid4()
     org_uuid = uuid.uuid4()
@@ -97,7 +128,7 @@ async def test_user(db_session) -> User:
     
     user = User(
         id=user_uuid,
-        email="test@michi.com",
+        email=f"test_{user_uuid.hex[:8]}@michi.com",
         hashed_password=hash_password("testpassword"),
         shop_id=shop_uuid,
         current_organization_id=org_uuid
@@ -120,7 +151,7 @@ async def test_user(db_session) -> User:
 @pytest.fixture(scope="function")
 async def auth_token(test_user) -> str:
     """Token JWT pour user de test"""
-    from michi_core.security import create_access_token
+    from security import create_access_token
     
     token = create_access_token({
         "user_id": str(test_user.id),

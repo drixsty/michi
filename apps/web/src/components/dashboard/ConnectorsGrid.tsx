@@ -68,7 +68,11 @@ interface ConnectorsGridProps {
   isAdmin?: boolean;
 }
 
+import { useTranslations, useFormatter } from 'next-intl';
+
 export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProps) {
+  const t = useTranslations('dashboard.connectors');
+  const format = useFormatter();
   const [showAddSourcePanel, setShowAddSourcePanel] = React.useState(false);
   const [showSuccess, setShowSuccess] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null);
@@ -131,22 +135,22 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
               </div>
               <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400">
                  <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />
-                 Manuel
+                 {t('manual')}
               </div>
            </div>
            
            <div className="space-y-1 mb-4">
-              <h3 className="text-sm font-bold text-slate-900">Fichier CSV</h3>
+              <h3 className="text-sm font-bold text-slate-900">{t('manual')} (CSV)</h3>
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-slate-400 font-bold tracking-wider">Santé</span>
+                  <span className="text-[9px] text-slate-400 font-bold tracking-wider">{t('apiHealth')}</span>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-600">
-                    Disponible
+                    {t('available')}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-slate-400 font-bold">Dernier import</span>
-                  <span className="text-[9px] text-slate-600 font-bold italic">Manuel</span>
+                  <span className="text-[9px] text-slate-400 font-bold">{t('lastImport')}</span>
+                  <span className="text-[9px] text-slate-600 font-bold italic">{t('manual')}</span>
                 </div>
               </div>
            </div>
@@ -168,7 +172,7 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
              )}
            >
               <Upload className="h-3.5 w-3.5" />
-              {isAdmin ? "Importer" : "Accès restreint"}
+              {isAdmin ? t('header.export') : t('restricted')}
            </label>
         </div>
 
@@ -188,8 +192,8 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
             <Plus className="h-6 w-6" />
           </div>
           <div className="space-y-1">
-            <p className="text-[11px] font-extrabold text-slate-900">Nouvelle source</p>
-            <p className="text-[9px] text-slate-400 font-bold">{isAdmin ? "Connecter un flux API" : "Réservé aux admins"}</p>
+            <p className="text-[11px] font-extrabold text-slate-900">{t('newSource')}</p>
+            <p className="text-[9px] text-slate-400 font-bold">{isAdmin ? t('adminOnly') : t('restricted')}</p>
           </div>
         </button>
 
@@ -208,7 +212,7 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
                 
                 <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-600">
                   <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Actif
+                  {t('active')}
                 </div>
               </div>
 
@@ -216,7 +220,7 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
                 <h3 className="text-sm font-bold text-slate-900">{source.platform}</h3>
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-slate-400 font-bold">Santé API</span>
+                    <span className="text-[9px] text-slate-400 font-bold">{t('apiHealth')} API</span>
                     <span className={cn(
                       "text-[9px] font-bold px-1.5 py-0.5 rounded-lg",
                       source.healthStatus === 'HEALTHY' ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
@@ -225,9 +229,9 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-slate-400 font-bold">Dernière sync</span>
+                    <span className="text-[9px] text-slate-400 font-bold">{t('lastSyncAt')}</span>
                     <span className="text-[9px] text-slate-600 font-bold">
-                      {source.lastSyncAt ? new Date(source.lastSyncAt).toLocaleDateString() : 'Jamais'}
+                      {source.lastSyncAt ? format.dateTime(new Date(source.lastSyncAt)) : 'Jamais'}
                     </span>
                   </div>
                 </div>
@@ -249,7 +253,7 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
                 ) : (
                    <>
                      <PowerOff className="h-3.5 w-3.5" />
-                     {isAdmin ? "Déconnecter" : "Lecture seule"}
+                     {isAdmin ? t('disconnect') : t('readonly')}
                    </>
                 )}
               </button>
@@ -297,9 +301,9 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
                 
                 <div className="space-y-2">
                   <h2 className="text-3xl font-extrabold text-white tracking-tight">
-                    Source Connectée !
+                    {t('success.title')}
                   </h2>
-                  <p className="text-slate-400 text-sm font-medium tracking-wide">Vos données sont en cours de synchronisation</p>
+                  <p className="text-slate-400 text-sm font-medium tracking-wide">{t('success.subtitle')}</p>
                 </div>
                 <p className="text-[10px] text-slate-500 font-bold  tracking-[0.2em] animate-pulse">Chargement intelligent...</p>
                 
@@ -307,7 +311,7 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
                   onClick={() => setShowSuccess(false)}
                   className="mt-8 px-8 py-3 bg-white text-slate-900 rounded-lg font-bold text-xs hover:bg-slate-50 transition-colors focus:ring-0 focus:outline-none"
                 >
-                  Terminer la synchronisation
+                  {t('success.button')}
                 </button>
               </motion.div>
             </motion.div>
@@ -325,12 +329,12 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
                <div className="w-14 h-14 bg-red-50 rounded-lg flex items-center justify-center mb-6">
                  <PowerOff className="h-6 w-6 text-red-600" />
                </div>
-               <h3 className="text-lg font-bold text-slate-900 mb-2 tracking-tight">Supprimer les données ?</h3>
+               <h3 className="text-lg font-bold text-slate-900 mb-2 tracking-tight">{t('confirmDelete.title')}</h3>
                <p className="text-[11px] text-slate-500 font-medium leading-relaxed mb-8">
-                 En déconnectant <span className="text-slate-900 font-extrabold">{confirmDelete}</span>, vous perdrez instantanément tous les produits et l'historique de ventes associés à ce canal. Cette action est irréversible.
+                 {t('confirmDelete.description', { platform: confirmDelete })}
                </p>
                <div className="flex gap-3">
-                 <button onClick={() => setConfirmDelete(null)} className="flex-1 py-3.5 text-[10px] font-extrabold  text-slate-400 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors focus:ring-0 focus:outline-none">Annuler</button>
+                 <button onClick={() => setConfirmDelete(null)} className="flex-1 py-3.5 text-[10px] font-extrabold  text-slate-400 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors focus:ring-0 focus:outline-none">{t('cancel')}</button>
                  <button 
                    onClick={() => {
                      handleToggle(confirmDelete!, true);
@@ -338,7 +342,7 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
                    }} 
                    className="flex-1 py-3.5 text-[10px] font-extrabold  text-white bg-red-600 rounded-lg hover:bg-red-700 transition-shadow shadow-lg shadow-red-200 focus:ring-0 focus:outline-none"
                  >
-                   Confirmer
+                   {t('confirm')}
                  </button>
                </div>
             </motion.div>
@@ -348,7 +352,7 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
 
       {toggling && (
          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-white/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <LoadingState size="lg" message="mise à jour du canal..." />
+            <LoadingState size="lg" message="{t('updating')}" />
          </div>
       )}
     </section>

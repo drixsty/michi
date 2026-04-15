@@ -4,7 +4,6 @@ Abstract interfaces (Protocols) for repositories.
 """
 from typing import Protocol, List, Optional, Any
 from uuid import UUID
-from datetime import date
 from .entities import (
     ProductEntity, StoreEntity, AlertEntity, 
     SalesLogEntity, SupplierEntity, PurchaseOrderEntity

@@ -1,0 +1,4 @@
+- [x] Correction des imports dans `packages/types`
+- [x] Mise à jour du `tsconfig.json` de `apps/mobile` (skipLibCheck, jsonModule, explicit extends path)
+- [x] Ajout des dépendances manquantes (`lucide-react-native`, `react-native-svg`)
+- [x] Vérification finale via `type-check` (PASS ✅)

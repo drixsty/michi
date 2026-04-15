@@ -10,14 +10,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from michi_core.config import settings
-from michi_core.security import hash_password
-from michi_core.database import Base
+from config import settings
+from security import hash_password
+from database import Base
 
 # Imports requis pour que SQLAlchemy découvre les modèles lors du drop/create
 from src.modules.auth.models import User, Organization, OrganizationMember, Invitation
-from src.modules.inventory.models import Product, SalesLog, Store, Supplier, PurchaseOrder, Alert
-from src.modules.forecasting.models import CleanedDemand, Prediction
 
 async def recreate_all():
     """Supprime et recrée toutes les tables"""

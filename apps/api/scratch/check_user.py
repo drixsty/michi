@@ -11,10 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.core.config import settings
 from src.core.security import hash_password
-from src.core.database import Base
 from src.modules.auth.models import User, Organization, OrganizationMember, UserRole
-from src.modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder, Store
-from src.modules.forecasting.models import CleanedDemand, Prediction
 
 async def check_and_fix_user():
     engine = create_async_engine(settings.DATABASE_URL, echo=False)

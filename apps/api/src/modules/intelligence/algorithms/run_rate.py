@@ -1,3 +1,5 @@
+import pandas as pd
+import numpy as np
 """
 Run Rate Algorithm — US 2.5 (Sprint 4)
 
@@ -20,8 +22,6 @@ Hypothèses :
 Performance :
     O(n) — vectorisation Pandas, pas de boucles for.
 """
-import pandas as pd
-import numpy as np
 
 RUN_RATE_WINDOW = 30     # jours pour la médiane glissante du run rate
 RUN_RATE_MIN_PERIODS = 4  # minimum de jours valides pour un run rate fiable

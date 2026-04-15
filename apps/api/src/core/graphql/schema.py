@@ -16,9 +16,9 @@ from src.modules.inventory.adapters.resolvers import InventoryQuery, InventoryMu
 from src.modules.forecasting.adapters.resolvers import ForecastingQuery, ForecastingMutation
 
 # Other Modules
-from src.modules.shopify.resolvers import ShopifyQuery, ShopifyMutation
+from src.modules.shopify.adapters.resolvers import ShopifyQuery, ShopifyMutation
 from src.modules.decisions.adapters.resolvers import DecisionQuery, DecisionMutation
-from src.modules.billing.resolvers import BillingQuery, BillingMutation
+from src.modules.billing.adapters.resolvers import BillingQuery, BillingMutation
 
 
 @strawberry.type

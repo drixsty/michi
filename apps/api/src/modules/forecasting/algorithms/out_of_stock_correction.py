@@ -1,3 +1,4 @@
+import pandas as pd
 """
 Out-of-Stock Correction Algorithm — US 2.1 (révisé Sprint 4 — DS-1)
 
@@ -26,7 +27,6 @@ Hypothèses :
 Performance :
     O(n) avec vectorisation Pandas — interdit les boucles for sur les lignes.
 """
-import pandas as pd
 
 ROLLING_WINDOW = 14   # jours de fenêtre glissante
 

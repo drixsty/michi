@@ -5,12 +5,11 @@ from typing import List, Optional
 from uuid import UUID
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from src.modules.forecasting.domain.entities import PredictionEntity
 from src.modules.forecasting.domain.ports import IPredictionRepository
 from src.modules.forecasting.infrastructure.persistence.models import Prediction
-from src.modules.inventory.models import Product, Store
+from src.modules.inventory.infrastructure.models import Product, Store
 
 class SQLAlchemyPredictionRepository(IPredictionRepository):
     def __init__(self, session: AsyncSession):

@@ -11,7 +11,6 @@ Usage dans les resolvers :
     auth_svc = build_auth_service(info.context.db, info.context.billing)
     result = await auth_svc.login(email, password)
 """
-from __future__ import annotations
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

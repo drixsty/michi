@@ -4,7 +4,6 @@ Entités du domaine Auth — Sprint 21.
 Entités avec identité propre. Ces classes sont des projections pures du domaine,
 sans dépendance SQLAlchemy ni Pydantic. Elles reflètent le modèle métier Auth.
 """
-from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field

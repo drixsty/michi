@@ -1,8 +1,6 @@
 import os
 import sys
 import asyncio
-import pandas as pd
-import numpy as np
 from datetime import date, timedelta
 from loguru import logger
 

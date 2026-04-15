@@ -9,8 +9,8 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 
-from michi_core.database import Base, GUID
-from src.modules.inventory.models import Product  # Import requis pour les relations
+from database import Base, GUID
+from src.modules.inventory.infrastructure.models import Product  # Import requis pour les relations
 
 
 class CleanedDemand(Base):

@@ -7,7 +7,6 @@ et de invitation_service.py.
 
 Aucune dépendance SQLAlchemy directe — pur Python métier.
 """
-from __future__ import annotations
 
 import secrets
 import uuid
@@ -15,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Optional
 
-from src.modules.auth.domain.entities import InvitationEntity, MembershipEntity
+from src.modules.auth.domain.entities import InvitationEntity, MembershipEntity, OrganizationEntity
 from src.modules.auth.domain.value_objects import JwtToken
 from src.modules.auth.infrastructure.repositories import (
     SQLAlchemyInvitationRepository,
@@ -24,14 +23,14 @@ from src.modules.auth.infrastructure.repositories import (
     SQLAlchemyUserRepository,
 )
 from src.modules.auth.domain.ports import ITokenService
-from src.modules.auth.models import (
+from src.modules.auth.infrastructure.models import (
     Invitation,
     InvitationStatus,
     Organization,
     OrganizationMember,
     UserRole,
 )
-from michi_core.exceptions import ErrorCode, MichiException
+from exceptions import ErrorCode, MichiException
 
 
 @dataclass

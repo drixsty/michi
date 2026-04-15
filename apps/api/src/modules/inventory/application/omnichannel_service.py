@@ -4,11 +4,9 @@ Aggregates inventory by SKU across channels.
 """
 from typing import List, Optional, Dict
 from datetime import date
-from loguru import logger
 from uuid import UUID
 
 from src.modules.inventory.domain.ports import IProductRepository, IStoreRepository
-from src.modules.inventory.application.inventory_service import PlatformSource
 
 # We keep the dataclasses here as they are Application-specific DTOs for the UI
 from dataclasses import dataclass, field

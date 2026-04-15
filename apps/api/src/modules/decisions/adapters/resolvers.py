@@ -8,7 +8,7 @@ from strawberry.types import Info
 from uuid import UUID
 
 from src.core.graphql.context import GraphQLContext
-from michi_core.exceptions import UnauthenticatedException
+from exceptions import UnauthenticatedException
 from .graphql_types import (
     DecisionCenterOverviewType, 
     FinancialKpiType, 

@@ -4,12 +4,11 @@ Adaptateurs sécurité Auth — Sprint 21.
 Implémentations concrètes des ports IPasswordHasher et ITokenService.
 Délèguent à src.core.security (bcrypt, JWT).
 """
-from __future__ import annotations
 
 from typing import Optional
 from uuid import UUID
 
-from michi_core.security import (
+from security import (
     create_access_token,
     hash_password,
     verify_password,
@@ -47,5 +46,5 @@ class JwtTokenService:
         return JwtToken(raw)
 
     def decode(self, token: JwtToken) -> dict:
-        from michi_core.security import decode_access_token
+        from security import decode_access_token
         return decode_access_token(token.value)

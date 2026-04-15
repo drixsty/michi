@@ -4,7 +4,6 @@ Types GraphQL avec Strawberry
 import strawberry
 from typing import Optional, List
 from datetime import datetime, date
-from uuid import UUID
 
 @strawberry.type
 class OrganizationType:

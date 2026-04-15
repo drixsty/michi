@@ -4,7 +4,6 @@ Value Objects du domaine Auth — Sprint 21.
 Objets immuables sans identité propre. Encapsulent les règles de validation
 métier sur les primitives (email, password, token).
 """
-from __future__ import annotations
 
 import re
 from dataclasses import dataclass

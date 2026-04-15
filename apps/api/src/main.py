@@ -3,23 +3,27 @@ Point d'entrée FastAPI - Michi Backend
 """
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env if present (Hexagonal Adapter logic)
+load_dotenv()
 from strawberry.fastapi import GraphQLRouter
 from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from michi_core.config import settings
+from config import settings
 from src.core.graphql.schema import schema
 from src.core.graphql.context import GraphQLContext
 import asyncio
-from michi_core.database import get_db
-from michi_core.database_utils import SerializedAsyncSession
+from database import get_db
+from database import SerializedAsyncSession
 from src.core.middleware.auth import get_current_user_from_token
-from src.modules.shopify.auth_routes import router as shopify_auth_router
-from src.modules.billing.router import router as billing_router
-from michi_core.exceptions import UnauthenticatedException, ForbiddenException
+from src.modules.shopify.adapters.auth_routes import router as shopify_auth_router
+from src.modules.billing.adapters.router import router as billing_router
+from exceptions import UnauthenticatedException, ForbiddenException
 from loguru import logger
 import sys
-import logging
 
 # Configuration Loguru pour filtrer les tracebacks d'auth bruyants (seulement pour Loguru)
 def log_filter(record):

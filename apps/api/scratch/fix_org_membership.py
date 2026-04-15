@@ -1,7 +1,6 @@
 import asyncio
 import sys
 import os
-import uuid
 
 # Add src to path
 sys.path.append(os.path.join(os.getcwd(), 'src'))

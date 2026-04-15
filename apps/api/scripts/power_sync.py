@@ -5,11 +5,10 @@ from pathlib import Path
 # Ajouter src au path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from michi_core.database import AsyncSessionLocal, Base, engine as async_engine
+from database import AsyncSessionLocal, Base, engine as async_engine
 from src.modules.auth.models import User
 from src.modules.shopify.service import ShopifyService
 from src.modules.forecasting.service import ForecastingService
-from michi_core.config import settings
 from sqlalchemy import select, create_engine
 
 async def run():

@@ -7,7 +7,6 @@ Aucune dépendance SQLAlchemy directe — pur Python.
 Remplace progressivement auth/service.py (backward compat conservée le temps
 que les resolvers migrent via US 21.9).
 """
-from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
@@ -32,7 +31,7 @@ from src.modules.auth.infrastructure.persistence.models import (
     User,
     UserRole,
 )
-from michi_core.exceptions import ErrorCode, MichiException, UnauthenticatedException
+from exceptions import ErrorCode, MichiException, UnauthenticatedException
 
 
 @dataclass

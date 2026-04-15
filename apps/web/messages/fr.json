@@ -147,27 +147,34 @@
       "version": "Michi 道 v2.5"
     },
     "errors": {
-      "payment": "Erreur de paiement. Veuillez réessayer."
+      "payment": "Erreur de paiement. Veuillez réessayer.",
+      "generic": "Une erreur est survenue."
     },
-    "step1": {
-      "title": "Votre organisation",
-      "orgNameLabel": "Nom de l'organisation",
-      "orgNamePlaceholder": "Ma boutique",
-      "currencyLabel": "Devise",
-      "continueButton": "Continuer"
-    },
-    "step2": {
-      "title": "Connectez votre boutique",
-      "shopifyOption": "Shopify",
-      "wooOption": "WooCommerce",
-      "amazonOption": "Amazon",
-      "csvOption": "Import CSV",
-      "skipButton": "Passer cette étape"
-    },
-    "step3": {
-      "title": "C'est prêt !",
-      "subtitle": "Votre espace est configuré. Accédez à votre dashboard.",
-      "goToDashboard": "Accéder au dashboard"
+    "wizard": {
+      " привет": "Salut, {name} !",
+      "welcome": "Salut, {name} !",
+      "syncing": "Analyse des flux...",
+      "skip": "Passer la configuration (Expert)",
+      "steps": {
+        "0": {
+          "cta": "Démarrer la configuration"
+        },
+        "connect": {
+          "title": "Connectez votre première boutique",
+          "description": "Michi a besoin de vos données pour prédire vos besoins. Choisissez votre plateforme principale.",
+          "cta": "Connecter"
+        },
+        "analysis": {
+          "title": "Moteur IA en pleine action",
+          "description": "Nous analysons vos flux, nettoyons les ruptures historiques et calculons vos modèles de croissance.",
+          "cta": "Finaliser l'analyse"
+        },
+        "ready": {
+          "title": "Prêt pour la croissance",
+          "description": "Votre inventaire est maintenant sous contrôle. Prêt à voir vos premières prévisions ?",
+          "cta": "Entrer dans Michi"
+        }
+      }
     }
   },
   "dashboard": {
@@ -198,16 +205,28 @@
       "syncing": "Synchronisation...",
       "sync": "Synchroniser"
     },
-    "export": {
-      "product": "Produit",
-      "sku": "SKU",
-      "stock": "Stock Total",
-      "reorder": "Commande Suggérée"
-    },
-    "toast": {
-      "importSuccess": "Import réussi",
-      "exportSuccess": "Export réussi",
-      "exportError": "Erreur export"
+    "connectors": {
+      "manual": "Manuel",
+      "available": "Disponible",
+      "lastImport": "Dernier import",
+      "disconnect": "Déconnecter",
+      "restricted": "Accès restreint",
+      "newSource": "Nouvelle source",
+      "adminOnly": "Réservé aux admins",
+      "active": "Actif",
+      "apiHealth": "Santé API",
+      "readonly": "Lecture seule",
+      "updating": "Mise à jour du canal...",
+      "success": {
+        "title": "Source Connectée !",
+        "subtitle": "Vos données sont en cours de synchronisation",
+        "loading": "Chargement intelligent...",
+        "button": "Terminer la synchronisation"
+      },
+      "confirmDelete": {
+        "title": "Supprimer les données ?",
+        "description": "En déconnectant {platform}, vous perdrez instantanément tous les produits et l'historique de ventes associés à ce canal. Cette action est irréversible."
+      }
     }
   },
   "stats": {
@@ -220,17 +239,6 @@
     "healthy": "Sains",
     "healthySub": "Stock optimisé",
     "units": "Unités"
-  },
-  "overview": {
-    "recentAlerts": "Alertes récentes",
-    "emptyTitle": "Données vides",
-    "noAlerts": "Aucune alerte active pour le moment.",
-    "seeAllAlerts": "Voir toutes les alertes",
-    "optimizedStock": "Stock optimisé",
-    "noProducts": "Aucun produit synchronisé.",
-    "units": "Unités",
-    "open": "Ouvrir",
-    "manageInventory": "Gérer l'inventaire"
   },
   "inventory": {
     "title": "Inventaire",
@@ -246,78 +254,7 @@
       "sources": "Sources",
       "stockout": "Rupture prévue",
       "reorder": "À commander",
-      "catalogTitle": "Catalogue Unifié",
-      "productsShown": "produits affichés",
-      "all": "Tous",
-      "groupedActions": "Actions groupées"
-    },
-    "status": {
-      "critical": "Critique",
-      "warning": "Tendu",
-      "healthy": "Sain",
-      "neutral": "Neutre",
-      "stockout": "Rupture"
-    },
-    "empty": "Aucun produit trouvé",
-    "emptySubtitle": "Aucun produit ne correspond à votre sélection."
-  },
-  "forecast": {
-    "title": "Prévisions",
-    "subtitle": "Anticipez vos besoins en stocks",
-    "runForecast": "Lancer les prévisions",
-    "lastRun": "Dernière analyse",
-    "accuracy": "Précision",
-    "chart": {
-      "demand": "Demande prévisionnelle",
-      "actual": "Ventes réelles"
-    }
-  },
-  "profile": {
-    "title": "Mon profil",
-    "loading": "Chargement du profil...",
-    "settings": "Paramètres du profil",
-    "settingsSubtitle": "Gérez vos informations personnelles et votre sécurité.",
-    "logout": "Déconnexion",
-    "personalInfo": "Informations personnelles",
-    "firstNameLabel": "Prénom",
-    "firstNamePlaceholder": "Votre prénom",
-    "lastNameLabel": "Nom",
-    "lastNamePlaceholder": "Votre nom",
-    "emailLabel": "Adresse email",
-    "languageLabel": "Langue",
-    "save": "Sauvegarder",
-    "saveButton": "Enregistrer les modifications",
-    "updateSuccess": "Profil mis à jour avec succès",
-    "updateError": "Erreur lors de la mise à jour",
-    "dangerZone": "Zone dangereuse",
-    "deleteAccount": "Supprimer mon compte",
-    "tabs": {
-      "profile": "Profil",
-      "security": "Sécurité",
-      "notifications": "Notifications"
-    },
-    "security": {
-      "title": "Sécurité du compte",
-      "currentPassword": "Mot de passe actuel",
-      "newPassword": "Nouveau mot de passe",
-      "confirmPassword": "Confirmer le mot de passe",
-      "hidePasswords": "Masquer",
-      "showPasswords": "Afficher",
-      "updateButton": "Mettre à jour le mot de passe",
-      "passwordSuccess": "Mot de passe modifié avec succès",
-      "passwordError": "Erreur lors du changement",
-      "passwordMismatch": "Les mots de passe ne correspondent pas",
-      "incorrectPassword": "Mot de passe actuel incorrect"
-    },
-    "notifications": {
-      "title": "Centre de notifications",
-      "emailAlerts": "Alertes par email",
-      "emailAlertsDesc": "Recevoir un condensé quotidien de vos alertes critiques.",
-      "minSeverity": "Sévérité minimale",
-      "minSeverityDesc": "Niveau d'urgence requis pour déclencher un email.",
-      "standard": "Standard",
-      "urgent": "Urgent",
-      "critical": "Critique"
+      "catalogTitle": "Catalogue Unifié"
     }
   }
 }

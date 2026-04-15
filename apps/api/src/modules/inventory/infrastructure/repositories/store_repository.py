@@ -42,7 +42,7 @@ class SQLAlchemyStoreRepository(IStoreRepository):
         return [self._to_entity(m) for m in result.scalars().all()]
 
     async def get_by_platform(self, org_id: UUID, platform: str) -> Optional[StoreEntity]:
-        from src.modules.inventory.models import PlatformSource as ModelPlatformSource
+        from src.modules.inventory.infrastructure.models import PlatformSource as ModelPlatformSource
         stmt = select(Store).where(
             Store.organization_id == org_id,
             Store.platform == ModelPlatformSource(platform.upper())
@@ -63,7 +63,7 @@ class SQLAlchemyStoreRepository(IStoreRepository):
             model.health_status = entity.health_status
             model.config = entity.config
         else:
-            from src.modules.inventory.models import PlatformSource as ModelPlatformSource
+            from src.modules.inventory.infrastructure.models import PlatformSource as ModelPlatformSource
             model = Store(
                 id=entity.id,
                 organization_id=entity.organization_id,

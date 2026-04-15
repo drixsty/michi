@@ -10,7 +10,6 @@ Sortie  : list[RiskItem] triée par risk_value DESC
 
 Performance : O(n log n) — tri final seulement.
 """
-from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, timedelta

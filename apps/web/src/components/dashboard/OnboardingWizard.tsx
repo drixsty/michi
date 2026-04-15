@@ -1,4 +1,5 @@
 'use client';
+import { useTranslations } from 'next-intl';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,31 +14,31 @@ interface OnboardingWizardProps {
 
 const STEPS = [
   {
-    cta: 'Démarrer la configuration',
+    cta: t('steps.0.cta'),
     testid: 'wizard-start'
   },
   {
     id: 'connect',
-    title: 'Connectez votre première boutique',
-    description: 'Michi a besoin de vos données pour prédire vos besoins. Choisissez votre plateforme principale.',
+    title: t('steps.connect.title'),
+    description: t('steps.connect.description'),
     icon: <ShoppingBag className="text-blue-500 h-12 w-12" />,
-    cta: 'Connecter', // Dynamic
+    cta: t('steps.connect.cta'), // Dynamic
     testid: 'wizard-next'
   },
   {
     id: 'analysis',
-    title: 'Moteur IA en pleine action',
-    description: 'Nous analysons vos flux, nettoyons les ruptures historiques et calculons vos modèles de croissance.',
+    title: t('steps.analysis.title'),
+    description: t('steps.analysis.description'),
     icon: <Zap className="text-amber-500 h-12 w-12" />,
-    cta: 'Finaliser l\'analyse',
+    cta: t('steps.analysis.cta'),
     testid: 'wizard-finish'
   },
   {
     id: 'ready',
-    title: 'Prêt pour la croissance',
-    description: 'Votre inventaire est maintenant sous contrôle. Prêt à voir vos premières prévisions ?',
+    title: t('steps.ready.title'),
+    description: t('steps.ready.description'),
     icon: <CheckCircle2 className="text-emerald-500 h-12 w-12" />,
-    cta: 'Entrer dans Michi',
+    cta: t('steps.ready.cta'),
     testid: 'wizard-enter'
   }
 ];
@@ -106,7 +107,7 @@ export default function OnboardingWizard({ userName, onComplete, onSync }: Onboa
               
               <div className="space-y-3">
                 <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-                    {currentStep === 0 && userName ? `Salut, ${userName} !` : step.title}
+                    {currentStep === 0 && userName ? t('welcome', { name: userName }) : step.title}
                 </h2>
                 <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">{step.description}</p>
               </div>
@@ -154,7 +155,7 @@ export default function OnboardingWizard({ userName, onComplete, onSync }: Onboa
                   {isSyncing ? (
                     <>
                       <div className="animate-spin h-4 w-4 border-2 border-slate-400 border-t-white rounded-full" />
-                      Analyse des flux...
+                      {t('syncing')}
                     </>
                   ) : (
                     <>
@@ -172,7 +173,7 @@ export default function OnboardingWizard({ userName, onComplete, onSync }: Onboa
                     }}
                     className="mt-6 text-[10px] font-bold text-slate-400 hover:text-primary tracking-[0.2em] uppercase transition-colors"
                   >
-                    Passer la configuration (Expert)
+                    {t('skip')}
                   </button>
                 )}
               </div>

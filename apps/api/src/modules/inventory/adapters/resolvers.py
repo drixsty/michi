@@ -3,15 +3,13 @@ Inventory Resolvers — Adapters Layer
 Thin resolvers delegating to Application Services.
 """
 import csv
-import io
 import strawberry
 from typing import List, Optional, Annotated
 import uuid
-from loguru import logger
 
-from michi_core.exceptions import UnauthenticatedException, MichiException, ErrorCode
-from src.modules.auth.decorators import require_permission
-from src.modules.auth.constants import MichiPermission
+from exceptions import UnauthenticatedException, MichiException, ErrorCode
+from src.modules.auth.adapters.decorators import require_permission
+from src.modules.auth.domain.constants import MichiPermission
 from src.core.graphql.types import (
     ProductType, AlertType, SupplierType, StoreType,
     PurchaseOrderType, OmnichannelProductType,
@@ -153,7 +151,7 @@ class InventoryMutation:
         service = info.context.services.inventory_service
         
         # Accès aux autres services via le contexte pour l'orchestrateur
-        from src.modules.ingestion.service import IngestionService
+        from src.modules.ingestion.application.service import IngestionService
         ingestion_service = IngestionService(info.context.db)
         from src.modules.ingestion.connectors.csv import CSVConnector
         ingestion_service.register_connector("csv", CSVConnector())

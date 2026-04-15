@@ -1,6 +1,5 @@
 import strawberry
 from typing import List, Optional
-from datetime import date
 
 @strawberry.type
 class PlatformCapitalType:

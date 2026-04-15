@@ -1,5 +1,4 @@
-import pytest
-from michi_core.exceptions import (
+from exceptions import (
     MichiException, 
     ErrorCode, 
     UnauthenticatedException, 

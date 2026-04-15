@@ -1,11 +1,15 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "../../node_modules/expo/tsconfig.base.json",
   "compilerOptions": {
     "strict": true,
     "paths": {
       "@/*": ["./src/*"],
       "@michi/types": ["../../packages/types/src/index.ts"]
-    }
+    },
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "**/*.ts",

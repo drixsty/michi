@@ -4,7 +4,6 @@ Mappers Infrastructure Auth — Sprint 21.
 Fonctions de conversion SQLAlchemy model ↔ Domain entity.
 Séparent explicitement la persistance du domaine.
 """
-from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
@@ -63,7 +62,7 @@ def org_to_entity(model: "Organization") -> OrganizationEntity:
 
 
 def membership_to_entity(model: "OrganizationMember") -> MembershipEntity:
-    from src.modules.auth.models import UserRole as ModelUserRole
+    from src.modules.auth.infrastructure.models import UserRole as ModelUserRole
     role_map = {
         ModelUserRole.ADMIN: UserRole.ADMIN,
         ModelUserRole.MANAGER: UserRole.MANAGER,
@@ -79,7 +78,7 @@ def membership_to_entity(model: "OrganizationMember") -> MembershipEntity:
 
 
 def invitation_to_entity(model: "Invitation") -> InvitationEntity:
-    from src.modules.auth.models import (
+    from src.modules.auth.infrastructure.models import (
         InvitationStatus as ModelStatus,
         UserRole as ModelUserRole,
     )

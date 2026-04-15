@@ -12,7 +12,7 @@
 1. [Vue d'Ensemble Architecture](#1-vue-densemble-architecture)
 2. [Schéma de Base de Données](#2-schéma-de-base-de-données)
 3. [API GraphQL (Schema First)](#3-api-graphql-schema-first)
-4. [Architecture Backend (Domain-Driven)](#4-architecture-backend-domain-driven)
+4. [Architecture Backend (Hexagonale & DDD)](#4-architecture-backend-hexagonale--ddd)
 5. [Pipeline Data Science](#5-pipeline-data-science)
 6. [Architecture Frontend](#6-architecture-frontend)
 7. [Sécurité & Performance](#7-sécurité--performance)
@@ -563,53 +563,43 @@ class Mutation:
 
 ## 4. Architecture Backend (Domain-Driven)
 
-### 4.1 Structure des Dossiers
+### 4.0 Principes de l'Architecture Hexagonale
+
+Pour garantir la testabilité et l'indépendance vis-à-vis des frameworks, Michi utilise une architecture hexagonale (Ports & Adapters) structurée comme suit par module :
+
+1.  **Domain (Core)** : Contient les entités métier complexes, les énumérations (Source de vérité) et les interfaces (Ports). Zéro dépendance vers l'extérieur.
+2.  **Application (Use Cases)** : Contient les services qui orchestrent la logique métier. Dépend uniquement du Domain.
+3.  **Infrastructure (Adapters)** : Implémentations concrètes (SQLAlchemy Repositories, API Shopify, Clients Email). Dépend du Domain et de l'Application.
+
+### 4.1 Structure des Dossiers (Monorepo)
 
 ```
-backend/
+apps/api/
 ├── src/
-│   ├── core/                    # Infrastructure partagée
-│   │   ├── __init__.py
-│   │   ├── config.py            # Variables d'environnement, settings
-│   │   ├── database.py          # Connexion async PostgreSQL
-│   │   ├── security.py          # JWT, hashing password
-│   │   ├── middleware/
-│   │   │   ├── auth.py          # Middleware JWT
-│   │   │   ├── cors.py
-│   │   │   └── rate_limit.py
-│   │   └── graphql/
-│   │       ├── schema.py        # Schema Strawberry principal
-│   │       └── context.py       # Context GraphQL (injection services)
-│   │
-│   ├── modules/                 # Domaines métier
+│   ├── modules/                 # Domaines métier isolés
 │   │   ├── auth/
-│   │   ├── ingestion/           # Connecteurs (CSV, Shopify, Amazon)
-│   │   │   ├── __init__.py
-│   │   │   ├── base.py          # Connector Interface
-│   │   │   ├── shopify.py       # Shopify Logic
-│   │   │   ├── csv.py           # Universal CSV Logic
-│   │   │   └── service.py       # Ingestion Orchestrator
-│   │   │
-│   │   ├── suppliers/           # Gestion Fournisseurs
-│   │   │   ├── models.py        # Supplier Table
-│   │   │   └── service.py       # Delay tracking
-│   │   │
-│   │   ├── inventory/           # Gestion produits Agnostique
-│   │   └── forecasting/         # Prédictions & Simulations
+│   │   │   ├── domain/          # Entities, Enums (Source de vérité), Ports
+│   │   │   ├── application/     # Services (Thick), Logic
+│   │   │   └── infrastructure/  # Repositories (SQLAlchemy), Adapters
+│   │   ├── inventory/
+│   │   └── forecasting/
 │   │
-│   ├── main.py                  # FastAPI app entry point
-│   └── alembic/                 # Migrations DB
-│       ├── versions/
-│       └── env.py
+│   └── main.py                  # Point d'entrée FastAPI
 │
-├── tests/                       # Tests e2e
-│   ├── conftest.py
-│   └── test_graphql_e2e.py
-│
-├── requirements.txt
-├── pyproject.toml
-└── README.md
+├── packages/
+│   ├── core/                    # Shared Kernel (Infrastructure Partagée)
+│   │   ├── src/
+│   │   │   ├── database/        # Connexion async (Engine, Session, Base)
+│   │   │   ├── security/        # JWT, Hashing
+│   │   │   └── config/          # Settings Pydantic
+│   └── types/                   # Types TS partagés
 ```
+
+### 4.2 Shared Kernel (`packages/core`)
+
+Le dossier `packages/core` contient les éléments d'infrastructure transversaux utilisés par l'API et potentiellement d'autres workers futurs :
+- **Database** : Unifie la définition de `GUID` et `Base` pour éviter les conflits de mapping.
+- **Security** : Centralise la logique de hashage et de génération de tokens.
 
 ### 4.2 Exemple : ProductService
 

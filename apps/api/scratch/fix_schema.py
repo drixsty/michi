@@ -1,5 +1,4 @@
 import json
-import os
 
 filepath = 'c:/Users/KevinTSAGUE/michi-app/backend/src/core/graphql/schema.py'
 

@@ -11,7 +11,6 @@ Métriques :
 
 Performance : O(n) vectorisé.
 """
-from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any  # noqa: F401 — used in dict[str, Any] annotation below
 

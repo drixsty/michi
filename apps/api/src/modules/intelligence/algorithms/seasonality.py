@@ -1,3 +1,4 @@
+import pandas as pd
 """
 Seasonality Algorithm (Sprint 15)
 Persona: #2 Data Scientist / ML Engineer
@@ -9,9 +10,6 @@ Note : En phase MVP, si l'historique est < 14 jours, on retourne 1.0.
 Sinon, on utilise une décomposition simple pour identifier si nous sommes dans une phase 
 ascendante ou descendante du cycle saisonnier hebdomadaire/mensuel.
 """
-import pandas as pd
-import numpy as np
-from loguru import logger
 
 def detect_seasonality_factor(df: pd.DataFrame, window: int = 14) -> float:
     """

@@ -28,7 +28,7 @@ class SQLAlchemyProductRepository(IProductRepository):
             stock_weight=model.stock_weight,
             cost_price=model.cost_price,
             sale_price=model.sale_price,
-            source_platform=PlatformSource(model.source_platform.value),
+            source_platform=PlatformSource(model.source_platform.value) if model.source_platform else PlatformSource.CUSTOM,
             external_id=model.external_id,
             supplier_id=model.supplier_id,
             created_at=model.created_at,
