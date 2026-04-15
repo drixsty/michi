@@ -6,9 +6,9 @@ from uuid import UUID
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.forecasting.domain.entities import CleanedDemandEntity
-from src.modules.forecasting.domain.ports import ICleanedDemandRepository
-from src.modules.forecasting.infrastructure.persistence.models import CleanedDemand
+from modules.forecasting.domain.entities import CleanedDemandEntity
+from modules.forecasting.domain.ports import ICleanedDemandRepository
+from modules.forecasting.infrastructure.persistence.models import CleanedDemand
 
 class SQLAlchemyCleanedDemandRepository(ICleanedDemandRepository):
     def __init__(self, session: AsyncSession):

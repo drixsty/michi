@@ -5,10 +5,10 @@ from pathlib import Path
 # Ajouter src au path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.core.database import AsyncSessionLocal
-from src.modules.auth.models import User
-from src.modules.shopify.models import Product
-from src.modules.forecasting.models import Prediction
+from core.database import AsyncSessionLocal
+from modules.auth.models import User
+from modules.shopify.models import Product
+from modules.forecasting.models import Prediction
 from sqlalchemy import select, func
 
 async def run():

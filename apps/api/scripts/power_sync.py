@@ -6,9 +6,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from database import AsyncSessionLocal, Base, engine as async_engine
-from src.modules.auth.models import User
-from src.modules.shopify.service import ShopifyService
-from src.modules.forecasting.service import ForecastingService
+from modules.auth.models import User
+from modules.shopify.service import ShopifyService
+from modules.forecasting.service import ForecastingService
 from sqlalchemy import select, create_engine
 
 async def run():

@@ -7,7 +7,7 @@ from sqlalchemy import select, delete
 from loguru import logger
 import random
 
-from src.modules.inventory.infrastructure.models import Product, SalesLog, Supplier, PlatformSource
+from modules.inventory.infrastructure.models import Product, SalesLog, Supplier, PlatformSource
 from ..domain.schemas import SyncResultSchema
 from ..infrastructure.mock_generator import generate_full_mock_dataset
 

@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Repositories SQLAlchemy Auth — Sprint 21.
 
@@ -14,13 +15,13 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.modules.auth.domain.entities import (
+from modules.auth.domain.entities import (
     InvitationEntity,
     MembershipEntity,
     OrganizationEntity,
     UserEntity,
 )
-from src.modules.auth.domain.value_objects import Email, HashedPassword, OrgSlug
+from modules.auth.domain.value_objects import Email, HashedPassword, OrgSlug
 from .persistence.models import (
     Invitation,
     InvitationStatus,
@@ -250,7 +251,7 @@ class SQLAlchemyInvitationRepository:
         model = result.scalar_one_or_none()
         if not model:
             raise ValueError(f"Invitation {entity.id} introuvable")
-        from src.modules.auth.infrastructure.models import InvitationStatus as ModelStatus
+        from modules.auth.infrastructure.models import InvitationStatus as ModelStatus
         status_map = {
             InvitationStatus.PENDING: ModelStatus.PENDING,
             InvitationStatus.ACCEPTED: ModelStatus.ACCEPTED,

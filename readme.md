@@ -210,18 +210,19 @@ michi-app/
 ├── apps/
 │   ├── api/                   # Backend (FastAPI + DDD)
 │   │   ├── src/
-│   │   │   ├── core/          # Infrastructure Partagée
+│   │   │   ├── core/          # Infrastructure & Shared API Core
+│   │   │   │   ├── config/        # Central Settings (Migré)
+│   │   │   │   ├── database/      # Persistence & SQLAlchemy
+│   │   │   │   ├── exceptions/    # Business Exceptions (Migré)
+│   │   │   │   ├── security/      # Auth & Hashing (Migré)
+│   │   │   │   └── di.py          # Service Container
 │   │   │   ├── modules/       # Domaines métiers isolés
-│   │   │   │   ├── domain/        # Entities, Ports, Logic
-│   │   │   │   ├── application/   # Services, Use Cases
-│   │   │   │   └── infrastructure/# Persistence, Adapters
 │   │   │   └── main.py
 │   │   └── tests/
 │   ├── web/                   # Frontend (Next.js 14)
 │   └── mobile/                # Application Mobile (React Native/Expo)
 │
 ├── packages/
-│   ├── core/                  # Shared Kernel (DB, Types, Utils)
 │   ├── types/                 # Typages TypeScript partagés
 │   └── ui/                    # Design System (shadcn/ui)
 │

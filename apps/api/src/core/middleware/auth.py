@@ -3,9 +3,11 @@ Middleware JWT Authentication
 Extrait et valide le token JWT de chaque requête
 """
 from fastapi import Request
+from core.config import settings
+from core.exceptions import UnauthenticatedException, ForbiddenException
 from jose import JWTError
 
-from security import decode_access_token
+from core.security import decode_access_token
 
 
 async def get_current_user_from_token(request: Request) -> tuple[str | None, str | None, str | None]:

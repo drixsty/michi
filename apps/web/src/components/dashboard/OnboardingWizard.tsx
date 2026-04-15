@@ -12,41 +12,43 @@ interface OnboardingWizardProps {
   onSync: (platform: string) => Promise<void>;
 }
 
-const STEPS = [
-  {
-    cta: t('steps.0.cta'),
-    testid: 'wizard-start'
-  },
-  {
-    id: 'connect',
-    title: t('steps.connect.title'),
-    description: t('steps.connect.description'),
-    icon: <ShoppingBag className="text-blue-500 h-12 w-12" />,
-    cta: t('steps.connect.cta'), // Dynamic
-    testid: 'wizard-next'
-  },
-  {
-    id: 'analysis',
-    title: t('steps.analysis.title'),
-    description: t('steps.analysis.description'),
-    icon: <Zap className="text-amber-500 h-12 w-12" />,
-    cta: t('steps.analysis.cta'),
-    testid: 'wizard-finish'
-  },
-  {
-    id: 'ready',
-    title: t('steps.ready.title'),
-    description: t('steps.ready.description'),
-    icon: <CheckCircle2 className="text-emerald-500 h-12 w-12" />,
-    cta: t('steps.ready.cta'),
-    testid: 'wizard-enter'
-  }
-];
-
 export default function OnboardingWizard({ userName, onComplete, onSync }: OnboardingWizardProps) {
+  const t = useTranslations('Onboarding');
   const [currentStep, setCurrentStep] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+
+  const STEPS = [
+    {
+      cta: t('steps.0.cta'),
+      testid: 'wizard-start',
+      icon: <CheckCircle2 className="text-primary h-12 w-12" /> // Added default icon if missing
+    },
+    {
+      id: 'connect',
+      title: t('steps.connect.title'),
+      description: t('steps.connect.description'),
+      icon: <ShoppingBag className="text-blue-500 h-12 w-12" />,
+      cta: t('steps.connect.cta'),
+      testid: 'wizard-next'
+    },
+    {
+      id: 'analysis',
+      title: t('steps.analysis.title'),
+      description: t('steps.analysis.description'),
+      icon: <Zap className="text-amber-500 h-12 w-12" />,
+      cta: t('steps.analysis.cta'),
+      testid: 'wizard-finish'
+    },
+    {
+      id: 'ready',
+      title: t('steps.ready.title'),
+      description: t('steps.ready.description'),
+      icon: <CheckCircle2 className="text-emerald-500 h-12 w-12" />,
+      cta: t('steps.ready.cta'),
+      testid: 'wizard-enter'
+    }
+  ];
 
   const handleNext = async () => {
     if (currentStep === 1) {

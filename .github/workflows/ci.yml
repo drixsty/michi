@@ -1,0 +1,134 @@
+name: Michi Omnichannel CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # 1. Validation des fondations (Packages Shared)
+  packages-validation:
+    name: Packages Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm install
+
+      - name: Validate @michi/types
+        working-directory: packages/types
+        run: npx tsc --noEmit
+
+      - name: Validate @michi/ui
+        working-directory: packages/ui
+        run: |
+          npm run type-check
+          npm run test -- --run
+
+  # 2. Validation de la Documentation
+  docs-validation:
+    name: Documentation Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install Docs Dependencies
+        working-directory: docs-site
+        run: npm install
+      - name: Build Docs
+        working-directory: docs-site
+        run: npm run build
+
+  # 3. Backend CI (fastapi)
+  backend-ci:
+    name: Backend API
+    needs: packages-validation
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: sqlite+aiosqlite:///:memory:
+      SECRET_KEY: ci-test-key
+      ENVIRONMENT: test
+      SMTP_HOST: localhost
+      SMTP_PORT: 1025
+      SMTP_USER: test
+      SMTP_PASSWORD: test
+      EMAIL_FROM: test@michi.com
+      SHOPIFY_API_KEY: mock
+      SHOPIFY_API_SECRET: mock
+      SHOPIFY_REDIRECT_URI: http://localhost:8000
+      SHOPIFY_SCOPES: read_products
+      STRIPE_API_KEY: mock
+      STRIPE_WEBHOOK_SECRET: mock
+      STRIPE_PRICE_BASIC: price_1
+      STRIPE_PRICE_PRO: price_2
+      STRIPE_PRICE_ENTERPRISE: price_3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API Dependencies
+        working-directory: apps/api
+        run: pip install -r requirements.txt
+      - name: Run Mypy
+        working-directory: apps/api
+        run: mypy src
+      - name: Run Pytest
+        working-directory: apps/api
+        run: pytest
+
+  # 4. Web Frontend CI (Next.js)
+  web-ci:
+    name: Web App
+    needs: packages-validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install Dependencies
+        run: npm install
+      - name: Type-check
+        working-directory: apps/web
+        run: npx tsc --noEmit
+      - name: Run Tests
+        working-directory: apps/web
+        run: npm run test -- --run
+      - name: Production Build
+        working-directory: apps/web
+        run: npm run build
+
+  # 5. Mobile CI (Expo)
+  mobile-ci:
+    name: Mobile App
+    needs: packages-validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install Dependencies
+        working-directory: apps/mobile
+        run: npm install
+      - name: Type-check
+        working-directory: apps/mobile
+        run: npm run type-check

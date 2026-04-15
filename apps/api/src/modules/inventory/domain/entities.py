@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Domain Entities — Inventory Module
 Pure Python dataclasses to isolate business logic from infrastructure (SQLAlchemy).
@@ -73,6 +74,7 @@ class SupplierEntity:
     contact_email: Optional[str] = None
     reliability_score: float = 1.0
     average_delay_days: float = 0.0
+    lead_time_sigma: float = 0.0
 
 @dataclass
 class PurchaseOrderEntity:

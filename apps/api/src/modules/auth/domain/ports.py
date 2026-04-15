@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Ports du domaine Auth — Sprint 21.
 

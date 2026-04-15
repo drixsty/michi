@@ -24,6 +24,7 @@ export const GET_PRODUCT_DETAIL: TypedDocumentNode<GetProductDetailQuery, GetPro
         daysOfStock
         predictedStockoutDate
         reorderQuantity
+        demandSigma
       }
       cleanedDemands {
         date

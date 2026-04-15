@@ -7,9 +7,9 @@ from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.modules.inventory.domain.entities import ProductEntity, PlatformSource
-from src.modules.inventory.domain.ports import IProductRepository
-from src.modules.inventory.infrastructure.persistence.models import Product
+from modules.inventory.domain.entities import ProductEntity, PlatformSource
+from modules.inventory.domain.ports import IProductRepository
+from modules.inventory.infrastructure.persistence.models import Product
 
 class SQLAlchemyProductRepository(IProductRepository):
     def __init__(self, session: AsyncSession):
@@ -82,7 +82,7 @@ class SQLAlchemyProductRepository(IProductRepository):
             model.sale_price = entity.sale_price
             model.supplier_id = entity.supplier_id
         else:
-            from src.modules.inventory.infrastructure.persistence.models import PlatformSource as ModelPlatformSource
+            from modules.inventory.infrastructure.persistence.models import PlatformSource as ModelPlatformSource
             model = Product(
                 id=entity.id,
                 store_id=entity.store_id,

@@ -103,7 +103,7 @@ def generate_mock_products(count: int = 50, store_id: Optional[str] = None, plat
     )
 
     products = []
-    from src.modules.inventory.infrastructure.models import PlatformSource
+    from modules.inventory.infrastructure.models import PlatformSource
     platforms = [PlatformSource.SHOPIFY, PlatformSource.AMAZON, PlatformSource.WOOCOMMERCE]
     
     for i, (title, category) in enumerate(catalog[:count]):

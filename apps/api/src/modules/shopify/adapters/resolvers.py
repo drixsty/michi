@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Resolvers GraphQL — Shopify
 Types Strawberry + Query/Mutation pour produits, sync mock et validation.
@@ -6,18 +7,18 @@ import strawberry
 from typing import List, Optional
 from datetime import datetime
 
-from exceptions import UnauthenticatedException
-from src.modules.shopify.application.service import ShopifyService
-from src.modules.inventory.application.inventory_service import InventoryService
-from src.modules.inventory.application.alert_service import AlertService
-from src.core.graphql.types import SupplierType, ChannelBreakdownType, ProductType, IngestionResult, SyncResultType
-from src.modules.forecasting.application.forecasting_service import ForecastingService
-from src.modules.forecasting.adapters.resolvers import (
+from core.exceptions import UnauthenticatedException
+from modules.shopify.application.service import ShopifyService
+from modules.inventory.application.inventory_service import InventoryService
+from modules.inventory.application.alert_service import AlertService
+from core.graphql.types import SupplierType, ChannelBreakdownType, ProductType, IngestionResult, SyncResultType
+from modules.forecasting.application.forecasting_service import ForecastingService
+from modules.forecasting.adapters.resolvers import (
     PredictionType, 
     CleanedDemandType
 )
-from src.modules.auth.adapters.decorators import require_permission
-from src.modules.auth.domain.constants import MichiPermission
+from modules.auth.adapters.decorators import require_permission
+from modules.auth.domain.constants import MichiPermission
 
 
 # ── Strawberry Types ──────────────────────────────────────────────────────────
@@ -85,18 +86,18 @@ class ShopifyMutation:
     @strawberry.mutation
     @require_permission(MichiPermission.STORES_MANAGE)
     async def trigger_omnichannel_sync(self, info, store_id: strawberry.ID) -> IngestionResult:
-        from src.modules.inventory.application.alert_service import AlertService
+        from modules.inventory.application.alert_service import AlertService
         # ... logic ...
         s_id = str(store_id)
         service = ShopifyService(info.context.db)
         result = await service.trigger_mock_sync(s_id)
         
         # Logique de prédiction déclenchée après sync (pour démo)
-        from src.modules.forecasting.infrastructure.repositories.cleaned_demand_repository import SQLAlchemyCleanedDemandRepository
-        from src.modules.forecasting.infrastructure.repositories.prediction_repository import SQLAlchemyPredictionRepository
-        from src.modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
-        from src.modules.inventory.infrastructure.repositories.sales_log_repository import SQLAlchemySalesLogRepository
-        from src.modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
+        from modules.forecasting.infrastructure.repositories.cleaned_demand_repository import SQLAlchemyCleanedDemandRepository
+        from modules.forecasting.infrastructure.repositories.prediction_repository import SQLAlchemyPredictionRepository
+        from modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
+        from modules.inventory.infrastructure.repositories.sales_log_repository import SQLAlchemySalesLogRepository
+        from modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
         
         db = info.context.db
         product_repo = SQLAlchemyProductRepository(db)
@@ -143,11 +144,11 @@ class ShopifyMutation:
         )
 
         # Recalculer la prédiction en temps réel
-        from src.modules.forecasting.infrastructure.repositories.cleaned_demand_repository import SQLAlchemyCleanedDemandRepository
-        from src.modules.forecasting.infrastructure.repositories.prediction_repository import SQLAlchemyPredictionRepository
-        from src.modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
-        from src.modules.inventory.infrastructure.repositories.sales_log_repository import SQLAlchemySalesLogRepository
-        from src.modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
+        from modules.forecasting.infrastructure.repositories.cleaned_demand_repository import SQLAlchemyCleanedDemandRepository
+        from modules.forecasting.infrastructure.repositories.prediction_repository import SQLAlchemyPredictionRepository
+        from modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
+        from modules.inventory.infrastructure.repositories.sales_log_repository import SQLAlchemySalesLogRepository
+        from modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
 
         db = info.context.db
         forecasting_service = ForecastingService(

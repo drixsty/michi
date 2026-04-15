@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 SQLAlchemy Implementation of IPredictionRepository
 """
@@ -6,10 +7,10 @@ from uuid import UUID
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.forecasting.domain.entities import PredictionEntity
-from src.modules.forecasting.domain.ports import IPredictionRepository
-from src.modules.forecasting.infrastructure.persistence.models import Prediction
-from src.modules.inventory.infrastructure.models import Product, Store
+from modules.forecasting.domain.entities import PredictionEntity
+from modules.forecasting.domain.ports import IPredictionRepository
+from modules.forecasting.infrastructure.persistence.models import Prediction
+from modules.inventory.infrastructure.models import Product, Store
 
 class SQLAlchemyPredictionRepository(IPredictionRepository):
     def __init__(self, session: AsyncSession):
@@ -29,6 +30,7 @@ class SQLAlchemyPredictionRepository(IPredictionRepository):
             mape_score=model.mape_score,
             abc_rank=model.abc_rank,
             annual_gross_profit=model.annual_gross_profit,
+            demand_sigma=model.demand_sigma or 0.0,
             computed_at=model.computed_at
         )
 
@@ -54,6 +56,7 @@ class SQLAlchemyPredictionRepository(IPredictionRepository):
             model.mape_score = entity.mape_score
             model.abc_rank = entity.abc_rank
             model.annual_gross_profit = entity.annual_gross_profit
+            model.demand_sigma = entity.demand_sigma
         else:
             model = Prediction(
                 id=entity.id,
@@ -67,7 +70,8 @@ class SQLAlchemyPredictionRepository(IPredictionRepository):
                 moq_snapshot=entity.moq_snapshot,
                 mape_score=entity.mape_score,
                 abc_rank=entity.abc_rank,
-                annual_gross_profit=entity.annual_gross_profit
+                annual_gross_profit=entity.annual_gross_profit,
+                demand_sigma=entity.demand_sigma
             )
             self.session.add(model)
         

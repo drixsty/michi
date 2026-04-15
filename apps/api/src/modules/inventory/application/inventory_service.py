@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 InventoryService — Application Layer
 Coordinates inventory use cases using domain ports.
@@ -7,8 +8,8 @@ from loguru import logger
 import uuid
 from uuid import UUID
 
-from src.modules.inventory.domain.entities import ProductEntity, SalesLogEntity, PlatformSource
-from src.modules.inventory.domain.ports import IProductRepository, ISalesLogRepository, IStoreRepository
+from modules.inventory.domain.entities import ProductEntity, SalesLogEntity, PlatformSource
+from modules.inventory.domain.ports import IProductRepository, ISalesLogRepository, IStoreRepository
 
 class InventoryService:
     """
@@ -147,7 +148,7 @@ class InventoryService:
         store_id: Optional[UUID] = None
     ) -> Any: # Any to avoid complex StoreEntity imports for now in signature
         """Gère la connexion/déconnexion d'un Store."""
-        from src.modules.inventory.domain.entities import StoreEntity, PlatformSource
+        from modules.inventory.domain.entities import StoreEntity, PlatformSource
         plat_enum = PlatformSource(platform.upper())
 
         if store_id:

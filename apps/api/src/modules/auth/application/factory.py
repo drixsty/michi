@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Factory Auth — Sprint 21.
 
@@ -6,7 +7,7 @@ Point d'entrée unique pour obtenir un ApplicationAuthService ou ApplicationOrgS
 depuis un AsyncSession.
 
 Usage dans les resolvers :
-    from src.modules.auth.application.factory import build_auth_service, build_org_service
+    from modules.auth.application.factory import build_auth_service, build_org_service
 
     auth_svc = build_auth_service(info.context.db, info.context.billing)
     result = await auth_svc.login(email, password)
@@ -14,13 +15,13 @@ Usage dans les resolvers :
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.auth.infrastructure.repositories import (
+from modules.auth.infrastructure.repositories import (
     SQLAlchemyInvitationRepository,
     SQLAlchemyMembershipRepository,
     SQLAlchemyOrganizationRepository,
     SQLAlchemyUserRepository,
 )
-from src.modules.auth.infrastructure.security_adapters import (
+from modules.auth.infrastructure.security_adapters import (
     BCryptPasswordHasher,
     JwtTokenService,
 )

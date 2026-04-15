@@ -14,7 +14,10 @@ import {
   Save,
   Check,
   Activity,
-  Copy
+  Copy,
+  ShieldCheck,
+  Zap,
+  Info
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { 
@@ -40,32 +43,68 @@ interface ProductQuickViewProps {
 
 // ── What-If Simulator Component (US 14.4) ───────────────────
 function WhatIfSimulator({
-  currentStock, runRate, leadTime, boostFactor, salePrice
+  currentStock, runRate, leadTime, boostFactor, salePrice, costPrice, demandSigma
 }: {
-  currentStock: number; runRate: number; leadTime: number; boostFactor: number; costPrice: number; salePrice: number;
+  currentStock: number; 
+  runRate: number; 
+  leadTime: number; 
+  boostFactor: number; 
+  costPrice: number; 
+  salePrice: number;
+  demandSigma: number;
 }) {
   const [extraDelay, setExtraDelay] = React.useState(0);
   const [salesMultiplier, setSalesMultiplier] = React.useState(1.0);
   const isSimulating = extraDelay > 0 || salesMultiplier !== 1.0;
 
+  // Approximation de la distribution normale (ERF) pour le calcul du RoS
+  const normalCDF = (x: number) => {
+    const t = 1 / (1 + 0.2316419 * Math.abs(x));
+    const d = 0.3989423 * Math.exp(-x * x / 2);
+    const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+    return x > 0 ? 1 - p : p;
+  };
+
   const simRunRate = runRate * boostFactor * salesMultiplier;
   const simLeadTime = leadTime + extraDelay;
+  
+  // Calcul statistique du Risque de Rupture (Risk of Stockout)
+  // Demand over LT is normal(Mean*LT, Sigma*sqrt(LT))
+  const meanOverLT = simRunRate * simLeadTime;
+  const sigmaOverLT = demandSigma * Math.sqrt(simLeadTime);
+  const ros = sigmaOverLT > 0 
+    ? (1 - normalCDF((currentStock - meanOverLT) / sigmaOverLT)) * 100
+    : (currentStock < meanOverLT ? 100 : 0);
+
   const simDaysOfStock = simRunRate > 0 ? currentStock / simRunRate : 999;
   const simStockoutDate = new Date(Date.now() + simDaysOfStock * 86400000);
+  
+  // Coût de détention (Holding Cost) estimé à 20% par an si on sur-stocke
+  const safetyStockLevel = Math.max(0, currentStock - meanOverLT);
+  const annualHoldingCost = safety_stock_value => safety_stock_value * 0.20;
+  const dailyHoldingCost = annualHoldingCost(safetyStockLevel * costPrice) / 365;
+
   const simRevenueAtRisk = Math.max(0, (simRunRate * Math.max(0, simLeadTime - simDaysOfStock)) * (salePrice || 0));
 
   const projectionData = React.useMemo(() => {
     const pts = [];
-    const maxDays = Math.min(90, Math.ceil(simDaysOfStock) + 15);
+    const maxDays = Math.min(90, Math.ceil(simDaysOfStock) + 20);
+    const sigma = demandSigma;
+    
     for (let d = 0; d <= maxDays; d += 2) {
+      const mean = Math.max(0, currentStock - (simRunRate * d));
+      const stdDev = sigma * Math.sqrt(d);
       pts.push({
         day: `J+${d}`,
         base: Math.max(0, Math.round(currentStock - runRate * boostFactor * d)),
-        sim: Math.max(0, Math.round(currentStock - simRunRate * d)),
+        sim: Math.round(mean),
+        // Intervalle de confiance 95% (+/- 1.96 sigma)
+        low: Math.max(0, Math.round(mean - 1.96 * stdDev)),
+        high: Math.round(mean + 1.96 * stdDev),
       });
     }
     return pts;
-  }, [currentStock, runRate, boostFactor, simRunRate, simDaysOfStock]);
+  }, [currentStock, runRate, boostFactor, simRunRate, simDaysOfStock, demandSigma]);
 
   return (
     <div className={cn(
@@ -144,7 +183,26 @@ function WhatIfSimulator({
             <Tooltip contentStyle={{ borderRadius: '10px', border: '1px solid #f1f5f9', boxShadow: 'none', fontSize: '9px' }} />
             <Area type="monotone" dataKey="base" stroke="#4f46e5" strokeWidth={1.5} fillOpacity={1} fill="url(#colorBase)" name="Actuel" />
             {isSimulating && (
-              <Area type="monotone" dataKey="sim" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 3" fillOpacity={1} fill="url(#colorSim)" name="Simulé" />
+              <>
+                {/* Confidence Ribbon */}
+                <Area 
+                  type="monotone" 
+                  dataKey="high" 
+                  stroke="none" 
+                  fill="#f59e0b" 
+                  fillOpacity={0.08} 
+                  name="Confiance Sup" 
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="low" 
+                  stroke="none" 
+                  fill="#f59e0b" 
+                  fillOpacity={0.08} 
+                  name="Confiance Inf" 
+                />
+                <Area type="monotone" dataKey="sim" stroke="#f59e0b" strokeWidth={2} strokeDasharray="4 3" fillOpacity={1} fill="url(#colorSim)" name="Simulé" />
+              </>
             )}
           </AreaChart>
         </ResponsiveContainer>
@@ -153,21 +211,21 @@ function WhatIfSimulator({
       {/* Results */}
       <div className="grid grid-cols-3 gap-2">
         <div className="text-center p-2 bg-white rounded-lg border border-slate-100">
-          <p className="text-[7px] font-bold text-slate-400 mb-0.5">Couverture</p>
-          <p className={cn("text-sm font-black", simDaysOfStock < simLeadTime ? "text-red-600" : "text-slate-900")}>
-            {Math.round(simDaysOfStock)}j
+          <p className="text-[7px] font-bold text-slate-400 mb-0.5">Risque Rupture</p>
+          <p className={cn("text-sm font-black transition-colors", ros > 5 ? "text-red-600" : "text-emerald-600")}>
+            {ros.toFixed(1)}%
           </p>
         </div>
         <div className="text-center p-2 bg-white rounded-lg border border-slate-100">
-          <p className="text-[7px] font-bold text-slate-400 mb-0.5">Rupture</p>
-          <p className={cn("text-[10px] font-black", simDaysOfStock < simLeadTime ? "text-red-600" : "text-slate-900")}>
+          <p className="text-[7px] font-bold text-slate-400 mb-0.5">Rupture (Date)</p>
+          <p className={cn("text-[9px] font-black", simDaysOfStock < simLeadTime ? "text-red-600" : "text-slate-900")}>
             {simStockoutDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
           </p>
         </div>
         <div className="text-center p-2 bg-white rounded-lg border border-slate-100">
-          <p className="text-[7px] font-bold text-slate-400 mb-0.5">Risque €</p>
-          <p className="text-[10px] font-black text-red-600">
-            {simRevenueAtRisk > 0 ? `${Math.round(simRevenueAtRisk).toLocaleString('fr-FR')}€` : '0€'}
+          <p className="text-[7px] font-bold text-slate-400 mb-0.5">Coût Surstock</p>
+          <p className={cn("text-[9px] font-black", dailyHoldingCost > 1 ? "text-amber-600" : "text-slate-500")}>
+            {dailyHoldingCost > 0.01 ? `${dailyHoldingCost.toFixed(2)}€/j` : "—"}
           </p>
         </div>
       </div>
@@ -499,6 +557,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                       boostFactor={boostFactor}
                       costPrice={costPrice}
                       salePrice={salePrice}
+                      demandSigma={product.prediction!.demandSigma || 0}
                     />
                   )}
 

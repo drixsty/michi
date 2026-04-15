@@ -6,8 +6,9 @@ import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
-from config import settings
-from database import get_db
+from core.config import settings
+from core.database import get_db
+from core.exceptions import UnauthenticatedException, ForbiddenException
 
 router = APIRouter(prefix="/api/shopify", tags=["shopify"])
 
@@ -43,7 +44,7 @@ async def shopify_callback(
     """
     Étape 2 : Callback Shopify. Échange du code contre un access_token.
     """
-    from src.modules.inventory.application.inventory_service import InventoryService
+    from modules.inventory.application.inventory_service import InventoryService
     
     # 1. Validation HMAC (Sécurité critique) — Persona #6
     params = dict(request.query_params)

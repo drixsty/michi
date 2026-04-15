@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Domain Ports — Inventory Module
 Abstract interfaces (Protocols) for repositories.

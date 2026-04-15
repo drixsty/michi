@@ -1,11 +1,11 @@
 import asyncio
 import uuid
-from src.core.database import AsyncSessionLocal
-from src.modules.inventory.models import Store, Product
+from core.database import AsyncSessionLocal
+from modules.inventory.models import Store, Product
 from sqlalchemy import select
-import src.modules.auth.models
-import src.modules.inventory.models
-import src.modules.forecasting.models
+import modules.auth.models
+import modules.inventory.models
+import modules.forecasting.models
 
 async def debug_org():
     async with AsyncSessionLocal() as db:

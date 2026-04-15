@@ -34,4 +34,5 @@ class PredictionEntity:
     mape_score: Optional[float] = None
     abc_rank: Optional[str] = None
     annual_gross_profit: Optional[float] = None
+    demand_sigma: float = 0.0
     computed_at: datetime = field(default_factory=datetime.utcnow)

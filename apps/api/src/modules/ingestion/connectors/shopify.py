@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from ..base import BaseConnector
-from src.modules.shopify.infrastructure.mock_generator import generate_full_mock_dataset
+from modules.shopify.infrastructure.mock_generator import generate_full_mock_dataset
 
 class ShopifyConnector(BaseConnector):
     """

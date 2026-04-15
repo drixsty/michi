@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Application OrgService (DDD) — Sprint 21.
 
@@ -14,23 +15,23 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Optional
 
-from src.modules.auth.domain.entities import InvitationEntity, MembershipEntity, OrganizationEntity
-from src.modules.auth.domain.value_objects import JwtToken
-from src.modules.auth.infrastructure.repositories import (
+from modules.auth.domain.entities import InvitationEntity, MembershipEntity, OrganizationEntity
+from modules.auth.domain.value_objects import JwtToken
+from modules.auth.infrastructure.repositories import (
     SQLAlchemyInvitationRepository,
     SQLAlchemyMembershipRepository,
     SQLAlchemyOrganizationRepository,
     SQLAlchemyUserRepository,
 )
-from src.modules.auth.domain.ports import ITokenService
-from src.modules.auth.infrastructure.models import (
+from modules.auth.domain.ports import ITokenService
+from modules.auth.infrastructure.models import (
     Invitation,
     InvitationStatus,
     Organization,
     OrganizationMember,
     UserRole,
 )
-from exceptions import ErrorCode, MichiException
+from core.exceptions import ErrorCode, MichiException
 
 
 @dataclass
@@ -259,7 +260,7 @@ class ApplicationOrgService:
             org_model.settings = kwargs["settings"]
             
         await self._orgs._db.flush()
-        from src.modules.auth.infrastructure.mappers import org_to_entity
+        from modules.auth.infrastructure.mappers import org_to_entity
         return org_to_entity(org_model)
 
     async def remove_member(self, org_id: uuid.UUID, user_id: uuid.UUID) -> bool:

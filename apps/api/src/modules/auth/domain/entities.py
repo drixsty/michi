@@ -14,30 +14,8 @@ from uuid import UUID
 from .value_objects import Email, OrgSlug
 
 
-class UserRole(enum.Enum):
-    ADMIN = "admin"
-    MANAGER = "manager"
-    VIEWER = "viewer"
-
-
-class InvitationStatus(enum.Enum):
-    PENDING = "pending"
-    ACCEPTED = "accepted"
-    EXPIRED = "expired"
-
-
-class OrgPlan(enum.Enum):
-    BASIC = "BASIC"
-    PRO = "PRO"
-    ENTERPRISE = "ENTERPRISE"
-
-
-class SubscriptionStatus(enum.Enum):
-    ACTIVE = "ACTIVE"
-    PAST_DUE = "PAST_DUE"
-    CANCELED = "CANCELED"
-    TRIALING = "TRIALING"
-
+from core.database.constants import UserRole, InvitationStatus, OrgPlan, SubscriptionStatus
+from core.database.models import Organization, User, OrganizationMember
 
 @dataclass
 class UserEntity:

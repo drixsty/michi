@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Re-export layer for backward compatibility.
 Implementation moved to src.modules.auth.infrastructure.persistence.models.

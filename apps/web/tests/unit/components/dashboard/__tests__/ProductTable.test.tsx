@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ProductTable } from '../ProductTable';
+import { ProductTable } from '@/components/dashboard/ProductTable';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 

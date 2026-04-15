@@ -6,9 +6,9 @@ from uuid import UUID
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.inventory.domain.entities import SalesLogEntity
-from src.modules.inventory.domain.ports import ISalesLogRepository
-from src.modules.inventory.infrastructure.persistence.models import SalesLog
+from modules.inventory.domain.entities import SalesLogEntity
+from modules.inventory.domain.ports import ISalesLogRepository
+from modules.inventory.infrastructure.persistence.models import SalesLog
 
 class SQLAlchemySalesLogRepository(ISalesLogRepository):
     def __init__(self, session: AsyncSession):

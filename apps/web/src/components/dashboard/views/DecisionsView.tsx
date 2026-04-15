@@ -9,7 +9,8 @@ import {
   Clock,
   ArrowRight,
   LayoutDashboard,
-  Calendar
+  Calendar,
+  ShieldCheck
 } from 'lucide-react';
 import { 
   Bar, 
@@ -31,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
 import { RisksReportPanel } from '@/components/dashboard/RisksReportPanel';
+import { SupplierCard } from '@/components/dashboard/SupplierCard';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 const GET_FINANCIAL_OVERVIEW = gql`
   query GetFinancialOverview($storeId: ID, $channel: String) {
@@ -61,9 +63,16 @@ const GET_FINANCIAL_OVERVIEW = gql`
       totalStock
       healthScore
       activePlatforms
-      capitalBreakdown {
+      capital_breakdown {
         platform
         value
+      }
+      suppliers {
+        id
+        name
+        reliabilityScore
+        averageDelayDays
+        leadTimeSigma
       }
       message
     }
@@ -337,6 +346,22 @@ export function DecisionsView() {
           ))}
         </div>
       </div>
+      
+      {/* DS v2 Confidence Banner */}
+      <div className="bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-900">Moteur Statistique Michi v2 Actif</h4>
+            <p className="text-[10px] text-muted-foreground font-medium">Réapprovisionnement basé sur un intervalle de confiance de 95% ($\sigma$ dynamique).</p>
+          </div>
+        </div>
+        <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-white rounded-lg border border-primary/10 shadow-sm">
+          <span className="text-[9px] font-black text-primary uppercase tracking-widest">Niveau de Service : 95%</span>
+        </div>
+      </div>
 
       {/* KPIs Row — compact 2-column layout + health gauge */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
@@ -348,6 +373,32 @@ export function DecisionsView() {
           <HealthGauge score={healthScore} />
         </div>
       </div>
+
+      {/* Supplier Performance Section */}
+      {overview?.suppliers && overview.suppliers.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              Répertoire de Performance Fournisseurs
+            </h2>
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">
+              {overview.suppliers.length} Partenaires
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {overview.suppliers.map((s: any) => (
+              <SupplierCard 
+                key={s.id}
+                name={s.name}
+                reliability={s.reliabilityScore}
+                avgDelay={s.averageDelayDays}
+                ltSigma={s.leadTimeSigma}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

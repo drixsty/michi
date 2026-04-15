@@ -1,6 +1,6 @@
 import asyncio
-from src.core.database import AsyncSessionLocal
-from src.modules.decisions.service import DecisionCenterService
+from core.database import AsyncSessionLocal
+from modules.decisions.service import DecisionCenterService
 
 async def test_global_vs_shopify():
     async with AsyncSessionLocal() as db:

@@ -1,6 +1,7 @@
+from core.database.models import Organization, User, OrganizationMember
 import aiosmtplib
 from email.message import EmailMessage
-from config import settings
+from core.config import settings
 from loguru import logger
 
 class EmailService:

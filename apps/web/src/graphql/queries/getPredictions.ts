@@ -9,6 +9,7 @@ export const GET_ALL_PREDICTIONS: TypedDocumentNode<GetAllPredictionsQuery, GetA
       daysOfStock
       predictedStockoutDate
       reorderQuantity
+      demandSigma
     }
   }
 `;

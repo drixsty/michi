@@ -1,11 +1,11 @@
 import asyncio
-from src.core.database import AsyncSessionLocal
-from src.modules.auth.models import User, Organization
-from src.modules.inventory.models import Store, Product
+from core.database import AsyncSessionLocal
+from modules.auth.models import User, Organization
+from modules.inventory.models import Store, Product
 from sqlalchemy import select
-import src.modules.auth.models
-import src.modules.inventory.models
-import src.modules.forecasting.models
+import modules.auth.models
+import modules.inventory.models
+import modules.forecasting.models
 
 async def run():
     async with AsyncSessionLocal() as db:
@@ -28,7 +28,7 @@ async def run():
             print(f"STORE {s.name}: {p_count} products")
             
         # 4. Global Query Simulation
-        from src.modules.decisions.service import DecisionCenterService
+        from modules.decisions.service import DecisionCenterService
         service = DecisionCenterService(db)
         overview = await service.get_overview(str(u.id), store_id=None, channel=None)
         print(f"\nGLOBAL OVERVIEW:")

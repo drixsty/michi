@@ -80,46 +80,54 @@ def calculate_reorder_quantity(
     lead_time: int,
     moq: int,
     current_stock: float,
-    safety_factor: float = 1.5,
+    sigma: float = 0.0,
+    service_level: float = 0.95,
     average_delay: float = 0.0,
 ) -> int:
     """
-    Calcule la quantité de commande recommandée.
+    Calcule la quantité de commande recommandée via modèle statistique (Sprint 22).
 
-    Formule :
-        target  = run_rate × lead_time × safety_factor
-        raw_qty = max(0, target - current_stock)
-        reorder = ceil(raw_qty / moq) × moq
+    Formule (Service Level driven) :
+        SafetyStock = Z * Sigma * sqrt(LeadTime)
+        Target      = (RunRate * LeadTime) + SafetyStock
+        Reorder     = ceil(max(0, Target - CurrentStock) / MOQ) * MOQ
 
     Args:
-        run_rate: Taux de vente quotidien en unités/jour (>= 0).
-        lead_time: Délai de livraison en jours (>= 1).
-        moq: Minimum Order Quantity — arrondi supérieur (>= 1).
-        current_stock: Stock actuel en unités (>= 0).
-        safety_factor: Multiplicateur de sécurité (défaut: 1.5).
-            1.0 = couverture exacte du lead time (aucune marge)
-            1.5 = 50% de marge de sécurité (recommandé)
+        run_rate: Taux de vente quotidien moyen (>= 0).
+        lead_time: Délai de livraison théorique en jours (>= 1).
+        moq: Quantité minimum de commande (>= 1).
+        current_stock: Stock actuel.
+        sigma: Écart-type de la demande (volatilité). Si 0, pas de stock de sécurité lié à la variance.
+        service_level: Probabilité de ne pas être en rupture (défaut: 0.95).
+        average_delay: Retard moyen constaté du fournisseur.
 
     Returns:
-        Quantité à commander en unités, multiple de ``moq``. 0 si stock suffisant.
-
-    Example:
-        >>> calculate_reorder_quantity(run_rate=10.0, lead_time=7, moq=50, current_stock=20.0)
-        100
-        >>> calculate_reorder_quantity(run_rate=5.0, lead_time=7, moq=10, current_stock=200.0)
-        0
+        Quantité à commander (multiple de moq).
     """
     if run_rate <= 0.0 or lead_time <= 0:
         return 0
 
     moq = max(1, moq)
-    # Lead time effectif = délai théorique + retard moyen constaté (Sprint 8)
     effective_lead_time = lead_time + average_delay
-    target_stock = run_rate * effective_lead_time * safety_factor
+    
+    # 1. Calcul du coefficient Z (approximation pour les niveaux standards)
+    # 95% -> 1.645, 99% -> 2.326, 90% -> 1.282
+    # On utilise 1.645 par défaut comme demandé.
+    z_map = {0.90: 1.282, 0.95: 1.645, 0.99: 2.326}
+    z_score = z_map.get(service_level, 1.645)
+
+    # 2. Calcul du besoin de fond (Cycle Stock)
+    cycle_stock = run_rate * effective_lead_time
+    
+    # 3. Calcul du Stock de Sécurité Statistique
+    # Formule : Z * Sigma * sqrt(LT)
+    safety_stock = z_score * sigma * math.sqrt(effective_lead_time)
+    
+    # 4. Cible de stock et calcul de commande
+    target_stock = cycle_stock + safety_stock
     raw_qty = max(0.0, target_stock - current_stock)
 
     if raw_qty == 0.0:
         return 0
 
-    # Arrondir au MOQ supérieur
     return math.ceil(raw_qty / moq) * moq

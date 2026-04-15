@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Application AuthService (DDD) — Sprint 21.
 
@@ -12,26 +13,26 @@ import uuid
 from dataclasses import dataclass
 from typing import Optional
 
-from src.modules.auth.domain.entities import UserEntity
-from src.modules.auth.domain.ports import (
+from modules.auth.domain.entities import UserEntity
+from modules.auth.domain.ports import (
     IOrganizationRepository,
     IPasswordHasher,
     ITokenService,
     IUserRepository,
 )
-from src.modules.auth.domain.value_objects import Email, JwtToken
-from src.modules.auth.infrastructure.repositories import (
+from modules.auth.domain.value_objects import Email, JwtToken
+from modules.auth.infrastructure.repositories import (
     SQLAlchemyMembershipRepository,
     SQLAlchemyOrganizationRepository,
     SQLAlchemyUserRepository,
 )
-from src.modules.auth.infrastructure.persistence.models import (
+from modules.auth.infrastructure.persistence.models import (
     Organization,
     OrganizationMember,
     User,
     UserRole,
 )
-from exceptions import ErrorCode, MichiException, UnauthenticatedException
+from core.exceptions import ErrorCode, MichiException, UnauthenticatedException
 
 
 @dataclass
@@ -79,7 +80,7 @@ class ApplicationAuthService:
         if not user_model.hashed_password:
             raise UnauthenticatedException("Compte Google-only — utilisez Google Login")
 
-        from src.modules.auth.domain.value_objects import HashedPassword
+        from modules.auth.domain.value_objects import HashedPassword
         hashed = HashedPassword(user_model.hashed_password)
         if not self._hasher.verify(password, hashed):
             raise UnauthenticatedException("Invalid email or password")
@@ -119,7 +120,7 @@ class ApplicationAuthService:
                 message="Cet email est déjà utilisé", code=ErrorCode.ALREADY_MEMBER
             )
 
-        from src.modules.auth.domain.value_objects import HashedPassword
+        from modules.auth.domain.value_objects import HashedPassword
         hashed = self._hasher.hash(password)
         user_model = User(
             email=email,
@@ -250,7 +251,7 @@ class ApplicationAuthService:
         if not user_model or not user_model.hashed_password:
             return False
             
-        from src.modules.auth.domain.value_objects import HashedPassword
+        from modules.auth.domain.value_objects import HashedPassword
         if not self._hasher.verify(current_password, HashedPassword(user_model.hashed_password)):
             raise MichiException(message="Mot de passe actuel incorrect", code=ErrorCode.UNAUTHENTICATED)
             

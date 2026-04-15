@@ -5,20 +5,20 @@ Pure composition of modular resolvers.
 import strawberry
 
 # Auth & Organizations
-from src.modules.auth import (
+from modules.auth import (
     AuthQuery, AuthMutation,
     OrgQuery, OrgMutation,
     InvitationQuery, InvitationMutation
 )
 
 # Inventory & Forecasting
-from src.modules.inventory.adapters.resolvers import InventoryQuery, InventoryMutation
-from src.modules.forecasting.adapters.resolvers import ForecastingQuery, ForecastingMutation
+from modules.inventory.adapters.resolvers import InventoryQuery, InventoryMutation
+from modules.forecasting.adapters.resolvers import ForecastingQuery, ForecastingMutation
 
 # Other Modules
-from src.modules.shopify.adapters.resolvers import ShopifyQuery, ShopifyMutation
-from src.modules.decisions.adapters.resolvers import DecisionQuery, DecisionMutation
-from src.modules.billing.adapters.resolvers import BillingQuery, BillingMutation
+from modules.shopify.adapters.resolvers import ShopifyQuery, ShopifyMutation
+from modules.decisions.adapters.resolvers import DecisionQuery, DecisionMutation
+from modules.billing.adapters.resolvers import BillingQuery, BillingMutation
 
 
 @strawberry.type

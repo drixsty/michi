@@ -1,8 +1,8 @@
 
 import asyncio
 from sqlalchemy import select, func
-from src.modules.inventory.models import Product, SourceConnection, PlatformSource
-from src.modules.auth.models import User
+from modules.inventory.models import Product, SourceConnection, PlatformSource
+from modules.auth.models import User
 
 async def diag():
     async with SessionLocal() as db:

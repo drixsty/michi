@@ -7,7 +7,7 @@ Les implémentations canoniques vivent désormais dans :
 Ce module maintient la compatibilité ascendante pour tout code qui importait
 depuis src.modules.forecasting.algorithms.*
 """
-from src.modules.intelligence.algorithms import (
+from modules.intelligence.algorithms import (
     calculate_run_rate,
     calculate_run_rate_batch,
     RUN_RATE_WINDOW,

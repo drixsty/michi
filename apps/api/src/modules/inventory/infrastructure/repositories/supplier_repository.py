@@ -6,9 +6,9 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.modules.inventory.domain.entities import SupplierEntity
-from src.modules.inventory.domain.ports import ISupplierRepository
-from src.modules.inventory.infrastructure.persistence.models import Supplier
+from modules.inventory.domain.entities import SupplierEntity
+from modules.inventory.domain.ports import ISupplierRepository
+from modules.inventory.infrastructure.persistence.models import Supplier
 
 class SQLAlchemySupplierRepository(ISupplierRepository):
     def __init__(self, session: AsyncSession):
@@ -21,7 +21,8 @@ class SQLAlchemySupplierRepository(ISupplierRepository):
             name=model.name,
             contact_email=model.contact_email,
             reliability_score=model.reliability_score,
-            average_delay_days=model.average_delay_days
+            average_delay_days=model.average_delay_days,
+            lead_time_sigma=model.lead_time_sigma
         )
 
     async def get_by_id(self, supplier_id: UUID) -> Optional[SupplierEntity]:
@@ -45,6 +46,7 @@ class SQLAlchemySupplierRepository(ISupplierRepository):
             model.contact_email = entity.contact_email
             model.reliability_score = entity.reliability_score
             model.average_delay_days = entity.average_delay_days
+            model.lead_time_sigma = entity.lead_time_sigma
         else:
             model = Supplier(
                 id=entity.id,
@@ -52,7 +54,8 @@ class SQLAlchemySupplierRepository(ISupplierRepository):
                 name=entity.name,
                 contact_email=entity.contact_email,
                 reliability_score=entity.reliability_score,
-                average_delay_days=entity.average_delay_days
+                average_delay_days=entity.average_delay_days,
+                lead_time_sigma=entity.lead_time_sigma
             )
             self.session.add(model)
         

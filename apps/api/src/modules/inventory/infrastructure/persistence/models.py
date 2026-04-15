@@ -9,9 +9,10 @@ import enum
 from datetime import datetime
 import uuid
 
-from database import Base, GUID
+from core.database import Base, GUID
+from core.database.models import Organization, User, OrganizationMember
 
-from src.modules.inventory.domain.entities import PlatformSource
+from modules.inventory.domain.entities import PlatformSource
 
 class Store(Base):
     """

@@ -14,13 +14,7 @@ ascendante ou descendante du cycle saisonnier hebdomadaire/mensuel.
 def detect_seasonality_factor(df: pd.DataFrame, window: int = 14) -> float:
     """
     Calcule un facteur de boost saisonnier basé sur l'évolution récente de la demande.
-    
-    Args:
-        df: DataFrame de demande avec [date, corrected_units_sold]
-        window: Fenêtre de comparaison
-        
-    Returns:
-        float: Facteur multiplicateur (ex: 1.2 pour +20% de demande saisonnière détectée)
+    (Momentum court terme vs moyen terme).
     """
     if df.empty or len(df) < window * 2:
         return 1.0
@@ -44,6 +38,40 @@ def detect_seasonality_factor(df: pd.DataFrame, window: int = 14) -> float:
         return 1.0
         
     return float(factor)
+
+
+def calculate_weekly_indices(df: pd.DataFrame) -> dict[int, float]:
+    """
+    Calcule les index saisonniers par jour de la semaine (0=Lundi, 6=Dimanche).
+    
+    L'index est normalisé pour que la moyenne soit de 1.0.
+    Un index de 1.2 le samedi signifie que le samedi vend 20% de plus que la moyenne.
+    """
+    if df.empty or len(df) < 28: # Besoin d'au moins 4 semaines pour un index fiable
+        return {i: 1.0 for i in range(7)}
+
+    df = df.copy()
+    if not pd.api.types.is_datetime64_any_dtype(df['date']):
+        df['date'] = pd.to_datetime(df['date'])
+        
+    df['day_of_week'] = df['date'].dt.dayofweek
+    
+    # Calcul de la moyenne par jour de la semaine
+    daily_avg = df.groupby('day_of_week')['corrected_units_sold'].mean()
+    global_avg = daily_avg.mean()
+    
+    if global_avg <= 0:
+        return {i: 1.0 for i in range(7)}
+        
+    indices = (daily_avg / global_avg).to_dict()
+    
+    # S'assurer que tous les jours sont présents
+    for i in range(7):
+        if i not in indices:
+            indices[i] = 1.0
+            
+    return indices
+
 
 def apply_seasonality_batch(products_df: pd.DataFrame, history_df: pd.DataFrame) -> pd.DataFrame:
     """

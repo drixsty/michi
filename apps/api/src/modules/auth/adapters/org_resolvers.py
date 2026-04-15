@@ -6,8 +6,8 @@ import strawberry
 from typing import Optional, List
 import uuid
 
-from exceptions import UnauthenticatedException, MichiException, ErrorCode
-from src.core.graphql.types import (
+from core.exceptions import UnauthenticatedException, MichiException, ErrorCode
+from core.graphql.types import (
     OrganizationType, OrganizationMemberType, UpdateOrganizationInput,
     AuthPayload, UserType
 )
@@ -113,7 +113,7 @@ class OrgMutation:
         if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()
             
-        from src.modules.auth.infrastructure.models import UserRole
+        from core.database.models import UserRole
         service = info.context.services.org_service
         return await service.update_member_role(
             org_id=uuid.UUID(str(info.context.org_id)),

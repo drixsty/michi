@@ -35,7 +35,7 @@ seed: ## Seed la DB (crée tables + user de dev)
 
 seed-v2: ## Seed la DB v2 (SaaS Multi-Tenant Enterprise) [S16]
 	@echo "🌱 Seeding database v2 (SaaS)..."
-	cd apps/api && set PYTHONPATH=. && python scripts/seed_v2.py
+	cd apps/api && set PYTHONPATH=src && python scripts/seed_v2.py
 
 seed-demo: ## Régénère le dataset mock démo (50 produits + 365j historique)
 	@echo "🌱 Seeding demo data..."
@@ -47,7 +47,7 @@ seed-demo-small: ## Régénère un dataset mock réduit (10 produits — tests r
 
 schema: ## Exporte le schéma GraphQL (SDL)
 	@echo "📡 Exportation du schéma GraphQL..."
-	cd apps/api && set PYTHONPATH=. && python scripts/export_schema.py > ../../packages/types/schema.graphql
+	cd apps/api && set PYTHONPATH=src && python scripts/export_schema.py > ../../packages/types/schema.graphql
 	@echo "✅ Schéma exporté dans packages/types/schema.graphql"
 
 api: dev-backend ## Alias pour dev-backend
@@ -56,7 +56,7 @@ mobile: dev-mobile ## Alias pour dev-mobile
 
 dev-backend: ## Lance le backend (port 8000)
 	@echo "🚀 Démarrage backend..."
-	cd apps/api && uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+	cd apps/api && uvicorn --app-dir src main:app --reload --host 0.0.0.0 --port 8000
 
 dev-frontend: ## Lance le frontend (port 3000)
 	@echo "🚀 Démarrage frontend..."

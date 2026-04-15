@@ -22,12 +22,12 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy import select, delete
 
 from config import settings
-from src.modules.auth.models import User, Organization, OrganizationMember
-from src.modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder, Store, AlertEmail
-from src.modules.forecasting.models import CleanedDemand, Prediction
-from src.modules.forecasting.application.forecasting_service import ForecastingService
-from src.modules.inventory.application.alert_service import AlertService
-from src.modules.shopify.mock_generator import generate_full_mock_dataset
+from modules.auth.models import User, Organization, OrganizationMember
+from modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder, Store, AlertEmail
+from modules.forecasting.models import CleanedDemand, Prediction
+from modules.forecasting.application.forecasting_service import ForecastingService
+from modules.inventory.application.alert_service import AlertService
+from modules.shopify.mock_generator import generate_full_mock_dataset
 from database import Base
 
 
@@ -36,7 +36,7 @@ async def get_or_create_demo_shop(session: AsyncSession) -> tuple[str, str, str]
     Récupère ou crée l'utilisateur de démo.
     Retourne (email, shop_id, organization_id).
     """
-    from src.modules.auth.infrastructure.persistence.models import Organization, OrganizationMember, UserRole
+    from modules.auth.infrastructure.persistence.models import Organization, OrganizationMember, UserRole
     
     email = "dev@michi.com"
     result = await session.execute(select(User).where(User.email == email))
@@ -45,7 +45,7 @@ async def get_or_create_demo_shop(session: AsyncSession) -> tuple[str, str, str]
     if not user:
         print(f"   [INFO] Creation utilisateur de demo {email}...")
         shop_id = uuid.uuid4()
-        from src.modules.auth.infrastructure.persistence.models import User as AuthUser
+        from modules.auth.infrastructure.persistence.models import User as AuthUser
         from security import hash_password
         user = AuthUser(
             email=email,
@@ -90,8 +90,8 @@ async def get_or_create_demo_shop(session: AsyncSession) -> tuple[str, str, str]
 async def reset_and_seed(shop_id: str, count: int, session: AsyncSession) -> dict:
     """Supprime les données existantes et régénère le dataset mock."""
     # Supprimer les données existantes (ordres importants pour FKs)
-    from src.modules.inventory.models import Alert, AlertEmail, SalesLog
-    from src.modules.forecasting.models import CleanedDemand, Prediction
+    from modules.inventory.models import Alert, AlertEmail, SalesLog
+    from modules.forecasting.models import CleanedDemand, Prediction
     
     # On supprime tout ce qui est lié aux produits de ce shop
     p_ids_query = select(Product.id).where(Product.store_id == shop_id)

@@ -12,16 +12,17 @@ from strawberry.fastapi import GraphQLRouter
 from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import settings
-from src.core.graphql.schema import schema
-from src.core.graphql.context import GraphQLContext
+from core.config import settings
+from core.graphql.schema import schema
+from core.graphql.context import GraphQLContext
+from core.di import build_services
 import asyncio
-from database import get_db
-from database import SerializedAsyncSession
-from src.core.middleware.auth import get_current_user_from_token
-from src.modules.shopify.adapters.auth_routes import router as shopify_auth_router
-from src.modules.billing.adapters.router import router as billing_router
-from exceptions import UnauthenticatedException, ForbiddenException
+from core.database import get_db
+from core.database import SerializedAsyncSession
+from core.middleware.auth import get_current_user_from_token
+from modules.shopify.adapters.auth_routes import router as shopify_auth_router
+from modules.billing.adapters.router import router as billing_router
+from core.exceptions import UnauthenticatedException, ForbiddenException
 from loguru import logger
 import sys
 
@@ -103,20 +104,15 @@ async def get_context(
     lock = asyncio.Lock()
     serialized_db = SerializedAsyncSession(db, lock)
     
-    # Services globaux (Sprint 17)
-    from src.modules.billing import BillingService
-    from src.core.di import build_services
-    billing_service = BillingService()
-    
     # DI Container (Sprint 21)
-    services_container = build_services(serialized_db, billing_service)
+    services_container = build_services(serialized_db)
     
     return GraphQLContext(
         db=serialized_db,
         user_id=user_id,
         org_id=org_id,
         email=email,
-        billing=billing_service,
+        billing=services_container.billing_service,
         services=services_container
     )
 

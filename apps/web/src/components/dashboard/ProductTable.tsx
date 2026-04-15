@@ -26,7 +26,11 @@ import {
   Globe,
   Anchor,
   Layers,
-  ExternalLink
+  ExternalLink,
+  ShieldCheck,
+  Zap,
+  Activity,
+  Info
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -180,6 +184,50 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
               styles[rank as keyof typeof styles] || styles['C']
             )}>
               {rank}
+            </span>
+          </div>
+        );
+      }
+    },
+    {
+      accessorKey: 'volatility',
+      size: 110,
+      header: ({ column }) => (
+        <div className="flex items-center justify-center gap-1.5 text-slate-900 font-extrabold cursor-help group">
+          Volatilité
+          <Info className="h-3 w-3 text-slate-300 group-hover:text-primary transition-colors" />
+        </div>
+      ),
+      cell: ({ row }) => {
+        const rr = row.original.runRate ?? row.original.prediction?.runRate ?? 0;
+        const sigma = row.original.demandSigma ?? row.original.prediction?.demandSigma ?? 0;
+        
+        if (rr <= 0) return <div className="text-center text-muted-foreground text-[10px]">—</div>;
+        
+        const cv = sigma / rr;
+        
+        let label = "Stable";
+        let colorClass = "bg-emerald-50 text-emerald-700 border-emerald-100";
+        let Icon = ShieldCheck;
+        
+        if (cv > 0.5) {
+          label = "Élevée";
+          colorClass = "bg-red-50 text-red-700 border-red-100";
+          Icon = Activity;
+        } else if (cv > 0.2) {
+          label = "Modérée";
+          colorClass = "bg-amber-50 text-amber-700 border-amber-100";
+          Icon = Zap;
+        }
+        
+        return (
+          <div className="flex justify-center">
+            <span className={cn(
+              "px-2 py-0.5 rounded-full text-[9px] font-bold border flex items-center gap-1 transition-all shadow-sm",
+              colorClass
+            )}>
+              <Icon className="h-2.5 w-2.5" />
+              {label}
             </span>
           </div>
         );
@@ -385,7 +433,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
                     >
                       <div className={cn(
                         "flex items-center",
-                        header.column.id === 'sources' || header.column.id === 'predictedStockoutDate' || header.column.id === 'totalReorderQuantity' || header.column.id === 'totalStock' || header.column.id === 'abcRank' ? "justify-center" :
+                        header.column.id === 'sources' || header.column.id === 'predictedStockoutDate' || header.column.id === 'totalReorderQuantity' || header.column.id === 'totalStock' || header.column.id === 'abcRank' || header.column.id === 'volatility' ? "justify-center" :
                         header.column.id === 'actions' || header.column.id === 'select' ? "justify-center" : ""
                       )}>
                         {flexRender(header.column.columnDef.header, header.getContext())}

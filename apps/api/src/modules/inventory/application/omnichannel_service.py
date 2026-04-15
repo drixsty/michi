@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 OmnichannelService — Application Layer
 Aggregates inventory by SKU across channels.
@@ -6,7 +7,7 @@ from typing import List, Optional, Dict
 from datetime import date
 from uuid import UUID
 
-from src.modules.inventory.domain.ports import IProductRepository, IStoreRepository
+from modules.inventory.domain.ports import IProductRepository, IStoreRepository
 
 # We keep the dataclasses here as they are Application-specific DTOs for the UI
 from dataclasses import dataclass, field

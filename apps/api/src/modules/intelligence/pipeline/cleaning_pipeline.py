@@ -16,7 +16,7 @@ Performance : O(n) — pipeline vectorisé.
 
 import pandas as pd
 
-from src.modules.intelligence.algorithms import (
+from modules.intelligence.algorithms import (
     correct_out_of_stock,
     detect_outliers,
     calculate_run_rate,
@@ -26,7 +26,7 @@ from src.modules.intelligence.algorithms import (
 def run_cleaning_pipeline(
     df: pd.DataFrame,
     sku: str = "",
-) -> tuple[pd.DataFrame, float]:
+) -> tuple[pd.DataFrame, float, float]:
     """
     Applique le pipeline OOS → IQR → RunRate sur un DataFrame de demande brute.
 
@@ -38,11 +38,12 @@ def run_cleaning_pipeline(
         sku: Identifiant SKU pour les logs/debug (optionnel).
 
     Returns:
-        Tuple (cleaned_df, run_rate) où :
+        Tuple (cleaned_df, run_rate, sigma) où :
         - cleaned_df: DataFrame enrichi avec colonnes supplémentaires
           (theoretical_units_sold, is_outlier, iqr_upper, iqr_lower,
-           corrected_quantity, run_rate_series)
+           corrected_quantity, run_rate_series, demand_sigma)
         - run_rate: float — run rate journalier final
+        - sigma: float — écart-type de la demande (volatilité)
 
     Raises:
         ValueError: si les colonnes requises sont absentes.
@@ -86,4 +87,8 @@ def run_cleaning_pipeline(
     run_rate_series = df_step3["run_rate"].dropna()
     run_rate: float = float(run_rate_series.iloc[-1]) if len(run_rate_series) > 0 else 0.0
 
-    return df_step3, run_rate
+    # Extraire le sigma scalaire (volatilité) — Sprint 22 (DS v2)
+    sigma_series = df_step3["demand_sigma"].dropna()
+    sigma: float = float(sigma_series.iloc[-1]) if len(sigma_series) > 0 else 0.0
+
+    return df_step3, run_rate, sigma

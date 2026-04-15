@@ -1,11 +1,11 @@
 import asyncio
-from src.core.database import AsyncSessionLocal
-from src.modules.auth.models import User
-from src.core.security import create_access_token
+from core.database import AsyncSessionLocal
+from modules.auth.models import User
+from core.security import create_access_token
 from sqlalchemy import select
-import src.modules.auth.models
-import src.modules.inventory.models
-import src.modules.forecasting.models
+import modules.auth.models
+import modules.inventory.models
+import modules.forecasting.models
 
 async def get_token():
     async with AsyncSessionLocal() as db:

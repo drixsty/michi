@@ -9,7 +9,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 try:
-    from src.core.graphql.schema import schema
+    from core.graphql.schema import schema
     # On utilise print pour permettre la redirection dans le Makefile
     print(str(schema))
 except ImportError as e:

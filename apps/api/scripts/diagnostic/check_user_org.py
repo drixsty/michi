@@ -1,6 +1,6 @@
 import asyncio
-from src.core.database import AsyncSessionLocal
-from src.modules.auth.models import User
+from core.database import AsyncSessionLocal
+from modules.auth.models import User
 from sqlalchemy import select
 
 async def run():

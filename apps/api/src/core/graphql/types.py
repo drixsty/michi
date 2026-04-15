@@ -38,6 +38,7 @@ class OrganizationMemberType:
     permissions: str # JSON string
     organization: Optional[OrganizationType] = None
     user: Optional['UserType'] = None
+    supplier: Optional["SupplierType"] = strawberry.field(resolver=get_supplier_for_product)
 
     @classmethod
     def from_db(cls, member, include_org=True, include_user=False):
@@ -156,6 +157,7 @@ class SupplierType:
     contact_email: Optional[str]
     reliability_score: float
     average_delay_days: float
+    lead_time_sigma: float
 
     @classmethod
     def from_db(cls, supplier):
@@ -228,23 +230,23 @@ class ProductType:
 
     @strawberry.field(name="cleanedDemands")
     async def cleaned_demands(self, info) -> List[Annotated["CleanedDemandType", strawberry.lazy("src.modules.forecasting.adapters.resolvers")]]:
-        from src.modules.forecasting.adapters.resolvers import resolve_cleaned_demands
+        from modules.forecasting.adapters.resolvers import resolve_cleaned_demands
         return await resolve_cleaned_demands(info, str(self.id), self.sku)
 
     @strawberry.field
     async def channels(self, info) -> List["ChannelBreakdownType"]:
-        from src.modules.inventory.adapters.resolvers import resolve_product_channels
+        from modules.inventory.adapters.resolvers import resolve_product_channels
         return await resolve_product_channels(info, self.sku)
 
     @strawberry.field
     async def prediction(self, info) -> Optional[Annotated["PredictionType", strawberry.lazy("src.modules.forecasting.adapters.resolvers")]]:
-        from src.modules.forecasting.adapters.resolvers import resolve_product_prediction
+        from modules.forecasting.adapters.resolvers import resolve_product_prediction
         return await resolve_product_prediction(info, str(self.id), self.sku)
 
     @strawberry.field
     async def supplier(self, info) -> Optional[SupplierType]:
         if not self.supplier_id: return None
-        from src.modules.inventory.adapters.resolvers import resolve_product_supplier
+        from modules.inventory.adapters.resolvers import resolve_product_supplier
         return await resolve_product_supplier(info, str(self.supplier_id))
 
     @strawberry.field
@@ -352,6 +354,7 @@ class PredictionType:
     mape_score: Optional[float]
     abc_rank: Optional[str]
     annual_gross_profit: Optional[float]
+    demand_sigma: float
     computed_at: datetime
 
     @classmethod
@@ -370,6 +373,7 @@ class PredictionType:
             mape_score=r.mape_score,
             abc_rank=r.abc_rank,
             annual_gross_profit=r.annual_gross_profit,
+            demand_sigma=r.demand_sigma or 0.0,
             computed_at=r.computed_at,
         )
 

@@ -1,12 +1,9 @@
 import strawberry
-import uuid
 from typing import List
-from sqlalchemy import select
-from exceptions import UnauthenticatedException, MichiException, ErrorCode
-from src.modules.auth.infrastructure.models import Organization
-from src.modules.auth.adapters.decorators import require_permission
-from src.modules.auth.domain.constants import MichiPermission
-from src.modules.billing.domain.types import InvoiceType
+from core.exceptions import MichiException, ErrorCode
+from modules.auth.adapters.decorators import require_permission
+from modules.auth.domain.constants import MichiPermission
+from .types import InvoiceType
 
 @strawberry.type
 class BillingQuery:
@@ -14,70 +11,34 @@ class BillingQuery:
     @require_permission(MichiPermission.BILLING_VIEW)
     async def invoices(self, info) -> List[InvoiceType]:
         """Récupère l'historique des factures de l'organisation."""
-            
-        db = info.context.db
-        billing_service = info.context.billing
+        billing_service = info.context.services.billing_service
+        org_id = str(info.context.org_id)
         
-        # Récupérer l'org pour avoir le stripe_customer_id et le plan actuel
-        result = await db.execute(
-            select(Organization).where(Organization.id == uuid.UUID(str(info.context.org_id)))
-        )
-        org = result.scalar_one_or_none()
+        invoices_entities = await billing_service.get_invoices(org_id=org_id)
         
-        if not org or not org.stripe_customer_id:
-            return []
-            
-        invoices_data = await billing_service.get_invoices(
-            customer_id=org.stripe_customer_id,
-            plan=org.plan
-        )
-        
-        return [InvoiceType(**inv) for inv in invoices_data]
+        return [
+            InvoiceType(
+                id=inv.id,
+                number=inv.number,
+                amount=inv.amount,
+                currency=inv.currency,
+                status=inv.status,
+                date=inv.date,
+                pdf_url=inv.pdf_url,
+                hosted_url=inv.hosted_url
+            ) for inv in invoices_entities
+        ]
 
 @strawberry.type
 class BillingMutation:
     @strawberry.mutation
     @require_permission(MichiPermission.BILLING_MANAGE)
     async def create_checkout_session(self, info, plan: str, success_url: str, cancel_url: str) -> str:
-        # ... logic existante ...
-            
-        db = info.context.db
-        billing_service = info.context.billing
+        billing_service = info.context.services.billing_service
+        org_id = str(info.context.org_id)
         
-        if not billing_service:
-            raise MichiException(message="Service Billing non disponible", code=ErrorCode.INTERNAL_ERROR)
-            
-        # 1. Récupérer stripe_customer_id de l'organisation
-        result = await db.execute(
-            select(Organization).where(Organization.id == uuid.UUID(str(info.context.org_id)))
-        )
-        org = result.scalar_one_or_none()
-        
-        if not org or not org.stripe_customer_id:
-            # Fallback : Création du client si manquant
-            user_id = info.context.user_id
-            from src.modules.auth.infrastructure.models import User
-            user_result = await db.execute(select(User).where(User.id == uuid.UUID(str(user_id))))
-            user = user_result.scalar_one_or_none()
-            
-            customer_id = await billing_service.create_customer(
-                name=org.name if org else "Org Michi",
-                email=user.email if user else "",
-                org_id=str(info.context.org_id)
-            )
-            if org and customer_id:
-                org.stripe_customer_id = customer_id
-                await db.flush()
-        else:
-            customer_id = org.stripe_customer_id
-            
-        # 2. Créer la session
-        if billing_service.mode == "MOCK":
-            await billing_service.mock_upgrade_organization(db, str(info.context.org_id), plan)
-            return success_url
-
         url = await billing_service.create_checkout_session(
-            customer_id=customer_id,
+            org_id=org_id,
             plan=plan,
             success_url=success_url,
             cancel_url=cancel_url
@@ -91,42 +52,11 @@ class BillingMutation:
     @strawberry.mutation
     @require_permission(MichiPermission.BILLING_MANAGE)
     async def create_billing_portal_session(self, info, return_url: str) -> str:
-        """Crée une session pour le portail de gestion Stripe."""
-            
-        db = info.context.db
-        billing_service = info.context.billing
+        billing_service = info.context.services.billing_service
+        org_id = str(info.context.org_id)
         
-        result = await db.execute(
-            select(Organization).where(Organization.id == uuid.UUID(str(info.context.org_id)))
-        )
-        org = result.scalar_one_or_none()
-        
-        if not org:
-            raise MichiException(message="Organisation non trouvée", code=ErrorCode.NOT_FOUND)
-
-        customer_id = org.stripe_customer_id
-        
-        if not customer_id:
-            # Création à la volée du client (notamment pour le mode MOCK)
-            from src.modules.auth.infrastructure.models import User
-            user_result = await db.execute(select(User).where(User.id == uuid.UUID(str(info.context.user_id))))
-            user = user_result.scalar_one_or_none()
-            
-            customer_id = await billing_service.create_customer(
-                name=org.name,
-                email=user.email if user else "",
-                org_id=str(info.context.org_id)
-            )
-            if customer_id:
-                org.stripe_customer_id = customer_id
-                await db.commit()
-                logger.info(f"Stripe Customer auto-créé : {customer_id} pour le portail")
-        
-        if not customer_id:
-            raise MichiException(message="Impossible de créer un compte client Stripe", code=ErrorCode.INTERNAL_ERROR)
-            
         url = await billing_service.create_portal_session(
-            customer_id=customer_id,
+            org_id=org_id,
             return_url=return_url
         )
         

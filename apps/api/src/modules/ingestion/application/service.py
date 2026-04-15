@@ -3,10 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from loguru import logger
 
 from .base import BaseConnector
-from src.modules.inventory.application.inventory_service import InventoryService
-from src.modules.inventory.application.alert_service import AlertService
-from src.modules.inventory.infrastructure.models import PlatformSource
-from src.modules.auth.infrastructure.models import Organization
+from modules.inventory.application.inventory_service import InventoryService
+from modules.inventory.application.alert_service import AlertService
+from modules.inventory.infrastructure.models import PlatformSource
+from core.database.models import Organization
 from sqlalchemy import select
 import uuid
 
@@ -62,7 +62,7 @@ class IngestionService:
             sales_data = await connector.fetch_sales_history(kwargs.get("csv_content"), kwargs.get("mapping"))
 
         # 2. Vérifier les limites de l'abonnement (Subscription Guard)
-        from src.modules.auth.infrastructure.models import Organization
+        from core.database.models import Organization
         org_result = await self.db.execute(
             select(Organization).where(Organization.id == uuid.UUID(str(kwargs.get("organization_id"))))
         )

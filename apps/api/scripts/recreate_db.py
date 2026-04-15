@@ -15,7 +15,7 @@ from security import hash_password
 from database import Base
 
 # Imports requis pour que SQLAlchemy découvre les modèles lors du drop/create
-from src.modules.auth.models import User, Organization, OrganizationMember, Invitation
+from modules.auth.models import User, Organization, OrganizationMember, Invitation
 
 async def recreate_all():
     """Supprime et recrée toutes les tables"""

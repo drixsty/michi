@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from loguru import logger
 
-from src.modules.inventory.infrastructure.models import Product, SalesLog
+from modules.inventory.infrastructure.models import Product, SalesLog
 from ..domain.schemas import ValidationReportSchema, ValidationIssue
 
 VALID_LEAD_TIMES = {7, 14, 21, 30, 45}

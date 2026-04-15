@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Forecasting Resolvers — Adapters Layer
 Thin resolvers delegating to Application Services.
@@ -6,10 +7,10 @@ import strawberry
 from typing import List, Optional
 import uuid
 
-from src.modules.billing.adapters.decorators import require_plan
-from src.modules.auth.adapters.decorators import require_permission
-from src.modules.auth.domain.constants import MichiPermission
-from src.core.graphql.types import (
+from modules.billing.adapters.decorators import require_plan
+from modules.auth.adapters.decorators import require_permission
+from modules.auth.domain.constants import MichiPermission
+from core.graphql.types import (
     CleanedDemandType, PredictionType, 
     PipelineResultType, PredictionRunResultType, 
     DashboardKPIType

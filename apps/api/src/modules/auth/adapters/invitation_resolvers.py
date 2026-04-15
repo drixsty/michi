@@ -6,8 +6,8 @@ import strawberry
 from typing import Optional, List
 import uuid
 
-from exceptions import UnauthenticatedException
-from src.core.graphql.types import InvitationType
+from core.exceptions import UnauthenticatedException
+from core.graphql.types import InvitationType
 
 @strawberry.type
 class InvitationQuery:
@@ -44,7 +44,7 @@ class InvitationMutation:
         if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()
             
-        from src.modules.auth.infrastructure.models import UserRole
+        from core.database.models import UserRole
         service = info.context.services.org_service
         invitation = await service.create_invitation(
             email=email,

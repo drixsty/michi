@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Request, Header, Depends
-from database import get_db
-from sqlalchemy.ext.asyncio import AsyncSession
-from src.modules.billing.application.service import BillingService
 from loguru import logger
 import stripe
+
+from core.database import get_db
+from sqlalchemy.ext.asyncio import AsyncSession
+from ..application.service import ApplicationBillingService
+from ..infrastructure.stripe_provider import StripeBillingProvider
+from ..infrastructure.repositories import SQLAlchemyBillingRepository
 
 router = APIRouter(prefix="/api/billing", tags=["Billing"])
 
@@ -17,21 +20,26 @@ async def stripe_webhook(
     Endpoint de réception des webhooks Stripe.
     """
     if not stripe_signature:
-        logger.error("Signature Stripe manquante dans les headers")
         return {"error": "Missing signature"}, 400
 
     payload = await request.body()
-    billing_service = BillingService()
+    
+    # Injection manuelle dans le routeur (Adapter) pour le moment
+    # Ou via une dépendance FastAPI si préféré
+    provider = StripeBillingProvider()
+    repo = SQLAlchemyBillingRepository(db)
+    billing_service = ApplicationBillingService(provider, repo)
 
     try:
+        # Note: Le parsing de l'event est complexe car il nécessite le SDK.
+        # Idéalement, StripeBillingProvider.parse_webhook_event(payload, signature)
         result = await billing_service.handle_webhook_event(
             payload=payload,
-            sig_header=stripe_signature,
-            db=db
+            sig_header=stripe_signature
         )
         return result
     except stripe.error.SignatureVerificationError:
         return {"error": "Invalid signature"}, 400
     except Exception as e:
-        logger.error(f"Erreur interne lors du traitement du webhook : {str(e)}")
+        logger.error(f"Erreur Webhook : {str(e)}")
         return {"error": "Internal error"}, 500

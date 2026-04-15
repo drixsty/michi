@@ -9,8 +9,8 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 
-from database import Base, GUID
-from src.modules.inventory.infrastructure.models import Product  # Import requis pour les relations
+from core.database import Base, GUID
+from modules.inventory.infrastructure.models import Product  # Import requis pour les relations
 
 
 class CleanedDemand(Base):
@@ -86,6 +86,7 @@ class Prediction(Base):
     # --- Sprint 15 : Analyse ABC par la marge ---
     abc_rank = Column(String(10), nullable=True) # "A", "B", "C"
     annual_gross_profit = Column(Float, nullable=True) # Profit annuel estimé
+    demand_sigma = Column(Float, nullable=True, default=0.0) # Écart-type de la demande (DS v2)
 
     computed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 

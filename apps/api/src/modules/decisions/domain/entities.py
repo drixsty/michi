@@ -5,6 +5,9 @@ Pure Python dataclasses to isolate business logic from infrastructure.
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any
 from uuid import UUID
+from modules.inventory.domain.ports import IProductRepository, IStoreRepository, ISupplierRepository
+from modules.forecasting.domain.ports import IPredictionRepository
+from modules.inventory.domain.entities import SupplierEntity
 
 @dataclass(frozen=True)
 class FinancialKpis:
@@ -39,4 +42,5 @@ class DecisionCenterOverview:
     health_score: int
     active_platforms: List[str]
     capital_breakdown: List[Dict[str, Any]]
+    suppliers: List[SupplierEntity] = field(default_factory=list)
     message: str

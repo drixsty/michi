@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Application DecisionsService (DDD) — Sprint 21.
 Coordinates analytics and decision-making logic using domain ports.
@@ -6,18 +7,18 @@ from typing import List, Optional, Dict, Any
 from uuid import UUID
 from loguru import logger
 
-from src.modules.auth.domain.ports import IUserRepository
-from src.modules.inventory.domain.ports import IProductRepository, IStoreRepository
-from src.modules.forecasting.domain.ports import IPredictionRepository
-from src.modules.inventory.domain.entities import PlatformSource
-from src.modules.decisions.domain.entities import (
+from modules.auth.domain.ports import IUserRepository
+from modules.inventory.domain.ports import IProductRepository, IStoreRepository
+from modules.forecasting.domain.ports import IPredictionRepository
+from modules.inventory.domain.entities import PlatformSource
+from modules.decisions.domain.entities import (
     DecisionCenterOverview, 
     FinancialKpis, 
     RiskItem
 )
-from src.modules.intelligence.analytics.financial_kpis import calculate_financial_kpis
-from src.modules.intelligence.analytics.health_score import calculate_health_score
-from src.modules.intelligence.analytics.risk_scoring import score_products
+from modules.intelligence.analytics.financial_kpis import calculate_financial_kpis
+from modules.intelligence.analytics.health_score import calculate_health_score
+from modules.intelligence.analytics.risk_scoring import score_products
 
 class ApplicationDecisionsService:
     def __init__(

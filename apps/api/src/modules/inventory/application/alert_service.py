@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 AlertService — Application Layer
 Coordinates stockout checks and alert generation.
@@ -8,9 +9,9 @@ from datetime import datetime, date, timedelta
 from uuid import UUID
 import uuid
 
-from src.modules.inventory.domain.entities import AlertEntity
-from src.modules.inventory.domain.ports import IAlertRepository, IProductRepository, IStoreRepository
-from src.modules.inventory.application.email_service import EmailService
+from modules.inventory.domain.entities import AlertEntity
+from modules.inventory.domain.ports import IAlertRepository, IProductRepository, IStoreRepository
+from modules.inventory.application.email_service import EmailService
 
 class AlertService:
     """
@@ -65,7 +66,7 @@ class AlertService:
                 if await self.alert_repo.exists_unread(product.id, "STOCKOUT_RISK_HIGH"):
                     continue
 
-                from src.modules.inventory.domain.entities import AlertEntity
+                from modules.inventory.domain.entities import AlertEntity
                 alert = AlertEntity(
                     id=uuid.uuid4(),
                     product_id=product.id,

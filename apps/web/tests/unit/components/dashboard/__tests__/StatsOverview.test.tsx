@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { StatsOverview } from '../StatsOverview';
+import { StatsOverview } from '@/components/dashboard/StatsOverview';
 import { describe, it, expect } from 'vitest';
 import React from 'react';
 

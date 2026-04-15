@@ -80,6 +80,17 @@ def calculate_run_rate(df: pd.DataFrame, window: int = RUN_RATE_WINDOW) -> pd.Da
 
     df["run_rate"] = adaptive_run_rate.fillna(global_median).clip(lower=0.0)
     
+    # 5. Calcul de la Volatilité (Sigma) — Sprint 22 (Data Science v2)
+    # L'écart-type est calculé sur la fenêtre de 30j pour capturer la variabilité réelle
+    sigma_30j = clean_sales.rolling(window=30, min_periods=4).std()
+    
+    # Fallback pour sigma : écart-type global ou 0.0
+    global_std = clean_sales.std()
+    if pd.isna(global_std):
+        global_std = 0.0
+        
+    df["demand_sigma"] = sigma_30j.fillna(global_std).fillna(0.0).clip(lower=0.0)
+
     # Ajout du diagnostic (invisible au frontend mais utile pour l'audit)
     df["is_trending"] = is_trending
 

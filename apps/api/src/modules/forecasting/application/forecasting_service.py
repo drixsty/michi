@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 import pandas as pd
 """
 ForecastingService — Application Layer
@@ -8,12 +9,12 @@ from typing import Optional, List, Dict
 import uuid
 from loguru import logger
 
-from src.modules.forecasting.domain.entities import CleanedDemandEntity, PredictionEntity
-from src.modules.forecasting.domain.ports import ICleanedDemandRepository, IPredictionRepository
-from src.modules.inventory.domain.ports import IProductRepository, ISalesLogRepository, IStoreRepository
+from modules.forecasting.domain.entities import CleanedDemandEntity, PredictionEntity
+from modules.forecasting.domain.ports import ICleanedDemandRepository, IPredictionRepository
+from modules.inventory.domain.ports import IProductRepository, ISalesLogRepository, IStoreRepository, ISupplierRepository
 
-from src.modules.forecasting.domain.schemas import PipelineResultSchema, PredictionRunResultSchema, DashboardKPISchema
-from src.modules.intelligence.algorithms import (
+from modules.forecasting.domain.schemas import PipelineResultSchema, PredictionRunResultSchema, DashboardKPISchema
+from modules.intelligence.algorithms import (
     correct_out_of_stock_batch,
     detect_outliers_batch,
     calculate_run_rate_batch,
@@ -30,13 +31,15 @@ class ForecastingService:
         prediction_repo: IPredictionRepository,
         product_repo: IProductRepository,
         sales_log_repo: ISalesLogRepository,
-        store_repo: IStoreRepository
+        store_repo: IStoreRepository,
+        supplier_repo: ISupplierRepository
     ):
         self.cleaned_demand_repo = cleaned_demand_repo
         self.prediction_repo = prediction_repo
         self.product_repo = product_repo
         self.sales_log_repo = sales_log_repo
         self.store_repo = store_repo
+        self.supplier_repo = supplier_repo
 
     async def run_cleaning_pipeline(self, store_id: str) -> PipelineResultSchema:
         """
@@ -150,7 +153,11 @@ class ForecastingService:
         if not all_demand:
             return PredictionRunResultSchema(success=False, products_processed=0, message="Nettoyez d'abord.")
 
-        # 3. Logic algorithms
+        # 3. Charger les fournisseurs pour le store
+        suppliers = await self.supplier_repo.list_by_store(s_uuid)
+        supplier_map = {s.id: s for s in suppliers}
+
+        # 4. Logic algorithms
         df = pd.DataFrame([{
             "product_id": str(d.product_id),
             "date": d.date,
@@ -166,7 +173,7 @@ class ForecastingService:
         latest['cost_price'] = latest['product_id'].map(lambda pid: product_map.get(pid).cost_price if product_map.get(pid) else 0)
         latest = calculate_abc_ranks_batch(latest)
 
-        # 4. Save predictions
+        # 5. Save predictions
         await self.prediction_repo.delete_by_products(product_ids)
         
         today = date.today()
@@ -176,10 +183,14 @@ class ForecastingService:
             p = product_map.get(pid_str)
             if not p: continue
 
-            # Algorithm details... (Omit logic for now, keeping it same as original but using entities)
-            # Reusing original logic from ForecastingService...
             run_rate = float(row["run_rate"]) * (float(p.boost_factor) if p.boost_factor else 1.0)
+            sigma = float(row["demand_sigma"]) if "demand_sigma" in row else 0.0
             
+            # Récupérer les données de performance du fournisseur associé
+            supplier_data = supplier_map.get(p.supplier_id) if p.supplier_id else None
+            avg_delay = supplier_data.average_delay_days if supplier_data else 0.0
+            lt_sigma = supplier_data.lead_time_sigma if supplier_data else 0.0
+
             stockout_date = predict_stockout_date(
                 current_stock=float(p.current_stock),
                 run_rate=run_rate,
@@ -190,7 +201,11 @@ class ForecastingService:
                 run_rate=run_rate,
                 lead_time=int(p.lead_time),
                 moq=int(p.moq),
-                current_stock=float(p.current_stock)
+                current_stock=float(p.current_stock),
+                sigma=sigma,
+                service_level=0.95,
+                average_delay=avg_delay,
+                lead_time_sigma=lt_sigma
             )
 
             prediction_entities.append(PredictionEntity(
@@ -206,6 +221,7 @@ class ForecastingService:
                 mape_score=None,
                 abc_rank=row["abc_rank"],
                 annual_gross_profit=row["annual_gross_profit"],
+                demand_sigma=sigma,
                 computed_at=datetime.utcnow()
             ))
 

@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DashboardHeader } from '../DashboardHeader';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 

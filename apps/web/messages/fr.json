@@ -254,7 +254,9 @@
       "sources": "Sources",
       "stockout": "Rupture prévue",
       "reorder": "À commander",
-      "catalogTitle": "Catalogue Unifié"
-    }
+      "catalogTitle": "Catalogue Unifié",
+      "productsShown": "produits affichés"
+    },
+    "emptySubtitle": "Aucun produit ne correspond à votre sélection."
   }
 }

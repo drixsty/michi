@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Auth Resolvers — Adapters Layer
 Thin resolvers delegating to Application Services.
@@ -5,8 +6,8 @@ Thin resolvers delegating to Application Services.
 import strawberry
 import uuid
 
-from exceptions import UnauthenticatedException, MichiException, ErrorCode
-from src.core.graphql.types import (
+from core.exceptions import UnauthenticatedException, MichiException, ErrorCode
+from core.graphql.types import (
     UserType, LoginInput, AuthPayload, RegisterInput, 
     GoogleLoginInput, ChangePasswordInput, UpdateProfileInput
 )

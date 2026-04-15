@@ -7,7 +7,7 @@ Séparent explicitement la persistance du domaine.
 
 from typing import TYPE_CHECKING
 
-from src.modules.auth.domain.entities import (
+from modules.auth.domain.entities import (
     InvitationEntity,
     InvitationStatus,
     MembershipEntity,
@@ -17,7 +17,7 @@ from src.modules.auth.domain.entities import (
     UserEntity,
     UserRole,
 )
-from src.modules.auth.domain.value_objects import Email, OrgSlug
+from modules.auth.domain.value_objects import Email, OrgSlug
 
 if TYPE_CHECKING:
     from .persistence.models import (
@@ -62,7 +62,7 @@ def org_to_entity(model: "Organization") -> OrganizationEntity:
 
 
 def membership_to_entity(model: "OrganizationMember") -> MembershipEntity:
-    from src.modules.auth.infrastructure.models import UserRole as ModelUserRole
+    from core.database.models import UserRole as ModelUserRole
     role_map = {
         ModelUserRole.ADMIN: UserRole.ADMIN,
         ModelUserRole.MANAGER: UserRole.MANAGER,
@@ -78,7 +78,7 @@ def membership_to_entity(model: "OrganizationMember") -> MembershipEntity:
 
 
 def invitation_to_entity(model: "Invitation") -> InvitationEntity:
-    from src.modules.auth.infrastructure.models import (
+    from modules.auth.infrastructure.models import (
         InvitationStatus as ModelStatus,
         UserRole as ModelUserRole,
     )

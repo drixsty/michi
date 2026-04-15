@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Domaine Auth — entités, value objects et ports (interfaces).
 """

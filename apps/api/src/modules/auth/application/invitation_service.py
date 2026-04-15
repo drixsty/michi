@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 InvitationService : Gestion du cycle de vie des invitations collaborateurs.
 """
@@ -10,7 +11,7 @@ import secrets
 from loguru import logger
 
 from .models import Invitation, InvitationStatus, OrganizationMember, UserRole, User
-from exceptions import MichiException, ErrorCode
+from core.exceptions import MichiException, ErrorCode
 
 
 class InvitationService:

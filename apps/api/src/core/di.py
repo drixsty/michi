@@ -7,36 +7,42 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Auth
-from src.modules.auth.application.auth_service import ApplicationAuthService
-from src.modules.auth.application.org_service import ApplicationOrgService
-from src.modules.auth.infrastructure.repositories import (
+from modules.auth.application.auth_service import ApplicationAuthService
+from modules.auth.application.org_service import ApplicationOrgService
+from modules.auth.infrastructure.repositories import (
     SQLAlchemyUserRepository,
     SQLAlchemyOrganizationRepository,
     SQLAlchemyMembershipRepository,
     SQLAlchemyInvitationRepository,
 )
-from src.modules.auth.infrastructure.security_adapters import (
+from modules.auth.infrastructure.security_adapters import (
     BcryptPasswordHasher,
     JwtTokenService,
 )
 
 # Inventory
-from src.modules.inventory.application.inventory_service import InventoryService
-from src.modules.inventory.application.omnichannel_service import OmnichannelService
-from src.modules.inventory.application.alert_service import AlertService
-from src.modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
-from src.modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
-from src.modules.inventory.infrastructure.repositories.sales_log_repository import SQLAlchemySalesLogRepository
-from src.modules.inventory.infrastructure.repositories.alert_repository import SQLAlchemyAlertRepository
-from src.modules.inventory.application.email_service import EmailService
+from modules.inventory.application.inventory_service import InventoryService
+from modules.inventory.application.omnichannel_service import OmnichannelService
+from modules.inventory.application.alert_service import AlertService
+from modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
+from modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
+from modules.inventory.infrastructure.repositories.sales_log_repository import SQLAlchemySalesLogRepository
+from modules.inventory.infrastructure.repositories.alert_repository import SQLAlchemyAlertRepository
+from modules.inventory.application.email_service import EmailService
 
 # Forecasting
-from src.modules.forecasting.application.forecasting_service import ForecastingService
-from src.modules.forecasting.infrastructure.repositories.cleaned_demand_repository import SQLAlchemyCleanedDemandRepository
-from src.modules.forecasting.infrastructure.repositories.prediction_repository import SQLAlchemyPredictionRepository
+from modules.forecasting.application.forecasting_service import ForecastingService
+from modules.forecasting.infrastructure.repositories.cleaned_demand_repository import SQLAlchemyCleanedDemandRepository
+# Decisions
+from modules.forecasting.infrastructure.repositories.prediction_repository import SQLAlchemyPredictionRepository
 
 # Decisions
-from src.modules.decisions.application.decisions_service import ApplicationDecisionsService
+from modules.decisions.application.decisions_service import ApplicationDecisionsService
+
+# Billing
+from modules.billing.application.service import ApplicationBillingService
+from modules.billing.infrastructure.stripe_provider import StripeBillingProvider
+from modules.billing.infrastructure.repositories import SQLAlchemyBillingRepository
 
 
 @dataclass
@@ -49,9 +55,10 @@ class ServiceContainer:
     alert_service: AlertService
     forecasting_service: ForecastingService
     decisions_service: ApplicationDecisionsService
+    billing_service: ApplicationBillingService
 
 
-def build_services(db: AsyncSession, billing_service: Optional[object] = None) -> ServiceContainer:
+def build_services(db: AsyncSession) -> ServiceContainer:
     """
     Factory qui construit tous les repositories et services application.
     """
@@ -71,6 +78,9 @@ def build_services(db: AsyncSession, billing_service: Optional[object] = None) -
     # Forecasting
     cleaned_demand_repo = SQLAlchemyCleanedDemandRepository(db)
     prediction_repo = SQLAlchemyPredictionRepository(db)
+    
+    # Billing
+    billing_repo = SQLAlchemyBillingRepository(db)
 
     # Note: Email service est un service d'infrastructure pur (sans DB en général, mais utilise Config)
     email_service = EmailService()
@@ -128,7 +138,15 @@ def build_services(db: AsyncSession, billing_service: Optional[object] = None) -
         user_repo=user_repo,
         store_repo=store_repo,
         product_repo=product_repo,
-        prediction_repo=prediction_repo
+        prediction_repo=prediction_repo,
+        supplier_repo=supplier_repo
+    )
+
+    # Billing
+    billing_provider = StripeBillingProvider()
+    billing_service = ApplicationBillingService(
+        provider=billing_provider,
+        repository=billing_repo
     )
 
     return ServiceContainer(
@@ -138,5 +156,6 @@ def build_services(db: AsyncSession, billing_service: Optional[object] = None) -
         omnichannel_service=omnichannel_service,
         alert_service=alert_service,
         forecasting_service=forecasting_service,
-        decisions_service=decisions_service
+        decisions_service=decisions_service,
+        billing_service=billing_service
     )

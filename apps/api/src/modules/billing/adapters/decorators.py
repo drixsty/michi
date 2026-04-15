@@ -1,6 +1,6 @@
 from functools import wraps
-from exceptions import SubscriptionRequiredException, UnauthenticatedException
-from src.modules.auth.infrastructure.models import Organization
+from core.exceptions import SubscriptionRequiredException, UnauthenticatedException
+from core.database.models import Organization
 from sqlalchemy import select
 import uuid
 from loguru import logger

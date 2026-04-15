@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Infrastructure Auth — repositories SQLAlchemy + adaptateurs sécurité.
 """

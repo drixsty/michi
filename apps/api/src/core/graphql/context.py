@@ -12,7 +12,7 @@ from typing import Optional
 
 
 from strawberry.fastapi import BaseContext
-from src.core.di import ServiceContainer
+from core.di import ServiceContainer
 
 @dataclass
 class GraphQLContext(BaseContext):

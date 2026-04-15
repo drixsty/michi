@@ -1,3 +1,4 @@
+from core.database.models import Organization, User, OrganizationMember
 """
 Inventory Resolvers — Adapters Layer
 Thin resolvers delegating to Application Services.
@@ -7,10 +8,10 @@ import strawberry
 from typing import List, Optional, Annotated
 import uuid
 
-from exceptions import UnauthenticatedException, MichiException, ErrorCode
-from src.modules.auth.adapters.decorators import require_permission
-from src.modules.auth.domain.constants import MichiPermission
-from src.core.graphql.types import (
+from core.exceptions import UnauthenticatedException, MichiException, ErrorCode
+from modules.auth.adapters.decorators import require_permission
+from modules.auth.domain.constants import MichiPermission
+from core.graphql.types import (
     ProductType, AlertType, SupplierType, StoreType,
     PurchaseOrderType, OmnichannelProductType,
     IngestionResult
@@ -18,9 +19,9 @@ from src.core.graphql.types import (
 
 # Helper functions for ProductType field resolvers
 async def resolve_product_channels(info, sku: str):
-    from src.modules.inventory.application.omnichannel_service import OmnichannelService
-    from src.modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
-    from src.modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
+    from modules.inventory.application.omnichannel_service import OmnichannelService
+    from modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
+    from modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
     
     product_repo = SQLAlchemyProductRepository(info.context.db)
     store_repo = SQLAlchemyStoreRepository(info.context.db)
@@ -30,7 +31,7 @@ async def resolve_product_channels(info, sku: str):
     if not org_id: return []
     
     # Delegate to Service
-    from src.core.graphql.types import ChannelBreakdownType
+    from core.graphql.types import ChannelBreakdownType
     channels = await service.get_channels_for_sku(sku, str(org_id))
     return [
         ChannelBreakdownType(
@@ -45,7 +46,7 @@ async def resolve_product_channels(info, sku: str):
     ]
 
 async def resolve_product_supplier(info, supplier_id: str):
-    from src.modules.inventory.infrastructure.repositories.supplier_repository import SQLAlchemySupplierRepository
+    from modules.inventory.infrastructure.repositories.supplier_repository import SQLAlchemySupplierRepository
     repo = SQLAlchemySupplierRepository(info.context.db)
     s = await repo.get_by_id(uuid.UUID(supplier_id))
     return SupplierType.from_db(s)
@@ -151,9 +152,9 @@ class InventoryMutation:
         service = info.context.services.inventory_service
         
         # Accès aux autres services via le contexte pour l'orchestrateur
-        from src.modules.ingestion.application.service import IngestionService
+        from modules.ingestion.application.service import IngestionService
         ingestion_service = IngestionService(info.context.db)
-        from src.modules.ingestion.connectors.csv import CSVConnector
+        from modules.ingestion.connectors.csv import CSVConnector
         ingestion_service.register_connector("csv", CSVConnector())
 
         mapping = {"sku": sku_col, "date": date_col, "units_sold": sales_col, "stock": stock_col, "title": title_col}

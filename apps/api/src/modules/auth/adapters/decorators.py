@@ -1,8 +1,8 @@
 from functools import wraps
 from typing import List, Union
-from exceptions import MichiException, UnauthenticatedException, ErrorCode
-from src.modules.auth.infrastructure.models import OrganizationMember, UserRole
-from src.modules.auth.domain.constants import MichiPermission, ROLE_PERMISSIONS
+from core.exceptions import MichiException, UnauthenticatedException, ErrorCode
+from core.database.models import OrganizationMember, UserRole
+from modules.auth.domain.constants import MichiPermission, ROLE_PERMISSIONS
 from sqlalchemy import select
 import uuid
 from loguru import logger
