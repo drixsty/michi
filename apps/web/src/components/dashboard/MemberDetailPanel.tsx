@@ -11,12 +11,7 @@ import {
   AlertCircle,
   Mail,
   Calendar,
-  Shield,
-  User,
-  Clock,
-  RefreshCw,
-  MoreVertical,
-  ChevronDown
+  RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -115,7 +110,7 @@ export function MemberDetailPanel({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [removeMember, { loading: removing }] = useMutation(REMOVE_MEMBER);
-  const [updateRole, { loading: updatingRole }] = useMutation(UPDATE_MEMBER_ROLE);
+  const [updateRole] = useMutation(UPDATE_MEMBER_ROLE);
   const [toggleStatus, { loading: togglingStatus }] = useMutation(TOGGLE_USER_STATUS);
   const [deleteInvitation, { loading: deletingInvite }] = useMutation(DELETE_INVITATION);
   const [updatePermissions, { loading: updatingPerms }] = useMutation(UPDATE_MEMBER_PERMISSIONS);

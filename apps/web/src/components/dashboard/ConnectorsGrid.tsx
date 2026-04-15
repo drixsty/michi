@@ -72,8 +72,6 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
   const [showAddSourcePanel, setShowAddSourcePanel] = React.useState(false);
   const [showSuccess, setShowSuccess] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null);
-  const [syncedPlatform, setSyncedPlatform] = React.useState<string>('');
-  
   const searchParams = useSearchParams();
   const router = useRouter();
   const status = searchParams.get('status');

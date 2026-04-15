@@ -10,8 +10,6 @@ import {
   AlertCircle, 
   Box, 
   Calendar,
-  ExternalLink,
-  ChevronRight,
   Settings,
   Save,
   Check,
@@ -28,25 +26,22 @@ import {
   Tooltip, 
   ResponsiveContainer,
   ComposedChart,
-  Line,
-  Legend
+  Line
 } from 'recharts';
 import { GET_PRODUCT_DETAIL } from '@/graphql/queries/getProductDetail';
 import { UPDATE_PRODUCT_SETTINGS } from '@/graphql/mutations/updateProduct';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { LoadingState } from '../ui/LoadingState';
-import { useStore } from '@/context/StoreContext';
-
 interface ProductQuickViewProps {
   productId: string | null;
   onClose: () => void;
 }
 
 // ── What-If Simulator Component (US 14.4) ───────────────────
-function WhatIfSimulator({ 
-  currentStock, runRate, leadTime, boostFactor, costPrice, salePrice 
-}: { 
+function WhatIfSimulator({
+  currentStock, runRate, leadTime, boostFactor, salePrice
+}: {
   currentStock: number; runRate: number; leadTime: number; boostFactor: number; costPrice: number; salePrice: number;
 }) {
   const [extraDelay, setExtraDelay] = React.useState(0);
@@ -182,7 +177,6 @@ function WhatIfSimulator({
 
 export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) {
   const router = useRouter();
-  const { user } = useStore();
   const { data, loading } = useQuery(GET_PRODUCT_DETAIL, {
     variables: {
       id: productId!

@@ -9,7 +9,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine
 } from 'recharts';
 import { CleanedDemand } from '@michi/types';
 import { format } from 'date-fns';

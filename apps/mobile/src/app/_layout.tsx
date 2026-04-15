@@ -8,6 +8,7 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { apolloClient } from '../graphql/client';
+import '../i18n';
 
 SplashScreen.preventAutoHideAsync();
 

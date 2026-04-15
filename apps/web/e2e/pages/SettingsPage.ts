@@ -8,7 +8,7 @@ export class SettingsPage {
     await expect(this.page.locator('text=Paramètres')).toBeVisible();
   }
 
-  async inviteMember(email: string, role: 'ADMIN' | 'VIEWER' | 'MANAGER' = 'VIEWER') {
+  async inviteMember(email: string, _role: 'ADMIN' | 'VIEWER' | 'MANAGER' = 'VIEWER') {
     await this.page.click('[data-testid="add-member-button"]');
     await this.page.fill('[data-testid="invite-email-input"]', email);
     // Select role if provided (assuming a select or radio buttons)

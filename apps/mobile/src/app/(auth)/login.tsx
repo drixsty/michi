@@ -2,8 +2,6 @@
  * Login Screen
  * Persona #3 UI/UX : design mobile-first, touch targets 44×44px.
  */
-'use client';
-
 import { useMutation } from '@apollo/client';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -18,10 +16,12 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { saveToken } from '../../graphql/client';
 import { LOGIN } from '../../graphql/mutations/login';
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -34,13 +34,13 @@ export default function LoginScreen() {
       }
     },
     onError: (err) => {
-      Alert.alert('Erreur', err.message || 'Email ou mot de passe incorrect.');
+      Alert.alert(t('login.errorTitle'), err.message || t('login.errorMessage'));
     },
   });
 
   const handleLogin = () => {
     if (!email || !password) {
-      Alert.alert('Champs requis', 'Veuillez saisir votre email et votre mot de passe.');
+      Alert.alert(t('login.requiredTitle'), t('login.requiredMessage'));
       return;
     }
     login({ variables: { input: { email, password } } });
@@ -56,12 +56,12 @@ export default function LoginScreen() {
         <View style={styles.header}>
           <Text style={styles.logo}>道</Text>
           <Text style={styles.brand}>Michi</Text>
-          <Text style={styles.tagline}>Prévision de stocks intelligente</Text>
+          <Text style={styles.tagline}>{t('login.tagline')}</Text>
         </View>
 
         {/* Form */}
         <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>{t('login.emailLabel')}</Text>
           <TextInput
             style={styles.input}
             value={email}
@@ -69,19 +69,19 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
-            placeholder="you@company.com"
+            placeholder={t('login.emailPlaceholder')}
             placeholderTextColor="#94A3B8"
             testID="email-input"
           />
 
-          <Text style={styles.label}>Mot de passe</Text>
+          <Text style={styles.label}>{t('login.passwordLabel')}</Text>
           <TextInput
             style={styles.input}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
             autoComplete="password"
-            placeholder="••••••••"
+            placeholder={t('login.passwordPlaceholder')}
             placeholderTextColor="#94A3B8"
             testID="password-input"
           />
@@ -99,7 +99,7 @@ export default function LoginScreen() {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Se connecter</Text>
+              <Text style={styles.buttonText}>{t('login.submitButton')}</Text>
             )}
           </Pressable>
         </View>

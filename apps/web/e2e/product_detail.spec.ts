@@ -33,7 +33,6 @@ test.describe('Product Detail & Inline Editing', () => {
     // 3. Navigate to Product Detail
     // We click the first SKU link in the table
     const firstProductSku = page.locator('tbody tr td:nth-child(2)').first();
-    const sku = await firstProductSku.innerText();
     await firstProductSku.click();
 
     // Verify QuickView first

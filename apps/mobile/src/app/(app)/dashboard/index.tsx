@@ -14,11 +14,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { clearToken } from '../../../graphql/client';
 import { GET_ME } from '../../../graphql/queries/getMe';
 import { GET_PRODUCTS } from '../../../graphql/queries/getProducts';
 
 export default function DashboardScreen() {
+  const { t } = useTranslation();
   const { data: meData, loading: meLoading } = useQuery(GET_ME);
   const {
     data: productsData,
@@ -29,7 +31,6 @@ export default function DashboardScreen() {
   const products = productsData?.products ?? [];
   const user = meData?.me;
 
-  // Compute KPIs from product list
   const totalProducts = products.length;
   const stockouts = products.filter((p) => (p.prediction?.daysOfStock ?? Infinity) <= 0).length;
   const urgent = products.filter((p) => {
@@ -62,24 +63,24 @@ export default function DashboardScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>
-              Bonjour{user?.firstName ? `, ${user.firstName}` : ''} 👋
+              {t('dashboard.greeting')}{user?.firstName ? `, ${user.firstName}` : ''} 👋
             </Text>
-            <Text style={styles.subGreeting}>Votre tableau de bord</Text>
+            <Text style={styles.subGreeting}>{t('dashboard.subtitle')}</Text>
           </View>
           <Pressable onPress={handleLogout} style={styles.logoutBtn}>
-            <Text style={styles.logoutText}>Déco.</Text>
+            <Text style={styles.logoutText}>{t('dashboard.logout')}</Text>
           </Pressable>
         </View>
 
         {/* KPI Cards */}
         <View style={styles.kpiRow}>
-          <KpiCard label="Produits" value={totalProducts} color="#7C3AED" />
-          <KpiCard label="Ruptures" value={stockouts} color="#EF4444" />
-          <KpiCard label="Urgents (≤14j)" value={urgent} color="#F59E0B" />
+          <KpiCard label={t('dashboard.kpi.products')} value={totalProducts} color="#7C3AED" />
+          <KpiCard label={t('dashboard.kpi.stockouts')} value={stockouts} color="#EF4444" />
+          <KpiCard label={t('dashboard.kpi.urgent')} value={urgent} color="#F59E0B" />
         </View>
 
         {/* Product List (top 10) */}
-        <Text style={styles.sectionTitle}>Produits récents</Text>
+        <Text style={styles.sectionTitle}>{t('dashboard.recentProducts')}</Text>
         {products.slice(0, 10).map((product) => {
           const days = product.prediction?.daysOfStock;
           const isRed = days !== null && days !== undefined && days <= 0;
@@ -100,7 +101,7 @@ export default function DashboardScreen() {
                 {days !== null && days !== undefined && (
                   <View style={[styles.badge, isRed ? styles.badgeRed : isAmber ? styles.badgeAmber : styles.badgeGreen]}>
                     <Text style={styles.badgeText}>
-                      {isRed ? 'Rupture' : `${Math.round(days)}j`}
+                      {isRed ? t('dashboard.stockout') : `${Math.round(days)}j`}
                     </Text>
                   </View>
                 )}
@@ -111,8 +112,8 @@ export default function DashboardScreen() {
 
         {products.length === 0 && (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>Aucun produit disponible.</Text>
-            <Text style={styles.emptySubText}>Synchronisez vos sources depuis l'interface web.</Text>
+            <Text style={styles.emptyText}>{t('dashboard.empty')}</Text>
+            <Text style={styles.emptySubText}>{t('dashboard.emptySub')}</Text>
           </View>
         )}
       </ScrollView>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronDown, Building2, Check, ArrowLeftRight } from 'lucide-react';
+import { ChevronDown, Check, ArrowLeftRight } from 'lucide-react';
 import { useStore } from '@/context/StoreContext';
 import { cn } from '@/lib/utils';
 

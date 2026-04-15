@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, BarChart2, CheckCircle2, ArrowRight, Layers, Zap, ShoppingBag, Globe, FileSpreadsheet } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Zap, ShoppingBag, Globe, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface OnboardingWizardProps {

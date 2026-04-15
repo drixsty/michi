@@ -1,0 +1,43 @@
+{
+  "login": {
+    "tagline": "Prévision de stocks intelligente",
+    "emailLabel": "Email",
+    "emailPlaceholder": "vous@entreprise.com",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "••••••••",
+    "submitButton": "Se connecter",
+    "errorTitle": "Erreur",
+    "errorMessage": "Email ou mot de passe incorrect.",
+    "requiredTitle": "Champs requis",
+    "requiredMessage": "Veuillez saisir votre email et votre mot de passe."
+  },
+  "dashboard": {
+    "greeting": "Bonjour",
+    "subtitle": "Votre tableau de bord",
+    "logout": "Déco.",
+    "kpi": {
+      "products": "Produits",
+      "stockouts": "Ruptures",
+      "urgent": "Urgents (≤14j)"
+    },
+    "recentProducts": "Produits récents",
+    "stockout": "Rupture",
+    "empty": "Aucun produit disponible.",
+    "emptySub": "Synchronisez vos sources depuis l'interface web."
+  },
+  "inventory": {
+    "title": "Inventaire",
+    "searchPlaceholder": "Rechercher par SKU ou titre…",
+    "stockout": "Rupture",
+    "empty": "Aucun produit trouvé"
+  },
+  "profile": {
+    "title": "Profil",
+    "email": "Email",
+    "organizations": "Organisations",
+    "organisation": "organisation",
+    "organisations": "organisations",
+    "createdAt": "Compte créé le",
+    "logout": "Se déconnecter"
+  }
+}

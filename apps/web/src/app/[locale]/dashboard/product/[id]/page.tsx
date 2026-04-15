@@ -6,15 +6,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { GET_PRODUCT_DETAIL } from '@/graphql/queries/getProductDetail';
 import { UPDATE_PRODUCT_SETTINGS } from '@/graphql/mutations/updateProduct';
 import { 
-  ChevronLeft, 
-  Package, 
-  TrendingUp, 
+  ChevronLeft,
+  TrendingUp,
   AlertCircle, 
   Zap,
   Calendar,
   Box,
-  Settings,
-  ExternalLink
+  Settings
 } from 'lucide-react';
 import SalesChart from '@/components/dashboard/SalesChart';
 import { format } from 'date-fns';
@@ -114,7 +112,6 @@ export default function ProductDetailPage() {
   const prediction = product.prediction;
 
   // Simulate impact
-  const adjustedLeadTime = product.leadTime + leadTimeDelta;
   const impactOnStockout = leadTimeDelta > 0 ? "Risque accru" : "Sécurité améliorée";
 
   return (

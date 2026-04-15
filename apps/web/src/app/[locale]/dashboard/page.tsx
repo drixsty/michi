@@ -11,12 +11,12 @@ import { INGEST_CSV_DATA } from '@/graphql/mutations/ingestCSV';
 import { AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { gql } from '@apollo/client';
+import { useTranslations } from 'next-intl';
 
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
 import OnboardingWizard from '@/components/dashboard/OnboardingWizard';
 
-// New Modular Views
 import { OverviewView } from '@/components/dashboard/views/OverviewView';
 import { InventoryView } from '@/components/dashboard/views/InventoryView';
 import { SourcesView } from '@/components/dashboard/views/SourcesView';
@@ -34,10 +34,13 @@ const DELETE_ALERT = gql`
 `;
 
 function DashboardContent() {
+  const t = useTranslations('dashboard');
+  const tExport = useTranslations('dashboard.export');
+  const tToast = useTranslations('dashboard.toast');
   const [isMounted, setIsMounted] = React.useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -46,7 +49,6 @@ function DashboardContent() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
-  // Sync active view with URL 'tab' param
   const activeTab = searchParams.get('tab') || 'overview';
   const searchQuery = searchParams.get('q') || '';
 
@@ -57,10 +59,8 @@ function DashboardContent() {
 
   const { currentOrganization } = useStore();
 
-  // -- Queries --
   const { data: meData, loading: meLoading, error: meError } = useQuery(GET_ME);
-  
-  // Wait for meData to be available before fetching other protected resources
+
   const isAuthReady = !meLoading && !!meData;
 
   const { data: omnichannelData, loading: productsLoading, refetch: refetchProducts } = useQuery(GET_OMNICHANNEL_INVENTORY, {
@@ -69,12 +69,11 @@ function DashboardContent() {
   const { data: statsData, refetch: refetchStats } = useQuery(GET_DASHBOARD_STATS, {
     skip: !currentOrganization || !isAuthReady
   });
-  const { data: alertsData, refetch: refetchAlerts } = useQuery(GET_UNREAD_ALERTS, { 
+  const { data: alertsData, refetch: refetchAlerts } = useQuery(GET_UNREAD_ALERTS, {
     skip: !currentOrganization || !isAuthReady,
-    pollInterval: 30000 
+    pollInterval: 30000
   });
 
-  // -- Mutations --
   const [triggerSync, { loading: syncing }] = useMutation(TRIGGER_MOCK_DATA_SYNC, {
     onCompleted: (data) => {
       setToast({ message: data.triggerOmnichannelSync.message, type: 'success' });
@@ -91,7 +90,7 @@ function DashboardContent() {
 
   const [ingestCSV] = useMutation(INGEST_CSV_DATA, {
     onCompleted: () => {
-      setToast({ message: 'Import réussi', type: 'success' });
+      setToast({ message: tToast('importSuccess'), type: 'success' });
       refetchProducts();
       refetchStats();
       setTimeout(() => setToast(null), 5000);
@@ -123,7 +122,7 @@ function DashboardContent() {
   const handleExport = () => {
     try {
       const products = (omnichannelData?.omnichannelInventory || []) as OmnichannelProduct[];
-      const headers = ['Produit', 'SKU', 'Stock Total', 'Commande Suggérée'];
+      const headers = [tExport('product'), tExport('sku'), tExport('stock'), tExport('reorder')];
       const rows = products.map(p => [p.title, p.sku, p.totalStock, Math.round(p.totalReorderQuantity || 0)]);
       const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -134,21 +133,21 @@ function DashboardContent() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setToast({ message: 'Export réussi', type: 'success' });
+      setToast({ message: tToast('exportSuccess'), type: 'success' });
       setTimeout(() => setToast(null), 5000);
     } catch (err) {
-      setToast({ message: "Erreur export", type: 'error' });
+      setToast({ message: tToast('exportError'), type: 'error' });
     }
   };
 
   const kpis = useMemo(() => {
     if (statsData?.dashboardKpis) {
       const s = statsData.dashboardKpis;
-      return { 
-        total: s.totalProducts || 0, 
-        urgent: s.actualStockouts || 0, 
-        warning: s.urgentAlerts || 0, 
-        healthy: (s.totalProducts || 0) - (s.urgentAlerts || 0) - (s.actualStockouts || 0) 
+      return {
+        total: s.totalProducts || 0,
+        urgent: s.actualStockouts || 0,
+        warning: s.urgentAlerts || 0,
+        healthy: (s.totalProducts || 0) - (s.urgentAlerts || 0) - (s.actualStockouts || 0)
       };
     }
     return { total: 0, urgent: 0, warning: 0, healthy: 0 };
@@ -171,26 +170,26 @@ function DashboardContent() {
   if (!isMounted) return null;
 
   const tabConfigs: Record<string, { title: string; subtitle: string }> = {
-    overview: { 
-      title: "Tableau de bord", 
-      subtitle: "Pilotez votre inventaire avec précision" 
+    overview: {
+      title: t('tabs.overview.title'),
+      subtitle: t('tabs.overview.subtitle'),
     },
-    inventory: { 
-      title: "Inventaire", 
-      subtitle: "Gérez vos catalogues produits et niveaux de stock" 
+    inventory: {
+      title: t('tabs.inventory.title'),
+      subtitle: t('tabs.inventory.subtitle'),
     },
-    sources: { 
-      title: "Navigation des sources", 
-      subtitle: "Gérez vos connexions de données et flux api" 
+    sources: {
+      title: t('tabs.sources.title'),
+      subtitle: t('tabs.sources.subtitle'),
     },
     decisions: {
-      title: "Centre de Décision",
-      subtitle: "Pilotez l'impact financier de votre inventaire en temps réel"
+      title: t('tabs.decisions.title'),
+      subtitle: t('tabs.decisions.subtitle'),
     },
     organization: {
-      title: "Mon Organisation",
-      subtitle: "Gérez vos collaborateurs et invitations d'accès"
-    }
+      title: t('tabs.organization.title'),
+      subtitle: t('tabs.organization.subtitle'),
+    },
   };
 
   const { title, subtitle } = tabConfigs[activeTab] || tabConfigs.overview;
@@ -199,21 +198,21 @@ function DashboardContent() {
     <div className="space-y-6">
       <AnimatePresence>
         {showOnboarding && (
-          <OnboardingWizard 
+          <OnboardingWizard
             userName={meData?.me?.firstName ?? undefined}
-            onSync={() => triggerSync() as any} 
-            onComplete={() => setShowOnboarding(false)} 
+            onSync={() => triggerSync() as any}
+            onComplete={() => setShowOnboarding(false)}
           />
         )}
       </AnimatePresence>
-  
+
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-md shadow-lg text-sm bg-primary text-white border border-white/20 animate-in slide-in-from-right-2`}>
+        <div className="fixed top-4 right-4 z-50 px-4 py-2 rounded-md shadow-lg text-sm bg-primary text-white border border-white/20 animate-in slide-in-from-right-2">
           {toast.message}
         </div>
       )}
-  
-      <DashboardHeader 
+
+      <DashboardHeader
         title={title}
         subtitle={subtitle}
         syncing={syncing}
@@ -224,19 +223,19 @@ function DashboardContent() {
 
       <div className="mt-2">
         {activeTab === 'overview' && (
-           <OverviewView 
-              stats={kpis}
-              alerts={alertsData?.unreadAlerts || []}
-              onDeleteAlert={(id) => deleteAlert({ variables: { id } })}
-              omnichannelInventory={(omnichannelData?.omnichannelInventory || []) as OmnichannelProduct[]}
-              onProductClick={(id) => setSelectedProductId(id)}
-              onOpenInventory={() => router.push('/dashboard?tab=inventory')}
-              onOpenNotifications={() => window.dispatchEvent(new CustomEvent('michi:open-notifications'))}
-           />
+          <OverviewView
+            stats={kpis}
+            alerts={alertsData?.unreadAlerts || []}
+            onDeleteAlert={(id) => deleteAlert({ variables: { id } })}
+            omnichannelInventory={(omnichannelData?.omnichannelInventory || []) as OmnichannelProduct[]}
+            onProductClick={(id) => setSelectedProductId(id)}
+            onOpenInventory={() => router.push('/dashboard?tab=inventory')}
+            onOpenNotifications={() => window.dispatchEvent(new CustomEvent('michi:open-notifications'))}
+          />
         )}
 
         {activeTab === 'inventory' && (
-          <InventoryView 
+          <InventoryView
             loading={productsLoading}
             data={(omnichannelData?.omnichannelInventory || []) as OmnichannelProduct[]}
             searchQuery={searchQuery}
@@ -245,7 +244,7 @@ function DashboardContent() {
         )}
 
         {activeTab === 'sources' && (
-          <SourcesView 
+          <SourcesView
             onImport={handleCSVUpload}
             isAdmin={isAdmin}
           />
@@ -255,7 +254,7 @@ function DashboardContent() {
         {activeTab === 'organization' && <OrganizationView />}
       </div>
 
-      <ProductQuickView 
+      <ProductQuickView
         productId={selectedProductId}
         onClose={() => setSelectedProductId(null)}
       />

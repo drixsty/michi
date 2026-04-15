@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertTriangle, Calendar, ShoppingCart, Check, Loader2 } from 'lucide-react';
+import { X, AlertTriangle, ShoppingCart, Check, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useMutation, gql } from '@apollo/client';
 import { cn } from '@/lib/utils';

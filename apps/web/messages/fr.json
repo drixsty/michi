@@ -12,7 +12,21 @@
     "search": "Rechercher",
     "filter": "Filtrer",
     "export": "Exporter",
-    "or": "Ou"
+    "or": "Ou",
+    "units": "Unités",
+    "open": "Ouvrir",
+    "emptyTitle": "Données vides",
+    "syncSuccess": "Synchronisation réussie",
+    "syncError": "Erreur de synchronisation"
+  },
+  "brand": {
+    "tagline": "La précision au cœur de votre croissance.",
+    "description": "Automatisez vos prévisions de stocks et réduisez vos ruptures de 40% grâce à notre moteur IA omnicanal.",
+    "version": "Michi 道 UI 2.0",
+    "stats": {
+      "accuracy": "Fiabilité IA",
+      "stockoutReduction": "Ruptures en moins"
+    }
   },
   "auth": {
     "login": {
@@ -33,23 +47,108 @@
       "errorGoogleAuth": "Erreur Google Auth"
     },
     "register": {
-      "title": "Créer un compte",
+      "title": "Créer votre compte",
       "subtitle": "Commencez à optimiser vos stocks dès aujourd'hui.",
+      "freeTrial": "Essai gratuit de 14 jours.",
       "firstNameLabel": "Prénom",
+      "firstNamePlaceholder": "Jean",
       "lastNameLabel": "Nom",
-      "emailLabel": "Adresse email",
+      "lastNamePlaceholder": "Dupont",
+      "emailLabel": "Email professionnel",
+      "emailPlaceholder": "email@entreprise.com",
       "passwordLabel": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "orWithEmail": "Ou avec votre email",
       "submitButton": "Créer mon compte",
       "alreadyAccount": "Déjà un compte ?",
       "loginLink": "Se connecter",
+      "termsLink": "conditions",
+      "privacyLink": "confidentialité",
+      "termsText": "En continuant, vous acceptez nos {termsLink} et notre {privacyLink}.",
       "errorExists": "Un compte avec cet email existe déjà.",
-      "errorGeneric": "Erreur lors de la création du compte."
+      "errorGeneric": "Erreur lors de la création du compte.",
+      "errorRegistration": "Erreur lors de l'inscription.",
+      "errorGoogleFailed": "Échec de l'authentification Google.",
+      "joinThePath": "Rejoignez le chemin",
+      "heroTitle": "Prenez le contrôle de votre inventaire.",
+      "heroSubtitle": "Rejoignez des centaines de marchands qui optimisent leur supply chain avec Michi 道.",
+      "valueProps": {
+        "ai": "Prévisions IA Ultra-Précises",
+        "multiStore": "Gestion Multi-Boutiques Centralisée",
+        "alerts": "Alertes Rupture en Temps Réel"
+      }
     },
     "logout": "Déconnexion"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "overview": "Aperçu",
+    "inventory": "Inventaire",
+    "sources": "Sources",
+    "decisions": "Décisions",
+    "forecast": "Prévisions",
+    "connectors": "Connecteurs",
+    "settings": "Paramètres",
+    "profile": "Profil",
+    "logout": "Déconnexion",
+    "searchPlaceholder": "Rechercher un produit, une commande...",
+    "myProfile": "Mon profil",
+    "myOrg": "Mon organisation"
   },
   "onboarding": {
     "title": "Bienvenue sur Michi 道",
     "subtitle": "Configurez votre espace en quelques étapes.",
+    "loading": "Configuration de votre espace Michi...",
+    "initTitle": "Initialisez votre espace.",
+    "initSubtitle": "Connectez vos sources de données et laissez notre IA optimiser vos stocks.",
+    "steps": {
+      "identity": { "label": "Identité", "description": "Nom de l'espace" },
+      "plan": { "label": "Forfait", "description": "Capacité de calcul" }
+    },
+    "orgName": {
+      "badge": "Nom de l'organisation",
+      "title": "Quel est le nom de votre boutique ?",
+      "placeholder": "ex: Bloom Industries",
+      "validation": "Au moins 3 caractères requis.",
+      "continueButton": "Continuer"
+    },
+    "planSelection": {
+      "badge": "Sélection du plan",
+      "title": "Choisissez votre forfait.",
+      "recommended": "Recommandé",
+      "perMonth": "/ mois",
+      "quote": "Sur devis",
+      "backButton": "Retour",
+      "activateButton": "Activer l'espace",
+      "stripeButton": "Finaliser sur Stripe"
+    },
+    "plans": {
+      "basic": {
+        "name": "Basic",
+        "price": "0€",
+        "description": "Parfait pour débuter et valider vos premiers pas.",
+        "features": ["100 SKUs maximum", "1 Boutique Shopify", "Analyses basiques"]
+      },
+      "pro": {
+        "name": "Pro",
+        "price": "49€",
+        "description": "L'expérience complète Michi pour les marchands en croissance.",
+        "features": ["Produits illimités", "Prévisions IA avancées", "Multi-Canaux (Amazon/Woo)", "Alertes temps réel"]
+      },
+      "enterprise": {
+        "name": "Enterprise",
+        "price": "Sur devis",
+        "description": "Sur mesure pour les grands comptes et marques établies.",
+        "features": ["Multi-Boutiques illimitées", "Support Dédié 24/7", "SLA Garanti", "Accès API"]
+      }
+    },
+    "footer": {
+      "secure": "Stripe secure",
+      "version": "Michi 道 v2.5"
+    },
+    "errors": {
+      "payment": "Erreur de paiement. Veuillez réessayer."
+    },
     "step1": {
       "title": "Votre organisation",
       "orgNameLabel": "Nom de l'organisation",
@@ -86,26 +185,81 @@
       "recentActivity": "Activité récente"
     },
     "empty": "Aucune donnée disponible",
-    "refreshButton": "Actualiser"
+    "refreshButton": "Actualiser",
+    "tabs": {
+      "overview": { "title": "Tableau de bord", "subtitle": "Pilotez votre inventaire avec précision" },
+      "inventory": { "title": "Inventaire", "subtitle": "Gérez vos catalogues produits et niveaux de stock" },
+      "sources": { "title": "Navigation des sources", "subtitle": "Gérez vos connexions de données et flux API" },
+      "decisions": { "title": "Centre de Décision", "subtitle": "Pilotez l'impact financier de votre inventaire en temps réel" },
+      "organization": { "title": "Mon Organisation", "subtitle": "Gérez vos collaborateurs et invitations d'accès" }
+    },
+    "header": {
+      "export": "Exporter",
+      "syncing": "Synchronisation...",
+      "sync": "Synchroniser"
+    },
+    "export": {
+      "product": "Produit",
+      "sku": "SKU",
+      "stock": "Stock Total",
+      "reorder": "Commande Suggérée"
+    },
+    "toast": {
+      "importSuccess": "Import réussi",
+      "exportSuccess": "Export réussi",
+      "exportError": "Erreur export"
+    }
+  },
+  "stats": {
+    "totalProducts": "Total produits",
+    "totalProductsSub": "Inventaire complet",
+    "criticalStockouts": "Ruptures critiques",
+    "criticalStockoutsSub": "Rupture immédiate",
+    "toWatch": "À surveiller",
+    "toWatchSub": "Stock < 20u.",
+    "healthy": "Sains",
+    "healthySub": "Stock optimisé",
+    "units": "Unités"
+  },
+  "overview": {
+    "recentAlerts": "Alertes récentes",
+    "emptyTitle": "Données vides",
+    "noAlerts": "Aucune alerte active pour le moment.",
+    "seeAllAlerts": "Voir toutes les alertes",
+    "optimizedStock": "Stock optimisé",
+    "noProducts": "Aucun produit synchronisé.",
+    "units": "Unités",
+    "open": "Ouvrir",
+    "manageInventory": "Gérer l'inventaire"
   },
   "inventory": {
     "title": "Inventaire",
     "searchPlaceholder": "Rechercher un produit…",
+    "loadingCatalog": "Chargement du catalogue...",
     "table": {
-      "product": "Produit",
+      "product": "Produit unifié",
       "sku": "SKU",
       "stock": "Stock",
       "status": "Statut",
       "lastUpdate": "Dernière MAJ",
-      "actions": "Actions"
+      "actions": "Actions",
+      "sources": "Sources",
+      "stockout": "Rupture prévue",
+      "reorder": "À commander",
+      "catalogTitle": "Catalogue Unifié",
+      "productsShown": "produits affichés",
+      "all": "Tous",
+      "groupedActions": "Actions groupées"
     },
     "status": {
       "critical": "Critique",
       "warning": "Tendu",
       "healthy": "Sain",
-      "neutral": "Neutre"
+      "neutral": "Neutre",
+      "stockout": "Rupture"
     },
-    "empty": "Aucun produit trouvé"
+    "empty": "Aucun produit trouvé",
+    "emptySubtitle": "Aucun produit ne correspond à votre sélection."
   },
   "forecast": {
     "title": "Prévisions",
@@ -120,30 +274,50 @@
   },
   "profile": {
     "title": "Mon profil",
+    "loading": "Chargement du profil...",
+    "settings": "Paramètres du profil",
+    "settingsSubtitle": "Gérez vos informations personnelles et votre sécurité.",
+    "logout": "Déconnexion",
     "personalInfo": "Informations personnelles",
     "firstNameLabel": "Prénom",
+    "firstNamePlaceholder": "Votre prénom",
     "lastNameLabel": "Nom",
-    "emailLabel": "Email",
+    "lastNamePlaceholder": "Votre nom",
+    "emailLabel": "Adresse email",
     "languageLabel": "Langue",
+    "save": "Sauvegarder",
     "saveButton": "Enregistrer les modifications",
+    "updateSuccess": "Profil mis à jour avec succès",
+    "updateError": "Erreur lors de la mise à jour",
     "dangerZone": "Zone dangereuse",
-    "deleteAccount": "Supprimer mon compte"
-  },
-  "navigation": {
-    "dashboard": "Dashboard",
-    "inventory": "Inventaire",
-    "forecast": "Prévisions",
-    "connectors": "Connecteurs",
-    "settings": "Paramètres",
-    "profile": "Profil",
-    "logout": "Déconnexion"
-  },
-  "brand": {
-    "tagline": "La précision au cœur de votre croissance.",
-    "description": "Automatisez vos prévisions de stocks et réduisez vos ruptures de 40% grâce à notre moteur IA omnicanal.",
-    "stats": {
-      "accuracy": "Fiabilité IA",
-      "stockoutReduction": "Ruptures en moins"
+    "deleteAccount": "Supprimer mon compte",
+    "tabs": {
+      "profile": "Profil",
+      "security": "Sécurité",
+      "notifications": "Notifications"
+    },
+    "security": {
+      "title": "Sécurité du compte",
+      "currentPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "hidePasswords": "Masquer",
+      "showPasswords": "Afficher",
+      "updateButton": "Mettre à jour le mot de passe",
+      "passwordSuccess": "Mot de passe modifié avec succès",
+      "passwordError": "Erreur lors du changement",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "incorrectPassword": "Mot de passe actuel incorrect"
+    },
+    "notifications": {
+      "title": "Centre de notifications",
+      "emailAlerts": "Alertes par email",
+      "emailAlertsDesc": "Recevoir un condensé quotidien de vos alertes critiques.",
+      "minSeverity": "Sévérité minimale",
+      "minSeverityDesc": "Niveau d'urgence requis pour déclencher un email.",
+      "standard": "Standard",
+      "urgent": "Urgent",
+      "critical": "Critique"
     }
   }
 }

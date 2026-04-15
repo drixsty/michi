@@ -32,11 +32,6 @@ const DELETE_ALERT = gql`
   }
 `;
 
-const MARK_AS_READ = gql`
-  mutation MarkAlertAsRead($id: ID!) {
-    markAlertAsRead(alertId: $id)
-  }
-`;
 
 interface NotificationPanelProps {
   isOpen: boolean;
@@ -55,10 +50,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   const { data, loading, refetch } = useQuery(GET_UNREAD_ALERTS, {
     skip: !isOpen || !user || !currentOrganization,
     pollInterval: 30000,
-  });
-
-  const [markAsRead] = useMutation(MARK_AS_READ, {
-    onCompleted: () => refetch(),
   });
 
   const [deleteAlert] = useMutation(DELETE_ALERT, {

@@ -12,9 +12,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { GET_PRODUCTS } from '../../../graphql/queries/getProducts';
 
 export default function InventoryScreen() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const { data, loading, refetch } = useQuery(GET_PRODUCTS, {
     fetchPolicy: 'cache-and-network',
@@ -28,15 +30,15 @@ export default function InventoryScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Inventaire</Text>
-        <Text style={styles.count}>{products.length} produit{products.length !== 1 ? 's' : ''}</Text>
+        <Text style={styles.title}>{t('inventory.title')}</Text>
+        <Text style={styles.count}>{products.length} {products.length !== 1 ? t('inventory.title').toLowerCase() : t('inventory.title').toLowerCase()}</Text>
       </View>
 
       <TextInput
         style={styles.searchInput}
         value={search}
         onChangeText={setSearch}
-        placeholder="Rechercher par SKU ou titre…"
+        placeholder={t('inventory.searchPlaceholder')}
         placeholderTextColor="#94A3B8"
         clearButtonMode="while-editing"
       />
@@ -65,7 +67,7 @@ export default function InventoryScreen() {
                   {days !== null && days !== undefined && (
                     <View style={[styles.pill, isRed ? styles.pillRed : isAmber ? styles.pillAmber : styles.pillGreen]}>
                       <Text style={styles.pillText}>
-                        {isRed ? 'Rupture' : `${Math.round(days)}j`}
+                        {isRed ? t('inventory.stockout') : `${Math.round(days)}j`}
                       </Text>
                     </View>
                   )}
@@ -75,7 +77,7 @@ export default function InventoryScreen() {
           }}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>Aucun produit trouvé</Text>
+              <Text style={styles.emptyText}>{t('inventory.empty')}</Text>
             </View>
           }
         />

@@ -9,15 +9,11 @@ import {
   Search, 
   MoreVertical, 
   Shield,
-  Clock,
   Mail,
-  XCircle,
   Save,
   CheckCircle2,
   Settings2,
-  Plus,
   ChevronRight,
-  UserCircle,
   CreditCard
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -110,7 +106,7 @@ export function OrganizationView() {
   const [selectedInvitation, setSelectedInvitation] = useState<any>(null);
   const [showDetailPanel, setShowDetailPanel] = useState(false);
 
-  const { data, loading, error, refetch } = useQuery(GET_ORG_DATA, {
+  const { data, loading, refetch } = useQuery(GET_ORG_DATA, {
     errorPolicy: 'all',
     fetchPolicy: 'cache-and-network',
     onCompleted: (data) => {
@@ -134,7 +130,7 @@ export function OrganizationView() {
     }
   });
 
-  const [createPortal, { loading: creatingPortal }] = useMutation(CREATE_PORTAL_SESSION);
+  const [createPortal] = useMutation(CREATE_PORTAL_SESSION);
 
 
   const handleUpdateSettings = async () => {
@@ -156,7 +152,6 @@ export function OrganizationView() {
   
   const currentUserRole = members.find((m: any) => m.user?.id === currentUserId)?.role?.toLowerCase() || 'viewer';
   const isAdmin = currentUserRole === 'admin';
-  const isManager = currentUserRole === 'manager' || isAdmin;
 
   const filteredMembers = members.filter((m: any) => {
     const email = m.user?.email || '';

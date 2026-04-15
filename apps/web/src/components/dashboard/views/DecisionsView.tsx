@@ -6,11 +6,10 @@ import {
   Wallet, 
   Euro, 
   AlertTriangle, 
-  Clock, 
+  Clock,
   ArrowRight,
   LayoutDashboard,
-  Calendar,
-  Activity
+  Calendar
 } from 'lucide-react';
 import { 
   Bar, 
@@ -33,8 +32,6 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
 import { RisksReportPanel } from '@/components/dashboard/RisksReportPanel';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { useStore } from '@/context/StoreContext';
-
 const GET_FINANCIAL_OVERVIEW = gql`
   query GetFinancialOverview($storeId: ID, $channel: String) {
     financialOverview(storeId: $storeId, channel: $channel) {
@@ -166,7 +163,7 @@ function ABCParetoChart({ risks }: { risks: any[] }) {
 }
 
 // ── Capital by Channel Donut ────────────────────────────────
-function ChannelDonut({ kpis, breakdown }: { kpis: any, breakdown: any[] }) {
+function ChannelDonut({ breakdown }: { kpis: any, breakdown: any[] }) {
   const channelData = useMemo(() => {
     if (!breakdown || breakdown.length === 0) return [];
     return breakdown.map(item => {
@@ -226,7 +223,7 @@ export function DecisionsView() {
     setIsMounted(true);
   }, []);
 
-  const { data: data, loading, error, refetch } = useQuery(GET_FINANCIAL_OVERVIEW, { 
+  const { data: data, loading, error } = useQuery(GET_FINANCIAL_OVERVIEW, { 
     variables: { 
       channel: channel === 'all' ? null : channel 
     },

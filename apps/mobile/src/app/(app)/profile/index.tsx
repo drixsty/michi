@@ -12,10 +12,12 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { clearToken } from '../../../graphql/client';
 import { GET_ME } from '../../../graphql/queries/getMe';
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const { data, loading } = useQuery(GET_ME);
   const user = data?.me;
 
@@ -32,10 +34,13 @@ export default function ProfileScreen() {
     );
   }
 
+  const orgCount = user?.organizations?.length ?? 0;
+  const orgLabel = orgCount !== 1 ? t('profile.organisations') : t('profile.organisation');
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Profil</Text>
+        <Text style={styles.title}>{t('profile.title')}</Text>
 
         {/* Avatar */}
         <View style={styles.avatar}>
@@ -53,13 +58,13 @@ export default function ProfileScreen() {
 
         {/* Info rows */}
         <View style={styles.section}>
-          <InfoRow label="Email" value={user?.email ?? '—'} />
+          <InfoRow label={t('profile.email')} value={user?.email ?? '—'} />
           <InfoRow
-            label="Organisations"
-            value={`${user?.organizations?.length ?? 0} organisation${(user?.organizations?.length ?? 0) !== 1 ? 's' : ''}`}
+            label={t('profile.organizations')}
+            value={`${orgCount} ${orgLabel}`}
           />
           <InfoRow
-            label="Compte créé le"
+            label={t('profile.createdAt')}
             value={
               user?.createdAt
                 ? new Date(user.createdAt).toLocaleDateString('fr-FR')
@@ -73,7 +78,7 @@ export default function ProfileScreen() {
           onPress={handleLogout}
           style={({ pressed }) => [styles.logoutBtn, pressed && styles.logoutBtnPressed]}
         >
-          <Text style={styles.logoutText}>Se déconnecter</Text>
+          <Text style={styles.logoutText}>{t('profile.logout')}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

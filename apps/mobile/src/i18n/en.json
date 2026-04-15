@@ -1,0 +1,43 @@
+{
+  "login": {
+    "tagline": "Intelligent inventory forecasting",
+    "emailLabel": "Email",
+    "emailPlaceholder": "you@company.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "••••••••",
+    "submitButton": "Sign in",
+    "errorTitle": "Error",
+    "errorMessage": "Invalid email or password.",
+    "requiredTitle": "Required fields",
+    "requiredMessage": "Please enter your email and password."
+  },
+  "dashboard": {
+    "greeting": "Hello",
+    "subtitle": "Your dashboard",
+    "logout": "Out.",
+    "kpi": {
+      "products": "Products",
+      "stockouts": "Stockouts",
+      "urgent": "Urgent (≤14d)"
+    },
+    "recentProducts": "Recent products",
+    "stockout": "Stockout",
+    "empty": "No products available.",
+    "emptySub": "Sync your sources from the web interface."
+  },
+  "inventory": {
+    "title": "Inventory",
+    "searchPlaceholder": "Search by SKU or title…",
+    "stockout": "Stockout",
+    "empty": "No products found"
+  },
+  "profile": {
+    "title": "Profile",
+    "email": "Email",
+    "organizations": "Organizations",
+    "organisation": "organization",
+    "organisations": "organizations",
+    "createdAt": "Account created on",
+    "logout": "Sign out"
+  }
+}
