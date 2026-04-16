@@ -35,6 +35,7 @@ class OmnichannelProduct:
     dominant_run_rate: float = 0.0
     abc_rank: str = 'C'
     annual_gross_profit: float = 0.0
+    demand_sigma: float = 0.0
 
 from modules.forecasting.domain.ports import IPredictionRepository
 
@@ -72,6 +73,10 @@ class OmnichannelService:
         prediction_map = {p.product_id: p for p in predictions}
 
         # 3. Agréger par SKU
+        # Construire un dict store_id → platform.value pour éviter de lire source_platform
+        # (qui peut être erroné si le mock a été généré sans la plateforme correcte)
+        store_map: Dict[UUID, str] = {s.id: s.platform.value for s in active_stores}
+
         sku_map: Dict[str, OmnichannelProduct] = {}
 
         for product in products:
@@ -83,13 +88,14 @@ class OmnichannelService:
                     total_stock=0,
                     channels=[],
                 )
-            
+
             omni = sku_map[sku]
             pred = prediction_map.get(product.id)
-            
-            # Mapping entity to breakdown
+
+            # Mapping entity to breakdown — on lit la platform du Store (source of truth),
+            # pas celle du produit qui peut être incorrecte après un mock sync générique.
             channel = ChannelStockBreakdown(
-                platform=product.source_platform.value,
+                platform=store_map.get(product.store_id, product.source_platform.value),
                 product_id=str(product.id),
                 current_stock=product.current_stock,
                 lead_time=product.lead_time,
@@ -115,6 +121,10 @@ class OmnichannelService:
                 if pred.predicted_stockout_date:
                     if not omni.predicted_stockout_date or pred.predicted_stockout_date < omni.predicted_stockout_date:
                         omni.predicted_stockout_date = pred.predicted_stockout_date
+                
+                # Volatility (Sigma): Max for safety
+                if hasattr(pred, 'demand_sigma') and pred.demand_sigma > omni.demand_sigma:
+                    omni.demand_sigma = pred.demand_sigma
 
         # 4. Sort and return
         result_list = sorted(
@@ -134,18 +144,20 @@ class OmnichannelService:
         # 1. Charger les stores de l'organisation
         active_stores = await self.store_repo.list_by_organization(o_uuid, connected_only=True)
         active_store_ids = [s.id for s in active_stores]
-        
+
         if not active_store_ids:
             return []
-            
+
+        store_map: Dict[UUID, str] = {s.id: s.platform.value for s in active_stores}
+
         # 2. Charger les produits pour ce SKU dans ces stores
         products = await self.product_repo.list_by_store(active_store_ids)
         sku_products = [p for p in products if p.sku == sku]
-        
+
         breakdown = []
         for product in sku_products:
             breakdown.append(ChannelStockBreakdown(
-                platform=product.source_platform.value,
+                platform=store_map.get(product.store_id, product.source_platform.value),
                 product_id=str(product.id),
                 current_stock=product.current_stock,
                 lead_time=product.lead_time,

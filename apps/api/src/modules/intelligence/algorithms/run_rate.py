@@ -72,9 +72,13 @@ def calculate_run_rate(df: pd.DataFrame, window: int = RUN_RATE_WINDOW) -> pd.Da
     adaptive_run_rate[is_trending] = run_rate_7j[is_trending]
 
     # 4. Fallback Global
+    # Cas nominal : médiane des jours non-rupture/non-outlier.
+    # Cas dégradé : si tous les jours sont exclus (clean_sales tout NaN),
+    # on utilise la médiane des corrected_units_sold > 0 pour éviter run_rate=0.
     global_median = clean_sales.dropna().median()
-    if pd.isna(global_median):
-        global_median = df["corrected_units_sold"].median()
+    if pd.isna(global_median) or global_median == 0.0:
+        non_zero = df.loc[df["corrected_units_sold"] > 0, "corrected_units_sold"]
+        global_median = float(non_zero.median()) if not non_zero.empty else 0.0
     if pd.isna(global_median):
         global_median = 0.0
 

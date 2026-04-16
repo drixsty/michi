@@ -338,6 +338,7 @@ class OmnichannelProductType:
     predicted_stockout_date: Optional[str]
     abc_rank: str
     annual_gross_profit: float
+    demand_sigma: float
     channels: List[ChannelBreakdownType]
 
     @classmethod
@@ -354,6 +355,7 @@ class OmnichannelProductType:
             predicted_stockout_date=str(item.predicted_stockout_date) if item.predicted_stockout_date else None,
             abc_rank=item.abc_rank,
             annual_gross_profit=item.annual_gross_profit,
+            demand_sigma=item.demand_sigma,
             channels=[
                 ChannelBreakdownType(
                     platform=ch.platform,

@@ -201,7 +201,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
         </div>
       ),
       cell: ({ row }) => {
-        const rr = row.original.runRate ?? row.original.prediction?.runRate ?? 0;
+        const rr = row.original.dominantRunRate ?? row.original.runRate ?? row.original.prediction?.runRate ?? 0;
         const sigma = row.original.demandSigma ?? row.original.prediction?.demandSigma ?? 0;
         
         if (rr <= 0) return <div className="text-center text-muted-foreground text-[10px]">—</div>;
@@ -225,7 +225,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
         return (
           <div className="flex justify-center">
             <span className={cn(
-              "px-2 py-0.5 rounded-full text-[9px] font-bold border flex items-center gap-1 transition-all shadow-sm",
+              "px-2 py-0.5 rounded-lg text-[9px] font-bold border flex items-center gap-1 transition-all",
               colorClass
             )}>
               <Icon className="h-2.5 w-2.5" />
@@ -265,7 +265,7 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
         return (
           <div className="flex justify-center">
             <span className={cn(
-              "px-2 py-0.5 rounded-full text-[9px] font-bold border flex items-center gap-1 transition-all shadow-sm",
+              "px-2 py-0.5 rounded-lg text-[9px] font-bold border flex items-center gap-1 transition-all",
               colorClass
             )}>
               <Icon className="h-2.5 w-2.5" />
@@ -281,9 +281,10 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
       size: 100,
       cell: ({ row }) => {
         const channels = row.original.channels || [];
-        const platforms = channels.length > 0
-          ? Array.from(new Set(channels.map((c: any) => c.platform.toLowerCase())))
-          : ['shopify'];
+        const platforms = Array.from(new Set(channels.map((c: any) => c.platform.toLowerCase())));
+        if (platforms.length === 0) {
+          return <div className="text-center text-muted-foreground text-[10px]">—</div>;
+        }
         return (
           <div className="flex items-center justify-center gap-1.5">
             {platforms.map((platform: any, i) => {

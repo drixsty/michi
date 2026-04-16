@@ -1,4 +1,4 @@
-﻿type AlertType {
+type AlertType {
   id: ID!
   productId: ID!
   type: String!
@@ -156,6 +156,7 @@ type OmnichannelProductType {
   predictedStockoutDate: String
   abcRank: String!
   annualGrossProfit: Float!
+  demandSigma: Float!
   channels: [ChannelBreakdownType!]!
 }
 

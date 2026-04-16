@@ -188,6 +188,12 @@ def generate_mock_sales(product_id: str, sku: Optional[str] = None, days: int = 
             units_sold = 0.0
             stock = 0
         else:
+            # Simulate supplier restocking when stock naturally depletes.
+            # Without this, end_of_day_stock stays 0 for the rest of the history,
+            # causing OOS correction to zero out corrected_units_sold → run_rate=0.
+            if stock <= 0:
+                stock = rng.randint(150, 400)
+
             units = float(np_rng.normal(base_mean, base_std))
             if _is_peak_day(current_date):
                 units *= rng.uniform(3.0, 5.0)

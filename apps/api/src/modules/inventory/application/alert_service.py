@@ -79,12 +79,14 @@ class AlertService:
                 await self.alert_repo.save(alert)
                 new_alerts.append(alert)
                 
-                await self.email_service.send_stockout_warning(recipient_email, {
-                    "sku": product.sku,
-                    "title": product.title,
-                    "stock": product.current_stock,
-                    "recommended_order": product.moq
-                })
+                try:
+                    await self.email_service.send_stockout_warning(
+                        recipient_email,
+                        product.title,
+                        product.lead_time
+                    )
+                except Exception as e:
+                    logger.warning(f"[AlertService] Email send failed (non-blocking): {e}")
         
         return new_alerts
 

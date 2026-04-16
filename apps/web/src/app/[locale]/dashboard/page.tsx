@@ -222,7 +222,7 @@ function DashboardContent() {
         syncing={syncing}
         onSync={() => triggerSync()}
         onExport={activeTab === 'decisions' ? () => {} : handleExport}
-        showActions={activeTab === 'inventory' || activeTab === 'decisions'}
+        showActions={activeTab === 'inventory'}
       />
 
       <div className="mt-2">

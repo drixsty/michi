@@ -14,6 +14,7 @@ export const GET_OMNICHANNEL_INVENTORY: TypedDocumentNode<GetOmnichannelInventor
       predictedStockoutDate
       abcRank
       annualGrossProfit
+      demandSigma
       channels {
         platform
         productId

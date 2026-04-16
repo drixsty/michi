@@ -82,8 +82,13 @@ def correct_out_of_stock(df: pd.DataFrame) -> pd.DataFrame:
         .median()
     )
 
-    # Fallback : médiane globale des jours non-rupture
+    # Fallback : médiane globale des jours non-rupture.
+    # Si tous les jours sont en rupture (déplétion naturelle sans réapprovisionnement),
+    # on utilise la médiane des ventes brutes > 0 comme proxy de la demande réelle.
     global_median = df.loc[~df["is_stockout"], "units_sold"].median()
+    if pd.isna(global_median) or global_median == 0.0:
+        non_zero_sales = df.loc[df["units_sold"] > 0, "units_sold"]
+        global_median = float(non_zero_sales.median()) if not non_zero_sales.empty else 0.0
     if pd.isna(global_median):
         global_median = 0.0
 

@@ -23,12 +23,10 @@ function Show-Help {
 
 switch ($Command) {
     "install" {
-        Write-Host "[INFO] Installation root npm..." -ForegroundColor Yellow
+        Write-Host "[INFO] Installation des dependances (NPM Workspace)..." -ForegroundColor Yellow
         npm install
         Write-Host "`n[INFO] Installation API (Python)..." -ForegroundColor Yellow
         Set-Location apps/api; pip install -r requirements.txt; Set-Location ../..
-        Write-Host "`n[INFO] Installation Web (npm)..." -ForegroundColor Yellow
-        Set-Location apps/web; npm install; Set-Location ../..
         Write-Host "`n[OK] Installation terminee !" -ForegroundColor Green
     }
 

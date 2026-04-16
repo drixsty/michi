@@ -31,7 +31,6 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { LoadingState } from '@/components/ui/LoadingState';
 import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
 import { RisksReportPanel } from '@/components/dashboard/RisksReportPanel';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -231,26 +230,21 @@ export function DecisionsView() {
   const [period, setPeriod] = useState('all');
   const [channel, setChannel] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isMounted, setIsMounted] = useState(false);
 
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const { data: data, loading, error } = useQuery(GET_FINANCIAL_OVERVIEW, {
+  const { data, previousData, loading, error } = useQuery(GET_FINANCIAL_OVERVIEW, {
     variables: {
-      channel: channel === 'all' ? null : channel
+      channel: channel === 'all' ? null : channel,
     },
     errorPolicy: 'all',
     fetchPolicy: 'cache-and-network',
-    pollInterval: 30000
+    pollInterval: 30000,
   });
 
   if (error) {
     console.warn("[DecisionsView] Query handled partial or error state:", error.message);
   }
 
-  const overview = data?.financialOverview;
+  const overview = (data ?? previousData)?.financialOverview;
   console.log("[DecisionsView] Organization Context Active");
   const kpis = overview?.kpis;
   const allRisks = overview?.topRisks || [];
@@ -294,7 +288,7 @@ export function DecisionsView() {
     return totalRunRate * avgLead * (kpis?.inventoryValueCost / Math.max(1, totalStock) || 0);
   }, [totalRunRate, totalStock, kpis]);
 
-  if ((loading && !data) || !isMounted) return <LoadingState fullScreen message={t('loading')} />;
+  if (loading && !data && !previousData) return <LoadingState message={t('loading')} />;
 
   const periods = [
     { value: 'all', label: t('filters.period.all') },

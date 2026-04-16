@@ -94,22 +94,29 @@ class ShopifyMutation:
         from modules.inventory.infrastructure.repositories.product_repository import SQLAlchemyProductRepository
         from modules.inventory.infrastructure.repositories.sales_log_repository import SQLAlchemySalesLogRepository
         from modules.inventory.infrastructure.repositories.supplier_repository import SQLAlchemySupplierRepository
+        from modules.inventory.infrastructure.repositories.alert_repository import SQLAlchemyAlertRepository
+        from modules.inventory.application.alert_service import AlertService
+        from modules.inventory.application.email_service import EmailService
         import uuid
 
         db = info.context.db
         store_repo = SQLAlchemyStoreRepository(db)
         shopify_service = ShopifyService(db)
         
-        # Déterminer quels stores synchroniser
-        target_store_ids = []
+        # Déterminer quels stores synchroniser, en conservant la platform de chaque store
+        # pour la passer au générateur de mock (évite que tous les produits soient SHOPIFY).
+        store_platform_map: dict[str, str] = {}
         if store_id:
-            target_store_ids = [str(store_id)]
+            store = await store_repo.get_by_id(uuid.UUID(str(store_id)))
+            if store and store.connected:
+                store_platform_map[str(store_id)] = store.platform.value
         else:
             if not info.context.org_id:
                 raise UnauthenticatedException("Organisation non identifiée")
-            # All connected stores for the organization
             stores = await store_repo.list_by_organization(uuid.UUID(str(info.context.org_id)))
-            target_store_ids = [str(s.id) for s in stores if s.connected]
+            store_platform_map = {str(s.id): s.platform.value for s in stores if s.connected}
+
+        target_store_ids = list(store_platform_map.keys())
 
         if not target_store_ids:
             return IngestionResult(
@@ -133,15 +140,28 @@ class ShopifyMutation:
             SQLAlchemySupplierRepository(db)
         )
 
+        # Initialiser le service d'alertes (shared)
+        alert_service = AlertService(
+            SQLAlchemyAlertRepository(db),
+            SQLAlchemyProductRepository(db),
+            store_repo,
+            EmailService()
+        )
+
         for s_id in target_store_ids:
-            # 1. Sync Mock Data
-            result = await shopify_service.trigger_mock_sync(s_id)
+            # 1. Sync Mock Data — on passe explicitement la platform du Store
+            # pour que le générateur insère les produits avec la bonne source_platform.
+            store_platform = store_platform_map.get(s_id, "shopify")
+            result = await shopify_service.trigger_mock_sync(s_id, platform=store_platform)
             total_products += result.products_created
             total_sales += result.sales_logs_created
-            
+
             # 2. Run Forecasting Pipeline
             await forecasting.run_cleaning_pipeline(s_id)
             await forecasting.run_prediction_pipeline(s_id)
+
+            # 3. Generate Stockout Alerts
+            await alert_service.check_for_stockouts(s_id)
 
         # Commit explicit maintenant que get_db ne le fait plus automatiquement (plus sûr avec SerializedAsyncSession)
         await db.commit()

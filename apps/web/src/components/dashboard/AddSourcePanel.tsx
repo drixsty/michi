@@ -169,14 +169,15 @@ export function AddSourcePanel({ isOpen, onClose, onSuccess, connectedPlatforms 
     }
     
     // --- Sprint 15 : Real Connection for Shopify ---
-    if (selectedPlatform === 'shopify') {
+    // Bypass real connection if user clicked "Use test data" (michi-test-shop)
+    if (selectedPlatform === 'shopify' && shopUrl !== 'michi-test-shop') {
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const cleanShop = shopUrl.replace('.myshopify.com', '');
       window.location.href = `${backendUrl}/api/shopify/auth?shop=${cleanShop}`;
       return;
     }
 
-    // Mock connection for others (until Sprint 16/17)
+    // Mock connection for others (until Sprint 16/17) and for test Shopify
     await toggleSource({ 
       variables: { 
         platform: selectedPlatform, 

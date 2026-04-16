@@ -6,13 +6,10 @@ help: ## Affiche l'aide
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 install: ## Installe toutes les dépendances (backend + frontend)
-	@echo "📦 Installation root..."
+	@echo "📦 Installation des dépendances (NPM Workspace)..."
 	npm install
-	@echo "📦 Installation backend..."
+	@echo "📦 Installation backend (Python)..."
 	cd apps/api && pip install -r requirements.txt
-	@echo ""
-	@echo "📦 Installation frontend..."
-	cd apps/web && npm install
 	@echo ""
 	@echo "✅ Installation terminée !"
 
