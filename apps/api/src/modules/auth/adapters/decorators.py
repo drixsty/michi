@@ -15,8 +15,11 @@ def require_permission(permission: MichiPermission):
     def decorator(f):
         @wraps(f)
         async def wrapper(self, info, *args, **kwargs):
-            if not info.context.user_id or not info.context.org_id:
-                raise UnauthenticatedException("Accès refusé : session ou organisation non identifiée")
+            if not info.context.user_id:
+                raise UnauthenticatedException("Accès refusé : session expirée ou non identifiée")
+            if not info.context.org_id:
+                # Si l'utilisateur est là mais pas l'org, c'est souvent un problème de switch d'org ou d'onboarding
+                raise UnauthenticatedException("Accès refusé : aucune organisation sélectionnée")
                 
             db = info.context.db
             user_id = uuid.UUID(str(info.context.user_id))
@@ -82,8 +85,10 @@ def require_role(allowed_roles: Union[str, List[str]]):
     def decorator(f):
         @wraps(f)
         async def wrapper(self, info, *args, **kwargs):
-            if not info.context.user_id or not info.context.org_id:
-                raise UnauthenticatedException("Accès refusé : session ou organisation non identifiée")
+            if not info.context.user_id:
+                raise UnauthenticatedException("Accès refusé : session expirée ou non identifiée")
+            if not info.context.org_id:
+                raise UnauthenticatedException("Accès refusé : aucune organisation sélectionnée")
                 
             db = info.context.db
             user_id = uuid.UUID(str(info.context.user_id))

@@ -149,13 +149,11 @@ class ShopifyMutation:
         )
 
         for s_id in target_store_ids:
-            # 1. Sync Mock Data — on passe explicitement la platform du Store
-            # pour que le générateur insère les produits avec la bonne source_platform.
-            store_platform = store_platform_map.get(s_id, "shopify")
-            result = await shopify_service.trigger_mock_sync(s_id, platform=store_platform)
+            # 1. Sync Mock Data with correct platform
+            result = await shopify_service.trigger_mock_sync(s_id, platform=store_platform_map[s_id])
             total_products += result.products_created
             total_sales += result.sales_logs_created
-
+            
             # 2. Run Forecasting Pipeline
             await forecasting.run_cleaning_pipeline(s_id)
             await forecasting.run_prediction_pipeline(s_id)

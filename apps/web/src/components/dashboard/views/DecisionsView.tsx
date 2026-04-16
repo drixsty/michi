@@ -31,6 +31,7 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { LoadingState } from '@/components/ui/LoadingState';
 import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
 import { RisksReportPanel } from '@/components/dashboard/RisksReportPanel';
 import { CustomSelect } from '@/components/ui/CustomSelect';

@@ -1,7 +1,12 @@
 from passlib.context import CryptContext
 
 # Context pour hashing passwords (bcrypt)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Sprint 21: Configuration explicite pour assurer la compatibilité entre environnements
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=12
+)
 
 def hash_password(password: str) -> str:
     """Hash un password avec bcrypt."""

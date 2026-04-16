@@ -147,7 +147,35 @@
       "version": "Michi 道 v2.5"
     },
     "errors": {
-      "payment": "Payment error. Please try again."
+      "payment": "Payment error. Please try again.",
+      "generic": "An error occurred."
+    },
+    "wizard": {
+      "welcome": "Hi, {name} !",
+      "syncing": "Syncing data...",
+      "skip": "Skip configuration (Expert)",
+      "steps": {
+        "0": {
+          "title": "Welcome to Michi 道",
+          "description": "Let's set up your omnichannel decision center together in 3 steps: connect your stores, let our AI intelligently analyze your flows, and activate your first stock forecasts.",
+          "cta": "Start configuration"
+        },
+        "connect": {
+          "title": "Connect your first store",
+          "description": "Michi needs your data to predict your needs. Choose your main platform.",
+          "cta": "Connect"
+        },
+        "analysis": {
+          "title": "AI engine in action",
+          "description": "We are analyzing your flows, cleaning historical stockouts, and calculating your growth models.",
+          "cta": "Finish analysis"
+        },
+        "ready": {
+          "title": "Ready for growth",
+          "description": "Your inventory is now under control. Ready to see your first forecasts?",
+          "cta": "Enter Michi"
+        }
+      }
     },
     "step1": {
       "title": "Your organization",

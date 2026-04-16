@@ -13,13 +13,15 @@ interface OnboardingWizardProps {
 }
 
 export default function OnboardingWizard({ userName, onComplete, onSync }: OnboardingWizardProps) {
-  const t = useTranslations('Onboarding');
+  const t = useTranslations('onboarding.wizard');
   const [currentStep, setCurrentStep] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
 
   const STEPS = [
     {
+      title: t('steps.0.title'),
+      description: t('steps.0.description'),
       cta: t('steps.0.cta'),
       testid: 'wizard-start',
       icon: <CheckCircle2 className="text-primary h-12 w-12" /> // Added default icon if missing
@@ -68,29 +70,38 @@ export default function OnboardingWizard({ userName, onComplete, onSync }: Onboa
   const step = STEPS[currentStep];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {/* Immersive backdrop */}
       <motion.div 
-        initial={{ opacity: 0, scale: 0.9, y: 30 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-slate-950/40 backdrop-blur-xl" 
+      />
+      
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-[40px] shadow-2xl border border-slate-100 max-w-xl w-full overflow-hidden flex flex-col"
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="relative bg-white/90 backdrop-blur-3xl rounded-lg shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white max-w-md w-full overflow-hidden flex flex-col"
       >
         {/* Progress header */}
-        <div className="px-10 pt-10 pb-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white font-bold text-sm">道</div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Onboarding</span>
+        <div className="px-6 pt-6 pb-2 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-sm bg-slate-900 flex items-center justify-center text-white font-bold text-xs ring-4 ring-slate-900/5">道</div>
+                <span className="text-[11px] font-bold tracking-tight text-slate-400">Assistant Michi</span>
             </div>
-            <div className="flex gap-1.5">
+            <div className="flex gap-2">
                 {STEPS.map((_, i) => (
                     <div key={i} className={cn(
-                        "h-1 rounded-full transition-all duration-500",
-                        i === currentStep ? "w-8 bg-primary" : "w-1.5 bg-slate-100"
+                        "h-1 rounded-full transition-all duration-700",
+                        i === currentStep ? "w-6 bg-primary shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]" : "w-1.5 bg-slate-200"
                     )} />
                 ))}
             </div>
         </div>
 
-        <div className="px-10 pb-10 flex-1">
+        <div className="px-8 pb-8 flex-1">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -98,24 +109,27 @@ export default function OnboardingWizard({ userName, onComplete, onSync }: Onboa
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 1.05 }}
               transition={{ duration: 0.4, ease: "circOut" }}
-              className="space-y-8 flex flex-col items-center text-center"
+              className="space-y-6 flex flex-col items-center text-center"
             >
-              <div className="relative">
-                 <div className="absolute inset-0 bg-primary/5 blur-3xl rounded-full scale-150" />
-                 <div className="relative p-6 bg-slate-50/50 rounded-[30px] border border-slate-100 mb-2">
-                    {step.icon}
-                 </div>
-              </div>
-              
-              <div className="space-y-3">
-                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-                    {currentStep === 0 && userName ? t('welcome', { name: userName }) : step.title}
-                </h2>
-                <p className="text-slate-500 text-sm leading-relaxed max-w-xs mx-auto">{step.description}</p>
-              </div>
+               <div className="relative group/icon">
+                  <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-110 group-hover/icon:scale-125 transition-transform duration-700" />
+                  <div className={cn(
+                    "relative p-4 rounded-lg transition-all mb-1",
+                    currentStep === 0 ? "bg-transparent border-transparent" : "bg-white/80 backdrop-blur-sm border border-white shadow-sm"
+                  )}>
+                     {step.icon}
+                  </div>
+               </div>
+               
+               <div className="space-y-2">
+                 <h2 className="text-2xl font-bold text-slate-900 tracking-tight leading-tight">
+                     {step.title}
+                 </h2>
+                 <p className="text-slate-500 text-sm leading-relaxed max-w-[280px] mx-auto font-medium opacity-80">{step.description}</p>
+               </div>
 
               {currentStep === 1 && (
-                 <div className="grid grid-cols-3 gap-4 w-full pt-2">
+                 <div className="grid grid-cols-3 gap-3 w-full pt-2">
                     {[
                         { id: 'shopify', label: 'Shopify', icon: <ShoppingBag className="h-5 w-5" /> },
                         { id: 'amazon', label: 'Amazon', icon: <Globe className="h-5 w-5" /> },
@@ -126,32 +140,32 @@ export default function OnboardingWizard({ userName, onComplete, onSync }: Onboa
                             data-testid={`wizard-platform-${plat.id}`}
                             onClick={() => setSelectedPlatform(plat.id)}
                             className={cn(
-                                "flex flex-col items-center justify-center p-5 rounded-3xl border-2 transition-all gap-3 group hover:scale-[1.02] active:scale-[0.98]",
+                                "flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all gap-2 group/item hover:scale-[1.02] active:scale-[0.98]",
                                 selectedPlatform === plat.id 
-                                    ? "bg-primary/5 border-primary text-primary shadow-xl shadow-primary/10" 
-                                    : "bg-white border-slate-50 text-slate-400 hover:border-slate-200"
+                                    ? "bg-white border-primary text-primary shadow-xl shadow-primary/10" 
+                                    : "bg-slate-50/50 border-transparent text-slate-400 hover:bg-white hover:border-slate-100"
                             )}
                         >
                             <div className={cn(
-                                "p-2.5 rounded-xl transition-colors",
-                                selectedPlatform === plat.id ? "bg-primary text-white" : "bg-slate-50 group-hover:bg-slate-100"
+                                "p-2 rounded-lg transition-all",
+                                selectedPlatform === plat.id ? "bg-primary text-white scale-110 shadow-lg shadow-primary/20" : "bg-white text-slate-400 group-hover/item:text-slate-600 shadow-sm"
                             )}>{plat.icon}</div>
-                            <span className="text-[10px] font-bold tracking-widest uppercase">{plat.label}</span>
+                            <span className="text-[10px] font-bold tracking-tight">{plat.label}</span>
                         </button>
                     ))}
                  </div>
               )}
 
-              <div className="w-full pt-8">
+              <div className="w-full pt-6">
                 <button
                   onClick={handleNext}
                   data-testid={step.testid}
                   disabled={isSyncing || (currentStep === 1 && !selectedPlatform)}
                   className={cn(
-                    "w-full flex items-center justify-center gap-3 py-4 rounded-[20px] text-sm font-bold tracking-widest uppercase transition-all shadow-2xl",
+                    "w-full flex items-center justify-center gap-3 py-4 rounded-lg text-[13px] font-bold tracking-tight transition-all",
                     isSyncing || (currentStep === 1 && !selectedPlatform)
-                      ? "bg-slate-100 text-slate-300 cursor-not-allowed shadow-none" 
-                      : "bg-slate-900 text-white hover:bg-slate-800 hover:shadow-slate-900/20 active:scale-[0.98]"
+                      ? "bg-slate-100 text-slate-300 cursor-not-allowed" 
+                      : "bg-slate-900 text-white hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-900/20 active:scale-[0.98]"
                   )}
                 >
                   {isSyncing ? (
@@ -173,7 +187,7 @@ export default function OnboardingWizard({ userName, onComplete, onSync }: Onboa
                       localStorage.setItem('michi_onboarded', 'true');
                       onComplete();
                     }}
-                    className="mt-6 text-[10px] font-bold text-slate-400 hover:text-primary tracking-[0.2em] uppercase transition-colors"
+                    className="mt-4 text-[11px] font-bold text-slate-400 hover:text-primary tracking-tight transition-colors"
                   >
                     {t('skip')}
                   </button>

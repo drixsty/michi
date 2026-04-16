@@ -59,6 +59,7 @@ class OmnichannelService:
         # 1. Charger les stores de l'organisation
         active_stores = await self.store_repo.list_by_organization(o_uuid, connected_only=True)
         active_store_ids = [s.id for s in active_stores]
+        store_map = {s.id: s.platform.value for s in active_stores}
 
         if not active_store_ids:
             return []
@@ -73,10 +74,6 @@ class OmnichannelService:
         prediction_map = {p.product_id: p for p in predictions}
 
         # 3. Agréger par SKU
-        # Construire un dict store_id → platform.value pour éviter de lire source_platform
-        # (qui peut être erroné si le mock a été généré sans la plateforme correcte)
-        store_map: Dict[UUID, str] = {s.id: s.platform.value for s in active_stores}
-
         sku_map: Dict[str, OmnichannelProduct] = {}
 
         for product in products:
@@ -88,12 +85,11 @@ class OmnichannelService:
                     total_stock=0,
                     channels=[],
                 )
-
+            
             omni = sku_map[sku]
             pred = prediction_map.get(product.id)
-
-            # Mapping entity to breakdown — on lit la platform du Store (source of truth),
-            # pas celle du produit qui peut être incorrecte après un mock sync générique.
+            
+            # Mapping entity to breakdown - Use store_map for platform accuracy
             channel = ChannelStockBreakdown(
                 platform=store_map.get(product.store_id, product.source_platform.value),
                 product_id=str(product.id),

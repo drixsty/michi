@@ -156,6 +156,8 @@
       "skip": "Passer la configuration (Expert)",
       "steps": {
         "0": {
+          "title": "Bienvenue sur Michi 道",
+          "description": "Nous allons configurer ensemble votre centre de décision omnichannel en 3 étapes : connexion de vos boutiques, analyse intelligente de vos flux par notre IA, et activation de vos premières prévisions de stock.",
           "cta": "Démarrer la configuration"
         },
         "connect": {

@@ -73,23 +73,36 @@ class ApplicationAuthService:
         Raises:
             UnauthenticatedException: si email inconnu ou password incorrect.
         """
+        from loguru import logger
+        email = email.strip().lower()
+        password = password.strip()
+        
         user_model = await self._users.get_model_by_email(email)
         if not user_model:
+            logger.warning(f"Login failure: user {email} not found")
             raise UnauthenticatedException("Invalid email or password")
 
         if not user_model.hashed_password:
+            logger.warning(f"Login failure: user {email} has no password (Google only)")
             raise UnauthenticatedException("Compte Google-only — utilisez Google Login")
 
         from modules.auth.domain.value_objects import HashedPassword
         hashed = HashedPassword(user_model.hashed_password)
+        
+        # Diagnostic logging (Temporary for Sprint 21 Debugging)
         if not self._hasher.verify(password, hashed):
+            logger.warning(f"Login failure: password mismatch for {email}")
             raise UnauthenticatedException("Invalid email or password")
 
         # Org active : utiliser current ou première membership
         active_org_id = user_model.current_organization_id
+        
+        # Sprint 21 Fix: Garantir qu'une organisation est sélectionnée si elle existe
         if not active_org_id and user_model.organizations:
             active_org_id = user_model.organizations[0].organization_id
             user_model.current_organization_id = active_org_id
+            from loguru import logger
+            logger.info(f"Auto-selected organization {active_org_id} for user {user_model.email}")
             await self._users._db.flush()
 
         token = self._tokens.create_access_token(

@@ -69,6 +69,7 @@ interface ConnectorsGridProps {
 }
 
 import { useTranslations, useFormatter } from 'next-intl';
+import { useStore } from '@/context/StoreContext';
 
 export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProps) {
   const t = useTranslations('dashboard.connectors');
@@ -80,8 +81,10 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
   const router = useRouter();
   const status = searchParams.get('status');
 
+  const { currentOrganization } = useStore();
   const { data, loading, refetch } = useQuery(GET_SOURCES, {
-    fetchPolicy: 'cache-and-network'
+    fetchPolicy: 'cache-and-network',
+    skip: !currentOrganization
   });
   const [toggleSource, { loading: toggling }] = useMutation(TOGGLE_SOURCE, {
     refetchQueries: [
