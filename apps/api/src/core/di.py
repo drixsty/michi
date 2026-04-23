@@ -110,6 +110,7 @@ def build_services(db: AsyncSession) -> ServiceContainer:
         membership_repo=membership_repo,
         password_hasher=password_hasher,
         token_service=token_service,
+        email_service=email_service,
         billing_service=billing_service
     )
 

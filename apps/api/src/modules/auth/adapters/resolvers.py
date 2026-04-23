@@ -9,7 +9,8 @@ import uuid
 from core.exceptions import UnauthenticatedException, MichiException, ErrorCode
 from core.graphql.types import (
     UserType, LoginInput, AuthPayload, RegisterInput, 
-    GoogleLoginInput, ChangePasswordInput, UpdateProfileInput
+    GoogleLoginInput, ChangePasswordInput, UpdateProfileInput,
+    RequestPasswordResetInput, ResetPasswordInput
 )
 
 @strawberry.type
@@ -120,3 +121,15 @@ class AuthMutation:
         )
         await info.context.db.commit()
         return result is not None
+
+    @strawberry.mutation
+    async def forgot_password(self, info, input: RequestPasswordResetInput) -> bool:
+        """Demande de réinitialisation de mot de passe."""
+        service = info.context.services.auth_service
+        return await service.request_password_reset(input.email)
+
+    @strawberry.mutation
+    async def reset_password(self, info, input: ResetPasswordInput) -> bool:
+        """Réinitialisation effective du mot de passe via token."""
+        service = info.context.services.auth_service
+        return await service.reset_password(input.token, input.new_password)

@@ -32,7 +32,6 @@ function NavLinks() {
   const navItems = [
     { id: 'overview', label: t('overview'), icon: LayoutDashboard, href: '/dashboard' },
     { id: 'inventory', label: t('inventory'), icon: Package, href: '/dashboard?tab=inventory' },
-    { id: 'sources', label: t('sources'), icon: Database, href: '/dashboard?tab=sources' },
     { id: 'decisions', label: t('decisions'), icon: BarChart3, href: '/dashboard?tab=decisions' },
   ];
 
@@ -188,6 +187,14 @@ export function Navbar() {
                       >
                         <Building2 className="h-4 w-4 text-muted-foreground" />
                         <span>{t('myOrg')}</span>
+                      </Link>
+                      <Link
+                        href="/dashboard/settings/connections"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                      >
+                        <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                        <span>Intégrations</span>
                       </Link>
                       <div className="h-px bg-border my-1" />
                       <button

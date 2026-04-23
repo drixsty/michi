@@ -47,6 +47,30 @@ class Store(Base):
     products = relationship("Product", back_populates="store", cascade="all, delete-orphan")
     suppliers = relationship("Supplier", back_populates="store", cascade="all, delete-orphan")
     purchase_orders = relationship("PurchaseOrder", back_populates="store", cascade="all, delete-orphan")
+    credentials = relationship("StoreCredential", back_populates="store", cascade="all, delete-orphan", uselist=False)
+
+class StoreCredential(Base):
+    """
+    StoreCredential Model: Encrypted secrets for API connections.
+    """
+    __tablename__ = "store_credentials"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    store_id = Column(GUID, ForeignKey("stores.id", ondelete="CASCADE"), nullable=False, unique=True)
+    
+    # Encrypted fields
+    encrypted_access_token = Column(String(1024), nullable=True)
+    encrypted_api_key = Column(String(1024), nullable=True)
+    encrypted_api_secret = Column(String(1024), nullable=True)
+    
+    # Public metadata (e.g. AWS Region, Shopify Domain)
+    meta = Column(JSON, default={}, nullable=False)
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    store = relationship("Store", back_populates="credentials")
 
     def __repr__(self):
         return f"<Store {self.name} ({self.platform.value})>"

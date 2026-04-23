@@ -29,3 +29,18 @@ class Invitation(Base):
 
     # Relationships
     organization = relationship("Organization", back_populates="invitations")
+
+class PasswordResetToken(Base):
+    """
+    PasswordResetToken Model: Manages temporary tokens for password reset.
+    """
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    token = Column(String(128), unique=True, nullable=False, index=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+
+    user = relationship("User")

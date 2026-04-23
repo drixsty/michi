@@ -11,6 +11,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 
 export default function RegisterPage() {
   const t = useTranslations('auth.register');
@@ -200,20 +201,14 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <div className="space-y-0.5">
-                <label className="text-[10px] font-bold text-slate-500 ml-1">{t('passwordLabel')}</label>
-                <div className="relative group">
-                  <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/30 group-focus-within:text-primary transition-colors" />
-                  <input
-                    type="password"
-                    placeholder={t('passwordPlaceholder')}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full h-11 pl-8 pr-3 rounded-lg border bg-slate-50/50 text-[13px] transition-all focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 border-transparent focus:bg-white"
-                  />
-                </div>
-              </div>
+              <PasswordInput
+                label={t('passwordLabel')}
+                placeholder={t('passwordPlaceholder')}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-slate-50/50 border-transparent focus:bg-white"
+              />
 
               <button
                 type="submit"

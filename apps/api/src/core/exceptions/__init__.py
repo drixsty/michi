@@ -7,3 +7,4 @@ from .auth import (
     NotFoundException
 )
 from .validation import ValidationException
+from .infrastructure import InfrastructureError

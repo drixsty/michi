@@ -10,6 +10,7 @@ import { LOGIN } from '@/graphql/mutations/login';
 import { GoogleLogin } from '@react-oauth/google';
 import { GOOGLE_LOGIN } from '@/graphql/mutations/googleLogin';
 import { useTranslations } from 'next-intl';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 
 export default function LoginPage() {
   const t = useTranslations('auth.login');
@@ -90,19 +91,21 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-foreground/60 ml-1">{t('passwordLabel')}</label>
-              <div className="relative group">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
-                <input
-                  type="password"
-                  placeholder={t('passwordPlaceholder')}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-11 pl-10 pr-4 rounded-md border bg-background text-sm transition-all focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 border-border"
-                />
-              </div>
+            <PasswordInput
+              label={t('passwordLabel')}
+              placeholder={t('passwordPlaceholder')}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+
+            <div className="flex justify-end">
+              <Link 
+                href="/forgot-password" 
+                className="text-[11px] font-bold text-primary hover:underline transition-all"
+              >
+                {t('forgotPasswordLink')}
+              </Link>
             </div>
 
             <button

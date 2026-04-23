@@ -1,11 +1,56 @@
 from functools import wraps
 from typing import List, Union
 from core.exceptions import MichiException, UnauthenticatedException, ErrorCode
-from core.database.models import OrganizationMember, UserRole
 from modules.auth.domain.constants import MichiPermission, ROLE_PERMISSIONS
 from sqlalchemy import select
 import uuid
 from loguru import logger
+from core.security.plans import PlanName
+from core.database.models import Organization, OrganizationMember, UserRole
+
+def require_plan(min_plan: PlanName):
+    """
+    Décorateur pour restreindre l'accès selon le plan de l'organisation.
+    Vérifie que l'organisation a au moins le plan spécifié.
+    Ordre de priorité : FREE < PRO < ENTERPRISE
+    """
+    plan_hierarchy = {PlanName.FREE: 0, PlanName.PRO: 1, PlanName.ENTERPRISE: 2}
+    min_rank = plan_hierarchy.get(min_plan, 0)
+
+    def decorator(f):
+        @wraps(f)
+        async def wrapper(self, info, *args, **kwargs):
+            if not info.context.org_id:
+                raise UnauthenticatedException("Action refusée : aucune organisation active.")
+                
+            db = info.context.db
+            org_id = uuid.UUID(str(info.context.org_id))
+            
+            # Récupérer l'organisation pour vérifier son plan
+            stmt = select(Organization.plan).where(Organization.id == org_id)
+            result = await db.execute(stmt)
+            plan_str = result.scalar()
+            
+            if not plan_str:
+                current_plan = PlanName.FREE
+            else:
+                try:
+                    current_plan = PlanName(plan_str.upper())
+                except ValueError:
+                    current_plan = PlanName.FREE
+            
+            current_rank = plan_hierarchy.get(current_plan, 0)
+            
+            if current_rank < min_rank:
+                logger.warning(f"Plan Denied: Org {org_id} has {current_plan}, needs {min_plan}")
+                raise MichiException(
+                    message=f"Cette fonctionnalité nécessite le plan {min_plan} (Votre plan actuel : {current_plan})", 
+                    code=ErrorCode.FORBIDDEN
+                )
+                
+            return await f(self, info, *args, **kwargs)
+        return wrapper
+    return decorator
 
 def require_permission(permission: MichiPermission):
     """

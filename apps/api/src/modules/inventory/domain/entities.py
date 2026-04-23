@@ -1,4 +1,3 @@
-from core.database.models import Organization, User, OrganizationMember
 """
 Domain Entities — Inventory Module
 Pure Python dataclasses to isolate business logic from infrastructure (SQLAlchemy).
@@ -16,7 +15,7 @@ class PlatformSource(Enum):
     CSV = "CSV"
     CUSTOM = "CUSTOM"
 
-@dataclass
+@dataclass(frozen=True)
 class StoreEntity:
     id: UUID
     organization_id: UUID
@@ -29,7 +28,7 @@ class StoreEntity:
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 
-@dataclass
+@dataclass(frozen=True)
 class ProductEntity:
     id: UUID
     store_id: UUID
@@ -48,7 +47,7 @@ class ProductEntity:
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 
-@dataclass
+@dataclass(frozen=True)
 class SalesLogEntity:
     id: UUID
     product_id: UUID
@@ -56,7 +55,7 @@ class SalesLogEntity:
     units_sold: float = 0.0
     end_of_day_stock: int = 0
 
-@dataclass
+@dataclass(frozen=True)
 class AlertEntity:
     id: UUID
     product_id: UUID
@@ -87,3 +86,14 @@ class PurchaseOrderEntity:
     expected_arrival_date: date
     actual_arrival_date: Optional[date] = None
     status: str = "PENDING"
+
+@dataclass(frozen=True)
+class CredentialEntity:
+    id: UUID
+    store_id: UUID
+    access_token: Optional[str] = None
+    api_key: Optional[str] = None
+    api_secret: Optional[str] = None
+    meta: dict = field(default_factory=dict)
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=datetime.utcnow)

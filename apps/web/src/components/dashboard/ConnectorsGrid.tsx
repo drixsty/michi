@@ -13,7 +13,10 @@ import {
   Plus, 
   Loader2, 
   PowerOff, 
-  CheckCircle2 
+  CheckCircle2,
+  Database,
+  Key,
+  ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -45,22 +48,36 @@ export const TOGGLE_SOURCE = gql`
   }
 `;
 
+export const UPDATE_STORE_CREDENTIALS = gql`
+  mutation UpdateStoreCredentials($input: UpdateCredentialInput!) {
+    updateStoreCredentials(input: $input) {
+      id
+      apiKeyLastChars
+      hasToken
+      updatedAt
+    }
+  }
+`;
+
 const ICON_MAP: Record<string, any> = {
   shopify: ShoppingCart,
   woocommerce: Globe,
   amazon: Anchor,
+  csv: Database,
 };
 
 const COLOR_MAP: Record<string, string> = {
   shopify: 'text-emerald-600',
   woocommerce: 'text-indigo-600',
   amazon: 'text-orange-600',
+  csv: 'text-blue-600',
 };
 
 const BG_MAP: Record<string, string> = {
   shopify: 'bg-emerald-50',
   woocommerce: 'bg-indigo-50',
   amazon: 'bg-orange-50',
+  csv: 'bg-blue-50',
 };
 
 interface ConnectorsGridProps {
@@ -77,6 +94,7 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
   const [showAddSourcePanel, setShowAddSourcePanel] = React.useState(false);
   const [showSuccess, setShowSuccess] = React.useState(false);
   const [confirmDelete, setConfirmDelete] = React.useState<string | null>(null);
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const status = searchParams.get('status');
@@ -86,6 +104,7 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
     fetchPolicy: 'cache-and-network',
     skip: !currentOrganization
   });
+
   const [toggleSource, { loading: toggling }] = useMutation(TOGGLE_SOURCE, {
     refetchQueries: [
       { query: GET_SOURCES },
@@ -95,16 +114,10 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
     ]
   });
 
-  React.useEffect(() => {
-    if (status === 'connected') {
-      setShowSuccess(true);
-      const timer = setTimeout(() => {
-        setShowSuccess(false);
-        router.replace('/dashboard?tab=sources');
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [status, router]);
+
+  const handleCSVUpload = () => {
+    router.push('/dashboard/import');
+  };
 
   const handleToggle = async (platform: string, currentStatus: boolean) => {
     try {
@@ -130,54 +143,6 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
   return (
     <section className="space-y-4 relative animate-in fade-in duration-500">
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {/* CSV Import Card */}
-        <div className="group relative bg-white border border-slate-100 rounded-lg p-4 transition-all hover:border-primary/30">
-           <div className="flex items-center justify-between mb-2">
-              <div className="p-2.5 rounded-lg bg-slate-50 text-slate-400 group-hover:bg-primary/5 group-hover:text-primary transition-colors">
-                 <Layers className="h-4 w-4" />
-              </div>
-              <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400">
-                 <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />
-                 {t('manual')}
-              </div>
-           </div>
-           
-           <div className="space-y-1 mb-4">
-              <h3 className="text-sm font-bold text-slate-900">{t('manual')} (CSV)</h3>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-slate-400 font-bold tracking-wider">{t('apiHealth')}</span>
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-600">
-                    {t('available')}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-slate-400 font-bold">{t('lastImport')}</span>
-                  <span className="text-[9px] text-slate-600 font-bold italic">{t('manual')}</span>
-                </div>
-              </div>
-           </div>
-           
-           <input 
-             type="file" 
-             id="csv-connector-upload" 
-             className="hidden" 
-             accept=".csv" 
-             onChange={onImport} 
-           />
-           <label 
-             htmlFor={isAdmin ? "csv-connector-upload" : ""}
-             className={cn(
-               "w-full py-2.5 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-2",
-               isAdmin 
-                ? "bg-primary text-white hover:opacity-90 cursor-pointer" 
-                : "bg-slate-100 text-slate-400 cursor-not-allowed opacity-60"
-             )}
-           >
-              <Upload className="h-3.5 w-3.5" />
-              {isAdmin ? t('header.export') : t('restricted')}
-           </label>
-        </div>
 
         {/* Add Source Button Card */}
         <button 
@@ -206,60 +171,62 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
           return (
             <div 
               key={source.id} 
-              className="group relative bg-white border border-primary/10 bg-primary/[0.02] rounded-lg p-4 transition-all hover:border-primary/30"
+              className="group relative bg-white border border-primary/10 bg-primary/[0.01] rounded-lg p-3 transition-all hover:border-primary/30"
             >
               <div className="flex items-center justify-between mb-2">
-                <div className={cn("p-2.5 rounded-lg", BG_MAP[platformKey] || "bg-slate-50")}>
-                  <Icon className={cn("h-4 w-4", COLOR_MAP[platformKey] || "text-slate-400")} />
+                <div className={cn("p-2 rounded-lg", BG_MAP[platformKey] || "bg-slate-50")}>
+                  <Icon className={cn("h-3.5 w-3.5", COLOR_MAP[platformKey] || "text-slate-400")} />
                 </div>
                 
-                <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-600">
-                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <div className="flex items-center gap-1 text-[8px] font-bold text-emerald-600 tracking-tighter">
+                  <div className="h-1 w-1 rounded-full bg-emerald-500" />
                   {t('active')}
                 </div>
               </div>
 
-              <div className="space-y-1 mb-4">
-                <h3 className="text-sm font-bold text-slate-900">{source.platform}</h3>
-                <div className="flex flex-col gap-1">
+              <div className="space-y-1 mb-3">
+                <h3 className="text-xs font-bold text-slate-800">{source.platform}</h3>
+                <div className="flex flex-col gap-0.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-slate-400 font-bold">{t('apiHealth')} API</span>
+                    <span className="text-[9px] text-slate-400 font-medium">{t('apiHealth')} API</span>
                     <span className={cn(
-                      "text-[9px] font-bold px-1.5 py-0.5 rounded-lg",
+                      "text-[8px] font-bold px-1 py-0.5 rounded",
                       source.healthStatus === 'HEALTHY' ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
                     )}>
                       {source.healthStatus === 'HEALTHY' ? 'Healthy' : source.healthStatus || 'N/A'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-slate-400 font-bold">{t('lastSyncAt')}</span>
-                    <span className="text-[9px] text-slate-600 font-bold">
+                    <span className="text-[9px] text-slate-400 font-medium">{t('lastSyncAt')}</span>
+                    <span className="text-[9px] text-slate-500 font-medium">
                       {source.lastSyncAt ? format.dateTime(new Date(source.lastSyncAt)) : 'Jamais'}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <button 
-                onClick={() => isAdmin && setConfirmDelete(source.platform)}
-                disabled={toggling || !isAdmin}
-                className={cn(
-                  "w-full py-2.5 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-2 border border-transparent shadow-sm",
-                  isAdmin 
-                    ? "bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600" 
-                    : "bg-slate-50 text-slate-300 cursor-not-allowed",
-                  toggling && "opacity-50"
-                )}
-              >
-                {toggling ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                   <>
-                     <PowerOff className="h-3.5 w-3.5" />
-                     {isAdmin ? t('disconnect') : t('readonly')}
-                   </>
-                )}
-              </button>
+              <div className="flex flex-col gap-1.5">
+                <button 
+                  onClick={() => isAdmin && setConfirmDelete(source.platform)}
+                  disabled={toggling || !isAdmin}
+                  className={cn(
+                    "w-full py-1.5 rounded-md text-[10px] font-semibold transition-all flex items-center justify-center gap-1.5 border border-transparent shadow-none",
+                    isAdmin 
+                      ? "bg-slate-100 text-slate-500 hover:bg-red-50 hover:text-red-600" 
+                      : "bg-slate-50 text-slate-300 cursor-not-allowed",
+                    toggling && "opacity-50"
+                  )}
+                >
+                  {toggling ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <>
+                      <PowerOff className="h-3 w-3" />
+                      {isAdmin ? t('disconnect') : t('readonly')}
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           );
         })}
@@ -276,7 +243,7 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
         connectedPlatforms={connectedPlatforms}
       />
 
-      {/* Legacy Success Celebration Overlay (kept for visual feedback) */}
+      {/* Success Celebration Overlay */}
       {typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           {showSuccess && (
@@ -322,7 +289,6 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
         </AnimatePresence>,
         document.body
       )}
-      
       {/* Confirmation Modale Déconnexion Destructive */}
       <AnimatePresence>
         {confirmDelete && (
@@ -355,7 +321,7 @@ export function ConnectorsGrid({ onImport, isAdmin = false }: ConnectorsGridProp
 
       {toggling && (
          <div className="fixed inset-0 z-[110] flex items-center justify-center bg-white/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <LoadingState size="lg" message="{t('updating')}" />
+            <LoadingState size="lg" message={t('updating')} />
          </div>
       )}
     </section>

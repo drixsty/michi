@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
-from ..base import BaseConnector
+from ..domain.base import BaseConnector
 from modules.shopify.infrastructure.mock_generator import generate_full_mock_dataset
+from core.utils import retry
 
 class ShopifyConnector(BaseConnector):
     """
@@ -9,6 +10,7 @@ class ShopifyConnector(BaseConnector):
     En production, il utilisera l'API Shopify (REST/GraphQL).
     """
 
+    @retry(retries=3, delay=1.0)
     async def fetch_products(self, shop_id: str) -> List[Dict[str, Any]]:
         """
         Récupère les produits Shopify (Mock).

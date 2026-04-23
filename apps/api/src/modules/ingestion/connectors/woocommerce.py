@@ -27,7 +27,7 @@ import io
 from typing import List, Dict, Any
 from datetime import datetime
 
-from ..base import BaseConnector
+from ..domain.base import BaseConnector
 
 
 # Mapping colonnes WooCommerce → Michi

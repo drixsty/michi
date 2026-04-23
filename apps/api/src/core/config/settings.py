@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = "development"
     
+    @property
+    def ENV(self) -> str:
+        return self.ENVIRONMENT
+
+    # Security
+    MASTER_ENCRYPTION_KEY: str = ""
+    
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000"
     

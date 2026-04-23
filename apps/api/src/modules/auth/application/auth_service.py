@@ -32,6 +32,7 @@ from modules.auth.infrastructure.persistence.models import (
     User,
     UserRole,
 )
+from modules.inventory.application.email_service import EmailService
 from core.exceptions import ErrorCode, MichiException, UnauthenticatedException
 
 
@@ -57,6 +58,7 @@ class ApplicationAuthService:
         membership_repo: SQLAlchemyMembershipRepository,
         password_hasher: IPasswordHasher,
         token_service: ITokenService,
+        email_service: Optional[EmailService] = None,
         billing_service=None,
     ) -> None:
         self._users = user_repo
@@ -64,6 +66,7 @@ class ApplicationAuthService:
         self._memberships = membership_repo
         self._hasher = password_hasher
         self._tokens = token_service
+        self._email = email_service
         self._billing = billing_service
 
     async def login(self, email: str, password: str) -> AuthResult:
@@ -285,3 +288,86 @@ class ApplicationAuthService:
             
         user_entity.is_active = is_active
         return await self._users.update(user_entity)
+
+    async def request_password_reset(self, email: str) -> bool:
+        """
+        Initie le workflow de réinitialisation de mot de passe.
+        """
+        from datetime import datetime, timedelta
+        import secrets
+        from modules.auth.infrastructure.persistence.models import PasswordResetToken
+        from core.config import settings
+        from loguru import logger
+
+        email = email.strip().lower()
+        user_model = await self._users.get_model_by_email(email)
+        
+        # Sécurité : on ne dit pas si l'email existe ou non (prévention énumération)
+        if not user_model:
+            logger.info(f"Password reset requested for unknown email: {email}")
+            return True
+
+        # Générer token sécurisé
+        token = secrets.token_urlsafe(32)
+        expires_at = datetime.utcnow() + timedelta(hours=1)
+        
+        # Enregistrer le token
+        reset_token = PasswordResetToken(
+            user_id=user_model.id,
+            token=token,
+            expires_at=expires_at
+        )
+        self._users._db.add(reset_token)
+        await self._users._db.flush()
+        
+        # Envoyer l'email
+        if self._email:
+            # TODO: Utiliser l'URL de base configurée
+            base_url = "http://localhost:3000" if settings.ENVIRONMENT == "development" else "https://app.michi.ai"
+            # On détecte la locale de l'utilisateur (simplifié : fr par défaut)
+            locale = user_model.preferences.get("language", "fr")
+            reset_link = f"{base_url}/{locale}/reset-password?token={token}"
+            
+            await self._email.send_password_reset(email, reset_link)
+            
+        return True
+
+    async def reset_password(self, token: str, new_password: str) -> bool:
+        """
+        Valide le token et change le mot de passe.
+        """
+        from datetime import datetime
+        from sqlalchemy import select
+        from modules.auth.infrastructure.persistence.models import PasswordResetToken
+        from loguru import logger
+
+        # Rechercher le token
+        result = await self._users._db.execute(
+            select(PasswordResetToken).where(PasswordResetToken.token == token)
+        )
+        reset_token = result.scalar_one_or_none()
+        
+        if not reset_token:
+            logger.warning(f"Invalid reset token: {token}")
+            return False
+            
+        if reset_token.expires_at < datetime.utcnow():
+            logger.warning(f"Expired reset token: {token}")
+            await self._users._db.delete(reset_token)
+            await self._users._db.commit()
+            return False
+            
+        # Changer le mot de passe
+        user_model = await self._users.get_model_by_id(reset_token.user_id)
+        if not user_model:
+            return False
+            
+        new_hashed = self._hasher.hash(new_password)
+        user_model.hashed_password = new_hashed.value
+        
+        # Supprimer le token utilisé
+        await self._users._db.delete(reset_token)
+        await self._users._db.commit()
+        
+        logger.info(f"Password successfully reset for user: {user_model.email}")
+        return True

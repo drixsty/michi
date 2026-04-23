@@ -4,7 +4,7 @@ exclude = ["**/node_modules", "**/__pycache__"]
 executionEnvironments = [
   { root = "src" }
 ]
-typeCheckingMode = "basic"
+typeCheckingMode = "standard"
 pythonVersion = "3.12"
 reportMissingImports = true
 reportMissingModuleSource = false
@@ -13,37 +13,17 @@ reportMissingModuleSource = false
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
-disallow_any_generics = false
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
-module = "modules.*.tests.*"
+module = "tests.*"
 disallow_untyped_defs = false
 check_untyped_defs = false
 
 [[tool.mypy.overrides]]
-module = "modules.*.models"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "core.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "modules.auth.infrastructure.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "modules.auth.application.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "modules.auth.service"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "modules.auth.invitation_service"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "modules.auth.decorators"
+module = "core.database.models"
 ignore_errors = true

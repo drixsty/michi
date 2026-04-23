@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useMutation, gql } from '@apollo/client';
 import { 
   ShoppingCart, 
@@ -19,6 +20,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { SidePanel } from '../ui/SidePanel';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 // Reuse existing mutation from ConnectorsGrid (assuming it's compatible)
 const TOGGLE_SOURCE = gql`
@@ -26,6 +28,15 @@ const TOGGLE_SOURCE = gql`
     toggleSource(platform: $platform, connected: $connected) {
       id
       connected
+    }
+  }
+`;
+
+const UPDATE_STORE_CREDENTIALS = gql`
+  mutation UpdateStoreCredentials($input: UpdateCredentialInput!) {
+    updateStoreCredentials(input: $input) {
+      id
+      updatedAt
     }
   }
 `;
@@ -57,6 +68,15 @@ const CONNECTOR_TYPES = [
     color: 'text-indigo-600',
     bg: 'bg-indigo-50',
     status: 'Direct'
+  },
+  {
+    id: 'csv',
+    name: 'Fichier CSV',
+    description: 'Importation manuelle via notre moteur d\'analyse intelligente IA.',
+    icon: Database,
+    color: 'text-blue-600',
+    bg: 'bg-blue-50',
+    status: 'Permanent'
   }
 ];
 
@@ -68,6 +88,7 @@ interface AddSourcePanelProps {
 }
 
 export function AddSourcePanel({ isOpen, onClose, onSuccess, connectedPlatforms }: AddSourcePanelProps) {
+  const router = useRouter();
   const [step, setStep] = useState<'selection' | 'config'>('selection');
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   
@@ -75,6 +96,7 @@ export function AddSourcePanel({ isOpen, onClose, onSuccess, connectedPlatforms 
   const [shopUrl, setShopUrl] = useState('');
   const [sellerId, setSellerId] = useState('');
   const [mwsToken, setMwsToken] = useState('');
+  const [amazonRegion, setAmazonRegion] = useState('eu-west-1');
   const [wooUrl, setWooUrl] = useState('');
   const [wooKey, setWooKey] = useState('');
   const [wooSecret, setWooSecret] = useState('');
@@ -106,25 +128,20 @@ export function AddSourcePanel({ isOpen, onClose, onSuccess, connectedPlatforms 
       icon: Globe,
       color: 'text-indigo-600',
       bg: 'bg-indigo-50'
+    },
+    csv: {
+      name: 'Fichier CSV',
+      description: 'Importation manuelle via notre moteur d\'analyse intelligente IA.',
+      icon: Database,
+      color: 'text-blue-600',
+      bg: 'bg-blue-50'
     }
   };
 
   const availablePlatforms = Object.keys(connectorData)
-    .filter(id => !connectedPlatforms.some(cp => cp.toLowerCase() === id.toLowerCase()))
+    .filter(id => id === 'csv' || !connectedPlatforms.some(cp => cp.toLowerCase() === id.toLowerCase()))
     .map(id => ({ id, ...connectorData[id] }));
 
-  const [toggleSource, { loading: toggling }] = useMutation(TOGGLE_SOURCE, {
-    onCompleted: () => {
-      setSuccess(true);
-      setTimeout(() => {
-        onSuccess();
-        handleClose();
-      }, 1500);
-    },
-    onError: (err) => {
-      setError(err.message);
-    }
-  });
 
   const handleClose = () => {
     setStep('selection');
@@ -141,49 +158,91 @@ export function AddSourcePanel({ isOpen, onClose, onSuccess, connectedPlatforms 
   };
 
   const handleSelectPlatform = (id: string) => {
+    if (id === 'csv') {
+      router.push('/dashboard/import');
+      onClose();
+      return;
+    }
     setSelectedPlatform(id);
     setStep('config');
   };
 
   const fillTestData = () => {
-    if (selectedPlatform === 'shopify') setShopUrl('michi-test-shop');
+    if (selectedPlatform === 'shopify') {
+      setShopUrl('michi-test-shop');
+      setMwsToken('shpat_test_token_123456789');
+    }
     if (selectedPlatform === 'amazon') {
-      setSellerId('TEST_SELLER_ID');
-      setMwsToken('amzn.mws.test-token-12345');
+      setSellerId('A3TESTSELLERID');
+      setMwsToken('Atzr|test_refresh_token_amzn_123');
+      setAmazonRegion('eu-west-1');
     }
     if (selectedPlatform === 'woocommerce') {
-      setWooUrl('https://example-shop.com');
-      setWooKey('ck_test_key_123');
-      setWooSecret('cs_test_secret_456');
+      setWooUrl('https://michi-demo-store.com');
+      setWooKey('ck_test_e5a2e5a2e5a2e5a2e5a2');
+      setWooSecret('cs_test_f6b3f6b3f6b3f6b3f6b3');
     }
   };
+
+  const [toggleSource, { loading: toggling }] = useMutation(TOGGLE_SOURCE);
+  const [updateCredentials] = useMutation(UPDATE_STORE_CREDENTIALS);
 
   const handleConnect = async () => {
     if (!selectedPlatform) return;
     setError(null);
     
-    // Simple validation
-    if (selectedPlatform === 'shopify' && !shopUrl) {
-      setError(t("shopify.error"));
-      return;
-    }
-    
-    // --- Sprint 15 : Real Connection for Shopify ---
-    // Bypass real connection if user clicked "Use test data" (michi-test-shop)
-    if (selectedPlatform === 'shopify' && shopUrl !== 'michi-test-shop') {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const cleanShop = shopUrl.replace('.myshopify.com', '');
-      window.location.href = `${backendUrl}/api/shopify/auth?shop=${cleanShop}`;
-      return;
-    }
+    try {
+      // 1. Activer la source
+      const { data: toggleData } = await toggleSource({ 
+        variables: { 
+          platform: selectedPlatform, 
+          connected: true 
+        } 
+      });
 
-    // Mock connection for others (until Sprint 16/17) and for test Shopify
-    await toggleSource({ 
-      variables: { 
-        platform: selectedPlatform, 
-        connected: true 
-      } 
-    });
+      if (!toggleData?.toggleSource?.connected) {
+        throw new Error("Failed to activate source");
+      }
+
+      // 2. Sauvegarder les credentials
+      let apiKeyVal = "";
+      let apiSecretVal = "";
+      let meta = {};
+
+      if (selectedPlatform === 'shopify') {
+        apiKeyVal = shopUrl; // URL du shop dans apiKey (ou meta)
+        apiSecretVal = mwsToken; 
+        meta = { shop_url: shopUrl };
+      } else if (selectedPlatform === 'amazon') {
+        apiKeyVal = sellerId;
+        apiSecretVal = mwsToken;
+        meta = { seller_id: sellerId, region: amazonRegion };
+      } else if (selectedPlatform === 'woocommerce') {
+        apiKeyVal = wooKey;
+        apiSecretVal = wooSecret;
+        meta = { store_url: wooUrl };
+      }
+
+      await updateCredentials({
+        variables: {
+          input: {
+            storeId: toggleData.toggleSource.id,
+            apiKey: apiKeyVal || null,
+            apiSecret: apiSecretVal || null,
+            metaJson: JSON.stringify(meta)
+          }
+        }
+      });
+
+      setSuccess(true);
+      setTimeout(() => {
+        handleClose();
+        onSuccess();
+      }, 1500);
+
+    } catch (err: any) {
+      setError(err.message || "An error occurred during connection");
+    }
   };
 
   const currentPlatform = CONNECTOR_TYPES.find(p => p.id === selectedPlatform);
@@ -275,71 +334,34 @@ export function AddSourcePanel({ isOpen, onClose, onSuccess, connectedPlatforms 
                 <div className="p-4 bg-emerald-50/50 rounded-lg border border-emerald-100/50 space-y-2">
                   <h4 className="text-[10px] font-bold text-emerald-700 flex items-center gap-2">
                     <Lock className="h-3 w-3" />
-                    {t('shopify.title')}
+                    Shopify configuration
                   </h4>
                   <p className="text-[9px] text-emerald-600/70 font-medium leading-relaxed">
-                    {t('shopify.guide')}
+                    Enter your shop URL and Admin Access Token from your Shopify custom app.
                   </p>
                 </div>
                 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 ml-1">{t('shopify.label')}</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-slate-50 rounded-lg group-focus-within:bg-emerald-50 transition-colors">
-                      <Search className="h-3.5 w-3.5 text-slate-400 group-focus-within:text-emerald-600" />
-                    </div>
-                    <input 
-                      type="text"
-                      placeholder="ma-boutique-direct"
-                      value={shopUrl}
-                      onChange={(e) => setShopUrl(e.target.value)}
-                      className="w-full h-12 pl-12 pr-32 bg-slate-100/50 border border-transparent rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all"
-                    />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <span className="text-[9px] font-bold text-slate-400 tracking-tight">.myshopify.com</span>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 ml-1">Shop URL</label>
+                    <div className="relative">
+                      <input 
+                        type="text"
+                        placeholder="my-store"
+                        value={shopUrl}
+                        onChange={(e) => setShopUrl(e.target.value)}
+                        className="w-full h-11 pl-4 pr-32 bg-slate-100/50 border border-transparent rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <span className="text-[9px] font-bold text-slate-400 tracking-tight">.myshopify.com</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <button 
-                  type="button"
-                  onClick={fillTestData}
-                  className="w-full py-2 border border-dashed border-emerald-200 rounded-lg text-[9px] font-bold text-emerald-600 hover:bg-emerald-50 focus:ring-0 focus:outline-none transition-colors flex items-center justify-center gap-2"
-                >
-                  <Database className="h-3 w-3" />
-                  {t('testData')}
-                </button>
-              </div>
-            )}
-
-            {selectedPlatform === 'amazon' && (
-              <div className="space-y-4">
-                <div className="p-4 bg-orange-50/50 rounded-lg border border-orange-100/50 space-y-2">
-                  <h4 className="text-[10px] font-bold text-orange-700 flex items-center gap-2">
-                    <ExternalLink className="h-3 w-3" />
-                    {t('amazon.title')}
-                  </h4>
-                  <p className="text-[9px] text-orange-600/70 font-medium leading-relaxed">
-                    {t('amazon.guide')}
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 ml-1">Seller ID</label>
-                    <input 
-                      type="text"
-                      placeholder="A123BCDEFGH456"
-                      value={sellerId}
-                      onChange={(e) => setSellerId(e.target.value)}
-                      className="w-full h-11 px-4 bg-slate-100/50 border border-transparent rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-slate-400 ml-1">MWS Auth Token</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 ml-1">Admin access token</label>
                     <input 
                       type="password"
-                      placeholder="amzn.mws.4ea07525-..."
+                      placeholder="shpat_xxxxxxxxxxxxxxxx"
                       value={mwsToken}
                       onChange={(e) => setMwsToken(e.target.value)}
                       className="w-full h-11 px-4 bg-slate-100/50 border border-transparent rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all"
@@ -350,10 +372,69 @@ export function AddSourcePanel({ isOpen, onClose, onSuccess, connectedPlatforms 
                 <button 
                   type="button"
                   onClick={fillTestData}
+                  className="w-full py-2 border border-dashed border-emerald-200 rounded-lg text-[9px] font-bold text-emerald-600 hover:bg-emerald-50 focus:ring-0 focus:outline-none transition-colors flex items-center justify-center gap-2"
+                >
+                  <Database className="h-3 w-3" />
+                  Use test data
+                </button>
+              </div>
+            )}
+
+            {selectedPlatform === 'amazon' && (
+              <div className="space-y-4">
+                <div className="p-4 bg-orange-50/50 rounded-lg border border-orange-100/50 space-y-2">
+                  <h4 className="text-[10px] font-bold text-orange-700 flex items-center gap-2">
+                    <ExternalLink className="h-3 w-3" />
+                    Amazon SP-API configuration
+                  </h4>
+                  <p className="text-[9px] text-orange-600/70 font-medium leading-relaxed">
+                    Connect your Seller Central account using SP-API credentials.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 ml-1">Seller ID</label>
+                    <input 
+                      type="text"
+                      placeholder="A123BCDEFGH456"
+                      value={sellerId}
+                      onChange={(e) => setSellerId(e.target.value)}
+                      className="w-full h-11 px-4 bg-slate-100/50 border border-transparent rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 ml-1">LWA refresh token</label>
+                    <input 
+                      type="password"
+                      placeholder="Atzr|xxxxxxxxxxxxxxxx"
+                      value={mwsToken}
+                      onChange={(e) => setMwsToken(e.target.value)}
+                      className="w-full h-11 px-4 bg-slate-100/50 border border-transparent rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 ml-1">Region</label>
+                    <CustomSelect 
+                      className="w-full h-11"
+                      value={amazonRegion}
+                      onChange={setAmazonRegion}
+                      options={[
+                        { value: 'eu-west-1', label: 'Europe (UK, FR, DE, ES, IT)' },
+                        { value: 'us-east-1', label: 'North America (US, CA, MX, BR)' },
+                        { value: 'us-west-2', label: 'Far East (AU, JP, SG)' }
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="button"
+                  onClick={fillTestData}
                   className="w-full py-2 border border-dashed border-orange-200 rounded-lg text-[9px] font-bold text-orange-600 hover:bg-orange-50 focus:ring-0 focus:outline-none transition-colors flex items-center justify-center gap-2"
                 >
                   <Database className="h-3 w-3" />
-                  {t('testData')}
+                  Use test data
                 </button>
               </div>
             )}
@@ -363,40 +444,40 @@ export function AddSourcePanel({ isOpen, onClose, onSuccess, connectedPlatforms 
                 <div className="p-4 bg-indigo-50/50 rounded-lg border border-indigo-100/50 space-y-2">
                   <h4 className="text-[10px] font-bold text-indigo-700 flex items-center gap-2">
                     <Database className="h-3 w-3" />
-                    {t('woocommerce.title')}
+                    WooCommerce REST API
                   </h4>
                   <p className="text-[9px] text-indigo-600/70 font-medium leading-relaxed">
-                    {t('woocommerce.guide')}
+                    Generate Consumer Key and Secret in your WordPress settings.
                   </p>
                 </div>
                 
                 <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 ml-1">{t('woocommerce.url')}</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 ml-1">Store URL</label>
                     <input 
                       type="url"
-                      placeholder="https://mon-site.com"
+                      placeholder="https://my-site.com"
                       value={wooUrl}
                       onChange={(e) => setWooUrl(e.target.value)}
                       className="w-full h-11 px-4 bg-slate-100/50 border border-transparent rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 ml-1">{t('woocommerce.key')}</label>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 ml-1">Consumer key</label>
                       <input 
                         type="text"
-                        placeholder="ck_..."
+                        placeholder="ck_xxxxxxxxxxxxxxxx"
                         value={wooKey}
                         onChange={(e) => setWooKey(e.target.value)}
                         className="w-full h-11 px-4 bg-slate-100/50 border border-transparent rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 ml-1">{t('woocommerce.secret')}</label>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 ml-1">Consumer secret</label>
                       <input 
                         type="password"
-                        placeholder="cs_..."
+                        placeholder="cs_xxxxxxxxxxxxxxxx"
                         value={wooSecret}
                         onChange={(e) => setWooSecret(e.target.value)}
                         className="w-full h-11 px-4 bg-slate-100/50 border border-transparent rounded-lg text-xs font-bold text-slate-900 focus:bg-white focus:border-primary/20 focus:ring-4 focus:ring-primary/5 focus:outline-none transition-all"
@@ -411,7 +492,7 @@ export function AddSourcePanel({ isOpen, onClose, onSuccess, connectedPlatforms 
                   className="w-full py-2 border border-dashed border-indigo-200 rounded-lg text-[9px] font-bold text-indigo-600 hover:bg-indigo-50 focus:ring-0 focus:outline-none transition-colors flex items-center justify-center gap-2"
                 >
                   <Database className="h-3 w-3" />
-                  {t('testData')}
+                  Use test data
                 </button>
               </div>
             )}
@@ -421,7 +502,7 @@ export function AddSourcePanel({ isOpen, onClose, onSuccess, connectedPlatforms 
               <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 animate-in fade-in zoom-in duration-300">
                 <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-red-700">{t('errors.title')}</p>
+                  <p className="text-[10px] font-bold text-red-700">Connection error</p>
                   <p className="text-[9px] text-red-600 font-medium leading-relaxed">{error}</p>
                 </div>
               </div>

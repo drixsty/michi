@@ -7,6 +7,29 @@ from typing import Optional, List
 from datetime import datetime, date
 
 @strawberry.type
+class TestConnectionResult:
+    success: bool
+    message: str
+    latency_ms: Optional[int] = None
+
+@strawberry.input
+class UpdateCredentialInput:
+    store_id: strawberry.ID
+    access_token: Optional[str] = None
+    api_key: Optional[str] = None
+    api_secret: Optional[str] = None
+    meta_json: Optional[str] = "{}"
+
+@strawberry.type
+class CredentialType:
+    id: strawberry.ID
+    store_id: strawberry.ID
+    api_key_last_chars: Optional[str] = None # Sécurité: ne jamais renvoyer la clé entière
+    has_token: bool
+    meta: str # JSON
+    updated_at: datetime
+
+@strawberry.type
 class OrganizationType:
     """Type Organization GraphQL"""
     id: strawberry.ID
@@ -534,3 +557,32 @@ class ChangePasswordInput:
 
 # SourceType alias for backward compatibility or refactor frontend
 SourceType = StoreType
+
+@strawberry.input
+class RequestPasswordResetInput:
+    email: str
+
+@strawberry.input
+class ResetPasswordInput:
+    token: str
+    new_password: str
+@strawberry.type
+class MappingSuggestionType:
+    target_field: str
+    csv_column: str
+    confidence: float
+
+@strawberry.type
+class CsvAnalysisType:
+    columns: List[str]
+    column_types: str
+    suggested_mapping: List[MappingSuggestionType]
+    sample_data: str
+    anomalies: str
+    impact_summary: Optional[str] = None
+
+@strawberry.input
+class SmartImportInput:
+    store_id: strawberry.ID
+    csv_content: str
+    mapping: str

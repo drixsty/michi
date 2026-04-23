@@ -226,6 +226,7 @@
       "readonly": "Lecture seule",
       "updating": "Mise à jour du canal...",
       "status": "Statut",
+      "manageKeys": "Gérer les clés",
       "cancel": "Annuler",
       "confirm": "Confirmer",
       "header": {
@@ -420,6 +421,21 @@
       "urgent": "Urgent",
       "critical": "Critique"
     }
+  },
+  "connections": {
+    "title": "Apps & intégrations",
+    "description": "Gérez vos connexions aux plateformes e-commerce et sécurisez vos clés API.",
+    "statusConnected": "Connecté",
+    "statusDisconnected": "Déconnecté",
+    "testButton": "Tester",
+    "configureButton": "Configurer",
+    "modalTitle": "Paramètres {platform}",
+    "apiKeyLabel": "Clé API / Client ID",
+    "apiSecretLabel": "Secret API / Access token",
+    "saveButton": "Enregistrer les modifications",
+    "closeButton": "Fermer",
+    "encryptionNotice": "Chiffrement AES-256 actif.",
+    "platformDescription": "Synchronisez vos stocks et vos ventes {platform} en temps réel avec Michi."
   },
   "inventory": {
     "title": "Inventaire",

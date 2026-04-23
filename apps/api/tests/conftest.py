@@ -15,6 +15,7 @@ from httpx import AsyncClient
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://user:pass@localhost:5432/db"
 os.environ["SECRET_KEY"] = "test-secret-key-12345"
 os.environ["ENVIRONMENT"] = "testing"
+os.environ["MASTER_ENCRYPTION_KEY"] = "rE-f4L_Xp-6_T7_Y_p-8_D7_W_p-9_A7_Z_p-0_B7_C=" # Fernet valid dummy key
 
 # SMTP
 os.environ["SMTP_HOST"] = "localhost"
@@ -38,14 +39,13 @@ os.environ["STRIPE_PRICE_PRO"] = "price_2"
 os.environ["STRIPE_PRICE_ENTERPRISE"] = "price_3"
 # --- End of Mock ---
 
-from database import Base
-from database import get_db
-from src.main import app
+from core.database import Base, get_db
+from main import app
 
-# Imports des modèles pour enregistrement dans Metadata (Updated paths after refactor)
-from src.modules.auth.infrastructure.persistence.models import User, Organization, OrganizationMember, Invitation
-from src.modules.inventory.infrastructure.persistence.models import Product, SalesLog, Supplier, Alert, AlertEmail, PurchaseOrder, Store
-from security import hash_password
+# Utilisation des modèles centralisés dans Core
+from core.database.models import User, Organization, OrganizationMember, Invitation
+from modules.inventory.infrastructure.persistence.models import Product, SalesLog, Supplier, Alert, AlertEmail, PurchaseOrder, Store, StoreCredential
+from core.security.hashing import hash_password
 
 # Database de test éphémère (SQLite Async)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -100,11 +100,11 @@ async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
 async def test_user(db_session) -> User:
     """Créer un user de test et son organisation/store associés"""
     import uuid
-    from src.modules.inventory.domain.entities import PlatformSource
-    from src.modules.auth.domain.entities import UserRole
+    from modules.inventory.domain.entities import PlatformSource
+    from modules.auth.domain.entities import UserRole
     # Models are in infrastructure
-    from src.modules.auth.infrastructure.persistence.models import Organization, OrganizationMember, User
-    from src.modules.inventory.infrastructure.persistence.models import Store
+    from core.database.models import Organization, OrganizationMember, User
+    from modules.inventory.infrastructure.persistence.models import Store
     
     shop_uuid = uuid.uuid4()
     org_uuid = uuid.uuid4()
@@ -151,7 +151,7 @@ async def test_user(db_session) -> User:
 @pytest.fixture(scope="function")
 async def auth_token(test_user) -> str:
     """Token JWT pour user de test"""
-    from security import create_access_token
+    from core.middleware.auth import create_access_token
     
     token = create_access_token({
         "user_id": str(test_user.id),

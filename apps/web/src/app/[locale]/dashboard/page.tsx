@@ -7,7 +7,6 @@ import { GET_ME } from '@/graphql/queries/getMe';
 import { TRIGGER_MOCK_DATA_SYNC } from '@/graphql/mutations/syncInventory';
 import { GET_DASHBOARD_STATS, FINANCIAL_OVERVIEW } from '@/graphql/queries/getDashboardStats';
 import { GET_UNREAD_ALERTS } from '@/graphql/queries/getUnreadAlerts';
-import { INGEST_CSV_DATA } from '@/graphql/mutations/ingestCSV';
 import { AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { gql } from '@apollo/client';
@@ -19,7 +18,6 @@ import OnboardingWizard from '@/components/dashboard/OnboardingWizard';
 
 import { OverviewView } from '@/components/dashboard/views/OverviewView';
 import { InventoryView } from '@/components/dashboard/views/InventoryView';
-import { SourcesView } from '@/components/dashboard/views/SourcesView';
 import { DecisionsView } from '@/components/dashboard/views/DecisionsView';
 import { OrganizationView } from '@/components/dashboard/views/OrganizationView';
 
@@ -92,35 +90,14 @@ function DashboardContent() {
     },
   });
 
-  const [ingestCSV] = useMutation(INGEST_CSV_DATA, {
-    onCompleted: () => {
-      setToast({ message: tToast('importSuccess'), type: 'success' });
-      refetchProducts();
-      refetchStats();
-      setTimeout(() => setToast(null), 5000);
-    },
-  });
+
 
   const [deleteAlert] = useMutation(DELETE_ALERT, {
     onCompleted: () => refetchAlerts(),
   });
 
-  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const content = event.target?.result as string;
-      if (content) {
-        await ingestCSV({
-          variables: {
-            csvContent: content,
-            skuCol: 'sku', dateCol: 'date', salesCol: 'sales', stockCol: 'stock', titleCol: 'title'
-          }
-        });
-      }
-    };
-    reader.readAsText(file);
+  const handleCSVUpload = () => {
+    router.push('/dashboard/import');
   };
 
   const handleExport = () => {
@@ -248,12 +225,6 @@ function DashboardContent() {
           />
         )}
 
-        {activeTab === 'sources' && (
-          <SourcesView
-            onImport={handleCSVUpload}
-            isAdmin={isAdmin}
-          />
-        )}
 
         {activeTab === 'decisions' && <DecisionsView />}
         {activeTab === 'organization' && <OrganizationView />}

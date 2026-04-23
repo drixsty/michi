@@ -1,17 +1,20 @@
 michi 
 
 - Trouver un nouveau nom à l'app plus parlant et proche de l'identité de stripe, apple, et autres
-- mettre en place des contraintes sur le core du code pour éviter les erreurs de types
-- mettre en place des tests unitaires et d'intégration
+- mettre en place des contraintes sur le core du code pour éviter les erreurs de types [Terminé ✅]
+    - *Blindage effectué : Immutabilité du domaine (frozen dataclasses), hiérarchie d'exceptions typées, Mypy/Pyright strict, et décorateurs de résilience (Retry).*
+- mettre en place des tests unitaires et d'intégration [Terminé ✅]
 - finaliser la documentation et contruire une documentation api pour une integration externe
-- configurer un system de credentials pour les differents connecteurs et les api avec tout un system de gestion des clés et tokens directement depuis l'interface utilisateur par les admins
-- intégrer de bout en bout jusqu'au backend la gestion des credentials et des api, des niveau d'accès et des permissions en fonction du plan de l'utilisateur et des rôles
+- configurer un system de credentials pour les differents connecteurs et les api avec tout un system de gestion des clés et tokens directement depuis l'interface utilisateur par les admins [Terminé ✅]
+    - *Implémentation du Security Vault : Centralisation dans Settings/Connections. Saisie "just-in-time" lors de l'activation des sources.*
+- intégrer de bout en bout jusqu'au backend la gestion des credentials et des api, des niveau d'accès et des permissions en fonction du plan de l'utilisateur et des rôles [Terminé ✅]
+    - *Blindage backend : Chiffrement AES-256 (Fernet) via SQL Alchemy. Décorateur @require_plan et gestion des permissions par rôle (Admin/Viewer).*
 - mettre en place un système de notification pour informer l'utilisateur des différentes actions effectuées sur le produit
 - Aucune notification ne remonte donc il faut en rajouter des notification dans les tests 
-- Il faut construire une page d'importation intelligente des données qui s'adapte aux format des données d'entrée et offre la possibilité dans un system de drag and drop à l'utilisateur de corriger l'importation
-- il y'a des données encore en dur dans la page login, onboarding et signin qui ne sont pas dans i18n
-- Ajouter la possibilité voir ou cacher le mot de passe saisie au niveau du login ou singup; 
-- rajoute la possibilité de réinitialiser sont mot de passe par mail, rajoute le lien au niveau du login et un autre au niveau des settings utilisateur.
+- Il faut construire une page d'importation intelligente des données qui s'adapte aux format des données d'entrée et offre la possibilité dans un system de drag and drop à l'utilisateur de corriger l'importation [Terminé ✅]
+- il y'a des données encore en dur dans la page login, onboarding et signin qui ne sont pas dans i18n [Terminé ✅]
+- Ajouter la possibilité voir ou cacher le mot de passe saisie au niveau du login ou singup; [Terminé ✅]
+- rajoute la possibilité de réinitialiser sont mot de passe par mail, rajoute le lien au niveau du login et un autre au niveau des settings utilisateur. [Terminé ✅]
 - UI/UX revoit les pages pour les rendre plus adapter sur mobile
 - revoir et développer un onboarding pas à pas et une interface qui force l'utilisateur à connecter au moins une source de données avant de pourvoir commencer à utiliser le produit et pour l'onboarding pas à pas, il faut verifier si c'est la première connexion pour commencer l'onboarding sinon celui-ci pourra demander
 - construire un petit backoffice avec la possibilité de passer par ce biais pour accéder à une interface utilisateur 

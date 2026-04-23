@@ -26,12 +26,21 @@ class InventoryService:
         self.sales_log_repo = sales_log_repo
         self.store_repo = store_repo
 
+    async def get_product(self, product_id: UUID) -> ProductEntity:
+        """Récupère un produit ou lève une NotFoundError."""
+        from core.exceptions import NotFoundError
+        product = await self.product_repo.get_by_id(product_id)
+        if not product:
+            raise NotFoundError("Product", product_id)
+        return product
+
     async def upsert_inventory_data(
         self, 
         shop_id: str, 
         platform: PlatformSource, 
         products_data: List[Dict[str, Any]], 
-        sales_data: List[Dict[str, Any]]
+        sales_data: List[Dict[str, Any]],
+        organization_id: Optional[UUID] = None
     ) -> Dict[str, Any]:
         """
         Ingestion unifiée avec UPSERT (Stable UUIDs par SKU).
@@ -39,8 +48,19 @@ class InventoryService:
         """
         logger.info(f"[Inventory] UPSERT start for shop {shop_id} (Platform: {platform.value})")
 
-        # 1. Charger les produits existants pour réconciliation
-        s_uuid = UUID(str(shop_id))
+        # 1. Résolution de l'ID du magasin (Gestion du cas "other")
+        try:
+            s_uuid = UUID(str(shop_id))
+        except ValueError:
+            if organization_id:
+                logger.info(f"[Inventory] Non-UUID shop_id '{shop_id}'. Resolving default CSV store for org {organization_id}")
+                # On utilise toggle_source pour obtenir un store stable pour les imports CSV
+                store = await self.toggle_source(organization_id, "CSV", True)
+                s_uuid = store.id
+            else:
+                raise ValueError(f"shop_id '{shop_id}' is not a valid UUID and no organization_id provided for resolution.")
+
+        # 2. Charger les produits existants pour réconciliation
         existing_products = {p.sku: p for p in await self.product_repo.list_by_store([s_uuid])}
 
         # 2. Traiter les produits
@@ -172,8 +192,8 @@ class InventoryService:
                 connected=connected
             )
         else:
-            store.name = platform.capitalize()
-            store.connected = connected
+            from dataclasses import replace
+            store = replace(store, name=platform.capitalize(), connected=connected)
         
         saved_store = await self.store_repo.save(store)
         
@@ -186,26 +206,42 @@ class InventoryService:
     async def ingest_csv_orchestrator(
         self,
         store_id: str,
-        csv_content: str,
+        csv_content: Any, # Can be str or bytes
         mapping: Dict[str, str],
         ingestion_service: Any,
         forecasting_service: Any,
-        alert_service: Any
+        alert_service: Any,
+        organization_id: Optional[UUID] = None,
+        is_excel: bool = False
     ) -> Dict[str, Any]:
         """Orchestre l'ingestion CSV complète (Ingestion -> Forecasting -> Alerts)."""
+        
+        # 0. Résolution de l'ID du magasin (Gestion du cas "other")
+        target_store_id = store_id
+        try:
+            UUID(str(store_id))
+        except ValueError:
+            if organization_id:
+                store = await self.toggle_source(organization_id, "CSV", True)
+                target_store_id = str(store.id)
+            else:
+                raise ValueError(f"store_id '{store_id}' is not a valid UUID and no organization_id provided.")
+
         # 1. Ingestion
         result = await ingestion_service.ingest_from_platform(
             platform="csv",
-            shop_id=store_id,
+            shop_id=target_store_id,
             csv_content=csv_content,
-            mapping=mapping
+            mapping=mapping,
+            organization_id=organization_id,
+            is_excel=is_excel
         )
         
         # 2. Forecasting Pipeline
-        await forecasting_service.run_cleaning_pipeline(store_id)
-        await forecasting_service.run_prediction_pipeline(store_id)
+        await forecasting_service.run_cleaning_pipeline(target_store_id)
+        await forecasting_service.run_prediction_pipeline(target_store_id)
         
         # 3. Alerts
-        await alert_service.check_for_stockouts(store_id)
+        await alert_service.check_for_stockouts(target_store_id)
         
         return result

@@ -9,12 +9,14 @@ from typing import List, Optional, Annotated
 import uuid
 
 from core.exceptions import UnauthenticatedException, MichiException, ErrorCode
-from modules.auth.adapters.decorators import require_permission
+from modules.auth.adapters.decorators import require_permission, require_plan
+from core.security.plans import PlanName
 from modules.auth.domain.constants import MichiPermission
 from core.graphql.types import (
     ProductType, AlertType, SupplierType, StoreType,
     PurchaseOrderType, OmnichannelProductType,
-    IngestionResult
+    IngestionResult, CsvAnalysisType, MappingSuggestionType,
+    SmartImportInput, UpdateCredentialInput, CredentialType, TestConnectionResult
 )
 
 # Helper functions for ProductType field resolvers
@@ -203,6 +205,165 @@ class InventoryMutation:
         return IngestionResult(
             success=True, 
             message="Import CSV réussi.", 
+            platform="csv", 
+            products_count=result["products_count"], 
+            sales_logs_count=result["sales_logs_count"]
+        )
+    @strawberry.mutation
+    @require_permission(MichiPermission.STORES_MANAGE)
+    async def analyze_csv(self, info, csv_content: str) -> CsvAnalysisType:
+        """Analyse la structure du CSV ou Excel et suggère un mapping."""
+        from modules.ingestion.connectors.csv import CSVConnector
+        import json
+        import base64
+        
+        is_excel = False
+        final_content = csv_content
+        
+        # Détection Base64 (Data URL) pour Excel
+        if csv_content.startswith("data:"):
+            try:
+                # Format: data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,....
+                header, base64_data = csv_content.split(",", 1)
+                final_content = base64.b64decode(base64_data)
+                is_excel = "spreadsheet" in header or "excel" in header
+            except:
+                pass
+
+        connector = CSVConnector()
+        analysis = await connector.discover_schema(final_content, is_excel=is_excel)
+        
+        # Transformer le mapping suggéré en liste de MappingSuggestionType
+        suggestions = []
+        for target, col in analysis["suggested_mapping"].items():
+            suggestions.append(MappingSuggestionType(
+                target_field=target,
+                csv_column=col,
+                confidence=0.9 # Valeur par défaut pour le MVP
+            ))
+            
+        # Résumé d'impact
+        impact = analysis.get("impact", {})
+        impact_msg = f"Fichier {'Excel' if impact.get('is_excel') else 'CSV'} analysé. "
+        impact_msg += f"{impact.get('total_rows')} lignes de données trouvées. "
+        impact_msg += f"{impact.get('unique_skus')} produits uniques identifiés."
+            
+        return CsvAnalysisType(
+            columns=analysis["columns"],
+            column_types=json.dumps(analysis["column_types"]),
+            suggested_mapping=suggestions,
+            sample_data=json.dumps(analysis["sample_data"]),
+            anomalies=json.dumps(analysis.get("anomalies", [])),
+            impact_summary=impact_msg
+        )
+
+    @strawberry.mutation
+    @require_permission(MichiPermission.STORES_MANAGE)
+    @require_plan(PlanName.PRO)
+    async def update_store_credentials(self, info, input: UpdateCredentialInput) -> CredentialType:
+        """Met à jour les credentials chiffrés d'un store."""
+        import json
+        from modules.inventory.infrastructure.repositories.credential_repository import SQLAlchemyCredentialRepository
+        from modules.inventory.domain.entities import CredentialEntity
+        
+        db = info.context.db
+        repo = SQLAlchemyCredentialRepository(db)
+        
+        # Préparer l'entité
+        meta = json.loads(input.meta_json or "{}")
+        entity = CredentialEntity(
+            id=uuid.uuid4(),
+            store_id=uuid.UUID(str(input.store_id)),
+            access_token=input.access_token,
+            api_key=input.api_key,
+            api_secret=input.api_secret,
+            meta=meta
+        )
+        
+        saved = await repo.save(entity)
+        await db.commit()
+        
+        return CredentialType(
+            id=strawberry.ID(str(saved.id)),
+            store_id=strawberry.ID(str(saved.store_id)),
+            api_key_last_chars=saved.api_key[-4:] if saved.api_key else None,
+            has_token=bool(saved.access_token),
+            meta=json.dumps(saved.meta),
+            updated_at=saved.updated_at
+        )
+
+    @strawberry.mutation
+    @require_permission(MichiPermission.STORES_MANAGE)
+    async def test_store_connection(self, info, store_id: strawberry.ID) -> TestConnectionResult:
+        """Teste la connexion d'un store avec ses credentials enregistrés."""
+        import time
+        from modules.inventory.infrastructure.repositories.credential_repository import SQLAlchemyCredentialRepository
+        
+        db = info.context.db
+        repo = SQLAlchemyCredentialRepository(db)
+        
+        credentials = await repo.get_by_store(uuid.UUID(str(store_id)))
+        if not credentials:
+            return TestConnectionResult(success=False, message="Aucun credential trouvé pour ce store.")
+        
+        # Simulation de test (en attendant l'implémentation réelle par plateforme)
+        start = time.time()
+        await asyncio.sleep(0.5) # Simuler un appel réseau
+        latency = int((time.time() - start) * 1000)
+        
+        return TestConnectionResult(
+            success=True, 
+            message="Connexion réussie (Simulation)", 
+            latency_ms=latency
+        )
+
+    @strawberry.mutation
+    @require_permission(MichiPermission.STORES_MANAGE)
+    async def smart_import(self, info, info_input: SmartImportInput) -> IngestionResult:
+        """Exécute l'importation avec le mapping validé par l'utilisateur."""
+        import json
+        from core.exceptions import DomainValidationError
+        
+        service = info.context.services.inventory_service
+        
+        try:
+            mapping = json.loads(input.mapping)
+        except json.JSONDecodeError:
+            raise DomainValidationError("Mapping JSON invalide.")
+        
+        from modules.ingestion.application.service import IngestionService
+        ingestion_service = IngestionService(info.context.db, inventory_service=service, alert_service=info.context.services.alert_service)
+        from modules.ingestion.connectors.csv import CSVConnector
+        ingestion_service.register_connector("csv", CSVConnector())
+
+        import base64
+        is_excel = False
+        final_content = input.csv_content
+        
+        if input.csv_content.startswith("data:"):
+            try:
+                header, base64_data = input.csv_content.split(",", 1)
+                final_content = base64.b64decode(base64_data)
+                is_excel = "spreadsheet" in header or "excel" in header
+            except Exception as e:
+                raise DomainValidationError(f"Fichier corrompu ou format Base64 invalide : {str(e)}")
+
+        result = await service.ingest_csv_orchestrator(
+            store_id=str(input.store_id),
+            csv_content=final_content,
+            mapping=mapping,
+            ingestion_service=ingestion_service,
+            forecasting_service=info.context.services.forecasting_service,
+            alert_service=info.context.services.alert_service,
+            organization_id=info.context.org_id,
+            is_excel=is_excel
+        )
+        
+        await info.context.db.commit()
+        
+        return IngestionResult(
+            success=True, 
+            message="Importation intelligente réussie.", 
             platform="csv", 
             products_count=result["products_count"], 
             sales_logs_count=result["sales_logs_count"]

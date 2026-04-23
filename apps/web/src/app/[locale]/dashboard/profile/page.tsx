@@ -11,8 +11,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Lock,
-  Eye,
-  EyeOff,
   LogOut,
   ChevronRight,
   UserCircle
@@ -21,6 +19,8 @@ import { cn } from '@/lib/utils';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { PasswordInput } from '@/components/ui/PasswordInput';
+import Link from 'next/link';
 
 const GET_ME = gql`
   query GetMe {
@@ -73,7 +73,6 @@ export default function ProfilePage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPasswords, setShowPasswords] = useState(false);
 
   useEffect(() => {
     if (data?.me) {
@@ -302,50 +301,38 @@ export default function ProfilePage() {
 
                 <form onSubmit={handleChangePassword} className="p-5 space-y-4">
                   <div className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[12px] font-medium text-muted-foreground ml-0.5">{t('security.currentPassword')}</label>
-                      <input
-                        type={showPasswords ? "text" : "password"}
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        required
-                        className="w-full h-9 px-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary/10 focus:border-primary/20 transition-all outline-none text-sm"
-                      />
-                    </div>
+                    <PasswordInput
+                      label={t('security.currentPassword')}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                    />
 
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-[12px] font-medium text-muted-foreground ml-0.5">{t('security.newPassword')}</label>
-                        <input
-                          type={showPasswords ? "text" : "password"}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          required
-                          className="w-full h-9 px-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary/10 focus:border-primary/20 transition-all outline-none text-sm"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[12px] font-medium text-muted-foreground ml-0.5">{t('security.confirmPassword')}</label>
-                        <input
-                          type={showPasswords ? "text" : "password"}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          required
-                          className="w-full h-9 px-3 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary/10 focus:border-primary/20 transition-all outline-none text-sm"
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <PasswordInput
+                        label={t('security.newPassword')}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        minLength={8}
+                      />
+                      <PasswordInput
+                        label={t('security.confirmPassword')}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={8}
+                      />
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswords(!showPasswords)}
-                      className="text-[12px] font-medium text-primary hover:underline flex items-center gap-1.5"
+                    <Link 
+                      href="/forgot-password"
+                      className="text-[12px] font-medium text-primary hover:underline"
                     >
-                      {showPasswords ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                      {showPasswords ? t('security.hidePasswords') : t('security.showPasswords')}
-                    </button>
+                      {t('security.forgotPasswordLink')}
+                    </Link>
 
                     <button
                       type="submit"
