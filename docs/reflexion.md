@@ -21,7 +21,8 @@ michi
 - construire un petit backoffice avec la possibilité de passer par ce biais pour accéder à une interface utilisateur 
 - que pouvons nous mettre en place concernant la RGPD ? et la double authentification aussi ?
 - prépare l'intégration d'un connecteur chatbot dopé à l'IA que j'intègrerai dans l'app
-- prépare la configuration de l'interval (journalier, mensuel, ou autre) de rapport par email sur les produits et autres et configure des template de rapport de mail avec appel à l'action
+- prépare la configuration de l'interval (journalier, mensuel, ou autre) de rapport par email sur les produits et autres et configure des template de rapport de mail avec appel à l'action [Terminé ✅]
+    - *Implémentation complète : Orchestrateur CronWorker, Template 'World-Class' avec insights stratégiques, et tests de blindage.*
 - nettoie également le code pour supprimer les class, méthodes et repertoire inutiles
 - Pouvons nous créer des service de connexion aux différents canaux tout en le respectde la DDD extensible à chaque nouveau connecteur créer ?
 - Pouvons nous créer un connecter officiel dans le shopify store et un autre dans amazon store pour le produit ?
