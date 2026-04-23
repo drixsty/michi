@@ -50,3 +50,20 @@ class SQLAlchemySalesLogRepository(ISalesLogRepository):
         ]
         self.session.add_all(models)
         await self.session.flush()
+
+    async def get_total_sales_for_org(self, org_id: UUID, days: int) -> float:
+        from sqlalchemy import func
+        from datetime import date, timedelta
+        from modules.inventory.infrastructure.persistence.models import Product, Store
+        
+        since_date = date.today() - timedelta(days=days)
+        
+        stmt = (
+            select(func.sum(SalesLog.units_sold))
+            .join(Product, Product.id == SalesLog.product_id)
+            .join(Store, Store.id == Product.store_id)
+            .where(Store.organization_id == org_id)
+            .where(SalesLog.date >= since_date)
+        )
+        result = await self.session.execute(stmt)
+        return float(result.scalar() or 0.0)

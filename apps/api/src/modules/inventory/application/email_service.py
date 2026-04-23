@@ -180,3 +180,91 @@ class EmailService:
         except Exception as e:
             logger.error(f"[EmailService] Failed to send reset email to {to_email}: {str(e)}")
             return False
+    async def send_periodic_report(
+        self, 
+        to_email: str, 
+        organization_name: str, 
+        frequency: str,
+        total_sales: float,
+        stockout_count: int,
+        health_score: int,
+        critical_products: list, # list of dicts {title, sku, days_left, color, stock_label}
+        date_range: str,
+        strategic_insight: str
+    ):
+        """
+        Envoie un rapport périodique premium (Daily/Weekly/Monthly).
+        """
+        import os
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+
+        template_path = os.path.join(os.path.dirname(__file__), "templates", "periodic_report.html")
+        try:
+            with open(template_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+        except Exception as e:
+            logger.error(f"[EmailService] Template not found at {template_path}")
+            return False
+
+        # Remplacement manuel des produits
+        product_rows = ""
+        for p in critical_products:
+            product_rows += f"""
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 16px 0;">
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 13px; font-weight: 700; color: #1e293b;">{p['title']}</span>
+                        <span style="font-size: 11px; color: #94a3b8;">SKU: {p['sku']}</span>
+                    </div>
+                </td>
+                <td style="text-align: right; padding: 16px 0;">
+                    <div style="font-size: 13px; font-weight: 800; color: {p['color']};">{p['stock_label']}</div>
+                    <div style="font-size: 11px; font-weight: 600; color: #64748b;">{p['days_left']}j restants</div>
+                </td>
+            </tr>
+            """
+
+        replacements = {
+            "{{ organization_name }}": organization_name,
+            "{{ frequency }}": frequency.capitalize(),
+            "{{ total_sales }}": f"{total_sales:,.0f}",
+            "{{ stockout_count }}": str(stockout_count),
+            "{{ health_score }}": str(health_score),
+            "{{ date_range }}": date_range,
+            "{{ strategic_insight }}": strategic_insight,
+            "{{ dashboard_url }}": "http://localhost:3000/dashboard",
+            '<!-- PRODUCT_LOOP_START -->\n                <tr class="product-row">\n                    <td>\n                        <div class="p-info">\n                            <span class="p-name">{{ product.title }}</span>\n                            <span class="p-sku">SKU: {{ product.sku }}</span>\n                        </div>\n                    </td>\n                    <td class="p-status">\n                        <div class="p-stock" style="color: PRODUCT_COLOR_PLACEHOLDER;">{{ product.stock_label }}</div>\n                        <div class="p-days text-slate-400">{{ product.days_left }}j restants</div>\n                    </td>\n                </tr>\n                <!-- PRODUCT_LOOP_END -->': product_rows
+        }
+
+        for placeholder, value in replacements.items():
+            html_content = html_content.replace(placeholder, value)
+
+        message = MIMEMultipart("alternative")
+        message["From"] = settings.EMAIL_FROM
+        message["To"] = to_email
+        message["Subject"] = f"📊 Votre rapport Michi {frequency.capitalize()} - {organization_name}"
+
+        text_content = f"Résumé {frequency} pour {organization_name}. Ventes: {total_sales}€, Ruptures: {stockout_count}."
+        message.attach(MIMEText(text_content, "plain"))
+        message.attach(MIMEText(html_content, "html"))
+
+        if settings.ENVIRONMENT == "development" and settings.SMTP_PASSWORD == "your_password":
+            logger.info(f"[EmailService] MOCK SEND REPORT to {to_email}")
+            return True
+
+        try:
+            await aiosmtplib.send(
+                message,
+                hostname=settings.SMTP_HOST,
+                port=settings.SMTP_PORT,
+                username=settings.SMTP_USER,
+                password=settings.SMTP_PASSWORD,
+                use_tls=True if settings.SMTP_PORT == 465 else False,
+                start_tls=True if settings.SMTP_PORT == 587 else False,
+            )
+            logger.success(f"[EmailService] Report sent to {to_email}")
+            return True
+        except Exception as e:
+            logger.error(f"[EmailService] Failed to send report: {str(e)}")
+            return False

@@ -52,8 +52,10 @@ async def lifespan(_app: FastAPI):
     print(f"[INFO] Environment: {settings.ENVIRONMENT}")
     print(f"[INFO] CORS Origins: {settings.cors_origins_list}")
     
-    # Lancement du Worker d'Intelligence (Backround Task)
+    # Lancement des Workers de Background (SaaS Architecture)
+    from modules.inventory.application.cron_worker import worker as cron_worker
     asyncio.create_task(intelligence_worker.start())
+    asyncio.create_task(cron_worker.start())
     
     yield
     

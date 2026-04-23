@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votre Rapport Stratégique Michi 道</title>
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f1f5f9; color: #334155; margin: 0; padding: 20px; line-height: 1.5; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
+        
+        /* Header */
+        .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 40px 30px; text-align: center; position: relative; }
+        .header .logo { font-size: 28px; font-weight: 900; letter-spacing: -1px; margin-bottom: 8px; }
+        .header .logo span { color: #8b5cf6; }
+        .header .period { font-size: 12px; opacity: 0.7; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .content { padding: 32px; }
+        
+        /* KPI Grid */
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+        .kpi-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; text-align: left; }
+        .kpi-label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px; }
+        .kpi-value { font-size: 22px; font-weight: 800; color: #0f172a; display: flex; align-items: baseline; gap: 6px; }
+        .trend-up { font-size: 12px; color: #10b981; font-weight: 700; }
+        .trend-down { font-size: 12px; color: #ef4444; font-weight: 700; }
+        
+        /* Section Title */
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; margin-top: 32px; }
+        .section-title { font-size: 14px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .badge-success { background: #dcfce7; color: #166534; }
+        
+        /* Insight Box */
+        .insight-box { background: #f5f3ff; border: 1px solid #ddd6fe; padding: 20px; border-radius: 16px; margin-bottom: 32px; }
+        .insight-title { color: #6d28d9; font-size: 13px; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .insight-text { font-size: 13px; color: #4c1d95; }
+        
+        /* Product Table */
+        .product-table { width: 100%; border-collapse: collapse; }
+        .product-row td { padding: 16px 0; border-bottom: 1px solid #f1f5f9; }
+        .p-info { display: flex; flex-direction: column; }
+        .p-name { font-size: 13px; font-weight: 700; color: #1e293b; }
+        .p-sku { font-size: 11px; color: #94a3b8; }
+        .p-status { text-align: right; }
+        .p-stock { font-size: 13px; font-weight: 800; }
+        .p-days { font-size: 11px; font-weight: 600; }
+        
+        /* Footer */
+        .cta-button { display: block; width: 100%; padding: 16px; background: #0f172a; color: #ffffff !important; text-align: center; text-decoration: none; border-radius: 14px; font-weight: 800; font-size: 15px; margin-top: 32px; }
+        .footer { padding: 32px; text-align: center; font-size: 11px; color: #94a3b8; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="period">{{ frequency }} report — {{ date_range }}</div>
+            <div class="logo">Michi<span>道</span> Intelligence</div>
+            <p style="font-size: 14px; margin-top: 8px; opacity: 0.9;">Résumé stratégique pour <strong>{{ organization_name }}</strong></p>
+        </div>
+
+        <div class="content">
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-label">Ventes (Volume)</div>
+                    <div class="kpi-value">{{ total_sales }} <span class="trend-up">↑ 12%</span></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Santé du Stock</div>
+                    <div class="kpi-value">{{ health_score }}% <span class="trend-down">↓ 2%</span></div>
+                </div>
+            </div>
+
+            <!-- Strategic Insight -->
+            <div class="insight-box">
+                <div class="insight-title">💡 Michi Insight</div>
+                <div class="insight-text">
+                    {{ strategic_insight }}
+                </div>
+            </div>
+
+            <!-- Stock Alerts -->
+            <div class="section-header">
+                <div class="section-title">Alertes prioritaires</div>
+                <div class="badge badge-danger">{{ stockout_count }} ruptures</div>
+            </div>
+
+            <table class="product-table">
+                <!-- PRODUCT_LOOP_START -->
+                <tr class="product-row">
+                    <td>
+                        <div class="p-info">
+                            <span class="p-name">{{ product.title }}</span>
+                            <span class="p-sku">SKU: {{ product.sku }}</span>
+                        </div>
+                    </td>
+                    <td class="p-status">
+                        <div class="p-stock" style="color: PRODUCT_COLOR_PLACEHOLDER;">{{ product.stock_label }}</div>
+                        <div class="p-days text-slate-400">{{ product.days_left }}j restants</div>
+                    </td>
+                </tr>
+                <!-- PRODUCT_LOOP_END -->
+            </table>
+
+            <a href="{{ dashboard_url }}" class="cta-button">Ouvrir le Decision Center</a>
+        </div>
+
+        <div class="footer">
+            Cet email a été généré automatiquement par Michi Intelligence.<br>
+            <a href="#" style="color: #64748b; text-decoration: underline;">Gérer mes préférences de notification</a> • <a href="#" style="color: #64748b; text-decoration: underline;">Aide & Support</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -93,6 +93,12 @@ class OrgMutation:
             settings_dict["currency"] = input.currency
         if input.is_mutualized is not None:
             settings_dict["is_mutualized"] = input.is_mutualized
+        if input.report_enabled is not None:
+            settings_dict["report_enabled"] = input.report_enabled
+        if input.report_frequency is not None:
+            settings_dict["report_frequency"] = input.report_frequency
+        if input.report_recipients is not None:
+            settings_dict["report_recipients"] = input.report_recipients
 
         service = info.context.services.org_service
         updated_org = await service.update_organization(

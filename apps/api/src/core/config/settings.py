@@ -65,6 +65,10 @@ class Settings(BaseSettings):
     # Intelligence Worker (Sprint 24)
     INTELLIGENCE_WORKER_INTERVAL_HOURS: int = 6
     INTELLIGENCE_FORCE_ON_START: bool = True
+
+    # Cron / Task Scheduler (Sprint 21)
+    CRON_REPORTING_ENABLED: bool = True
+    CRON_REPORTING_HOUR: int = 8 # Heure d'envoi des rapports journaliers (0-23)
     
     model_config = SettingsConfigDict(
         env_file=".env",

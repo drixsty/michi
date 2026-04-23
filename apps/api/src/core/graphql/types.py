@@ -548,6 +548,9 @@ class UpdateOrganizationInput:
     name: Optional[str] = None
     currency: Optional[str] = None
     is_mutualized: Optional[bool] = None
+    report_enabled: Optional[bool] = None
+    report_frequency: Optional[str] = None
+    report_recipients: Optional[str] = None
 
 @strawberry.input
 class ChangePasswordInput:

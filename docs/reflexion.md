@@ -9,7 +9,8 @@ michi
     - *Implémentation du Security Vault : Centralisation dans Settings/Connections. Saisie "just-in-time" lors de l'activation des sources.*
 - intégrer de bout en bout jusqu'au backend la gestion des credentials et des api, des niveau d'accès et des permissions en fonction du plan de l'utilisateur et des rôles [Terminé ✅]
     - *Blindage backend : Chiffrement AES-256 (Fernet) via SQL Alchemy. Décorateur @require_plan et gestion des permissions par rôle (Admin/Viewer).*
-- mettre en place un système de notification pour informer l'utilisateur des différentes actions effectuées sur le produit
+- mettre en place un système de notification pour informer l'utilisateur des différentes actions effectuées sur le produit [Terminé ✅]
+    - *Implémentation du Reporting Périodique : CronWorker asynchrone, Templates HTML 'World-Class' avec insights stratégiques (IA) et calcul automatique du CA perdu. Suite de tests unitaires et d'intégration blindée.*
 - Aucune notification ne remonte donc il faut en rajouter des notification dans les tests 
 - Il faut construire une page d'importation intelligente des données qui s'adapte aux format des données d'entrée et offre la possibilité dans un system de drag and drop à l'utilisateur de corriger l'importation [Terminé ✅]
 - il y'a des données encore en dur dans la page login, onboarding et signin qui ne sont pas dans i18n [Terminé ✅]
