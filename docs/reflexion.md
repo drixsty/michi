@@ -17,7 +17,8 @@ michi
 - Ajouter la possibilité voir ou cacher le mot de passe saisie au niveau du login ou singup; [Terminé ✅]
 - rajoute la possibilité de réinitialiser sont mot de passe par mail, rajoute le lien au niveau du login et un autre au niveau des settings utilisateur. [Terminé ✅]
 - UI/UX revoit les pages pour les rendre plus adapter sur mobile
-- revoir et développer un onboarding pas à pas et une interface qui force l'utilisateur à connecter au moins une source de données avant de pourvoir commencer à utiliser le produit et pour l'onboarding pas à pas, il faut verifier si c'est la première connexion pour commencer l'onboarding sinon celui-ci pourra demander
+- revoir et développer un onboarding pas à pas et une interface qui force l'utilisateur à connecter au moins une source de données avant de pourvoir commencer à utiliser le produit et pour l'onboarding pas à pas, il faut verifier si c'est la première connexion pour commencer l'onboarding sinon celui-ci pourra demander [Terminé ✅]
+    - *Michi Journey stabilisé : Flux séquentiel (Identité -> Objectifs -> Connexion -> Analyse). Intégration de l'InteractiveTour v2 avec routage programmatique, transitions fluides ("Gliding Motion") et support i18n complet (FR/EN).*
 - construire un petit backoffice avec la possibilité de passer par ce biais pour accéder à une interface utilisateur 
 - que pouvons nous mettre en place concernant la RGPD ? et la double authentification aussi ?
 - prépare l'intégration d'un connecteur chatbot dopé à l'IA que j'intègrerai dans l'app
