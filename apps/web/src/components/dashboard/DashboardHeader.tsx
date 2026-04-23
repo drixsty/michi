@@ -42,7 +42,7 @@ export function DashboardHeader({
           <button
             onClick={onSync}
             disabled={syncing}
-            id="add-source-btn"
+            id="inventory-sync-btn"
             data-testid="sync-button"
             className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-none transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
           >

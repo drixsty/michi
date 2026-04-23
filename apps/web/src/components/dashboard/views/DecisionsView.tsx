@@ -246,7 +246,6 @@ export function DecisionsView() {
   }
 
   const overview = (data ?? previousData)?.financialOverview;
-  console.log("[DecisionsView] Organization Context Active");
   const kpis = overview?.kpis;
   const allRisks = overview?.topRisks || [];
   const totalRunRate = overview?.totalRunRate || 0;
@@ -369,7 +368,7 @@ export function DecisionsView() {
         <StatCard icon={Euro} label={t('kpis.marketValue')} value={formatCurrency(kpis?.inventoryValueSale || 0)} accent="emerald" />
         <StatCard icon={AlertTriangle} label={t('kpis.revenueAtRisk')} value={formatCurrency(kpis?.revenueAtRisk || 0)} sub={t('kpis.lossEstimate')} accent="destructive" />
         <StatCard icon={Clock} label={t('kpis.avgCoverage')} value={`${kpis?.stockCoverageAvgDays || 0} ${t('kpis.days')}`} accent="amber" />
-        <div className="bg-white rounded-2xl border border-border p-3.5 flex items-center justify-center transition-shadow hover:shadow-sm">
+        <div id="stat-health" className="bg-white rounded-2xl border border-border p-3.5 flex items-center justify-center transition-shadow hover:shadow-sm">
           <HealthGauge score={healthScore} t={t} />
         </div>
       </div>

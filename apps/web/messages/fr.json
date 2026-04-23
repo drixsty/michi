@@ -712,5 +712,48 @@
     "close": "Fermer",
     "open": "Ouvrir",
     "delete": "Supprimer"
+  },
+  "tour": {
+    "prev": "Précédent",
+    "next": "Suivant",
+    "finish": "Terminer",
+    "steps": {
+      "welcome": {
+        "title": "Bienvenue sur Michi 道",
+        "desc": "Votre nouveau copilote intelligent pour la gestion d'inventaire omnicanal."
+      },
+      "connect": {
+        "title": "Connectez vos données",
+        "desc": "Accédez aux paramètres pour lier Shopify, Amazon ou importer un CSV."
+      },
+      "inventory": {
+        "title": "Votre Inventaire",
+        "desc": "Visualisez l'état de vos stocks sur tous vos canaux en un clin d'œil."
+      },
+      "sync": {
+        "title": "Synchronisation Manuelle",
+        "desc": "Forcez une mise à jour immédiate de vos données depuis vos sources connectées."
+      },
+      "search": {
+        "title": "Recherche Intelligente",
+        "desc": "Accédez instantanément à n'importe quel produit, variante ou fournisseur."
+      },
+      "health": {
+        "title": "Santé de votre Stock",
+        "desc": "Suivez cet indicateur pour maintenir un niveau de stock optimal et éviter les ruptures."
+      },
+      "notifications": {
+        "title": "Restez Informé",
+        "desc": "Retrouvez ici toutes vos alertes critiques et mises à jour système en temps réel."
+      },
+      "language": {
+        "title": "Personnalisation",
+        "desc": "Changez la langue de l'interface pour l'adapter à votre équipe."
+      },
+      "decisions": {
+        "title": "Centre de Décision",
+        "desc": "Pilotez l'impact financier et optimisez votre trésorerie ici."
+      }
+    }
   }
 }

@@ -702,5 +702,48 @@
     "runForecast": "Run forecasts",
     "lastRun": "Last run",
     "accuracy": "Accuracy"
+  },
+  "tour": {
+    "prev": "Previous",
+    "next": "Next",
+    "finish": "Finish",
+    "steps": {
+      "welcome": {
+        "title": "Welcome to Michi 道",
+        "desc": "Your new intelligent copilot for omnichannel inventory management."
+      },
+      "connect": {
+        "title": "Connect Your Data",
+        "desc": "Access settings to link Shopify, Amazon, or import a CSV."
+      },
+      "inventory": {
+        "title": "Your Inventory",
+        "desc": "Visualize your stock status across all channels at a glance."
+      },
+      "sync": {
+        "title": "Manual Sync",
+        "desc": "Force an immediate update of your data from connected sources."
+      },
+      "search": {
+        "title": "Smart Search",
+        "desc": "Instantly access any product, variant, or supplier."
+      },
+      "health": {
+        "title": "Stock Health",
+        "desc": "Monitor this indicator to maintain optimal stock levels and avoid stockouts."
+      },
+      "notifications": {
+        "title": "Stay Informed",
+        "desc": "Find all your critical alerts and system updates here in real-time."
+      },
+      "language": {
+        "title": "Personalization",
+        "desc": "Change the interface language to suit your team."
+      },
+      "decisions": {
+        "title": "Decision Center",
+        "desc": "Drive financial impact and optimize your cash flow here."
+      }
+    }
   }
 }

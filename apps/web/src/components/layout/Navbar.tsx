@@ -140,10 +140,13 @@ export function Navbar() {
             </div>
 
             <div className="flex items-center gap-1 shrink-0 ml-2">
-              <LanguageSwitcher />
+              <div id="nav-language">
+                <LanguageSwitcher />
+              </div>
 
               <button
                 onClick={() => setIsNotificationOpen(true)}
+                id="nav-notifications"
                 data-testid="notification-bell"
                 className="p-2 text-muted-foreground hover:text-foreground transition-all relative hover:bg-accent rounded-lg"
               >
@@ -192,6 +195,7 @@ export function Navbar() {
                       </Link>
                       <Link
                         href="/dashboard/settings/connections"
+                        id="nav-integrations"
                         onClick={() => setIsUserMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
                       >
