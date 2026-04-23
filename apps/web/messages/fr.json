@@ -102,8 +102,14 @@
     "initTitle": "Initialisez votre espace.",
     "initSubtitle": "Connectez vos sources de données et laissez notre IA optimiser vos stocks.",
     "steps": {
-      "identity": { "label": "Identité", "description": "Nom de l'espace" },
-      "plan": { "label": "Forfait", "description": "Capacité de calcul" }
+      "identity": {
+        "label": "Identité",
+        "description": "Nom de l'espace"
+      },
+      "plan": {
+        "label": "Forfait",
+        "description": "Capacité de calcul"
+      }
     },
     "orgName": {
       "badge": "Nom de l'organisation",
@@ -127,19 +133,33 @@
         "name": "Basic",
         "price": "0€",
         "description": "Parfait pour débuter et valider vos premiers pas.",
-        "features": ["100 SKUs maximum", "1 Boutique Shopify", "Analyses basiques"]
+        "features": [
+          "100 SKUs maximum",
+          "1 Boutique Shopify",
+          "Analyses basiques"
+        ]
       },
       "pro": {
         "name": "Pro",
         "price": "49€",
         "description": "L'expérience complète Michi pour les marchands en croissance.",
-        "features": ["Produits illimités", "Prévisions IA avancées", "Multi-Canaux (Amazon/Woo)", "Alertes temps réel"]
+        "features": [
+          "Produits illimités",
+          "Prévisions IA avancées",
+          "Multi-Canaux (Amazon/Woo)",
+          "Alertes temps réel"
+        ]
       },
       "enterprise": {
         "name": "Enterprise",
         "price": "Sur devis",
         "description": "Sur mesure pour les grands comptes et marques établies.",
-        "features": ["Multi-Boutiques illimitées", "Support Dédié 24/7", "SLA Garanti", "Accès API"]
+        "features": [
+          "Multi-Boutiques illimitées",
+          "Support Dédié 24/7",
+          "SLA Garanti",
+          "Accès API"
+        ]
       }
     },
     "footer": {
@@ -195,11 +215,26 @@
     "empty": "Aucune donnée disponible",
     "refreshButton": "Actualiser",
     "tabs": {
-      "overview": { "title": "Tableau de bord", "subtitle": "Pilotez votre inventaire avec précision" },
-      "inventory": { "title": "Inventaire", "subtitle": "Gérez vos catalogues produits et niveaux de stock" },
-      "sources": { "title": "Navigation des sources", "subtitle": "Gérez vos connexions de données et flux API" },
-      "decisions": { "title": "Centre de Décision", "subtitle": "Pilotez l'impact financier de votre inventaire en temps réel" },
-      "organization": { "title": "Mon Organisation", "subtitle": "Gérez vos collaborateurs et invitations d'accès" }
+      "overview": {
+        "title": "Tableau de bord",
+        "subtitle": "Pilotez votre inventaire avec précision"
+      },
+      "inventory": {
+        "title": "Inventaire",
+        "subtitle": "Gérez vos catalogues produits et niveaux de stock"
+      },
+      "sources": {
+        "title": "Navigation des sources",
+        "subtitle": "Gérez vos connexions de données et flux API"
+      },
+      "decisions": {
+        "title": "Centre de Décision",
+        "subtitle": "Pilotez l'impact financier de votre inventaire en temps réel"
+      },
+      "organization": {
+        "title": "Mon Organisation",
+        "subtitle": "Gérez vos collaborateurs et invitations d'accès"
+      }
     },
     "sources": {
       "globalStatus": "État Global",
@@ -308,8 +343,18 @@
     },
     "filters": {
       "allChannels": "Tous les canaux",
-      "period": { "all": "Tout", "7": "7j", "30": "30j", "90": "90j" },
-      "status": { "all": "Tous", "critical": "Critique", "tense": "Tendu", "healthy": "Sain" }
+      "period": {
+        "all": "Tout",
+        "7": "7j",
+        "30": "30j",
+        "90": "90j"
+      },
+      "status": {
+        "all": "Tous",
+        "critical": "Critique",
+        "tense": "Tendu",
+        "healthy": "Sain"
+      }
     },
     "banner": {
       "title": "Moteur Statistique Michi v2 Actif",
@@ -710,8 +755,8 @@
     }
   },
   "notifications": {
-    "title": "notifications",
-    "subtitle": "suivi des stocks en temps réel",
+    "title": "Notifications",
+    "subtitle": "Suivi des stocks en temps réel",
     "emptyTitle": "Tout est sous contrôle",
     "emptyDesc": "Aucune alerte critique pour le moment.",
     "loading": "chargement...",

@@ -128,8 +128,14 @@
     "initTitle": "Initialize your workspace.",
     "initSubtitle": "Connect your data sources and let our AI optimize your inventory.",
     "steps": {
-      "identity": { "label": "Identity", "description": "Workspace name" },
-      "plan": { "label": "Plan", "description": "Computing capacity" }
+      "identity": {
+        "label": "Identity",
+        "description": "Workspace name"
+      },
+      "plan": {
+        "label": "Plan",
+        "description": "Computing capacity"
+      }
     },
     "orgName": {
       "badge": "Organization name",
@@ -153,19 +159,33 @@
         "name": "Basic",
         "price": "$0",
         "description": "Perfect for getting started and validating your first steps.",
-        "features": ["Up to 100 SKUs", "1 Shopify store", "Basic analytics"]
+        "features": [
+          "Up to 100 SKUs",
+          "1 Shopify store",
+          "Basic analytics"
+        ]
       },
       "pro": {
         "name": "Pro",
         "price": "$49",
         "description": "The full Michi experience for growing merchants.",
-        "features": ["Unlimited products", "Advanced AI forecasts", "Multi-Channel (Amazon/Woo)", "Real-time alerts"]
+        "features": [
+          "Unlimited products",
+          "Advanced AI forecasts",
+          "Multi-Channel (Amazon/Woo)",
+          "Real-time alerts"
+        ]
       },
       "enterprise": {
         "name": "Enterprise",
         "price": "Custom quote",
         "description": "Tailored for large accounts and established brands.",
-        "features": ["Unlimited multi-stores", "Dedicated 24/7 support", "Guaranteed SLA", "API access"]
+        "features": [
+          "Unlimited multi-stores",
+          "Dedicated 24/7 support",
+          "Guaranteed SLA",
+          "API access"
+        ]
       }
     },
     "footer": {
@@ -241,11 +261,26 @@
     "empty": "No data available",
     "refreshButton": "Refresh",
     "tabs": {
-      "overview": { "title": "Dashboard", "subtitle": "Manage your inventory with precision" },
-      "inventory": { "title": "Inventory", "subtitle": "Manage your product catalogs and stock levels" },
-      "sources": { "title": "Source navigation", "subtitle": "Manage your data connections and API feeds" },
-      "decisions": { "title": "Decision Center", "subtitle": "Strategic financial impact of your inventory" },
-      "organization": { "title": "My Organization", "subtitle": "Manage your collaborators and access invitations" }
+      "overview": {
+        "title": "Dashboard",
+        "subtitle": "Manage your inventory with precision"
+      },
+      "inventory": {
+        "title": "Inventory",
+        "subtitle": "Manage your product catalogs and stock levels"
+      },
+      "sources": {
+        "title": "Source navigation",
+        "subtitle": "Manage your data connections and API feeds"
+      },
+      "decisions": {
+        "title": "Decision Center",
+        "subtitle": "Strategic financial impact of your inventory"
+      },
+      "organization": {
+        "title": "My Organization",
+        "subtitle": "Manage your collaborators and access invitations"
+      }
     },
     "sources": {
       "globalStatus": "Global Status",
@@ -349,8 +384,18 @@
     },
     "filters": {
       "allChannels": "All channels",
-      "period": { "all": "All", "7": "7d", "30": "30d", "90": "90d" },
-      "status": { "all": "All", "critical": "Critical", "tense": "Tense", "healthy": "Healthy" }
+      "period": {
+        "all": "All",
+        "7": "7d",
+        "30": "30d",
+        "90": "90d"
+      },
+      "status": {
+        "all": "All",
+        "critical": "Critical",
+        "tense": "Tense",
+        "healthy": "Healthy"
+      }
     },
     "banner": {
       "title": "Michi v2 Statistical Engine Active",
@@ -701,8 +746,8 @@
     }
   },
   "notifications": {
-    "title": "notifications",
-    "subtitle": "real-time stock tracking",
+    "title": "Notifications",
+    "subtitle": "Real-time stock tracking",
     "emptyTitle": "Everything is under control",
     "emptyDesc": "No critical alerts at the moment.",
     "loading": "loading...",
