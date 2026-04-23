@@ -66,6 +66,8 @@ class OrganizationEntity:
     created_at: datetime
     stripe_customer_id: Optional[str] = None
     settings: dict = field(default_factory=dict)
+    onboarding_completed: bool = False
+    onboarding_step: str = "welcome"
 
     @property
     def is_active_subscription(self) -> bool:

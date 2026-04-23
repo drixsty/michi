@@ -70,7 +70,7 @@ export default function OnboardingWizard({ userName, onComplete, onSync }: Onboa
   const step = STEPS[currentStep];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 min-h-[100dvh]">
       {/* Immersive backdrop */}
       <motion.div 
         initial={{ opacity: 0 }}

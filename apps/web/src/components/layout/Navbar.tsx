@@ -49,6 +49,7 @@ function NavLinks() {
           <Link
             key={item.id}
             href={item.href}
+            id={`nav-${item.id}`}
             data-testid={`nav-${item.id}`}
             data-tab={item.id}
             className={cn(
@@ -108,7 +109,7 @@ export function Navbar() {
         <div className="flex justify-between h-16 items-center gap-8">
 
           {/* Logo & Org Switcher */}
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-4 shrink-0" id="sidebar-logo">
             <OrgSwitcher />
           </div>
 
@@ -124,6 +125,7 @@ export function Navbar() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
               <input
                 type="text"
+                id="main-search"
                 value={searchValue}
                 onChange={(e) => handleSearch(e.target.value)}
                 data-testid="search-input"

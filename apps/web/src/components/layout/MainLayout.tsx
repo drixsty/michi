@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Navbar } from './Navbar';
 import { useStore } from '@/context/StoreContext';
 import { LoadingOverlay } from '../ui/LoadingOverlay';
+import { InteractiveTour } from '../dashboard/InteractiveTour';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -23,6 +24,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen bg-slate-50/50">
       {showGlobalLoader && <LoadingOverlay />}
+      <InteractiveTour />
       <React.Suspense fallback={null}>
         <Navbar />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

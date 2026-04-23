@@ -17,6 +17,8 @@ export const GET_ME: TypedDocumentNode<GetMeQuery, GetMeQueryVariables> = gql`
           id
           name
           slug
+          onboardingCompleted
+          onboardingStep
         }
       }
     }

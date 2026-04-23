@@ -58,6 +58,8 @@ def org_to_entity(model: "Organization") -> OrganizationEntity:
         created_at=model.created_at,
         stripe_customer_id=model.stripe_customer_id,
         settings=model.settings or {},
+        onboarding_completed=bool(getattr(model, "onboarding_completed", False)),
+        onboarding_step=str(getattr(model, "onboarding_step", "welcome")),
     )
 
 

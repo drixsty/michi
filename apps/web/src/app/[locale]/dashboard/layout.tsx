@@ -2,6 +2,7 @@
  * Dashboard Layout — wraps all dashboard views with the Sidebar/Navbar.
  */
 import MainLayout from '@/components/layout/MainLayout';
+import { OnboardingGuard } from '@/components/auth/OnboardingGuard';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -9,8 +10,10 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <MainLayout>
-      {children}
-    </MainLayout>
+    <OnboardingGuard>
+      <MainLayout>
+        {children}
+      </MainLayout>
+    </OnboardingGuard>
   );
 }

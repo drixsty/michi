@@ -39,6 +39,8 @@ class OrganizationType:
     subscription_status: str
     created_at: datetime
     settings: str
+    onboarding_completed: bool
+    onboarding_step: str
 
     @classmethod
     def from_db(cls, org):
@@ -57,7 +59,9 @@ class OrganizationType:
             plan=_val(org.plan),
             subscription_status=_val(org.subscription_status),
             created_at=org.created_at,
-            settings=json.dumps(org.settings or {})
+            settings=json.dumps(org.settings or {}),
+            onboarding_completed=bool(getattr(org, 'onboarding_completed', False)),
+            onboarding_step=str(getattr(org, 'onboarding_step', 'welcome'))
         )
 
 @strawberry.type
@@ -551,6 +555,8 @@ class UpdateOrganizationInput:
     report_enabled: Optional[bool] = None
     report_frequency: Optional[str] = None
     report_recipients: Optional[str] = None
+    onboarding_completed: Optional[bool] = strawberry.field(default=None, name="onboardingCompleted")
+    onboarding_step: Optional[str] = strawberry.field(default=None, name="onboardingStep")
 
 @strawberry.input
 class ChangePasswordInput:

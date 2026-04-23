@@ -100,13 +100,30 @@ class OrgMutation:
         if input.report_recipients is not None:
             settings_dict["report_recipients"] = input.report_recipients
 
+        # Extraction robuste (supporte snake_case et camelCase sur l'objet Python)
+        onboarding_completed = getattr(input, "onboarding_completed", getattr(input, "onboardingCompleted", None))
+        onboarding_step = getattr(input, "onboarding_step", getattr(input, "onboardingStep", None))
+
+        from loguru import logger
+        logger.info(f"[Resolver] Update Org Input: name={input.name}, completed={onboarding_completed}, step={onboarding_step}")
+
         service = info.context.services.org_service
         updated_org = await service.update_organization(
             org_id=uuid.UUID(str(info.context.org_id)),
             name=input.name,
-            settings=settings_dict if settings_dict else None
+            settings=settings_dict if settings_dict else None,
+            onboarding_completed=onboarding_completed,
+            onboarding_step=onboarding_step
         )
-        await info.context.db.commit()
+        
+        try:
+            await info.context.db.commit()
+            logger.success(f"[Resolver] Commit Success for Org {info.context.org_id}")
+        except Exception as e:
+            logger.error(f"[Resolver] Commit Failed: {str(e)}")
+            await info.context.db.rollback()
+            raise MichiException("Database commit failed", ErrorCode.INTERNAL_ERROR)
+
         return OrganizationType.from_db(updated_org) if updated_org else None
 
     @strawberry.mutation

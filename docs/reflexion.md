@@ -26,6 +26,7 @@ michi
 - nettoie également le code pour supprimer les class, méthodes et repertoire inutiles
 - Pouvons nous créer des service de connexion aux différents canaux tout en le respectde la DDD extensible à chaque nouveau connecteur créer ?
 - Pouvons nous créer un connecter officiel dans le shopify store et un autre dans amazon store pour le produit ?
-- configurer tous les services externes (stripe, sendgrid, etc)
+- configurer tous les services externes (stripe, sendgrid, etc) [Terminé ✅]
+    - *Intégration terminée : BillingService (Stripe), EmailService (SMTP/SendGrid), et Security Vault (Chiffrement AES-256 des clés API).*
 - préparer la mise en production
 - test complet de l'application

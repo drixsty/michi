@@ -14,7 +14,6 @@ import { useTranslations } from 'next-intl';
 
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
-import OnboardingWizard from '@/components/dashboard/OnboardingWizard';
 
 import { OverviewView } from '@/components/dashboard/views/OverviewView';
 import { InventoryView } from '@/components/dashboard/views/InventoryView';
@@ -43,17 +42,12 @@ function DashboardContent() {
     setIsMounted(true);
   }, []);
 
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
   const activeTab = searchParams.get('tab') || 'overview';
   const searchQuery = searchParams.get('q') || '';
 
-  useEffect(() => {
-    const onboarded = localStorage.getItem('michi_onboarded');
-    if (!onboarded) setShowOnboarding(true);
-  }, []);
 
   const { currentOrganization } = useStore();
 
@@ -177,15 +171,6 @@ function DashboardContent() {
 
   return (
     <div className="space-y-6">
-      <AnimatePresence>
-        {showOnboarding && (
-          <OnboardingWizard
-            userName={meData?.me?.firstName ?? undefined}
-            onSync={() => triggerSync() as any}
-            onComplete={() => setShowOnboarding(false)}
-          />
-        )}
-      </AnimatePresence>
 
       {toast && (
         <div className="fixed top-4 right-4 z-50 px-4 py-2 rounded-md shadow-lg text-sm bg-primary text-white border border-white/20 animate-in slide-in-from-right-2">

@@ -258,14 +258,29 @@ class ApplicationOrgService:
         if not org_model:
             return None
         
-        if "name" in kwargs:
-            org_model.name = kwargs["name"]
-        if "settings" in kwargs:
+        from loguru import logger
+        logger.info(f"[Service] Updating Org {org_id}: name={kwargs.get('name')}, completed={kwargs.get('onboarding_completed')}, step={kwargs.get('onboarding_step')}")
+
+        if kwargs.get("name") is not None:
+            org_model.name = str(kwargs["name"])
+        if kwargs.get("settings") is not None:
             org_model.settings = kwargs["settings"]
+        if kwargs.get("onboarding_completed") is not None:
+            val = bool(kwargs["onboarding_completed"])
+            org_model.onboarding_completed = val
+            logger.warning(f"[Service] Set onboarding_completed to {val} for Org {org_id}")
+        if kwargs.get("onboarding_step") is not None:
+            org_model.onboarding_step = str(kwargs["onboarding_step"])
             
         await self._orgs._db.flush()
+        await self._orgs._db.commit()
+        
+        logger.success(f"[Service] Org {org_id} saved successfully. Final state in DB model: onboarding_completed={org_model.onboarding_completed}")
+        
         from modules.auth.infrastructure.mappers import org_to_entity
-        return org_to_entity(org_model)
+        entity = org_to_entity(org_model)
+        logger.debug(f"[Service] Returning entity for Org {org_id}: onboarding_completed={entity.onboarding_completed}")
+        return entity
 
     async def remove_member(self, org_id: uuid.UUID, user_id: uuid.UUID) -> bool:
         """Retire un membre d'une organisation."""

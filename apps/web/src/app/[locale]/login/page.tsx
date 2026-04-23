@@ -144,7 +144,6 @@ export default function LoginPage() {
                     googleLogin({ variables: { input: { idToken: credentialResponse.credential } } });
                   }}
                   onError={() => setErrorMessage(t('errorGoogleAuth'))}
-                  useOneTap
                   theme="outline"
                   shape="rectangular"
                   text="signin_with"

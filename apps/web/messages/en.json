@@ -122,129 +122,70 @@
     "myOrg": "My organization"
   },
   "onboarding": {
-    "title": "Welcome to Michi 道",
-    "subtitle": "Set up your workspace in a few steps.",
-    "loading": "Setting up your Michi workspace...",
-    "initTitle": "Initialize your workspace.",
-    "initSubtitle": "Connect your data sources and let our AI optimize your inventory.",
-    "steps": {
-      "identity": {
-        "label": "Identity",
-        "description": "Workspace name"
+    "welcome": {
+      "title": "Welcome to Michi",
+      "description": "Michi is your intelligent companion for omnichannel inventory forecasting. Let's set up your environment in a few seconds.",
+      "button": "Let's go"
+    },
+    "identity": {
+      "title": "Name your workspace",
+      "label": "Organization name",
+      "placeholder": "Enter your company name",
+      "button": "Continue"
+    },
+    "connect": {
+      "title": "Connect your sources",
+      "description": "Choose a source to import your products and sales history.",
+      "platforms": {
+        "csv": "CSV import",
+        "shopify": "Shopify store",
+        "woocommerce": "WooCommerce"
       },
-      "plan": {
-        "label": "Plan",
-        "description": "Computing capacity"
-      }
+      "button": "Sync data"
     },
-    "orgName": {
-      "badge": "Organization name",
-      "title": "What is your store name?",
-      "placeholder": "e.g. Bloom Industries",
-      "validation": "At least 3 characters required.",
-      "continueButton": "Continue"
-    },
-    "planSelection": {
-      "badge": "Plan selection",
-      "title": "Choose your plan.",
-      "recommended": "Recommended",
-      "perMonth": "/ month",
-      "quote": "Custom quote",
-      "backButton": "Back",
-      "activateButton": "Activate workspace",
-      "stripeButton": "Complete on Stripe"
-    },
-    "plans": {
-      "basic": {
-        "name": "Basic",
-        "price": "$0",
-        "description": "Perfect for getting started and validating your first steps.",
-        "features": [
-          "Up to 100 SKUs",
-          "1 Shopify store",
-          "Basic analytics"
-        ]
-      },
-      "pro": {
-        "name": "Pro",
-        "price": "$49",
-        "description": "The full Michi experience for growing merchants.",
-        "features": [
-          "Unlimited products",
-          "Advanced AI forecasts",
-          "Multi-Channel (Amazon/Woo)",
-          "Real-time alerts"
-        ]
-      },
-      "enterprise": {
-        "name": "Enterprise",
-        "price": "Custom quote",
-        "description": "Tailored for large accounts and established brands.",
-        "features": [
-          "Unlimited multi-stores",
-          "Dedicated 24/7 support",
-          "Guaranteed SLA",
-          "API access"
-        ]
-      }
-    },
-    "footer": {
-      "secure": "Stripe secure",
-      "version": "Michi 道 v2.5"
-    },
-    "errors": {
-      "payment": "Payment error. Please try again.",
-      "generic": "An error occurred."
-    },
-    "wizard": {
-      "welcome": "Hi, {name} !",
-      "syncing": "Syncing data...",
-      "skip": "Skip configuration (Expert)",
+    "sync": {
+      "title": "Synchronization in progress",
       "steps": {
-        "0": {
-          "title": "Welcome to Michi 道",
-          "description": "Let's set up your omnichannel decision center together in 3 steps: connect your stores, let our AI intelligently analyze your flows, and activate your first stock forecasts.",
-          "cta": "Start configuration"
+        "analyze": "Data ingestion",
+        "forecast": "AI forecasting",
+        "init": "Dashboard preparation"
+      },
+      "button": "Access dashboard",
+      "finishing": "Finishing..."
+    },
+    "progress": {
+      "welcome": "Welcome",
+      "identity": "Workspace",
+      "goal": "Goals",
+      "connect": "Connect",
+      "sync": "Analysis"
+    },
+    "goal": {
+      "title": "What is your main priority?",
+      "description": "This helps us personalize your dashboard and AI alerts.",
+      "options": {
+        "stockouts": {
+          "title": "Reduce stockouts",
+          "desc": "Never miss a sale due to missing inventory."
         },
-        "connect": {
-          "title": "Connect your first store",
-          "description": "Michi needs your data to predict your needs. Choose your main platform.",
-          "cta": "Connect"
+        "capital": {
+          "title": "Optimize capital",
+          "desc": "Reduce overstock and free up cash flow."
         },
-        "analysis": {
-          "title": "AI engine in action",
-          "description": "We are analyzing your flows, cleaning historical stockouts, and calculating your growth models.",
-          "cta": "Finish analysis"
-        },
-        "ready": {
-          "title": "Ready for growth",
-          "description": "Your inventory is now under control. Ready to see your first forecasts?",
-          "cta": "Enter Michi"
+        "growth": {
+          "title": "Scale growth",
+          "desc": "Automate replenishment for rapid expansion."
         }
-      }
-    },
-    "step1": {
-      "title": "Your organization",
-      "orgNameLabel": "Organization name",
-      "orgNamePlaceholder": "My store",
-      "currencyLabel": "Currency",
-      "continueButton": "Continue"
-    },
-    "step2": {
-      "title": "Connect your store",
-      "shopifyOption": "Shopify",
-      "wooOption": "WooCommerce",
-      "amazonOption": "Amazon",
-      "csvOption": "CSV Import",
-      "skipButton": "Skip this step"
-    },
-    "step3": {
-      "title": "You're all set!",
-      "subtitle": "Your workspace is configured. Go to your dashboard.",
-      "goToDashboard": "Go to dashboard"
+      },
+      "button": "Save & continue",
+      "back": "Back"
     }
   },
   "dashboard": {
+    "import": {
+      "title": "Import data",
+      "description": "Upload your CSV file to synchronize your data."
+    },
     "title": "Dashboard",
     "subtitle": "Overview of your inventory",
     "kpis": {
@@ -760,74 +701,6 @@
     "subtitle": "Anticipate your inventory needs",
     "runForecast": "Run forecasts",
     "lastRun": "Last run",
-    "accuracy": "Accuracy",
-    "chart": {
-      "demand": "Forecast demand",
-      "actual": "Actual sales"
-    }
-  },
-  "profile": {
-    "title": "My profile",
-    "loading": "Loading profile...",
-    "settings": "Profile settings",
-    "settingsSubtitle": "Manage your personal information and security.",
-    "logout": "Sign out",
-    "personalInfo": "Personal information",
-    "firstNameLabel": "First name",
-    "firstNamePlaceholder": "Your first name",
-    "lastNameLabel": "Last name",
-    "lastNamePlaceholder": "Your last name",
-    "emailLabel": "Email address",
-    "languageLabel": "Language",
-    "save": "Save",
-    "saveButton": "Save changes",
-    "updateSuccess": "Profile updated successfully",
-    "updateError": "Update error",
-    "dangerZone": "Danger zone",
-    "deleteAccount": "Delete my account",
-    "tabs": {
-      "profile": "Profile",
-      "security": "Security",
-      "notifications": "Notifications"
-    },
-    "security": {
-      "title": "Account security",
-      "currentPassword": "Current password",
-      "newPassword": "New password",
-      "confirmPassword": "Confirm password",
-      "hidePasswords": "Hide",
-      "showPasswords": "Show",
-      "updateButton": "Update password",
-      "passwordSuccess": "Password updated successfully",
-      "passwordError": "Change error",
-      "passwordMismatch": "Passwords do not match",
-      "incorrectPassword": "Current password is incorrect",
-      "forgotPasswordLink": "Forgot password? Receive a reset link"
-    },
-    "notifications": {
-      "title": "Notification center",
-      "emailAlerts": "Email alerts",
-      "emailAlertsDesc": "Receive a daily digest of your critical alerts.",
-      "minSeverity": "Minimum severity",
-      "minSeverityDesc": "Urgency level required to trigger an email.",
-      "standard": "Standard",
-      "urgent": "Urgent",
-      "critical": "Critical"
-    }
-  },
-  "connections": {
-    "title": "Apps & integrations",
-    "description": "Manage your e-commerce platform connections and secure your API keys.",
-    "statusConnected": "Connected",
-    "statusDisconnected": "Disconnected",
-    "testButton": "Test",
-    "configureButton": "Configure",
-    "modalTitle": "{platform} parameters",
-    "apiKeyLabel": "API Key / Client ID",
-    "apiSecretLabel": "API Secret / Access token",
-    "saveButton": "Save changes",
-    "closeButton": "Close",
-    "encryptionNotice": "AES-256 encryption active.",
-    "platformDescription": "Sync your {platform} stock and sales in real-time with Michi."
+    "accuracy": "Accuracy"
   }
 }

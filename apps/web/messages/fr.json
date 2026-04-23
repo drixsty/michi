@@ -17,7 +17,7 @@
     "open": "Ouvrir",
     "emptyTitle": "Données vides",
     "syncSuccess": "Synchronisation réussie",
-    "syncError": "Erreur de synchronisation"
+    "syncError": "Une erreur est survenue"
   },
   "brand": {
     "tagline": "La précision au cœur de votre croissance.",
@@ -44,7 +44,10 @@
       "termsLink": "conditions d'utilisation",
       "errorCredentials": "Identifiants incorrects ou problème serveur.",
       "errorGoogle": "Erreur lors de la connexion avec Google.",
-      "errorGoogleAuth": "Erreur Google Auth"
+      "errorGoogleAuth": "Erreur Google Auth",
+      "forgotPasswordLink": "Mot de passe oublié ?",
+      "showPassword": "Voir",
+      "hidePassword": "Cacher"
     },
     "register": {
       "title": "Créer votre compte",
@@ -96,109 +99,70 @@
     "myOrg": "Mon organisation"
   },
   "onboarding": {
-    "title": "Bienvenue sur Michi 道",
-    "subtitle": "Configurez votre espace en quelques étapes.",
-    "loading": "Configuration de votre espace Michi...",
-    "initTitle": "Initialisez votre espace.",
-    "initSubtitle": "Connectez vos sources de données et laissez notre IA optimiser vos stocks.",
-    "steps": {
-      "identity": {
-        "label": "Identité",
-        "description": "Nom de l'espace"
+    "welcome": {
+      "title": "Bienvenue sur Michi",
+      "description": "Michi est votre compagnon intelligent pour la prévision de stocks omnicanale. Configurons votre environnement en quelques secondes.",
+      "button": "C'est parti"
+    },
+    "identity": {
+      "title": "Nommez votre espace",
+      "label": "Nom de l'organisation",
+      "placeholder": "Entrez le nom de votre entreprise",
+      "button": "Continuer"
+    },
+    "connect": {
+      "title": "Connectez vos sources",
+      "description": "Choisissez une source pour importer vos produits et ventes.",
+      "platforms": {
+        "csv": "Import CSV",
+        "shopify": "Boutique Shopify",
+        "woocommerce": "WooCommerce"
       },
-      "plan": {
-        "label": "Forfait",
-        "description": "Capacité de calcul"
-      }
+      "button": "Synchroniser les données"
     },
-    "orgName": {
-      "badge": "Nom de l'organisation",
-      "title": "Quel est le nom de votre boutique ?",
-      "placeholder": "ex: Bloom Industries",
-      "validation": "Au moins 3 caractères requis.",
-      "continueButton": "Continuer"
-    },
-    "planSelection": {
-      "badge": "Sélection du plan",
-      "title": "Choisissez votre forfait.",
-      "recommended": "Recommandé",
-      "perMonth": "/ mois",
-      "quote": "Sur devis",
-      "backButton": "Retour",
-      "activateButton": "Activer l'espace",
-      "stripeButton": "Finaliser sur Stripe"
-    },
-    "plans": {
-      "basic": {
-        "name": "Basic",
-        "price": "0€",
-        "description": "Parfait pour débuter et valider vos premiers pas.",
-        "features": [
-          "100 SKUs maximum",
-          "1 Boutique Shopify",
-          "Analyses basiques"
-        ]
-      },
-      "pro": {
-        "name": "Pro",
-        "price": "49€",
-        "description": "L'expérience complète Michi pour les marchands en croissance.",
-        "features": [
-          "Produits illimités",
-          "Prévisions IA avancées",
-          "Multi-Canaux (Amazon/Woo)",
-          "Alertes temps réel"
-        ]
-      },
-      "enterprise": {
-        "name": "Enterprise",
-        "price": "Sur devis",
-        "description": "Sur mesure pour les grands comptes et marques établies.",
-        "features": [
-          "Multi-Boutiques illimitées",
-          "Support Dédié 24/7",
-          "SLA Garanti",
-          "Accès API"
-        ]
-      }
-    },
-    "footer": {
-      "secure": "Stripe secure",
-      "version": "Michi 道 v2.5"
-    },
-    "errors": {
-      "payment": "Erreur de paiement. Veuillez réessayer.",
-      "generic": "Une erreur est survenue."
-    },
-    "wizard": {
-      "welcome": "Salut, {name} !",
-      "syncing": "Analyse des flux...",
-      "skip": "Passer la configuration (Expert)",
+    "sync": {
+      "title": "Synchronisation en cours",
       "steps": {
-        "0": {
-          "title": "Bienvenue sur Michi 道",
-          "description": "Nous allons configurer ensemble votre centre de décision omnichannel en 3 étapes : connexion de vos boutiques, analyse intelligente de vos flux par notre IA, et activation de vos premières prévisions de stock.",
-          "cta": "Démarrer la configuration"
+        "analyze": "Ingestion des données",
+        "forecast": "Prévisions IA",
+        "init": "Préparation du tableau de bord"
+      },
+      "button": "Accéder au tableau de bord",
+      "finishing": "Finalisation..."
+    },
+    "progress": {
+      "welcome": "Bienvenue",
+      "identity": "Espace",
+      "goal": "Objectifs",
+      "connect": "Connexion",
+      "sync": "Analyse"
+    },
+    "goal": {
+      "title": "Quelle est votre priorité ?",
+      "description": "Cela nous aide à personnaliser votre tableau de bord et vos alertes IA.",
+      "options": {
+        "stockouts": {
+          "title": "Réduire les ruptures",
+          "desc": "Ne manquez jamais une vente par manque de stock."
         },
-        "connect": {
-          "title": "Connectez votre première boutique",
-          "description": "Michi a besoin de vos données pour prédire vos besoins. Choisissez votre plateforme principale.",
-          "cta": "Connecter"
+        "capital": {
+          "title": "Optimiser le capital",
+          "desc": "Réduisez le surstock et libérez de la trésorerie."
         },
-        "analysis": {
-          "title": "Moteur IA en pleine action",
-          "description": "Nous analysons vos flux, nettoyons les ruptures historiques et calculons vos modèles de croissance.",
-          "cta": "Finaliser l'analyse"
-        },
-        "ready": {
-          "title": "Prêt pour la croissance",
-          "description": "Votre inventaire est maintenant sous contrôle. Prêt à voir vos premières prévisions ?",
-          "cta": "Entrer dans Michi"
+        "growth": {
+          "title": "Accélérer la croissance",
+          "desc": "Automatisez le réapprovisionnement pour scaler."
         }
-      }
+      },
+      "button": "Enregistrer et continuer",
+      "back": "Retour"
     }
   },
   "dashboard": {
+    "import": {
+      "title": "Importer des données",
+      "description": "Téléchargez votre fichier CSV pour synchroniser vos données."
+    },
     "title": "Dashboard",
     "subtitle": "Vue d'ensemble de vos stocks",
     "kpis": {
@@ -364,7 +328,7 @@
     "kpis": {
       "immobilized": "Capital immobilisé",
       "marketValue": "Valeur marchande",
-      "revenueAtRisk": "Revenue at risk",
+      "revenueAtRisk": "Revenu à risque",
       "lossEstimate": "Perte estimée (30j)",
       "avgCoverage": "Couverture moyenne",
       "days": "jours"
@@ -467,21 +431,6 @@
       "critical": "Critique"
     }
   },
-  "connections": {
-    "title": "Apps & intégrations",
-    "description": "Gérez vos connexions aux plateformes e-commerce et sécurisez vos clés API.",
-    "statusConnected": "Connecté",
-    "statusDisconnected": "Déconnecté",
-    "testButton": "Tester",
-    "configureButton": "Configurer",
-    "modalTitle": "Paramètres {platform}",
-    "apiKeyLabel": "Clé API / Client ID",
-    "apiSecretLabel": "Secret API / Access token",
-    "saveButton": "Enregistrer les modifications",
-    "closeButton": "Fermer",
-    "encryptionNotice": "Chiffrement AES-256 actif.",
-    "platformDescription": "Synchronisez vos stocks et vos ventes {platform} en temps réel avec Michi."
-  },
   "inventory": {
     "title": "Inventaire",
     "searchPlaceholder": "Rechercher un produit…",
@@ -537,7 +486,7 @@
       "predictedStockout": "Rupture prévue",
       "notAvailable": "N/A",
       "seasonalityBoost": "Boost de saisonnalité",
-      "boostRatio": "Ratio de boost",
+      "boostRatio": "Boost ratio",
       "accelerateDemand": "Accélère la demande de {percent}%",
       "boostNote": "* Ce coefficient multiplie directement la demande statistique moyenne pour anticiper les pics.",
       "inventorySettings": "Paramètres d'inventaire",
@@ -758,10 +707,10 @@
     "title": "Notifications",
     "subtitle": "Suivi des stocks en temps réel",
     "emptyTitle": "Tout est sous contrôle",
-    "emptyDesc": "Aucune alerte critique pour le moment.",
-    "loading": "chargement...",
-    "close": "fermer",
-    "open": "ouvrir",
-    "delete": "supprimer"
+    "emptyDesc": "Aucune alerte active pour le moment.",
+    "loading": "Chargement...",
+    "close": "Fermer",
+    "open": "Ouvrir",
+    "delete": "Supprimer"
   }
 }

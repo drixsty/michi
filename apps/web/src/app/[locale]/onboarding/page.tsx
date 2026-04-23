@@ -1,334 +1,404 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { useMutation, gql } from '@apollo/client';
-import {
-  CheckCircle2,
-  ArrowRight,
-  Rocket,
-  ShieldCheck,
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import { 
+  ShoppingBag, 
+  Package, 
+  FileText,
+  Sparkles,
+  ChevronRight,
+  ChevronLeft,
+  Target,
+  TrendingUp,
   Zap,
+  CheckCircle2,
+  Rocket,
+  Plus
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useStore } from '@/context/StoreContext';
-import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
+import { useMutation, useQuery, useApolloClient, gql } from '@apollo/client';
 import { useTranslations } from 'next-intl';
+import { AddSourcePanel } from '@/components/dashboard/AddSourcePanel';
+import { Input } from '@/components/ui/Input';
+import { cn } from '@/lib/utils';
 
-const CREATE_ORGANIZATION = gql`
-  mutation CreateOrganization($name: String!, $plan: String!) {
-    createOrganization(name: $name, plan: $plan) {
-      token
-      user {
-        id
-        currentOrganizationId
-      }
+const GET_ONBOARDING_DATA = gql`
+  query GetOnboardingData {
+    currentOrganization {
+      id
+      name
+      onboardingStep
+      onboardingCompleted
+    }
+    sources {
+      id
+      platform
+      connected
     }
   }
 `;
 
-const CREATE_CHECKOUT_SESSION = gql`
-  mutation CreateCheckoutSession($plan: String!, $successUrl: String!, $cancelUrl: String!) {
-    createCheckoutSession(plan: $plan, successUrl: $successUrl, cancelUrl: $cancelUrl)
+const UPDATE_ORG = gql`
+  mutation UpdateOrg($input: UpdateOrganizationInput!) {
+    updateOrganization(input: $input) {
+      id
+      onboardingStep
+      onboardingCompleted
+    }
   }
 `;
+
+type Step = 'welcome' | 'identity' | 'goal' | 'connect' | 'sync';
+
+const STEPS: { id: Step; labelKey: string }[] = [
+  { id: 'welcome', labelKey: 'progress.welcome' },
+  { id: 'identity', labelKey: 'progress.identity' },
+  { id: 'goal', labelKey: 'progress.goal' },
+  { id: 'connect', labelKey: 'progress.connect' },
+  { id: 'sync', labelKey: 'progress.sync' },
+];
 
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
-  const { refreshUser } = useStore();
-  const [orgName, setOrgName] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState('BASIC');
-  const [step, setStep] = useState(1);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const PLANS = [
-    {
-      id: 'BASIC',
-      name: t('plans.basic.name'),
-      price: t('plans.basic.price'),
-      description: t('plans.basic.description'),
-      features: t.raw('plans.basic.features') as string[],
-      icon: Zap,
-      color: 'text-blue-500',
-      bg: 'bg-blue-50'
-    },
-    {
-      id: 'PRO',
-      name: t('plans.pro.name'),
-      price: t('plans.pro.price'),
-      description: t('plans.pro.description'),
-      features: t.raw('plans.pro.features') as string[],
-      icon: Rocket,
-      color: 'text-primary',
-      bg: 'bg-primary/5',
-      popular: true
-    },
-    {
-      id: 'ENTERPRISE',
-      name: t('plans.enterprise.name'),
-      price: t('plans.enterprise.price'),
-      description: t('plans.enterprise.description'),
-      features: t.raw('plans.enterprise.features') as string[],
-      icon: ShieldCheck,
-      color: 'text-amber-500',
-      bg: 'bg-amber-50'
-    }
-  ];
-
-  const STEPS = [
-    { id: 1, label: t('steps.identity.label'), description: t('steps.identity.description') },
-    { id: 2, label: t('steps.plan.label'), description: t('steps.plan.description') },
-  ];
-
-  const [createCheckoutSession, { loading: checkoutLoading }] = useMutation(CREATE_CHECKOUT_SESSION);
-
-  const [createOrganization, { loading: creatingOrg }] = useMutation(CREATE_ORGANIZATION, {
-    onCompleted: async (data) => {
-      const { token } = data.createOrganization;
-      localStorage.setItem('michi_token', token);
-
-      if (selectedPlan === 'BASIC') {
-        refreshUser();
-        window.location.href = '/dashboard?welcome=true';
-      } else {
-        try {
-          const { data: checkoutData } = await createCheckoutSession({
-            variables: {
-              plan: selectedPlan,
-              successUrl: `${window.location.origin}/dashboard?subscription=success`,
-              cancelUrl: `${window.location.origin}/onboarding?subscription=cancel`
-            }
-          });
-          if (checkoutData?.createCheckoutSession) {
-            window.location.href = checkoutData.createCheckoutSession;
-          }
-        } catch (err) {
-          setErrorMessage(t('errors.payment'));
-        }
-      }
-    },
-    onError: (err) => {
-      setErrorMessage(err.message || t('errors.payment'));
-    }
+  const router = useRouter();
+  
+  const { data, loading, refetch } = useQuery(GET_ONBOARDING_DATA, {
+    fetchPolicy: 'network-only'
   });
+  
+  const [updateOrg] = useMutation(UPDATE_ORG);
+  const client = useApolloClient();
+  
+  const [currentStep, setCurrentStep] = useState<Step>('welcome');
+  const [isAddSourceOpen, setIsAddSourceOpen] = useState(false);
+  const [orgName, setOrgName] = useState('');
+  const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
+  const [isSyncComplete, setIsSyncComplete] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
 
-  const handleNext = () => {
-    if (step === 1 && orgName.trim().length > 2) {
-      setStep(2);
+  const connectedSources = data?.sources || [];
+  const hasConnectedSources = connectedSources.length > 0;
+
+  // Sync state with backend data
+  useEffect(() => {
+    if (data?.currentOrganization) {
+      const { onboardingStep, name } = data.currentOrganization;
+      if (onboardingStep) setCurrentStep(onboardingStep as Step);
+      if (name) setOrgName(name);
+    }
+  }, [data]);
+
+  // Fake sync timer for UX
+  useEffect(() => {
+    if (currentStep === 'sync') {
+      const timer = setTimeout(() => {
+        setIsSyncComplete(true);
+      }, 4000); 
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
+  const handleNext = async (nextStep: Step) => {
+    try {
+      await updateOrg({
+        variables: {
+          input: { 
+            onboardingStep: nextStep, 
+            name: orgName || data?.currentOrganization?.name 
+          }
+        }
+      });
+      setCurrentStep(nextStep);
+      await refetch();
+    } catch (err) {
+      console.error("[Onboarding] Navigation Error:", err);
+    }
+  };
+
+  const handleBack = async () => {
+    const currentIndex = STEPS.findIndex(s => s.id === currentStep);
+    if (currentIndex > 0) {
+      const prevStep = STEPS[currentIndex - 1].id;
+      await handleNext(prevStep);
     }
   };
 
   const handleFinish = async () => {
-    if (orgName.trim().length <= 2) return;
-    await createOrganization({
-      variables: {
-        name: orgName,
-        plan: selectedPlan
+    if (isFinishing) return;
+    
+    try {
+      setIsFinishing(true);
+      const result = await updateOrg({
+        variables: {
+          input: { 
+            name: orgName, 
+            onboardingCompleted: true, 
+            onboardingStep: 'sync' 
+          }
+        }
+      });
+      
+      if (result.data) {
+        await client.resetStore();
+        window.location.replace('/dashboard');
+      } else {
+        setIsFinishing(false);
       }
-    });
+    } catch (err) {
+      console.error("[Onboarding] Finish Error:", err);
+      setIsFinishing(false);
+    }
   };
 
-  const loading = creatingOrg || checkoutLoading;
+  if (loading && !data) return null;
+
+  const currentStepIndex = STEPS.findIndex(s => s.id === currentStep);
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-slate-50">
-      {/* Immersive Background - Light Theme */}
-      <div className="absolute inset-0 z-0 opacity-100 transition-opacity duration-1000">
-        <img
-          src="/onboarding-bg-light.png"
-          alt="background"
-          className="w-full h-full object-cover grayscale-[0.2] opacity-80"
-        />
-        <div className="absolute inset-0 bg-white/40" />
+    <div className="min-h-[100dvh] bg-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[300px] bg-gradient-to-b from-slate-50 to-transparent -z-10" />
+
+      {/* Stepper Labels - Compact */}
+      <div className="w-full max-w-md mb-8 lg:mb-12">
+        <div className="flex justify-between px-1 gap-1.5">
+          {STEPS.map((step, idx) => (
+            <div 
+              key={step.id} 
+              className={cn(
+                "h-1 rounded-full transition-all duration-500 flex-1",
+                idx <= currentStepIndex ? "bg-slate-900" : "bg-slate-100"
+              )}
+            />
+          ))}
+        </div>
+        <div className="mt-3 text-center">
+          <span className="text-[10px] font-bold text-slate-400">
+            {t(STEPS[currentStepIndex].labelKey)} — {currentStepIndex + 1}/{STEPS.length}
+          </span>
+        </div>
       </div>
 
-      {loading && <LoadingOverlay message={t('loading')} />}
-
-      <div className="w-full max-w-4xl z-10 grid grid-cols-1 lg:grid-cols-12 gap-0 bg-white/70 backdrop-blur-3xl border border-white rounded-2xl shadow-2xl shadow-slate-200/50 overflow-hidden min-h-[500px]">
-
-        {/* Left Side: Brand & Progress */}
-        <div className="lg:col-span-4 bg-slate-50/50 p-8 flex flex-col justify-between border-r border-slate-200/50">
-          <div className="space-y-10">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center font-bold text-lg text-white shadow-lg shadow-primary/20">
-                道
+      <div className="max-w-md w-full z-10">
+        <AnimatePresence mode="wait">
+          {currentStep === 'welcome' && (
+            <motion.div
+              key="welcome"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="bg-white p-8 rounded-lg border border-slate-100 text-center shadow-sm"
+            >
+              <div className="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center mx-auto mb-6">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <span className="text-lg font-bold text-slate-900 tracking-tight">Michi</span>
-            </div>
-
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-slate-900 leading-tight tracking-tight">
-                {t('initTitle')}
-              </h2>
-              <p className="text-slate-500 text-[13px] leading-relaxed">
-                {t('initSubtitle')}
+              <h1 className="text-2xl font-bold text-slate-900 mb-3">{t('welcome.title')}</h1>
+              <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+                {t('welcome.description')}
               </p>
-            </div>
-          </div>
+              <button 
+                onClick={() => handleNext('identity')}
+                className="w-full h-11 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2"
+              >
+                {t('welcome.button')}
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </motion.div>
+          )}
 
-          <div className="space-y-4 mt-8">
-            <div className="relative space-y-6">
-              <div className="absolute left-[9px] top-2 bottom-2 w-px bg-slate-200" />
-              {STEPS.map((s) => (
-                <div key={s.id} className="relative flex items-center gap-3.5 group">
-                  <div className={cn(
-                    "w-[20px] h-[20px] rounded-full flex items-center justify-center text-[9px] font-bold border transition-all z-10",
-                    step === s.id ? "bg-primary border-primary text-white shadow-md shadow-primary/20" :
-                    step > s.id ? "bg-emerald-500 border-emerald-500 text-white" : "bg-white border-slate-200 text-slate-300"
-                  )}>
-                    {step > s.id ? <CheckCircle2 className="h-2.5 w-2.5" /> : s.id}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className={cn(
-                      "text-[12px] font-bold",
-                      step >= s.id ? "text-slate-900" : "text-slate-300"
-                    )}>
-                      {s.label}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
-                      {s.description}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Side: Content Area */}
-        <div className="lg:col-span-8 p-8 lg:p-12 flex flex-col justify-center relative overflow-y-auto">
-
-          <div className="space-y-8">
-            {errorMessage && (
-              <div className="animate-in slide-in-from-top-2 duration-300">
-                <div className="bg-red-50 border border-red-100 rounded-lg p-3 flex items-center gap-3 shadow-sm">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-                  <p className="text-red-600 text-[12px] font-bold leading-tight">
-                    {errorMessage}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {step === 1 && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="space-y-3">
-                  <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-slate-100 border border-slate-200 rounded-md text-[10px] font-bold text-slate-500">
-                    {t('orgName.badge')}
-                  </div>
-                  <h3 className="text-3xl font-bold text-slate-900 tracking-tight">
-                    {t('orgName.title')}
-                  </h3>
-                </div>
-
-                <div className="space-y-4">
-                  <input
-                    type="text"
-                    placeholder={t('orgName.placeholder')}
-                    value={orgName}
-                    data-testid="org-name-input"
-                    onChange={(e) => setOrgName(e.target.value)}
+          {(currentStep === 'identity' || currentStep === 'goal' || currentStep === 'connect') && (
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="bg-white p-8 rounded-lg border border-slate-100 shadow-sm"
+            >
+              <h1 className="text-xl font-bold text-slate-900 mb-1">{t(`${currentStep}.title`)}</h1>
+              
+              <div className="mt-6">
+                {currentStep === 'identity' && (
+                  <Input 
+                    label={t('identity.label')}
                     autoFocus
-                    className="w-full h-14 px-6 bg-slate-50/50 border border-slate-200 rounded-xl text-xl text-slate-900 placeholder:text-slate-300 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all font-semibold tracking-tight"
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
+                    placeholder={t('identity.placeholder')}
+                    className="rounded-lg"
                   />
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                    <CheckCircle2 className={cn("h-3 w-3", orgName.length >= 3 ? "text-emerald-500" : "text-slate-200")} />
-                    {t('orgName.validation')}
-                  </div>
-                </div>
+                )}
 
-                <button
-                  onClick={handleNext}
-                  disabled={orgName.trim().length <= 2}
-                  data-testid="onboarding-next"
-                  className="w-full h-14 bg-slate-900 text-white rounded-xl font-bold text-md hover:bg-slate-800 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-xl shadow-slate-900/10"
+                {currentStep === 'goal' && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-slate-500 mb-4">{t('goal.description')}</p>
+                    {[
+                      { id: 'stockouts', icon: Target },
+                      { id: 'capital', icon: Zap },
+                      { id: 'growth', icon: TrendingUp },
+                    ].map((goal) => (
+                      <button 
+                        key={goal.id}
+                        onClick={() => setSelectedGoal(goal.id)}
+                        className={cn(
+                          "flex items-center gap-3 w-full p-4 rounded-lg border transition-all text-left",
+                          selectedGoal === goal.id 
+                            ? "border-slate-900 bg-slate-900 text-white shadow-lg shadow-slate-900/10" 
+                            : "border-slate-100 bg-slate-50 hover:bg-white hover:border-slate-200"
+                        )}
+                      >
+                        <goal.icon className={cn("w-4 h-4", selectedGoal === goal.id ? "text-white" : "text-slate-400")} />
+                        <div>
+                          <h3 className="font-bold text-xs">{t(`goal.options.${goal.id}.title`)}</h3>
+                          <p className={cn("text-[10px] opacity-70", selectedGoal === goal.id ? "text-white" : "text-slate-500")}>
+                            {t(`goal.options.${goal.id}.desc`)}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {currentStep === 'connect' && (
+                  <div className="space-y-4">
+                    <p className="text-xs text-slate-500 mb-4">{t('connect.description')}</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        { id: 'shopify', icon: ShoppingBag, label: t('connect.platforms.shopify'), active: true },
+                        { id: 'csv', icon: FileText, label: t('connect.platforms.csv'), active: true },
+                        { id: 'woocommerce', icon: Package, label: t('connect.platforms.woocommerce'), active: false },
+                      ].map((platform) => {
+                        const isConnected = connectedSources.some((s: any) => s.platform.toLowerCase() === platform.id);
+                        
+                        return (
+                          <button 
+                            key={platform.id}
+                            disabled={!platform.active}
+                            onClick={() => platform.id === 'csv' ? router.push('/dashboard/import') : setIsAddSourceOpen(true)}
+                            className={cn(
+                              "flex items-center justify-between p-3 rounded-lg border transition-all text-left group",
+                              platform.active 
+                                ? isConnected 
+                                  ? "border-emerald-100 bg-emerald-50/30"
+                                  : "border-slate-100 bg-slate-50 hover:border-slate-900 hover:bg-white" 
+                                : "opacity-40 cursor-not-allowed border-slate-50 shadow-none"
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-white rounded-lg border border-slate-100 flex items-center justify-center transition-colors group-hover:border-slate-900/10">
+                                <platform.icon className={cn("w-4 h-4", isConnected ? "text-emerald-500" : "text-slate-900")} />
+                              </div>
+                              <span className={cn("font-bold text-xs", isConnected ? "text-emerald-700" : "text-slate-900")}>
+                                {platform.label}
+                              </span>
+                            </div>
+                            
+                            {isConnected ? (
+                              <div className="flex items-center gap-1 bg-emerald-500 text-white px-2 py-0.5 rounded-full text-[9px] font-bold">
+                                <CheckCircle2 className="w-2.5 h-2.5" />
+                                <span>Connecté</span>
+                              </div>
+                            ) : (
+                              platform.active && (
+                                <div className="p-1 rounded-lg bg-white border border-slate-100 transition-colors group-hover:border-slate-900/20">
+                                  <Plus className="w-3 h-3 text-slate-400" />
+                                </div>
+                              )
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 lg:mt-10 flex flex-col gap-3">
+                <button 
+                  onClick={() => {
+                    if (currentStep === 'identity') handleNext('goal');
+                    if (currentStep === 'goal') handleNext('connect');
+                    if (currentStep === 'connect') handleNext('sync');
+                  }}
+                  disabled={
+                    (currentStep === 'identity' && !orgName.trim()) || 
+                    (currentStep === 'goal' && !selectedGoal) ||
+                    (currentStep === 'connect' && !hasConnectedSources)
+                  }
+                  className="w-full h-11 bg-slate-900 hover:bg-slate-800 disabled:opacity-30 disabled:bg-slate-200 disabled:text-slate-400 text-white text-sm font-bold rounded-lg transition-all shadow-md shadow-slate-900/5 active:scale-[0.98]"
                 >
-                  {t('orgName.continueButton')}
-                  <ArrowRight className="h-4 w-4" />
+                  {t(`${currentStep}.button`)}
+                </button>
+                <button 
+                  onClick={handleBack}
+                  className="w-full h-10 text-slate-400 hover:text-slate-900 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  {t('goal.back')}
                 </button>
               </div>
-            )}
+            </motion.div>
+          )}
 
-            {step === 2 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-slate-100 border border-slate-200 rounded-md text-[10px] font-bold text-slate-500">
-                    {t('planSelection.badge')}
+          {currentStep === 'sync' && (
+            <motion.div
+              key="sync"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              className="bg-white p-8 rounded-lg border border-slate-100 shadow-sm text-center"
+            >
+              <h1 className="text-xl font-bold text-slate-900 mb-8">{t('sync.title')}</h1>
+              
+              <div className="space-y-4 mb-10 text-left max-w-[200px] mx-auto">
+                {[
+                  { key: 'analyze', done: true },
+                  { key: 'forecast', done: isSyncComplete },
+                  { key: 'init', done: isSyncComplete },
+                ].map((item) => (
+                  <div key={item.key} className="flex items-center gap-3">
+                    <div className={cn(
+                      "w-5 h-5 rounded-full flex items-center justify-center transition-all",
+                      item.done ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-300"
+                    )}>
+                      {item.done ? <CheckCircle2 className="w-3 h-3" /> : <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+                    </div>
+                    <span className={cn(
+                      "text-xs font-bold transition-all",
+                      item.done ? "text-slate-900" : "text-slate-300"
+                    )}>
+                      {t(`sync.steps.${item.key}`)}
+                    </span>
                   </div>
-                  <h3 className="text-3xl font-bold text-slate-900 tracking-tight">
-                    {t('planSelection.title')}
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 gap-2.5">
-                  {PLANS.map((plan) => (
-                    <button
-                      key={plan.id}
-                      onClick={() => setSelectedPlan(plan.id)}
-                      className={cn(
-                        "relative flex items-center gap-5 p-4 rounded-xl border transition-all text-left",
-                        selectedPlan === plan.id
-                          ? "border-primary bg-primary/5 shadow-[0_0_20px_rgba(var(--primary-rgb),0.05)]"
-                          : "border-slate-100 bg-white hover:border-slate-200"
-                      )}
-                    >
-                      <div className={cn("p-2.5 rounded-lg shrink-0 transition-all shadow-sm", plan.bg, plan.color)}>
-                        <plan.icon className={cn("h-5 w-5", selectedPlan === plan.id ? "scale-110" : "")} />
-                      </div>
-
-                      <div className="flex-1 min-w-0 pr-16 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900">{plan.name}</span>
-                          {plan.popular && (
-                            <span className="text-[8px] bg-primary text-white px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
-                              {t('planSelection.recommended')}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-slate-500 truncate mt-0.5 font-medium">{plan.description}</p>
-                      </div>
-
-                      <div className="absolute right-6 text-right">
-                        <span className="text-sm font-bold text-slate-900">{plan.price}</span>
-                        <p className="text-[8px] text-slate-400 font-bold uppercase">{t('planSelection.perMonth')}</p>
-                      </div>
-
-                      {selectedPlan === plan.id && (
-                        <div className="absolute top-1/2 -translate-y-1/2 right-2">
-                          <CheckCircle2 className="h-3 w-3 text-primary" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => setStep(1)}
-                    className="h-12 px-5 bg-white border border-slate-200 text-slate-500 rounded-xl font-bold text-xs hover:bg-slate-50 transition-all"
-                  >
-                    {t('planSelection.backButton')}
-                  </button>
-                  <button
-                    onClick={handleFinish}
-                    data-testid="onboarding-finish"
-                    className="flex-1 h-12 bg-slate-900 text-white rounded-xl font-bold text-[15px] hover:bg-slate-800 transition-all flex items-center justify-center gap-2 shadow-xl shadow-slate-900/10"
-                  >
-                    {selectedPlan === 'BASIC' ? t('planSelection.activateButton') : t('planSelection.stripeButton')}
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
+                ))}
               </div>
-            )}
-          </div>
-        </div>
+
+              <button 
+                onClick={handleFinish}
+                disabled={!isSyncComplete || isFinishing}
+                className="w-full h-11 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-50 disabled:text-slate-300 text-white text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-900/10 active:scale-[0.98]"
+              >
+                {isFinishing ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Rocket className="w-4 h-4" />
+                )}
+                {isFinishing ? t('sync.finishing') : t('sync.button')}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Footer */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] pointer-events-none">
-        <span className="capitalize">{t('footer.secure')}</span>
-        <div className="w-1 h-1 rounded-full bg-slate-200" />
-        <span className="capitalize">{t('footer.version')}</span>
-      </div>
+      <AddSourcePanel 
+        isOpen={isAddSourceOpen} 
+        onClose={() => setIsAddSourceOpen(false)} 
+        onSuccess={() => {
+          setIsAddSourceOpen(false);
+          refetch();
+        }}
+        connectedPlatforms={connectedSources.map((s: any) => s.platform)}
+      />
     </div>
   );
 }

@@ -21,6 +21,10 @@ class Organization(Base):
     stripe_customer_id = Column(String(255), nullable=True)
     plan = Column(String(50), default="BASIC") # BASIC, PRO, ENTERPRISE
     subscription_status = Column(String(50), default="ACTIVE")
+    
+    # Onboarding Status
+    onboarding_completed = Column(Boolean, default=False, nullable=False)
+    onboarding_step = Column(String(50), default="welcome") # welcome, identity, connect, sync
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
