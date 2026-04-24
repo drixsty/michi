@@ -17,10 +17,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LoadingState } from '@/components/ui/LoadingState';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import Link from 'next/link';
+import { TwoFactorSetup } from '@/components/profile/TwoFactorSetup';
 
 const GET_ME = gql`
   query GetMe {
@@ -29,6 +31,7 @@ const GET_ME = gql`
       email
       firstName
       lastName
+      twoFactorEnabled
       preferences
     }
   }
@@ -52,6 +55,20 @@ const CHANGE_PASSWORD = gql`
   }
 `;
 
+const EXPORT_DATA = gql`
+  mutation ExportUserData {
+    exportUserData {
+      dataJson
+    }
+  }
+`;
+
+const DELETE_ACCOUNT = gql`
+  mutation DeleteAccount {
+    deleteAccount
+  }
+`;
+
 type TabType = 'profile' | 'security' | 'notifications';
 
 export default function ProfilePage() {
@@ -60,6 +77,8 @@ export default function ProfilePage() {
   const { data, loading, error, refetch } = useQuery(GET_ME);
   const [updateProfile, { loading: updating }] = useMutation(UPDATE_PROFILE);
   const [changePassword, { loading: changingPassword }] = useMutation(CHANGE_PASSWORD);
+  const [exportData, { loading: exporting }] = useMutation(EXPORT_DATA);
+  const [deleteAccount, { loading: deleting }] = useMutation(DELETE_ACCOUNT);
 
   const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [email, setEmail] = useState('');
@@ -69,6 +88,8 @@ export default function ProfilePage() {
   const [minSeverity, setMinSeverity] = useState(1);
   const [showSuccess, setShowSuccess] = useState<string | null>(null);
   const [showError, setShowError] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -135,6 +156,40 @@ export default function ProfilePage() {
       }
     } catch (err: any) {
       setShowError(err.message || t('security.passwordError'));
+    }
+  };
+
+  const handleExportData = async () => {
+    try {
+      const { data } = await exportData();
+      const blob = new Blob([data.exportUserData.dataJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `michi-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'SUPPRIMER') {
+      toast.error(t('gdpr.deleteErrorText'));
+      return;
+    }
+
+    try {
+      const { data: deleteData } = await deleteAccount();
+      if (deleteData?.deleteAccount) {
+        toast.success(t('gdpr.deleteSuccess'));
+        router.push('/login');
+      }
+    } catch (err: any) {
+      toast.error(err.message || t('gdpr.deleteError'));
     }
   };
 
@@ -221,7 +276,6 @@ export default function ProfilePage() {
                 <div className="px-5 py-4 border-b border-border bg-muted/20">
                   <h2 className="text-[13px] font-semibold text-foreground">{t('personalInfo')}</h2>
                 </div>
-
                 <div className="p-5 space-y-5">
                   <div className="flex items-center gap-5 pb-2">
                     <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center text-muted-foreground border border-border text-xl font-bold">
@@ -351,6 +405,62 @@ export default function ProfilePage() {
                   </div>
                 </form>
               </section>
+
+              {/* 2FA Section */}
+              <TwoFactorSetup 
+                isEnabled={data?.me?.twoFactorEnabled} 
+                onStatusChange={() => refetch()} 
+              />
+
+              {/* Data Portability */}
+              <section className="bg-white rounded-lg border border-border overflow-hidden">
+                <div className="px-5 py-4 border-b border-border bg-muted/20">
+                  <h2 className="text-[13px] font-semibold text-foreground">{t('gdpr.exportTitle')}</h2>
+                </div>
+                <div className="p-5 flex items-center justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <p className="text-[13px] text-muted-foreground leading-relaxed">
+                      {t('gdpr.exportDesc')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleExportData}
+                    disabled={exporting}
+                    className="h-9 px-4 border border-border rounded-lg text-[12px] font-semibold hover:bg-muted transition-all shrink-0 flex items-center gap-2"
+                  >
+                    {exporting ? (
+                      <div className="h-3.5 w-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <LogOut className="h-3.5 w-3.5 rotate-90" />
+                        {t('gdpr.exportButton')}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </section>
+
+              {/* Danger Zone */}
+              <div className="pt-2">
+                <div className="bg-red-50/50 rounded-lg border border-red-100 p-5 flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <h3 className="text-[13px] font-bold text-red-600 flex items-center gap-2">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      {t('gdpr.deleteTitle')}
+                    </h3>
+                    <p className="text-[12px] text-red-600/70 max-w-md italic">
+                      {t('gdpr.deleteDesc')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsDeleteModalOpen(true)}
+                    disabled={deleting}
+                    className="h-9 px-4 bg-red-600 text-white rounded-lg text-[12px] font-bold hover:bg-red-700 transition-all shrink-0 flex items-center gap-2 shadow-sm"
+                  >
+                    {t('deleteAccount')}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -438,6 +548,60 @@ export default function ProfilePage() {
 
         </main>
       </div>
+
+      {/* Account Deletion Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
+            onClick={() => !deleting && setIsDeleteModalOpen(false)} 
+          />
+          <div className="relative bg-white w-full max-w-md rounded-lg shadow-2xl border border-border p-6 space-y-6 animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-foreground">{t('gdpr.deleteConfirmTitle')}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {t('gdpr.deleteConfirmDesc')}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-3 bg-muted/50 rounded-lg border border-border text-[12px] text-muted-foreground text-center italic">
+                {t('gdpr.deleteTypeToConfirm')} <span className="font-bold text-red-600 not-italic">SUPPRIMER</span>
+              </div>
+              <input
+                type="text"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                placeholder="SUPPRIMER"
+                className="w-full h-11 px-4 rounded-lg border border-border bg-background text-sm text-center font-bold tracking-widest transition-all focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                disabled={deleting}
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 h-11 rounded-lg text-sm font-bold text-muted-foreground hover:bg-muted transition-all"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                disabled={deleting || deleteConfirmation !== 'SUPPRIMER'}
+                onClick={handleDeleteAccount}
+                className="flex-[2] h-11 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-600/10 disabled:opacity-50 disabled:shadow-none"
+              >
+                {deleting && <div className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                {t('deleteAccount')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

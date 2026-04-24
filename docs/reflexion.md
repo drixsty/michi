@@ -1,6 +1,8 @@
 michi 
 
 - Trouver un nouveau nom à l'app plus parlant et proche de l'identité de stripe, apple, et autres
+- revoir le code pour le rendre plus propre et plus facile à maintenir
+- revoir le tableau dans la page inventory pour le rendre plus performant et plus facile à utiliser
 - mettre en place des contraintes sur le core du code pour éviter les erreurs de types [Terminé ✅]
     - *Blindage effectué : Immutabilité du domaine (frozen dataclasses), hiérarchie d'exceptions typées, Mypy/Pyright strict, et décorateurs de résilience (Retry).*
 - mettre en place des tests unitaires et d'intégration [Terminé ✅]
@@ -20,14 +22,17 @@ michi
 - revoir et développer un onboarding pas à pas et une interface qui force l'utilisateur à connecter au moins une source de données avant de pourvoir commencer à utiliser le produit et pour l'onboarding pas à pas, il faut verifier si c'est la première connexion pour commencer l'onboarding sinon celui-ci pourra demander [Terminé ✅]
     - *Michi Journey stabilisé : Flux séquentiel (Identité -> Objectifs -> Connexion -> Analyse). Intégration de l'InteractiveTour v2 avec routage programmatique, transitions fluides ("Gliding Motion") et support i18n complet (FR/EN).*
 - construire un petit backoffice avec la possibilité de passer par ce biais pour accéder à une interface utilisateur 
-- que pouvons nous mettre en place concernant la RGPD ? et la double authentification aussi ?
+- que pouvons nous mettre en place concernant la RGPD ? et la double authentification aussi ? [Terminé ✅]
+    - *Sécurité & Conformité : Double authentification TOTP (Google Auth/Authy) avec système de 10 codes de secours hachés (bcrypt) à usage unique. Conformité RGPD complète : Service d'exportation de données (Article 20 - Portabilité JSON) et Droit à l'oubli (Hard Delete en cascade).*
 - prépare l'intégration d'un connecteur chatbot dopé à l'IA que j'intègrerai dans l'app
 - prépare la configuration de l'interval (journalier, mensuel, ou autre) de rapport par email sur les produits et autres et configure des template de rapport de mail avec appel à l'action [Terminé ✅]
     - *Implémentation complète : Orchestrateur CronWorker, Template 'World-Class' avec insights stratégiques, et tests de blindage.*
 - nettoie également le code pour supprimer les class, méthodes et repertoire inutiles
-- Pouvons nous créer des service de connexion aux différents canaux tout en le respectde la DDD extensible à chaque nouveau connecteur créer ?
+- Pouvons nous créer des service de connexion aux différents canaux tout en le respect de la DDD extensible à chaque nouveau connecteur créer ? [Architecture Terminée ✅]
+    - *Ingestion Engine v2 : Mise en place du pattern Adapter/Factory. Schémas Pydantic unifiés, BaseConnector abstrait et pipeline d'orchestration prêt pour l'omnicanalité totale.*
 - Pouvons nous créer un connecter officiel dans le shopify store et un autre dans amazon store pour le produit ?
 - configurer tous les services externes (stripe, sendgrid, etc) [Terminé ✅]
     - *Intégration terminée : BillingService (Stripe), EmailService (SMTP/SendGrid), et Security Vault (Chiffrement AES-256 des clés API).*
 - préparer la mise en production
+- test complet de la création de compte jusq'au choix du plan payant ou l'invitation et la double auth avec l'envoie de mail 
 - test complet de l'application

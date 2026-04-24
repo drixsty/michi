@@ -40,15 +40,17 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
     graphQLErrors.forEach(({ message, extensions }) => {
       const code = extensions?.code;
       
-      // Si UNAUTHENTICATED, rediriger vers login
-      if (code === 'UNAUTHENTICATED' && typeof window !== 'undefined') {
-        console.warn("[Apollo] Session expired, clearing local data.");
+      // Si UNAUTHENTICATED ou FORBIDDEN, rediriger vers login
+      if ((code === 'UNAUTHENTICATED' || code === 'FORBIDDEN') && typeof window !== 'undefined') {
+        console.warn(`[Apollo] ${code}: Access denied, clearing local data.`);
         localStorage.removeItem('michi_token');
         localStorage.removeItem('michi_current_org');
         
-        // Éviter la boucle de rechargement si on est déjà sur /login
-        if (window.location.pathname !== '/login' && window.location.pathname !== '/onboarding') {
-          window.location.href = '/login';
+        // Éviter la boucle de rechargement si on est déjà sur les pages d'auth
+        const path = window.location.pathname;
+        if (!path.includes('/login') && !path.includes('/forgot-password') && !path.includes('/reset-password')) {
+          // On redirige vers la racine qui gérera la locale et le login
+          window.location.href = '/';
         }
       }
     });

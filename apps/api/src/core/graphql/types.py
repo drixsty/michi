@@ -126,6 +126,7 @@ class UserType:
     last_name: Optional[str] = None
     current_organization_id: Optional[strawberry.ID] = None
     created_at: datetime
+    two_factor_enabled: bool
     preferences: str
     
     # List of organizations the user belongs to
@@ -178,6 +179,7 @@ class UserType:
             first_name=user.first_name,
             last_name=user.last_name,
             current_organization_id=strawberry.ID(str(user.current_organization_id)) if user.current_organization_id else None,
+            two_factor_enabled=user.two_factor_enabled if hasattr(user, 'two_factor_enabled') else False,
             created_at=user.created_at,
             preferences=prefs_str,
             organizations=orgs_list
@@ -532,10 +534,22 @@ class GoogleLoginInput:
     id_token: str
 
 @strawberry.type
+class TwoFactorSetupType:
+    secret: str
+    provisioning_uri: str
+
+@strawberry.type
+class TwoFactorConfirmResult:
+    success: bool
+    recovery_codes: Optional[List[str]] = None
+
+@strawberry.type
 class AuthPayload:
     """Payload retourné par login"""
-    token: str
-    user: UserType
+    token: Optional[str] = None
+    user: Optional[UserType] = None
+    mfa_required: bool = False
+    mfa_token: Optional[str] = None
 
 @strawberry.input
 class UpdateProfileInput:
@@ -595,3 +609,7 @@ class SmartImportInput:
     store_id: strawberry.ID
     csv_content: str
     mapping: str
+
+@strawberry.type
+class UserDataExportType:
+    data_json: str

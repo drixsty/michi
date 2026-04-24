@@ -81,6 +81,23 @@
         "alerts": "Alertes Rupture en Temps Réel"
       }
     },
+    "forgotPassword": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Entrez votre email pour recevoir un lien de réinitialisation.",
+      "emailLabel": "ADRESSE EMAIL",
+      "emailPlaceholder": "votre@email.com",
+      "submitButton": "Envoyer le lien",
+      "backToLogin": "Retour à la connexion",
+      "successTitle": "Email envoyé !",
+      "successMessage": "Consultez votre boîte de réception. Nous vous avons envoyé un lien pour réinitialiser votre mot de passe.",
+      "error": "Une erreur est survenue lors de l'envoi !",
+      "deleteConfirmTitle": "Supprimer définitivement votre compte ?",
+      "deleteConfirmDesc": "Cette action est irréversible. Toutes vos données, boutiques connectées et prévisions seront supprimées de nos serveurs.",
+      "deleteTypeToConfirm": "Veuillez taper",
+      "deleteErrorText": "Veuillez saisir 'SUPPRIMER' pour confirmer.",
+      "deleteSuccess": "Votre compte a été supprimé avec succès.",
+      "deleteError": "Une erreur est survenue lors de la suppression."
+    },
     "logout": "Déconnexion"
   },
   "navigation": {
@@ -400,8 +417,22 @@
     "saveButton": "Enregistrer les modifications",
     "updateSuccess": "Profil mis à jour avec succès",
     "updateError": "Erreur lors de la mise à jour",
-    "dangerZone": "Zone dangereuse",
+    "dangerZone": "Zone de Danger",
     "deleteAccount": "Supprimer mon compte",
+    "cancel": "Annuler",
+    "gdpr": {
+      "exportTitle": "Portabilité des données",
+      "exportDesc": "Téléchargez l'intégralité de vos données personnelles et commerciales au format JSON conformément au RGPD.",
+      "exportButton": "Exporter mes données",
+      "deleteTitle": "Suppression du compte",
+      "deleteDesc": "Cette action est irréversible. Toutes vos données, prédictions et connexions aux boutiques seront définitivement supprimées.",
+      "deleteConfirmTitle": "Supprimer définitivement votre compte ?",
+      "deleteConfirmDesc": "Cette action est irréversible. Toutes vos données, boutiques connectées et prévisions seront supprimées de nos serveurs.",
+      "deleteTypeToConfirm": "Veuillez taper",
+      "deleteErrorText": "Veuillez saisir 'SUPPRIMER' pour confirmer.",
+      "deleteSuccess": "Votre compte a été supprimé avec succès.",
+      "deleteError": "Une erreur est survenue lors de la suppression."
+    },
     "tabs": {
       "profile": "Profil",
       "security": "Sécurité",
@@ -418,7 +449,26 @@
       "passwordSuccess": "Mot de passe mis à jour avec succès",
       "passwordError": "Erreur lors du changement",
       "passwordMismatch": "Les mots de passe ne correspondent pas",
-      "incorrectPassword": "Mot de passe actuel incorrect"
+      "incorrectPassword": "Mot de passe actuel incorrect",
+      "forgotPasswordLink": "Mot de passe oublié ?"
+    },
+    "twoFactor": {
+      "title": "Double Authentification (2FA)",
+      "subtitle": "Sécurisez votre compte en ajoutant une étape de vérification supplémentaire via une application d'authentification.",
+      "statusEnabled": "Activée",
+      "statusDisabled": "Désactivée",
+      "enableButton": "Activer le 2FA",
+      "disableButton": "Désactiver le 2FA",
+      "setupTitle": "Configurer le 2FA",
+      "setupDesc": "Scannez ce QR Code avec votre application d'authentification (Google Authenticator, Authy, etc.).",
+      "verifyCodeLabel": "Code à 6 chiffres",
+      "verifyCodePlaceholder": "000000",
+      "confirmButton": "Confirmer et activer",
+      "successEnable": "Double authentification activée !",
+      "successDisable": "Double authentification désactivée.",
+      "invalidCode": "Code invalide. Veuillez réessayer.",
+      "enterCodeTitle": "Vérification 2FA",
+      "enterCodeDesc": "Entrez le code généré par votre application pour vous connecter."
     },
     "notifications": {
       "title": "Centre de notifications",
@@ -754,6 +804,20 @@
         "title": "Centre de Décision",
         "desc": "Pilotez l'impact financier et optimisez votre trésorerie ici."
       }
+    }
+  },
+  "import": {
+    "title": "Import Intelligent CSV/Excel",
+    "subtitle": "Le moteur IA Michi mappe vos colonnes et nettoie vos données automatiquement.",
+    "destination": {
+      "label": "Boutique de destination",
+      "choose": "Sélectionner une boutique...",
+      "other": "Autre (Stock consolidé)"
+    },
+    "dropzone": {
+      "title": "Déposez votre fichier ici",
+      "subtitle": "Supporte les formats CSV et Excel (.xlsx, .xls). Taille max 10 Mo.",
+      "button": "Parcourir mes fichiers"
     }
   }
 }

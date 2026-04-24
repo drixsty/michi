@@ -40,7 +40,9 @@ from core.exceptions import ErrorCode, MichiException, UnauthenticatedException
 class AuthResult:
     """Résultat d'une opération d'authentification."""
     token: JwtToken
-    user_model: User  # conservé pour compatibilité avec les schemas Pydantic existants
+    user_model: User
+    mfa_required: bool = False
+    mfa_token: Optional[str] = None
 
 
 class ApplicationAuthService:
@@ -107,6 +109,17 @@ class ApplicationAuthService:
             from loguru import logger
             logger.info(f"Auto-selected organization {active_org_id} for user {user_model.email}")
             await self._users._db.flush()
+
+        # Check for 2FA
+        if user_model.two_factor_enabled:
+            # Generate a temporary token for MFA step (valid for 5 mins)
+            mfa_token = self._tokens.create_access_token(
+                user_id=user_model.id,
+                org_id=None,
+                email=user_model.email,
+                expires_delta=300 # 5 minutes
+            )
+            return AuthResult(token=JwtToken(""), user_model=user_model, mfa_required=True, mfa_token=mfa_token)
 
         token = self._tokens.create_access_token(
             user_id=user_model.id,

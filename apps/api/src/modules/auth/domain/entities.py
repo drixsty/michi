@@ -34,6 +34,7 @@ class UserEntity:
     created_at: datetime
     google_id: Optional[str] = None
     current_organization_id: Optional[UUID] = None
+    two_factor_enabled: bool = False
     preferences: dict = field(default_factory=dict)
 
     @property

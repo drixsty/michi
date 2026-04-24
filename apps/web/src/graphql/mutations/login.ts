@@ -1,10 +1,12 @@
 import { gql, TypedDocumentNode } from '@apollo/client';
 import type { LoginMutation, LoginMutationVariables } from '@michi/types';
 
-export const LOGIN: TypedDocumentNode<LoginMutation, LoginMutationVariables> = gql`
+export const LOGIN = gql`
   mutation Login($input: LoginInput!) {
     login(input: $input) {
       token
+      mfaRequired
+      mfaToken
       user {
         id
         email
@@ -18,6 +20,19 @@ export const LOGIN: TypedDocumentNode<LoginMutation, LoginMutationVariables> = g
             slug
           }
         }
+      }
+    }
+  }
+`;
+
+export const VERIFY_2FA = gql`
+  mutation Verify2FA($mfaToken: String!, $code: String!) {
+    verify2fa(mfaToken: $mfaToken, code: $code) {
+      token
+      user {
+        id
+        email
+        currentOrganizationId
       }
     }
   }

@@ -133,19 +133,42 @@ from graphql import GraphQLError
 
 def custom_process_errors(errors: list[GraphQLError], execution_context=None):
     """
-    Masque les traces d'erreurs Python pour les MichiException.
-    Retourne une erreur propre au client et évite de logger la stacktrace complète.
+    Gestionnaire d'erreurs centralisé (Standard DDD/Hexagonal).
+    Intercepte les MichiException pour un logging propre sans stacktrace.
     """
     processed_errors = []
     for error in errors:
         orig = error.original_error
-        # Si c'est une MichiException, on logue juste une ligne propre
+        
+        # 1. Gestion des exceptions métier Michi
         if isinstance(orig, MichiException):
-            logger.warning(f"[GraphQL] {orig.__class__.__name__}: {orig.message}")
-        elif error.path:
-            # Pour les autres erreurs avec un chemin, on logue l'erreur standard
-            logger.error(f"[GraphQL Error] Path: {error.path} | Message: {error.message}")
+            log_msg = f"[Business Error] {orig.code}: {orig.message}"
+            if orig.logging_level == "INFO":
+                logger.info(log_msg)
+            elif orig.logging_level == "WARNING":
+                logger.warning(log_msg)
+            elif orig.logging_level == "ERROR":
+                logger.error(log_msg)
+            else:
+                logger.warning(log_msg)
             
+            # Formater pour GraphQL
+            error.extensions.update({
+                "code": orig.code,
+                "details": orig.details
+            })
+        
+        # 2. Gestion des erreurs inattendues (Sûreté)
+        elif orig:
+            # On logue l'erreur réelle avec stacktrace uniquement pour les erreurs système
+            logger.critical(f"[System Error] {str(orig)}", exception=orig)
+            error.message = "Internal Server Error"
+            error.extensions.update({"code": "INTERNAL_ERROR"})
+        
+        else:
+            # Erreurs de syntaxe GraphQL etc.
+            logger.debug(f"[GraphQL Syntax/Validation] {error.message}")
+
         processed_errors.append(error.formatted)
     return processed_errors
 

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import date
+from .schemas import IngestedProduct, IngestedSale
 
 class BaseConnector(ABC):
     """
@@ -9,17 +10,30 @@ class BaseConnector(ABC):
     """
 
     @abstractmethod
-    async def fetch_products(self, shop_id: str) -> List[Dict[str, Any]]:
+    async def validate_connection(self, credentials: Dict[str, Any]) -> bool:
         """
-        Récupère la liste des produits depuis la source.
-        Doit retourner un format unifié : [ { "sku": str, "title": str, "inventory": int } ]
+        Vérifie si les accès (API Key, URL, etc.) sont valides.
         """
         pass
 
     @abstractmethod
-    async def fetch_sales_history(self, product_id: str, days: int = 365) -> List[Dict[str, Any]]:
+    async def fetch_products(self, shop_id: str) -> List[IngestedProduct]:
         """
-        Récupère l'historique des ventes.
-        Format unifié : [ { "date": date, "units_sold": int, "stock_at_end": int } ]
+        Récupère la liste des produits depuis la source.
+        """
+        pass
+
+    @abstractmethod
+    async def fetch_sales_history(self, product_sku: str, shop_id: str, days: int = 365) -> List[IngestedSale]:
+        """
+        Récupère l'historique des ventes pour un produit.
+        """
+        pass
+
+    @abstractmethod
+    async def fetch_all_data(self, shop_id: str) -> Dict[str, Any]:
+        """
+        Récupère produits et ventes de manière optimisée.
+        Retourne : {"products": List[IngestedProduct], "sales": List[IngestedSale]}
         """
         pass

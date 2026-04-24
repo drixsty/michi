@@ -45,7 +45,8 @@ def require_plan(min_plan: PlanName):
                 logger.warning(f"Plan Denied: Org {org_id} has {current_plan}, needs {min_plan}")
                 raise MichiException(
                     message=f"Cette fonctionnalité nécessite le plan {min_plan} (Votre plan actuel : {current_plan})", 
-                    code=ErrorCode.FORBIDDEN
+                    code=ErrorCode.FORBIDDEN,
+                    logging_level="WARNING"
                 )
                 
             return await f(self, info, *args, **kwargs)
@@ -71,7 +72,6 @@ def require_permission(permission: MichiPermission):
             org_id = uuid.UUID(str(info.context.org_id))
             
             # 1. Récupérer uniquement le rôle et les permissions (Selective Fetch)
-            # Utilisation de scalar pour être plus atomique et profiter du verrouillage du wrapper
             stmt = select(OrganizationMember.role, OrganizationMember.permissions).where(
                 OrganizationMember.organization_id == org_id,
                 OrganizationMember.user_id == user_id
@@ -80,10 +80,9 @@ def require_permission(permission: MichiPermission):
             row = result.first()
             
             if not row:
-                logger.warning(f"Access Denied: OrgMember not found (Org: {org_id}, User: {user_id})")
-                raise MichiException(message="Vous n'êtes pas membre de cette organisation", code=ErrorCode.FORBIDDEN)
-            
-            logger.debug(f"Auth Success: User {user_id} in Org {org_id} (Role: {row[0]})")
+                # Si l'utilisateur n'est pas membre de l'organisation spécifiée dans son token,
+                # on le traite comme une erreur d'auth pour forcer un refresh/relogin.
+                raise UnauthenticatedException("Session invalide : vous n'êtes plus membre de cette organisation")
             
             user_role_enum, member_perms = row
             user_role = user_role_enum.value if hasattr(user_role_enum, 'value') else str(user_role_enum).lower()
@@ -93,14 +92,16 @@ def require_permission(permission: MichiPermission):
                 return await f(self, info, *args, **kwargs)
                 
             # Vérifier les overrides explicites (JSONB)
-            # ex: {"billing:manage": false} pour retirer un droit par défaut
             member_perms = member_perms or {}
             if permission.value in member_perms:
                 if member_perms[permission.value] is True:
                     return await f(self, info, *args, **kwargs)
                 elif member_perms[permission.value] is False:
-                    logger.warning(f"Accès refusé [Perm Explicit Deny] : User {user_id} tentant {permission}")
-                    raise MichiException(message=f"Action refusée : droit '{permission}' révoqué explicitement", code=ErrorCode.FORBIDDEN)
+                    raise MichiException(
+                        message=f"Action refusée : droit '{permission}' révoqué explicitement", 
+                        code=ErrorCode.FORBIDDEN,
+                        logging_level="WARNING"
+                    )
 
             # Vérifier les permissions par défaut du rôle
             default_perms = ROLE_PERMISSIONS.get(user_role, [])
@@ -108,10 +109,10 @@ def require_permission(permission: MichiPermission):
                 return await f(self, info, *args, **kwargs)
 
             # Sinon refus
-            logger.warning(f"Accès refusé [Perm Guard] : User {user_id} (Role: {user_role}) n'a pas la permission {permission}")
             raise MichiException(
                 message=f"Cette action nécessite la permission : {permission}", 
-                code=ErrorCode.FORBIDDEN
+                code=ErrorCode.FORBIDDEN,
+                logging_level="WARNING"
             )
             
         return wrapper
@@ -148,12 +149,20 @@ def require_role(allowed_roles: Union[str, List[str]]):
             user_role_enum = result.scalar()
             
             if not user_role_enum:
-                raise MichiException(message="Vous n'êtes pas membre de cette organisation", code=ErrorCode.FORBIDDEN)
+                raise MichiException(
+                    message="Vous n'êtes pas membre de cette organisation", 
+                    code=ErrorCode.FORBIDDEN,
+                    logging_level="WARNING"
+                )
             
             user_role = user_role_enum.value if hasattr(user_role_enum, 'value') else str(user_role_enum).lower()
             
             if user_role not in allowed_roles:
-                raise MichiException(message=f"Cette action nécessite un rôle parmi : {', '.join(allowed_roles)}", code=ErrorCode.FORBIDDEN)
+                raise MichiException(
+                    message=f"Cette action nécessite un rôle parmi : {', '.join(allowed_roles)}", 
+                    code=ErrorCode.FORBIDDEN,
+                    logging_level="WARNING"
+                )
             
             return await f(self, info, *args, **kwargs)
         return wrapper

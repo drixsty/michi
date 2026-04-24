@@ -5,12 +5,14 @@ Thin resolvers delegating to Application Services.
 """
 import strawberry
 import uuid
+import json
 
 from core.exceptions import UnauthenticatedException, MichiException, ErrorCode
 from core.graphql.types import (
     UserType, LoginInput, AuthPayload, RegisterInput, 
     GoogleLoginInput, ChangePasswordInput, UpdateProfileInput,
-    RequestPasswordResetInput, ResetPasswordInput
+    RequestPasswordResetInput, ResetPasswordInput, TwoFactorSetupType,
+    UserDataExportType, TwoFactorConfirmResult
 )
 
 @strawberry.type
@@ -38,8 +40,10 @@ class AuthMutation:
         await info.context.db.commit()
         
         return AuthPayload(
-            token=result.token.value,
-            user=UserType.from_db(result.user_model)
+            token=result.token.value if result.token and result.token.value else None,
+            user=UserType.from_db(result.user_model) if result.user_model else None,
+            mfa_required=result.mfa_required,
+            mfa_token=result.mfa_token
         )
 
     @strawberry.mutation
@@ -133,3 +137,116 @@ class AuthMutation:
         """Réinitialisation effective du mot de passe via token."""
         service = info.context.services.auth_service
         return await service.reset_password(input.token, input.new_password)
+
+    # --- 2FA Mutations ---
+
+    @strawberry.mutation
+    async def setup_2fa(self, info) -> TwoFactorSetupType:
+        """Initialise la configuration du 2FA."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        from modules.auth.application.two_factor_service import TwoFactorService
+        service = TwoFactorService()
+        result = await service.setup_2fa(str(info.context.user_id))
+        return TwoFactorSetupType(
+            secret=result["secret"],
+            provisioning_uri=result["provisioning_uri"]
+        )
+
+    @strawberry.mutation
+    async def confirm_2fa(self, info, secret: str, code: str) -> TwoFactorConfirmResult:
+        """Valide et active le 2FA."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        from modules.auth.application.two_factor_service import TwoFactorService
+        service = TwoFactorService()
+        recovery_codes = await service.confirm_2fa(str(info.context.user_id), secret, code)
+        
+        return TwoFactorConfirmResult(
+            success=recovery_codes is not None,
+            recovery_codes=recovery_codes
+        )
+
+    @strawberry.mutation
+    async def disable_2fa(self, info) -> bool:
+        """Désactive le 2FA."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        from modules.auth.application.two_factor_service import TwoFactorService
+        service = TwoFactorService()
+        return await service.disable_2fa(str(info.context.user_id))
+
+    @strawberry.mutation
+    async def verify_2fa(self, info, mfa_token: str, code: str) -> AuthPayload:
+        """Valide le code 2FA (TOTP ou Recovery Code) pour finaliser le login."""
+        service = info.context.services.auth_service
+        
+        # 1. Décoder le mfa_token pour récupérer le user_id
+        payload = service._tokens.decode_token(mfa_token)
+        user_id = uuid.UUID(payload["sub"])
+        
+        # 2. Récupérer le modèle de l'utilisateur
+        user_model = await service.get_user_model_by_id(user_id)
+        if not user_model or not user_model.two_factor_enabled:
+            raise UnauthenticatedException("2FA non activé")
+            
+        from modules.auth.application.two_factor_service import TwoFactorService
+        tf_service = TwoFactorService()
+        
+        # 3. Vérifier le code (TOTP ou Recovery)
+        clean_code = code.strip().upper()
+        
+        if len(clean_code) == 8:
+            # Tentative avec un code de secours
+            new_recovery_codes = tf_service.verify_recovery_code(user_model.recovery_codes, clean_code)
+            if new_recovery_codes is None:
+                raise MichiException(message="Code de secours invalide ou déjà utilisé", code=ErrorCode.UNAUTHENTICATED)
+            
+            # Code valide ! On met à jour la liste des codes restants
+            user_model.recovery_codes = new_recovery_codes
+            # Note: SQLAlchemy marquera le champ JSON comme modifié automatiquement
+        else:
+            # Tentative TOTP standard
+            if not tf_service.verify_code(user_model.two_factor_secret, clean_code):
+                raise MichiException(message="Code d'authentification invalide", code=ErrorCode.UNAUTHENTICATED)
+            
+        # 4. Générer le token final
+        token = service._tokens.create_access_token(
+            user_id=user_model.id,
+            org_id=user_model.current_organization_id,
+            email=user_model.email,
+        )
+        
+        # Sauvegarder les changements (pour les recovery codes consommés)
+        await info.context.db.commit()
+        
+        return AuthPayload(
+            token=token.value,
+            user=UserType.from_db(user_model)
+        )
+
+    # --- GDPR Mutations ---
+
+    @strawberry.mutation
+    async def export_user_data(self, info) -> UserDataExportType:
+        """Exporte l'intégralité des données utilisateur (RGPD)."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        from modules.auth.application.gdpr_service import GdprService
+        service = GdprService()
+        data_json = await service.export_all_user_data(uuid.UUID(str(info.context.user_id)))
+        return UserDataExportType(data_json=data_json)
+
+    @strawberry.mutation
+    async def delete_account(self, info) -> bool:
+        """Supprime définitivement le compte et les données (RGPD)."""
+        if not info.context.user_id:
+            raise UnauthenticatedException()
+            
+        from modules.auth.application.gdpr_service import GdprService
+        service = GdprService()
+        return await service.delete_user_account(uuid.UUID(str(info.context.user_id)))

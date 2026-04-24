@@ -59,6 +59,11 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     
+    # 2FA Security
+    two_factor_secret = Column(String(255), nullable=True) # Will store the encrypted TOTP secret
+    two_factor_enabled = Column(Boolean, default=False, nullable=False)
+    recovery_codes = Column(JSON, nullable=True) # Liste de codes hachés
+
     preferences = Column(JSON, default={}, nullable=False)
     
     # Relationships
