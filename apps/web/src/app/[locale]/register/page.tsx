@@ -239,8 +239,8 @@ export default function RegisterPage() {
 
           <p className="text-center text-[9px] text-slate-400 leading-tight max-w-[240px] mx-auto italic">
             {t.rich('termsText', {
-              termsLink: (chunks) => <span className="underline cursor-pointer">{chunks}</span>,
-              privacyLink: (chunks) => <span className="underline cursor-pointer">{chunks}</span>,
+              termsLink: (chunks) => <Link href="/legal/terms" className="underline cursor-pointer hover:text-slate-600">{chunks}</Link>,
+              privacyLink: (chunks) => <Link href="/legal/privacy" className="underline cursor-pointer hover:text-slate-600">{chunks}</Link>,
             })}
           </p>
         </div>

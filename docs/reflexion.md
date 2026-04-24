@@ -33,6 +33,8 @@ michi
 - Pouvons nous créer un connecter officiel dans le shopify store et un autre dans amazon store pour le produit ?
 - configurer tous les services externes (stripe, sendgrid, etc) [Terminé ✅]
     - *Intégration terminée : BillingService (Stripe), EmailService (SMTP/SendGrid), et Security Vault (Chiffrement AES-256 des clés API).*
+- mettre en place la gestion des cookies et des conditions d'utilisation [Terminé ✅]
+    - *Cadre Légal & UX Premium : Implémentation d'une bannière de consentement cookies 'Glassmorphism' avec personnalisation granulaire. Création des pages /legal/terms et /legal/privacy avec un design 'Enterprise-Grade' (radius lg, typographie robuste, navigation latérale).*
 - préparer la mise en production
 - test complet de la création de compte jusq'au choix du plan payant ou l'invitation et la double auth avec l'envoie de mail 
 - test complet de l'application

@@ -1,4 +1,14 @@
 {
+  "legal": {
+    "cookieTitle": "Respect de votre vie privée",
+    "cookieDesc": "Nous utilisons des cookies pour améliorer votre expérience, analyser le trafic et assurer la sécurité de vos données de forecasting.",
+    "cookieAcceptAll": "Tout accepter",
+    "cookieRejectAll": "Tout refuser",
+    "cookieManage": "Personnaliser",
+    "privacy": "Politique de Confidentialité",
+    "terms": "Conditions d'Utilisation",
+    "cookies": "Gestion des Cookies"
+  },
   "common": {
     "loading": "Chargement…",
     "error": "Une erreur est survenue",

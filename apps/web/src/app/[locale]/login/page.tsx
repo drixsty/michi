@@ -261,7 +261,9 @@ export default function LoginPage() {
             </p>
             <p className="text-[9px] text-muted-foreground/50 px-8 leading-tight italic">
               {t('terms').split(t('termsLink'))[0]}
-              <span className="underline underline-offset-4 cursor-pointer hover:text-foreground">{t('termsLink')}</span>
+              <Link href="/legal/terms" className="underline underline-offset-4 cursor-pointer hover:text-foreground">
+                {t('termsLink')}
+              </Link>
               {t('terms').split(t('termsLink'))[1]}
             </p>
           </div>
