@@ -41,4 +41,5 @@ michi
 - Mettre en place une vérification d'e-mail totalement bloquante à l'inscription [Terminé ✅]
     - *Sécurité SaaS : Accès au produit interdit tant que l'e-mail n'est pas validé. Gestion de l'idempotence pour éviter les erreurs de "lien expiré" en cas de double-clic. Intégration i18n complète.*
 - préparer la mise en production
-- test complet de la création de compte jusq'au choix du plan payant ou l'invitation et la double auth avec l'envoie de mail [Terminé ✅]- test complet de l'application
+- test complet de la création de compte jusq'au choix du plan payant ou l'invitation et la double auth avec l'envoie de mail [Terminé ✅]
+- test complet de l'application
