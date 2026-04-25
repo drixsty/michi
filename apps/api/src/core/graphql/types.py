@@ -3,8 +3,10 @@ Types GraphQL avec Strawberry
 """
 import strawberry
 import asyncio
+import uuid
 from typing import Optional, List
 from datetime import datetime, date
+from modules.auth.domain.permissions import PermissionCode, ROLE_PERMISSIONS
 
 @strawberry.type
 class TestConnectionResult:
@@ -45,6 +47,10 @@ class OrganizationType:
     @classmethod
     def from_db(cls, org):
         import json
+        if not org: return None
+        
+        from loguru import logger
+        logger.debug(f"[GraphQL] Mapping Organization: ID={org.id}, Name='{org.name}'")
 
         def _val(v) -> str:
             """Extrait la valeur string d'un enum, value object ou string brut."""
@@ -54,7 +60,7 @@ class OrganizationType:
 
         return cls(
             id=strawberry.ID(str(org.id)),
-            name=org.name,
+            name=org.name or "Organisation sans nom",
             slug=_val(org.slug),
             plan=_val(org.plan),
             subscription_status=_val(org.subscription_status),
@@ -71,6 +77,7 @@ class OrganizationMemberType:
     user_id: strawberry.ID
     role: str
     permissions: str # JSON string
+    computed_permissions: List[str] # Liste plate des permissions effectives
     organization: Optional[OrganizationType] = None
     user: Optional['UserType'] = None
 
@@ -87,32 +94,50 @@ class OrganizationMemberType:
         except Exception:
             role_val = 'viewer'
             
+        from modules.auth.domain.access_policy import AccessPolicy
+        
+        # Calculer les permissions effectives via le DOMAINE
+        effective_perms = AccessPolicy.calculate_effective_permissions(
+            str(role_val), 
+            member.permissions
+        )
+                
         # Safety for organization link
         loaded_org = None
         if include_org:
             try:
-                # Check if already loaded
+                # Tentative d'accès sécurisée
                 org_model = getattr(member, 'organization', None)
-                if org_model and not asyncio.iscoroutine(org_model):
-                    loaded_org = OrganizationType.from_db(org_model)
+                if org_model:
+                    # Vérification si c'est un proxy non chargé
+                    from sqlalchemy.orm.util import was_deleted
+                    if not was_deleted(org_model):
+                        loaded_org = OrganizationType.from_db(org_model)
             except Exception:
-                loaded_org = None
+                # Si erreur de chargement (DetachedInstance), on laisse loaded_org à None
+                # mais l'ID restera présent pour le frontend
+                pass
 
         # Safety for user link
         loaded_user = None
         if include_user:
             try:
-                user_model = getattr(member, 'user', None)
-                if user_model and not asyncio.iscoroutine(user_model):
-                    loaded_user = UserType.from_db(user_model, include_orgs=False)
-            except Exception:
-                loaded_user = None
+                user_model = member.user
+                if user_model:
+                    loaded_user = UserType.from_db(user_model)
+            except Exception as e:
+                from loguru import logger
+                logger.error(f"[GraphQL] Failed to load user for member: {str(e)}")
+
+        # Extraction des permissions brutes pour le frontend
+        member_perms_dict = member.permissions if isinstance(member.permissions, dict) else {}
 
         return cls(
             organization_id=strawberry.ID(str(getattr(member, 'organization_id', ''))),
             user_id=strawberry.ID(str(getattr(member, 'user_id', ''))),
             role=str(role_val).lower(),
-            permissions=json.dumps(getattr(member, 'permissions', {})),
+            permissions=json.dumps(member_perms_dict),
+            computed_permissions=list(effective_perms),
             organization=loaded_org,
             user=loaded_user
         )
@@ -138,14 +163,13 @@ class UserType:
         if not info.context.org_id: return False
         active_org_id = str(info.context.org_id)
         
-        # Check in the already loaded organizations list
         for m in self.organizations:
             if str(m.organization_id) == active_org_id:
                 return m.role.lower() == "admin"
         return False
 
     @classmethod
-    def from_db(cls, user, include_orgs=True):
+    def from_db(cls, user):
         import json
         if not user: return None
         
@@ -158,20 +182,14 @@ class UserType:
         else:
             prefs_str = json.dumps(prefs or {})
 
-        # Safety check for organizations relationship to avoid DetachedInstanceError
+        # Population des organisations (déjà chargées via selectinload)
         orgs_list = []
-        if include_orgs:
-            try:
-                # Si on est dans un contexte async avec SQLAlchemy, l'accès à une 
-                # relation non chargée peut lever DetachedInstanceError ou une coroutine.
-                raw_orgs = getattr(user, 'organizations', [])
-                if isinstance(raw_orgs, (list, tuple)):
-                    orgs_list = [OrganizationMemberType.from_db(m) for m in raw_orgs]
-                else:
-                    # Probablement une coroutine ou un objet lazy non chargé
-                    orgs_list = []
-            except Exception:
-                orgs_list = []
+        try:
+            raw_orgs = getattr(user, 'organizations', [])
+            if hasattr(raw_orgs, "__iter__"):
+                orgs_list = [OrganizationMemberType.from_db(m) for m in raw_orgs]
+        except Exception:
+            pass
 
         return cls(
             id=strawberry.ID(str(user.id)),
@@ -411,8 +429,9 @@ class CleanedDemandType:
     correction_type: str
     computed_at: datetime
 
+
     @classmethod
-    def from_db(cls, r):
+    def from_db_legacy(cls, r):
         if not r: return None
         return cls(
             id=strawberry.ID(str(r.id)),

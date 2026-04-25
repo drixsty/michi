@@ -27,7 +27,13 @@
     "open": "Ouvrir",
     "emptyTitle": "Données vides",
     "syncSuccess": "Synchronisation réussie",
-    "syncError": "Une erreur est survenue"
+    "syncError": "Une erreur est survenue",
+    "unauthorized": {
+      "title": "Accès restreint",
+      "description": "Vous n'avez pas les permissions nécessaires pour accéder à cet espace. Veuillez contacter votre administrateur si vous pensez qu'il s'agit d'une erreur.",
+      "goBack": "Retour",
+      "goHome": "Accueil dashboard"
+    }
   },
   "brand": {
     "tagline": "La précision au cœur de votre croissance.",
@@ -656,6 +662,20 @@
       "settings": "Paramètres",
       "billing": "Facturation"
     },
+    "roles": {
+      "owner": "Propriétaire",
+      "admin": "Administrateur",
+      "manager": "Gestionnaire",
+      "viewer": "Lecteur",
+      "owner_desc": "Accès total, gestion de la facturation et suppression de l'organisation.",
+      "admin_desc": "Gestion des membres, des boutiques et de l'inventaire.",
+      "manager_desc": "Gestion de l'inventaire et des fournisseurs.",
+      "viewer_desc": "Consultation des données uniquement.",
+      "ownerDesc": "Accès total, gestion de la facturation et suppression de l'organisation.",
+      "adminDesc": "Gestion des membres, des boutiques et de l'inventaire.",
+      "managerDesc": "Gestion de l'inventaire et des fournisseurs.",
+      "viewerDesc": "Consultation des données uniquement."
+    },
     "billing": {
       "title": "Abonnement & Facturation",
       "subtitle": "Gérez votre plan Michi et vos informations de paiement Stripe.",
@@ -709,14 +729,6 @@
       "successBan": "Utilisateur banni",
       "successUnban": "Bannissement levé",
       "successRole": "Rôle mis à jour : {role}"
-    },
-    "roles": {
-      "admin": "Administrateur",
-      "manager": "Gestionnaire",
-      "viewer": "Lecteur",
-      "adminDesc": "Accès complet à tous les réglages",
-      "managerDesc": "Gestion des stocks et commandes",
-      "viewerDesc": "Accès en lecture seule"
     },
     "permissions": {
       "team": "Équipe & Membres",
@@ -828,6 +840,18 @@
       "title": "Déposez votre fichier ici",
       "subtitle": "Supporte les formats CSV et Excel (.xlsx, .xls). Taille max 10 Mo.",
       "button": "Parcourir mes fichiers"
+    }
+  },
+  "connections": {
+    "title": "Sources de données",
+    "description": "Gérez vos intégrations et flux de données pour centraliser votre inventaire.",
+    "security": {
+      "title": "Sécurité des données",
+      "description": "Toutes vos clés API sont chiffrées au repos avec l'algorithme AES-256. Michi ne stocke jamais vos mots de passe en clair."
+    },
+    "quotas": {
+      "title": "Quotas & limites",
+      "description": "Votre plan actuel permet de connecter jusqu'à 3 sources de données simultanément."
     }
   }
 }

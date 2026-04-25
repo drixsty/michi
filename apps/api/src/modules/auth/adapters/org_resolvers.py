@@ -12,21 +12,28 @@ from core.graphql.types import (
     AuthPayload, UserType
 )
 
+from modules.auth.adapters.decorators import require_permission, rate_limit
+from modules.auth.domain.permissions import PermissionCode
+
 @strawberry.type
 class OrgQuery:
     @strawberry.field
     async def current_organization(self, info) -> Optional[OrganizationType]:
         """Récupère les détails de l'organisation active."""
-        if not info.context.user_id or not info.context.org_id:
+        if not info.context.user_id:
             raise UnauthenticatedException()
+        
+        if not info.context.org_id:
+            return None
         
         service = info.context.services.org_service
         org = await service.get_current_org(uuid.UUID(str(info.context.org_id)))
         return OrganizationType.from_db(org) if org else None
 
     @strawberry.field(name="organizationMembers")
+    @require_permission(PermissionCode.SETTINGS_VIEW)
     async def organization_members(self, info) -> List[OrganizationMemberType]:
-        """Liste les membres de l'organisation active."""
+        """Liste les membres de l'organisation (MANAGER et au-dessus)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
         
@@ -83,10 +90,25 @@ class OrgMutation:
         )
 
     @strawberry.mutation
+    @require_permission(PermissionCode.ORG_EDIT)
     async def update_organization(self, info, input: UpdateOrganizationInput) -> Optional[OrganizationType]:
         """Met à jour les informations de l'organisation (Nom, Devise, Mutualisation)."""
-        if not info.context.user_id or not info.context.org_id:
-            raise UnauthenticatedException()
+        user_id = info.context.user_id
+        if not user_id:
+            raise UnauthenticatedException("Utilisateur non authentifié")
+            
+        org_id = info.context.org_id
+        if not org_id:
+            # Fallback pour l'onboarding: si pas d'org dans le token, on prend la seule org de l'utilisateur
+            from modules.auth.infrastructure.models import OrganizationMember
+            from sqlalchemy import select
+            stmt = select(OrganizationMember).where(OrganizationMember.user_id == user_id)
+            res = await info.context.db.execute(stmt)
+            memberships = res.scalars().all()
+            if len(memberships) == 1:
+                org_id = memberships[0].organization_id
+            else:
+                raise UnauthenticatedException("Contexte organisationnel introuvable. Veuillez vous reconnecter.")
             
         settings_dict = {}
         if input.currency is not None:
@@ -109,7 +131,7 @@ class OrgMutation:
 
         service = info.context.services.org_service
         updated_org = await service.update_organization(
-            org_id=uuid.UUID(str(info.context.org_id)),
+            org_id=uuid.UUID(str(org_id)),
             name=input.name,
             settings=settings_dict if settings_dict else None,
             onboarding_completed=onboarding_completed,
@@ -127,6 +149,7 @@ class OrgMutation:
         return OrganizationType.from_db(updated_org) if updated_org else None
 
     @strawberry.mutation
+    @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
     async def remove_member(self, info, user_id: strawberry.ID) -> bool:
         """Retire un membre de l'organisation."""
         if not info.context.user_id or not info.context.org_id:
@@ -141,6 +164,7 @@ class OrgMutation:
         return res
 
     @strawberry.mutation
+    @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
     async def update_member_role(self, info, user_id: strawberry.ID, role: str) -> bool:
         """Change le rôle d'un collaborateur."""
         if not info.context.user_id or not info.context.org_id:
@@ -157,6 +181,7 @@ class OrgMutation:
         return res
 
     @strawberry.mutation
+    @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
     async def update_member_permissions(self, info, user_id: strawberry.ID, permissions: str) -> Optional[OrganizationMemberType]:
         """Met à jour les permissions granulaires d'un membre (permissions passées en string JSON)."""
         if not info.context.user_id or not info.context.org_id:

@@ -18,6 +18,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { Permission } from '@/hooks/usePermissions';
+import { CanDo } from '@/components/auth/CanDo';
 
 export default function NotificationsPage() {
   const t = useTranslations('settings.notifications');
@@ -39,6 +42,7 @@ export default function NotificationsPage() {
   };
 
   return (
+    <PermissionGuard permission={Permission.SETTINGS_VIEW} redirectTo="/dashboard">
     <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Notifications & rapports</h1>
@@ -166,19 +170,22 @@ export default function NotificationsPage() {
         <p className="text-[10px] text-slate-400 font-medium italic">
           Les rapports sont envoyés à 08:00 (Fuseau horaire de l'organisation).
         </p>
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className={cn(
-            "px-8 py-3 rounded-xl text-sm font-black transition-all shadow-lg flex items-center gap-2",
-            success 
-              ? "bg-emerald-500 text-white" 
-              : "bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400"
-          )}
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (success ? <CheckCircle2 className="h-4 w-4" /> : "Enregistrer les réglages")}
-        </button>
+        <CanDo permission={Permission.ORG_EDIT}>
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className={cn(
+              "px-8 py-3 rounded-xl text-sm font-black transition-all shadow-lg flex items-center gap-2",
+              success 
+                ? "bg-emerald-500 text-white" 
+                : "bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400"
+            )}
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (success ? <CheckCircle2 className="h-4 w-4" /> : "Enregistrer les réglages")}
+          </button>
+        </CanDo>
       </div>
     </div>
+    </PermissionGuard>
   );
 }

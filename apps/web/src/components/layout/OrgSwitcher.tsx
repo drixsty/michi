@@ -6,7 +6,7 @@ import { useStore } from '@/context/StoreContext';
 import { cn } from '@/lib/utils';
 
 export function OrgSwitcher() {
-  const { organizations, currentOrganization, switchOrganization, loading } = useStore();
+  const { organizations, currentOrganization, switchOrganization, refreshUser, loading } = useStore();
   const [isOpen, setIsOpen] = useState(false);
   const [hasMounted, setHasMounted] = React.useState(false);
 
@@ -56,42 +56,67 @@ export function OrgSwitcher() {
                 </p>
              </div>
              <div className="max-h-64 overflow-y-auto px-2 space-y-1">
-               {organizations.map((m) => (
-                  <button
-                    key={m.organizationId}
-                    onClick={() => {
-                      if (m.organizationId !== currentOrganization.id) {
-                          switchOrganization(m.organizationId);
-                      }
-                      setIsOpen(false);
-                    }}
-                    data-testid="org-item"
-                    className={cn(
-                      "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all focus:ring-0 focus:outline-none",
-                      m.organizationId === currentOrganization.id 
-                        ? "bg-primary/5 text-primary border border-primary/10" 
-                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs",
-                        m.organizationId === currentOrganization.id ? "bg-primary/20" : "bg-slate-100 text-slate-500"
-                      )}>
-                          {m.organization?.name?.charAt(0)}
+               {organizations.length === 0 ? (
+                 <div className="px-3 py-4 text-center">
+                    <p className="text-xs text-slate-400 mb-2 italic">Aucune organisation trouvée</p>
+                    <button 
+                      onClick={() => refreshUser()}
+                      className="text-[10px] font-bold text-primary hover:underline"
+                    >
+                      Actualiser
+                    </button>
+                 </div>
+               ) : organizations.map((m: any) => {
+                  // Détection d'ID ultra-tolérante
+                  const mOrgId = String(m.organization?.id || m.organizationId || m.id || '');
+                  const currentId = String(currentOrganization?.id || '');
+                  const isCurrent = mOrgId !== '' && mOrgId === currentId;
+                  
+                  // Priorité absolue au nom du StoreContext pour l'org actuelle
+                  const orgName = isCurrent && currentOrganization?.name
+                                ? currentOrganization.name 
+                                : (m.organization?.name || "Organisation");
+                  
+                  // Initiales
+                  const initials = orgName.charAt(0).toUpperCase();
+                  
+                  return (
+                    <button
+                      key={mOrgId}
+                      onClick={() => {
+                        if (mOrgId && !isCurrent) {
+                          switchOrganization(mOrgId);
+                        }
+                        setIsOpen(false);
+                      }}
+                      data-testid="org-item"
+                      className={cn(
+                        "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition-all focus:ring-0 focus:outline-none",
+                        isCurrent 
+                          ? "bg-primary/5 text-primary border border-primary/10" 
+                          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs",
+                          isCurrent ? "bg-primary/20 text-primary" : "bg-slate-100 text-slate-500"
+                        )}>
+                            {initials}
+                        </div>
+                        <div className="text-left">
+                          <p className="font-semibold truncate max-w-[140px]">{orgName}</p>
+                          <p className="text-[10px] text-muted-foreground">{m.role}</p>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <p className="font-semibold truncate max-w-[140px]">{m.organization?.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{m.role}</p>
-                      </div>
-                    </div>
-                    {m.organizationId === currentOrganization.id && (
-                      <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                        <Check className="h-3 w-3 text-white" />
-                      </div>
-                    )}
-                  </button>
-               ))}
+                      {isCurrent && (
+                        <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                          <Check className="h-3 w-3 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+               })}
              </div>
              
           </div>

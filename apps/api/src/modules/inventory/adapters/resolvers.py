@@ -7,6 +7,8 @@ import csv
 import strawberry
 from typing import List, Optional, Annotated
 import uuid
+import asyncio
+import time
 
 from core.exceptions import UnauthenticatedException, MichiException, ErrorCode
 from modules.auth.adapters.decorators import require_permission, require_plan
@@ -141,7 +143,7 @@ class InventoryMutation:
         return ProductType.from_db(updated_p)
 
     @strawberry.mutation
-    @require_permission(MichiPermission.INVENTORY_EDIT)
+    @require_permission(MichiPermission.INVENTORY_VIEW)
     async def delete_alert(self, info, alert_id: strawberry.ID) -> bool:
         service = info.context.services.alert_service
         res = await service.alert_repo.delete(uuid.UUID(str(alert_id)))
@@ -368,3 +370,22 @@ class InventoryMutation:
             products_count=result["products_count"], 
             sales_logs_count=result["sales_logs_count"]
         )
+
+    @strawberry.mutation
+    @require_permission(MichiPermission.INVENTORY_EDIT)
+    async def create_purchase_order(
+        self, 
+        info, 
+        product_id: strawberry.ID, 
+        supplier_id: strawberry.ID, 
+        quantity: int
+    ) -> PurchaseOrderType:
+        """Crée un bon de commande fournisseur."""
+        service = info.context.services.inventory_service
+        po = await service.create_purchase_order(
+            product_id=uuid.UUID(str(product_id)),
+            supplier_id=uuid.UUID(str(supplier_id)),
+            quantity=quantity
+        )
+        await info.context.db.commit()
+        return PurchaseOrderType.from_db(po)

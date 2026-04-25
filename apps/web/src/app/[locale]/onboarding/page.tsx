@@ -18,6 +18,7 @@ import {
   Plus
 } from 'lucide-react';
 import { useMutation, useQuery, useApolloClient, gql } from '@apollo/client';
+import { useStore } from '../../../context/StoreContext';
 import { useTranslations } from 'next-intl';
 import { AddSourcePanel } from '@/components/dashboard/AddSourcePanel';
 import { Input } from '@/components/ui/Input';
@@ -35,6 +36,17 @@ const GET_ONBOARDING_DATA = gql`
       id
       platform
       connected
+    }
+  }
+`;
+
+const CREATE_ORG = gql`
+  mutation CreateOrg($name: String!) {
+    createOrganization(name: $name) {
+      token
+      user {
+        id
+      }
     }
   }
 `;
@@ -62,12 +74,14 @@ const STEPS: { id: Step; labelKey: string }[] = [
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
   const router = useRouter();
+  const { refreshUser } = useStore();
   
   const { data, loading, refetch } = useQuery(GET_ONBOARDING_DATA, {
     fetchPolicy: 'network-only'
   });
   
   const [updateOrg] = useMutation(UPDATE_ORG);
+  const [createOrg] = useMutation(CREATE_ORG);
   const client = useApolloClient();
   
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
@@ -101,6 +115,21 @@ export default function OnboardingPage() {
 
   const handleNext = async (nextStep: Step) => {
     try {
+      if (!data?.currentOrganization) {
+        // First step: Create the organization
+        const { data: createData } = await createOrg({
+          variables: { name: orgName || "Ma Boutique" }
+        });
+        
+        if (createData?.createOrganization?.token) {
+          localStorage.setItem('michi_token', createData.createOrganization.token);
+          localStorage.setItem('michi_onboarding_finished', 'true'); // NEW: Early flag to prevent redirect
+          // Force a full refetch to have context for subsequent steps
+          await client.resetStore();
+          await refreshUser(); // NEW: Update StoreContext memberships
+        }
+      }
+
       await updateOrg({
         variables: {
           input: { 
@@ -132,7 +161,7 @@ export default function OnboardingPage() {
       const result = await updateOrg({
         variables: {
           input: { 
-            name: orgName, 
+            name: orgName || data?.currentOrganization?.name, 
             onboardingCompleted: true, 
             onboardingStep: 'sync' 
           }
@@ -140,8 +169,12 @@ export default function OnboardingPage() {
       });
       
       if (result.data) {
-        await client.resetStore();
-        window.location.replace('/dashboard');
+        // Marquer l'onboarding comme fini localement pour éviter les boucles de redirection
+        localStorage.setItem('michi_onboarding_finished', 'true');
+        // Nettoyage complet pour éviter les données de cache périmées
+        await client.clearStore();
+        // Utiliser href pour forcer un rechargement complet du navigateur
+        window.location.href = '/dashboard';
       } else {
         setIsFinishing(false);
       }

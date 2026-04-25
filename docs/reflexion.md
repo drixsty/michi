@@ -10,7 +10,7 @@ michi
 - configurer un system de credentials pour les differents connecteurs et les api avec tout un system de gestion des clés et tokens directement depuis l'interface utilisateur par les admins [Terminé ✅]
     - *Implémentation du Security Vault : Centralisation dans Settings/Connections. Saisie "just-in-time" lors de l'activation des sources.*
 - intégrer de bout en bout jusqu'au backend la gestion des credentials et des api, des niveau d'accès et des permissions en fonction du plan de l'utilisateur et des rôles [Terminé ✅]
-    - *Blindage backend : Chiffrement AES-256 (Fernet) via SQL Alchemy. Décorateur @require_plan et gestion des permissions par rôle (Admin/Viewer).*
+    - *Blindage RBAC (Role-Based Access Control) : Backend sécurisé (Asyncpg/SQLAlchemy) et Frontend blindé par un `PermissionGuard` réutilisable. Implémentation d'une page d'accès restreint (`UnauthorizedView`) au design 'Flat' premium (radius lg, sentence case) et gestion granulaire des onglets (Organization, Settings) selon les permissions.*
 - mettre en place un système de notification pour informer l'utilisateur des différentes actions effectuées sur le produit [Terminé ✅]
     - *Implémentation du Reporting Périodique : CronWorker asynchrone, Templates HTML 'World-Class' avec insights stratégiques (IA) et calcul automatique du CA perdu. Suite de tests unitaires et d'intégration blindée.*
 - Aucune notification ne remonte donc il faut en rajouter des notification dans les tests 
@@ -18,7 +18,8 @@ michi
 - il y'a des données encore en dur dans la page login, onboarding et signin qui ne sont pas dans i18n [Terminé ✅]
 - Ajouter la possibilité voir ou cacher le mot de passe saisie au niveau du login ou singup; [Terminé ✅]
 - rajoute la possibilité de réinitialiser sont mot de passe par mail, rajoute le lien au niveau du login et un autre au niveau des settings utilisateur. [Terminé ✅]
-- UI/UX revoit les pages pour les rendre plus adapter sur mobile
+- UI/UX revoit les pages pour les rendre plus adapter sur mobile [Terminé ✅]
+    - *Design System "Flat" : Adoption d'un style minimaliste avec des arrondis `lg` standardisés, suppression des ombres complexes, et passage systématique à la typographie "Sentence case" pour une clarté maximale. Optimisation mobile-first sur tous les nouveaux composants (UnauthorizedView, Modals).*
 - revoir et développer un onboarding pas à pas et une interface qui force l'utilisateur à connecter au moins une source de données avant de pourvoir commencer à utiliser le produit et pour l'onboarding pas à pas, il faut verifier si c'est la première connexion pour commencer l'onboarding sinon celui-ci pourra demander [Terminé ✅]
     - *Michi Journey stabilisé : Flux séquentiel (Identité -> Objectifs -> Connexion -> Analyse). Intégration de l'InteractiveTour v2 avec routage programmatique, transitions fluides ("Gliding Motion") et support i18n complet (FR/EN).*
 - construire un petit backoffice avec la possibilité de passer par ce biais pour accéder à une interface utilisateur 

@@ -28,6 +28,7 @@ from modules.inventory.infrastructure.repositories.store_repository import SQLAl
 from modules.inventory.infrastructure.repositories.sales_log_repository import SQLAlchemySalesLogRepository
 from modules.inventory.infrastructure.repositories.alert_repository import SQLAlchemyAlertRepository
 from modules.inventory.infrastructure.repositories.supplier_repository import SQLAlchemySupplierRepository
+from modules.inventory.infrastructure.repositories.purchase_order_repository import SQLAlchemyPurchaseOrderRepository
 from modules.inventory.application.email_service import EmailService
 
 # Forecasting
@@ -83,6 +84,9 @@ def build_services(db: AsyncSession) -> ServiceContainer:
     cleaned_demand_repo = SQLAlchemyCleanedDemandRepository(db)
     prediction_repo = SQLAlchemyPredictionRepository(db)
     
+    # Inventory (PO)
+    po_repo = SQLAlchemyPurchaseOrderRepository(db)
+    
     # Billing
     billing_repo = SQLAlchemyBillingRepository(db)
 
@@ -126,7 +130,8 @@ def build_services(db: AsyncSession) -> ServiceContainer:
     inventory_service = InventoryService(
         product_repo=product_repo,
         sales_log_repo=sales_log_repo,
-        store_repo=store_repo
+        store_repo=store_repo,
+        po_repo=po_repo
     )
     
     omnichannel_service = OmnichannelService(

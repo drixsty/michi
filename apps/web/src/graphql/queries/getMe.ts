@@ -13,6 +13,7 @@ export const GET_ME: TypedDocumentNode<GetMeQuery, GetMeQueryVariables> = gql`
       organizations {
         organizationId
         role
+        computedPermissions
         organization {
           id
           name

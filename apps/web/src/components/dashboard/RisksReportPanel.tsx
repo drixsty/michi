@@ -6,6 +6,8 @@ import { X, AlertTriangle, ShoppingCart, Check, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useMutation, gql } from '@apollo/client';
 import { cn } from '@/lib/utils';
+import { CanDo } from '@/components/auth/CanDo';
+import { Permission } from '@/hooks/usePermissions';
 
 const CREATE_PURCHASE_ORDER = gql`
   mutation CreatePurchaseOrder($productId: ID!, $supplierId: ID!, $quantity: Int!) {
@@ -173,17 +175,19 @@ export function RisksReportPanel({
                               <Check className="h-3 w-3" /> Commandé
                             </span>
                           ) : risk.supplierId && risk.reorderQuantity ? (
-                            <button
-                              onClick={(e) => handleOrder(risk, e)}
-                              disabled={isOrdering}
-                              className="inline-flex items-center gap-1 text-[9px] font-bold text-white bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
-                            >
-                              {isOrdering ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <><ShoppingCart className="h-3 w-3" /> Commander</>
-                              )}
-                            </button>
+                            <CanDo permission={Permission.INVENTORY_EDIT} fallback={<span className="text-[8px] text-slate-300 italic">Lecture seule</span>}>
+                              <button
+                                onClick={(e) => handleOrder(risk, e)}
+                                disabled={isOrdering}
+                                className="inline-flex items-center gap-1 text-[9px] font-bold text-white bg-slate-900 hover:bg-slate-800 px-2.5 py-1 rounded-lg transition-colors disabled:opacity-50"
+                              >
+                                {isOrdering ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <><ShoppingCart className="h-3 w-3" /> Commander</>
+                                )}
+                              </button>
+                            </CanDo>
                           ) : (
                             <span className="text-[8px] text-slate-300 italic">N/A</span>
                           )}

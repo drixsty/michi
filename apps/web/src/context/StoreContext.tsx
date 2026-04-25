@@ -30,6 +30,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const isAuthPage = pathname.endsWith('/login') || pathname.endsWith('/register');
   
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
+  const [organizations, setOrganizations] = useState<OrgMember[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
 
   // Hydrate from local storage on mount ONLY to avoid hydration mismatch
@@ -57,7 +58,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         console.warn("[Store] Session expired or invalid, clearing context.");
         localStorage.removeItem('michi_token');
         localStorage.removeItem('michi_current_org');
-        if (pathname !== '/onboarding') {
+        if (!pathname.endsWith('/onboarding')) {
           window.location.href = '/login';
         }
       }
@@ -67,35 +68,74 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const memberships = (data.me.organizations || []) as OrgMember[];
         const currentOrgId = data.me.currentOrganizationId;
         
-        // US 19.2: Redirect to onboarding if no organization found
-        const isAuthOrOnboarding = isAuthPage || pathname === '/onboarding';
-        if (memberships.length === 0 && !isAuthOrOnboarding) {
-          console.log("[Store] No organizations found. Waiting 1.5s before redirecting to onboarding...");
-          setTimeout(() => {
-            // Re-check memberships before redirecting (might have updated if refetch happened)
-            if (memberships.length === 0 && !isAuthOrOnboarding) {
-               window.location.href = '/onboarding';
-            }
-          }, 1500);
-          return;
-        }
-
-        const activeMembership = memberships.find(m => m.organizationId === currentOrgId);
+        // US 19.2: Redirect to onboarding if no organization found or onboarding not completed
+        const isAuthOrOnboarding = isAuthPage || pathname.includes('/onboarding');
         
-        if (activeMembership?.organization) {
-          const org = activeMembership.organization;
-          setCurrentOrganization(org);
-          localStorage.setItem('michi_current_org', JSON.stringify({
-            id: org.id,
-            name: org.name
-          }));
-        } else if (memberships.length > 0 && memberships[0].organization) {
-          const org = memberships[0].organization;
-          setCurrentOrganization(org);
-          localStorage.setItem('michi_current_org', JSON.stringify({
-            id: org.id,
-            name: org.name
-          }));
+        const activeMembership = memberships.find(m => m.organizationId === currentOrgId);
+        const serverOnboardingCompleted = (activeMembership?.organization as any)?.onboardingCompleted ?? false;
+        
+        // Anti-redirection loop: check if we just finished onboarding
+        const clientOnboardingFinished = typeof window !== 'undefined' && localStorage.getItem('michi_onboarding_finished') === 'true';
+        const onboardingCompleted = serverOnboardingCompleted || clientOnboardingFinished;
+
+        if (!isAuthOrOnboarding) {
+          if (memberships.length > 0) {
+            console.log(">>> [STORE] FIRST MEMBERSHIP KEYS:", Object.keys(memberships[0]));
+            console.log(">>> [STORE] FIRST MEMBERSHIP DATA:", JSON.stringify(memberships[0]));
+          }
+          if (memberships.length === 0 && !clientOnboardingFinished) {
+            console.warn("[Store] No organizations. Redirecting to onboarding...");
+            window.location.href = '/onboarding';
+            return;
+          }
+          
+          if (!onboardingCompleted) {
+            console.warn("[Store] Onboarding not completed. Redirecting...");
+            window.location.href = '/onboarding';
+            return;
+          }
+          
+          console.log(">>> [STORE] ACCESS GRANTED <<<");
+        }
+        
+        // 1. Sync currentOrganization with fresh server data
+        if (memberships.length > 0) {
+          const currentOrgId = String(userData?.me?.currentOrganizationId || localStorage.getItem('michi_current_org_id'));
+          const matchingMembership = memberships.find((m: any) => String(m.organizationId) === currentOrgId) 
+                                   || memberships.find((m: any) => String(m.organization?.id) === currentOrgId)
+                                   || memberships[0];
+          
+          if (matchingMembership?.organization) {
+            const org = matchingMembership.organization as any;
+            const freshOrg = {
+              id: String(org.id),
+              name: org.name,
+              slug: org.slug,
+              onboardingCompleted: org.onboardingCompleted
+            };
+            
+            if (JSON.stringify(currentOrganization) !== JSON.stringify(freshOrg)) {
+              setCurrentOrganization(freshOrg);
+              localStorage.setItem('michi_current_org', JSON.stringify(freshOrg));
+              localStorage.setItem('michi_current_org_id', freshOrg.id);
+            }
+
+            // 2. Force update organizations list with cleaned data
+            const cleaned = memberships.map((m: any) => {
+              const mOrgId = String(m.organizationId || m.organization?.id);
+              const isCurr = mOrgId === freshOrg.id;
+              
+              if (isCurr && freshOrg.name) {
+                return { 
+                  ...m, 
+                  organization: { ...m.organization, name: freshOrg.name, id: freshOrg.id } 
+                };
+              }
+              return m;
+            });
+            
+            setOrganizations(cleaned);
+          }
         }
       }
     }
@@ -116,6 +156,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [switchOrgMutation] = useMutation(SWITCH_ORGANIZATION);
 
   const switchOrganization = async (orgId: string) => {
+    if (!orgId) {
+      console.error("[Store] switchOrganization called without orgId");
+      return;
+    }
     try {
       const { data } = await switchOrgMutation({ 
         variables: { organizationId: orgId } 
@@ -133,8 +177,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           }));
         }
 
-        // Clear active store when switching org to force re-selection
+        // Clear active store and onboarding flags when switching org
         localStorage.removeItem('activeStoreId');
+        localStorage.removeItem('michi_onboarding_finished');
         
         // Redirect to dashboard while reloading to refresh all Apollo data with new org context
         // and satisfy "repart sur la page dashboard" requirement
@@ -148,12 +193,15 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const value = {
     user: userData?.me || null,
-    organizations: userData?.me?.organizations || [],
+    organizations: organizations.length > 0 ? organizations : (userData?.me?.organizations || []),
     currentOrganization,
     stores,
     loading: userLoading || sourcesLoading,
     switchOrganization,
-    refreshUser: refetchUser
+    refreshUser: async () => {
+      console.log("[Store] Manual refresh requested...");
+      await refetchUser();
+    }
   };
 
   return (

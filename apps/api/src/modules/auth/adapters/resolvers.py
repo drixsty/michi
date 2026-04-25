@@ -14,6 +14,8 @@ from core.graphql.types import (
     RequestPasswordResetInput, ResetPasswordInput, TwoFactorSetupType,
     UserDataExportType, TwoFactorConfirmResult
 )
+from modules.auth.adapters.decorators import require_permission, rate_limit
+from modules.auth.domain.permissions import PermissionCode
 
 @strawberry.type
 class AuthQuery:
@@ -24,10 +26,24 @@ class AuthQuery:
             raise UnauthenticatedException()
 
         service = info.context.services.auth_service
-        user = await service.get_user_model_by_id(uuid.UUID(str(info.context.user_id)))
+        # Force eager load of organizations and their nested organization models
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+        from core.database.models import User, OrganizationMember, Organization
+        
+        stmt = (
+            select(User)
+            .where(User.id == uuid.UUID(str(info.context.user_id)))
+            .options(
+                selectinload(User.organizations).selectinload(OrganizationMember.organization)
+            )
+        )
+        res = await info.context.db.execute(stmt)
+        user = res.scalars().first()
+        
         if not user:
             raise UnauthenticatedException()
-
+            
         return UserType.from_db(user)
 
 @strawberry.type
@@ -71,6 +87,7 @@ class AuthMutation:
         raise MichiException(message="Google Login non implémenté dans l'adaptateur", code=ErrorCode.NOT_FOUND)
 
     @strawberry.mutation
+    @rate_limit(max_calls=10, window_seconds=900)  # 10 tentatives / 15 min
     async def change_password(self, info, input: ChangePasswordInput) -> bool:
         """Changement de mot de passe."""
         if not info.context.user_id:
@@ -113,6 +130,7 @@ class AuthMutation:
         return UserType.from_db(updated_user)
 
     @strawberry.mutation
+    @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
     async def toggle_user_status(self, info, user_id: strawberry.ID, active: bool) -> bool:
         """Active ou désactive un compte utilisateur."""
         if not info.context.user_id:
@@ -127,6 +145,7 @@ class AuthMutation:
         return result is not None
 
     @strawberry.mutation
+    @rate_limit(max_calls=3, window_seconds=3600)  # 3 demandes / heure (anti-spam)
     async def forgot_password(self, info, input: RequestPasswordResetInput) -> bool:
         """Demande de réinitialisation de mot de passe."""
         service = info.context.services.auth_service
@@ -231,6 +250,7 @@ class AuthMutation:
     # --- GDPR Mutations ---
 
     @strawberry.mutation
+    @require_permission(PermissionCode.ORG_EXPORT)
     async def export_user_data(self, info) -> UserDataExportType:
         """Exporte l'intégralité des données utilisateur (RGPD)."""
         if not info.context.user_id:
@@ -242,8 +262,9 @@ class AuthMutation:
         return UserDataExportType(data_json=data_json)
 
     @strawberry.mutation
+    @require_permission(PermissionCode.ORG_DELETE)
     async def delete_account(self, info) -> bool:
-        """Supprime définitivement le compte et les données (RGPD)."""
+        """Supprime définitivement le compte et les données (RGPD - Réservé aux Admins pour sécurité)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
             

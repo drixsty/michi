@@ -8,8 +8,9 @@ from loguru import logger
 import uuid
 from uuid import UUID
 
-from modules.inventory.domain.entities import ProductEntity, SalesLogEntity, PlatformSource
-from modules.inventory.domain.ports import IProductRepository, ISalesLogRepository, IStoreRepository
+from modules.inventory.domain.entities import ProductEntity, SalesLogEntity, PlatformSource, PurchaseOrderEntity
+from modules.inventory.domain.ports import IProductRepository, ISalesLogRepository, IStoreRepository, IPurchaseOrderRepository
+from core.exceptions import MichiException, ErrorCode
 
 class InventoryService:
     """
@@ -20,11 +21,13 @@ class InventoryService:
         self, 
         product_repo: IProductRepository, 
         sales_log_repo: ISalesLogRepository,
-        store_repo: IStoreRepository
+        store_repo: IStoreRepository,
+        po_repo: IPurchaseOrderRepository
     ):
         self.product_repo = product_repo
         self.sales_log_repo = sales_log_repo
         self.store_repo = store_repo
+        self.po_repo = po_repo
 
     async def get_product(self, product_id: UUID) -> ProductEntity:
         """Récupère un produit ou lève une NotFoundError."""
@@ -245,3 +248,37 @@ class InventoryService:
         await alert_service.check_for_stockouts(target_store_id)
         
         return result
+
+    async def create_purchase_order(
+        self, 
+        product_id: UUID, 
+        supplier_id: UUID, 
+        quantity: int
+    ) -> PurchaseOrderEntity:
+        """Crée une commande fournisseur pour un produit."""
+        from datetime import datetime, timedelta
+        
+        # 1. Vérifier le produit pour récupérer le store_id et le lead_time
+        product = await self.product_repo.get_by_id(product_id)
+        if not product:
+            raise MichiException("Produit non trouvé", ErrorCode.NOT_FOUND)
+            
+        # 2. Calculer la date d'arrivée prévue (basée sur lead_time produit)
+        lead_time = getattr(product, 'lead_time', 14) or 14
+        expected_arrival = datetime.now() + timedelta(days=lead_time)
+        
+        # 3. Créer l'entité
+        po = PurchaseOrderEntity(
+            id=uuid.uuid4(),
+            store_id=product.store_id,
+            product_id=product.id,
+            supplier_id=supplier_id,
+            quantity=quantity,
+            order_date=datetime.now(),
+            expected_arrival_date=expected_arrival,
+            actual_arrival_date=None,
+            status="PENDING"
+        )
+        
+        # 4. Sauvegarder
+        return await self.po_repo.save(po)

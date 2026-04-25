@@ -10,7 +10,9 @@ import { InteractiveTour } from '../dashboard/InteractiveTour';
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { loading: storeLoading, currentOrganization } = useStore();
-  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/onboarding';
+  const isAuthPage = pathname.endsWith('/login') || 
+                    pathname.endsWith('/register') || 
+                    pathname.endsWith('/onboarding');
 
   // Afficher l'overlay global uniquement lors du tout premier chargement (aucune org en cache).
   // Quand une org est déjà connue (localStorage hydraté), le contenu s'affiche directement

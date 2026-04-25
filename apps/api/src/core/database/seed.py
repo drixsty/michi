@@ -19,6 +19,8 @@ async def seed_data():
         try:
             # 1. Nettoyage (Ordre inverse des dépendances)
             print("[SEED] Cleaning existing data...")
+            from modules.auth.infrastructure.models import Invitation
+            await session.execute(delete(Invitation))
             await session.execute(delete(Prediction))
             await session.execute(delete(Product))
             await session.execute(delete(Store))
@@ -27,8 +29,11 @@ async def seed_data():
             await session.execute(delete(User))
             await session.commit()
 
-            # 2. Création de l'utilisateur de test
-            print("[SEED] Creating test user...")
+            # 2. Création des utilisateurs
+            print("[SEED] Creating diverse user roles...")
+            from modules.auth.domain.permissions import PermissionCode
+            
+            # --- OWNER (Accès total) ---
             user_id = uuid.UUID("c946f5b8-662a-4808-8acf-d58b4dab49bc")
             test_user = User(
                 id=user_id,
@@ -40,27 +45,72 @@ async def seed_data():
             )
             session.add(test_user)
 
+            # --- MANAGER (Avec Overrides) ---
+            sarah_id = uuid.uuid4()
+            sarah_user = User(
+                id=sarah_id,
+                email="sarah@michi.app",
+                hashed_password=hash_password("password123"),
+                first_name="Sarah",
+                last_name="Connor",
+                is_active=True
+            )
+            session.add(sarah_user)
+            
+            # --- VIEWER (Lecture seule stricte) ---
+            john_id = uuid.uuid4()
+            john_user = User(
+                id=john_id,
+                email="john@michi.app",
+                hashed_password=hash_password("password123"),
+                first_name="John",
+                last_name="Doe",
+                is_active=True
+            )
+            session.add(john_user)
+
             # 3. Création de l'organisation
             print("[SEED] Creating organization...")
             org_id = uuid.UUID("0532244f-d215-4f49-9e1e-c8461f9ec529")
             org = Organization(
                 id=org_id,
-                name="Michi Corp",
+                name="Michi 道 Corp",
                 slug="michi-corp",
                 onboarding_completed=True
             )
             session.add(org)
             
-            # Lier l'utilisateur à l'organisation comme ADMIN
-            member = OrganizationMember(
+            # Attacher les membres avec leurs rôles respectifs
+            
+            # Kevin: OWNER
+            session.add(OrganizationMember(
                 user_id=user_id,
                 organization_id=org_id,
-                role=UserRole.ADMIN
-            )
-            session.add(member)
+                role=UserRole.OWNER
+            ))
             
-            # Mettre à jour l'organisation courante de l'utilisateur
+            # Sarah: MANAGER + Override (Peut supprimer l'inventaire mais ne peut pas exporter)
+            session.add(OrganizationMember(
+                user_id=sarah_id,
+                organization_id=org_id,
+                role=UserRole.MANAGER,
+                permissions={
+                    PermissionCode.INVENTORY_DELETE.value: True,
+                    PermissionCode.FORECAST_EXPORT.value: False
+                }
+            ))
+            
+            # John: VIEWER (Droit de base uniquement)
+            session.add(OrganizationMember(
+                user_id=john_id,
+                organization_id=org_id,
+                role=UserRole.VIEWER
+            ))
+            
+            # Mettre à jour l'organisation courante
             test_user.current_organization_id = org_id
+            sarah_user.current_organization_id = org_id
+            john_user.current_organization_id = org_id
 
             # 4. Création des Boutiques (Stores)
             print("[SEED] Creating stores...")
@@ -81,7 +131,7 @@ async def seed_data():
             session.add_all([shopify_store, amazon_store])
 
             # 5. Création de produits et prédictions de test
-            print("[SEED] Creating products and predictions...")
+            print("[SEED] Generating inventory data...")
             products = [
                 ("MICHI-001", "Sérum Anti-Âge Premium", 150, 4.5, shopify_store.id),
                 ("MICHI-002", "Crème Hydratante Bio", 45, 12.0, shopify_store.id),
@@ -120,7 +170,7 @@ async def seed_data():
                 session.add(pred)
 
             await session.commit()
-            print("[SEED] Seeding completed successfully! ✅")
+            print("[SEED] Seeding completed successfully! [OK]")
             print(f"User: dev@michi.com / password123")
 
         except Exception as e:

@@ -23,6 +23,8 @@ import { CustomSelect } from '../../ui/CustomSelect';
 import { InviteMemberPanel } from '../InviteMemberPanel';
 import { MemberDetailPanel } from '../MemberDetailPanel';
 import { BillingSettings } from '../BillingSettings';
+import { usePermissions, Permission } from '@/hooks/usePermissions';
+import { CanDo } from '@/components/auth/CanDo';
 
 const GET_ORG_DATA = gql`
   query GetOrgData {
@@ -31,6 +33,7 @@ const GET_ORG_DATA = gql`
       userId
       role
       permissions
+      computedPermissions
       user {
         id
         email
@@ -57,7 +60,11 @@ const GET_ORG_DATA = gql`
     }
     me {
       id
-      isAdmin
+      email
+      organizations {
+        role
+        computedPermissions
+      }
     }
   }
 `;
@@ -79,6 +86,7 @@ const CREATE_PORTAL_SESSION = gql`
 `;
 
 const ROLE_ICONS: Record<string, any> = {
+  owner: ShieldAlert,
   admin: ShieldAlert,
   manager: ShieldCheck,
   viewer: Eye,
@@ -96,6 +104,7 @@ export function OrganizationView() {
   const [isMutualized, setIsMutualized] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const t = useTranslations('organization');
+  const { can, isAdmin } = usePermissions();
 
   // State for detail panel
   const [selectedMember, setSelectedMember] = useState<any>(null);
@@ -153,14 +162,14 @@ export function OrganizationView() {
 
   const members = data?.organizationMembers ?? [];
   const invitations = data?.pendingInvitations ?? [];
-  const isAdmin = data?.me?.isAdmin ?? false;
   const currentUserId = data?.me?.id;
   
   const currentMember = members.find((m: any) => {
     const mUserId = m.user?.id || m.userId;
     return mUserId?.toString() === currentUserId?.toString();
   });
-  const currentUserRole = currentMember?.role?.toLowerCase() || 'viewer';
+  const currentUserRole = currentMember?.role?.toUpperCase() || 'VIEWER';
+  // isAdmin derived from usePermissions hook (already initialized above)
 
   const filteredMembers = members.filter((m: any) => {
     const email = m.user?.email || '';
@@ -171,8 +180,10 @@ export function OrganizationView() {
 
   const tabs = [
     { id: 'team', label: t('tabs.team'), icon: Users },
-    ...(isAdmin ? [
+    ...(can(Permission.ORG_EDIT) ? [
       { id: 'settings', label: t('tabs.settings'), icon: Settings2 },
+    ] : []),
+    ...(can(Permission.ORG_BILLING) ? [
       { id: 'billing', label: t('tabs.billing'), icon: CreditCard }
     ] : [])
   ] as const;
@@ -220,14 +231,16 @@ export function OrganizationView() {
           </div>
         </div>
 
-        {activeTab === 'team' && isAdmin && (
-          <button 
-            onClick={() => setShowInvitePanel(true)}
-            className="h-9 px-4 bg-foreground text-background rounded-lg text-[13px] font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm shrink-0"
-          >
-            <UserPlus className="h-4 w-4" />
-            {t('invite.button')}
-          </button>
+        {activeTab === 'team' && (
+          <CanDo permission={Permission.MEMBERS_INVITE}>
+            <button 
+              onClick={() => setShowInvitePanel(true)}
+              className="h-9 px-4 bg-foreground text-background rounded-lg text-[13px] font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-sm shrink-0"
+            >
+              <UserPlus className="h-4 w-4" />
+              {t('invite.button')}
+            </button>
+          </CanDo>
         )}
       </div>
 
@@ -300,7 +313,7 @@ export function OrganizationView() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {isAdmin && member.user?.id !== currentUserId && (
+                          {can(Permission.ORG_MANAGE_MEMBERS) && member.user?.id !== currentUserId && (
                             <button 
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -392,9 +405,9 @@ export function OrganizationView() {
                         { value: 'CHF', label: t('settings.currencies.chf') }
                       ]}
                       value={currency}
-                      onChange={setCurrency}
+                      onChange={can(Permission.ORG_EDIT) ? setCurrency : () => {}}
                       placeholder={t('settings.currencyPlaceholder')}
-                      className="w-full sm:w-48"
+                      className={cn("w-full sm:w-48", !can(Permission.ORG_EDIT) && "opacity-50 pointer-events-none")}
                     />
                   </div>
 
@@ -418,22 +431,24 @@ export function OrganizationView() {
                     </button>
                   </div>
 
-                  <div className="pt-2 flex justify-end">
-                    <button 
-                      onClick={handleUpdateSettings}
-                      disabled={updatingSettings}
-                      className="h-9 px-6 bg-foreground text-background rounded-lg text-[13px] font-semibold hover:opacity-90 transition-all flex items-center gap-2"
-                    >
-                      {updatingSettings ? (
-                        <div className="h-3.5 w-3.5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <Save className="h-3.5 w-3.5" />
-                          {t('settings.save')}
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  <CanDo permission={Permission.ORG_EDIT}>
+                    <div className="pt-2 flex justify-end">
+                      <button 
+                        onClick={handleUpdateSettings}
+                        disabled={updatingSettings}
+                        className="h-9 px-6 bg-foreground text-background rounded-lg text-[13px] font-semibold hover:opacity-90 transition-all flex items-center gap-2"
+                      >
+                        {updatingSettings ? (
+                          <div className="h-3.5 w-3.5 border-2 border-background/30 border-t-background rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Save className="h-3.5 w-3.5" />
+                            {t('settings.save')}
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </CanDo>
                 </div>
               </section>
             </div>

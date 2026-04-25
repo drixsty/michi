@@ -1547,4 +1547,44 @@ Semaine 4 (Sprint 21B) :
 - **Mobile Stabilization** : Résolution des erreurs `tsconfig` (relative path hosting fix) et installation des dépendances `lucide-react-native`.
 - **Documentation Refactored** : Mise à jour exhaustive de la documentation système pour refléter la nouvelle réalité technique.
 
+
+---
+
+## ✅ Sprint 23 : Security Hardening & UX Consolidation — TERMINÉ ✅
+
+**Dates :** 24-25 Avril 2026
+**Objectif :** Finalisation de la sécurisation RBAC, implémentation du flux Purchase Order complet et simplification de l'UX de navigation.
+**Statut :** ✅ **100% TERMINÉ**
+
+### User Stories Sprint 23
+
+| ID | User Story | Points | Priorité | Statut |
+|----|-----------|--------|----------|--------|
+| US 23.1 | **Security Hardening (RBAC)** — Audit complet "Safe by Default", correction des noms de permissions (`FORECAST_VIEW/RUN`), protection des mutations critiques et masquage UI via `CanDo`. | 8 | P0 | ✅ Done |
+| US 23.2 | **UX Consolidation (Navigation)** — Déplacement de "Mon Organisation" vers le menu utilisateur, suppression des onglets redondants (billing/settings) et fiabilisation du `OrgSwitcher`. | 5 | P1 | ✅ Done |
+| US 23.3 | **Purchase Order Persistence** — Implémentation du service `createPurchaseOrder` backend, calcul auto des dates de livraison et intégration DI. | 8 | P0 | ✅ Done |
+| US 23.4 | **API Stability** — Résolution des erreurs d'import (`asyncio`, `MichiException`) et des erreurs de portée (`freshOrg`) dans le frontend. | 3 | P0 | ✅ Done |
+
+**Total Sprint 23 :** 24 pts — **24 pts livrés (100%)**
+
+### Checklist Sprint 23
+
+**Sécurité & RBAC :**
+- [x] Correction `FORECASTING_VIEW` -> `FORECAST_VIEW` (Backend)
+- [x] Protection mutation `createPurchaseOrder` par `@require_permission`
+- [x] Masquage du bouton "Commander" dans le `RisksReportPanel` pour les non-admins
+- [x] Audit complet des endpoints sensibles (100% protégés)
+
+**UX & Frontend :**
+- [x] Navbar simplifiée (retrait de l'onglet Organisation)
+- [x] Menu utilisateur enrichi (Profil + Organisation)
+- [x] Suppression des liens morts/redondants `tab=settings` et `tab=billing`
+- [x] `StoreContext` : Fix scope `freshOrg` et état `organizations`
+- [x] `OrgSwitcher` : Synchronisation du nom en temps réel
+
+**Backend Core :**
+- [x] Repository `SQLAlchemyPurchaseOrderRepository` enregistré
+- [x] `InventoryService.create_purchase_order` implémenté
+- [x] Calcul automatique `expected_arrival` basé sur le `lead_time`
+
 ---

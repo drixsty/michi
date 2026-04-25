@@ -45,7 +45,7 @@ class ForecastingQuery:
 
     @strawberry.field
     @require_plan("PRO")
-    @require_permission(MichiPermission.FORECASTING_VIEW)
+    @require_permission(MichiPermission.FORECAST_VIEW)
     async def predictions(self, info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
         service = info.context.services.forecasting_service
         
@@ -57,7 +57,7 @@ class ForecastingQuery:
         return [PredictionType.from_db(r) for r in rows]
 
     @strawberry.field
-    @require_permission(MichiPermission.FORECASTING_VIEW)
+    @require_permission(MichiPermission.FORECAST_VIEW)
     async def dashboard_kpis(self, info, store_id: Optional[strawberry.ID] = None) -> DashboardKPIType:
         service = info.context.services.forecasting_service
         kpis = await service.get_dashboard_kpis(
@@ -74,7 +74,7 @@ class ForecastingQuery:
 
     @strawberry.field
     @require_plan("PRO")
-    @require_permission(MichiPermission.FORECASTING_VIEW)
+    @require_permission(MichiPermission.FORECAST_VIEW)
     async def replenishment_alerts(self, info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
         """Alias de predictions pour la compatibilité avec le dashboard frontend."""
         return await self.predictions(info, store_id=store_id)
@@ -83,7 +83,7 @@ class ForecastingQuery:
 class ForecastingMutation:
     @strawberry.mutation
     @require_plan("PRO")
-    @require_permission(MichiPermission.FORECASTING_RUN)
+    @require_permission(MichiPermission.FORECAST_RUN)
     async def run_cleaning_pipeline(self, info, store_id: strawberry.ID) -> PipelineResultType:
         service = info.context.services.forecasting_service
         result = await service.run_cleaning_pipeline(str(store_id))
@@ -99,7 +99,7 @@ class ForecastingMutation:
 
     @strawberry.mutation
     @require_plan("PRO")
-    @require_permission(MichiPermission.FORECASTING_RUN)
+    @require_permission(MichiPermission.FORECAST_RUN)
     async def run_prediction_pipeline(self, info, store_id: strawberry.ID) -> PredictionRunResultType:
         service = info.context.services.forecasting_service
         result = await service.run_prediction_pipeline(str(store_id))

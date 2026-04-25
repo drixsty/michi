@@ -79,8 +79,9 @@ class SQLAlchemyUserRepository:
         return user_to_entity(model) if model else None
 
     async def get_model_by_id(self, user_id: UUID) -> Optional[User]:
-        """Retourne le modèle SQLAlchemy brut (usage interne infrastructure)."""
-        result = await self._db.execute(
+        """Retourne le modèle SQLAlchemy brut avec relations fraîches."""
+        # On force le rechargement depuis la DB même si déjà en session
+        stmt = (
             select(User)
             .where(User.id == user_id)
             .options(
@@ -88,8 +89,11 @@ class SQLAlchemyUserRepository:
                     OrganizationMember.organization
                 )
             )
+            .execution_options(populate_existing=True)
         )
-        return result.scalar_one_or_none()
+        result = await self._db.execute(stmt)
+        model = result.scalar_one_or_none()
+        return model
 
     async def get_model_by_email(self, email: str) -> Optional[User]:
         """Retourne le modèle SQLAlchemy brut (usage interne infrastructure)."""

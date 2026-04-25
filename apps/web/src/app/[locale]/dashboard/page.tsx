@@ -23,6 +23,8 @@ import { OrganizationView } from '@/components/dashboard/views/OrganizationView'
 import { GET_OMNICHANNEL_INVENTORY } from '@/graphql/queries/getOmnichannelInventory';
 import type { OmnichannelProduct } from '@michi/types';
 import { useStore } from '@/context/StoreContext';
+import { usePermissions, Permission } from '@/hooks/usePermissions';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 const DELETE_ALERT = gql`
   mutation DeleteAlert($id: ID!) {
@@ -50,6 +52,7 @@ function DashboardContent() {
 
 
   const { currentOrganization } = useStore();
+  const { isAdmin, can } = usePermissions();
 
   const { data: meData, loading: meLoading, error: meError } = useQuery(GET_ME);
 
@@ -128,12 +131,6 @@ function DashboardContent() {
     return { total: 0, urgent: 0, warning: 0, healthy: 0 };
   }, [statsData]);
 
-  const isAdmin = useMemo(() => {
-    const orgs = meData?.me?.organizations || [];
-    const currentOrgId = meData?.me?.currentOrganizationId;
-    const currentOrg = orgs.find((o: any) => o.organizationId === currentOrgId);
-    return currentOrg?.role?.toLowerCase() === 'admin';
-  }, [meData]);
 
   useEffect(() => {
     if (meError) {
@@ -212,7 +209,11 @@ function DashboardContent() {
 
 
         {activeTab === 'decisions' && <DecisionsView />}
-        {activeTab === 'organization' && <OrganizationView />}
+        {activeTab === 'organization' && (
+          <PermissionGuard permission={Permission.ORG_EDIT}>
+            <OrganizationView />
+          </PermissionGuard>
+        )}
       </div>
 
       <ProductQuickView

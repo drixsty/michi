@@ -8,12 +8,15 @@ import uuid
 
 from core.exceptions import UnauthenticatedException
 from core.graphql.types import InvitationType
+from modules.auth.adapters.decorators import require_permission, rate_limit
+from modules.auth.domain.permissions import PermissionCode
 
 @strawberry.type
 class InvitationQuery:
     @strawberry.field(name="pendingInvitations")
+    @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
     async def pending_invitations(self, info) -> List[InvitationType]:
-        """Liste les invitations en attente pour l'organisation active."""
+        """Liste les invitations en attente (ADMIN/OWNER uniquement — évite la fuite d'emails)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
 
@@ -36,11 +39,16 @@ class InvitationQuery:
             ) for i in invitations
         ]
 
+from modules.auth.adapters.decorators import require_permission, rate_limit
+from modules.auth.domain.permissions import PermissionCode
+
 @strawberry.type
 class InvitationMutation:
     @strawberry.mutation
+    @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
+    @rate_limit(max_calls=5, window_seconds=3600)  # Max 5 invitations/heure/user
     async def invite_member(self, info, email: str, role: str) -> InvitationType:
-        """Invite un nouveau collaborateur."""
+        """Invite un nouveau collaborateur (Réservé aux Admins)."""
         if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()
             
@@ -68,7 +76,7 @@ class InvitationMutation:
 
     @strawberry.mutation
     async def accept_invitation(self, info, code: str) -> bool:
-        """Accepte une invitation."""
+        """Accepte une invitation (Ouvert à l'invité)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
             
@@ -81,8 +89,9 @@ class InvitationMutation:
         return res
 
     @strawberry.mutation
+    @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
     async def delete_invitation(self, info, invitation_id: strawberry.ID) -> bool:
-        """Supprime/Annule une invitation."""
+        """Supprime/Annule une invitation (Réservé aux Admins)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
             

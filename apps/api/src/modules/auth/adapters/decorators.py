@@ -1,12 +1,18 @@
 from functools import wraps
 from typing import List, Union
+import time
+from collections import defaultdict
 from core.exceptions import MichiException, UnauthenticatedException, ErrorCode
-from modules.auth.domain.constants import MichiPermission, ROLE_PERMISSIONS
+from modules.auth.domain.permissions import PermissionCode, ROLE_PERMISSIONS
 from sqlalchemy import select
 import uuid
 from loguru import logger
 from core.security.plans import PlanName
 from core.database.models import Organization, OrganizationMember, UserRole
+from modules.auth.domain.access_policy import AccessPolicy
+
+# ── In-memory rate-limit store (TTL dict) ──────────────────────────────────
+_rate_limit_store: dict[str, list[float]] = defaultdict(list)
 
 def require_plan(min_plan: PlanName):
     """
@@ -53,10 +59,10 @@ def require_plan(min_plan: PlanName):
         return wrapper
     return decorator
 
-def require_permission(permission: MichiPermission):
+def require_permission(permission: PermissionCode):
     """
     Décorateur pour restreindre l'accès selon une permission granulaire.
-    Vérifie les permissions explicites (JSON) et les permissions par défaut du rôle.
+    Vérifie les permissions effectives calculées par l'AccessPolicy (Domain).
     """
     def decorator(f):
         @wraps(f)
@@ -64,14 +70,13 @@ def require_permission(permission: MichiPermission):
             if not info.context.user_id:
                 raise UnauthenticatedException("Accès refusé : session expirée ou non identifiée")
             if not info.context.org_id:
-                # Si l'utilisateur est là mais pas l'org, c'est souvent un problème de switch d'org ou d'onboarding
                 raise UnauthenticatedException("Accès refusé : aucune organisation sélectionnée")
                 
             db = info.context.db
             user_id = uuid.UUID(str(info.context.user_id))
             org_id = uuid.UUID(str(info.context.org_id))
             
-            # 1. Récupérer uniquement le rôle et les permissions (Selective Fetch)
+            # Fetch rôle et overrides
             stmt = select(OrganizationMember.role, OrganizationMember.permissions).where(
                 OrganizationMember.organization_id == org_id,
                 OrganizationMember.user_id == user_id
@@ -80,32 +85,16 @@ def require_permission(permission: MichiPermission):
             row = result.first()
             
             if not row:
-                # Si l'utilisateur n'est pas membre de l'organisation spécifiée dans son token,
-                # on le traite comme une erreur d'auth pour forcer un refresh/relogin.
                 raise UnauthenticatedException("Session invalide : vous n'êtes plus membre de cette organisation")
             
             user_role_enum, member_perms = row
             user_role = user_role_enum.value if hasattr(user_role_enum, 'value') else str(user_role_enum).lower()
             
-            # L'ADMIN a toujours tous les droits
-            if user_role == "admin":
-                return await f(self, info, *args, **kwargs)
-                
-            # Vérifier les overrides explicites (JSONB)
-            member_perms = member_perms or {}
-            if permission.value in member_perms:
-                if member_perms[permission.value] is True:
-                    return await f(self, info, *args, **kwargs)
-                elif member_perms[permission.value] is False:
-                    raise MichiException(
-                        message=f"Action refusée : droit '{permission}' révoqué explicitement", 
-                        code=ErrorCode.FORBIDDEN,
-                        logging_level="WARNING"
-                    )
-
-            # Vérifier les permissions par défaut du rôle
-            default_perms = ROLE_PERMISSIONS.get(user_role, [])
-            if permission in default_perms:
+            # Calcul des permissions effectives via le DOMAINE
+            effective_perms = AccessPolicy.calculate_effective_permissions(user_role, member_perms)
+            target_perm = permission.value if hasattr(permission, 'value') else str(permission)
+            
+            if AccessPolicy.has_permission(effective_perms, target_perm):
                 return await f(self, info, *args, **kwargs)
 
             # Sinon refus
@@ -164,6 +153,48 @@ def require_role(allowed_roles: Union[str, List[str]]):
                     logging_level="WARNING"
                 )
             
+            return await f(self, info, *args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def rate_limit(max_calls: int, window_seconds: int = 60):
+    """
+    Décorateur de rate-limiting par utilisateur (in-memory, TTL sliding window).
+    
+    Args:
+        max_calls: Nombre maximum d'appels autorisés dans la fenêtre.
+        window_seconds: Durée de la fenêtre de temps en secondes.
+    
+    Example:
+        @rate_limit(max_calls=5, window_seconds=60)  # 5 appels par minute
+    """
+    def decorator(f):
+        @wraps(f)
+        async def wrapper(self, info, *args, **kwargs):
+            # Clé unique : nom_de_la_fonction + user_id (ou IP fallback)
+            user_id = str(info.context.user_id) if info.context.user_id else "anonymous"
+            key = f"{f.__name__}:{user_id}"
+            
+            now = time.monotonic()
+            window_start = now - window_seconds
+            
+            # Nettoyage des timestamps expirés
+            _rate_limit_store[key] = [
+                ts for ts in _rate_limit_store[key] if ts > window_start
+            ]
+            
+            if len(_rate_limit_store[key]) >= max_calls:
+                remaining_wait = int(window_seconds - (now - _rate_limit_store[key][0]))
+                logger.warning(f"[RateLimit] BLOCKED {key} — {len(_rate_limit_store[key])}/{max_calls} calls in {window_seconds}s")
+                raise MichiException(
+                    message=f"Trop de tentatives. Réessayez dans {remaining_wait} secondes.",
+                    code=ErrorCode.FORBIDDEN,
+                    logging_level="WARNING"
+                )
+            
+            _rate_limit_store[key].append(now)
+            logger.debug(f"[RateLimit] {key} — {len(_rate_limit_store[key])}/{max_calls}")
             return await f(self, info, *args, **kwargs)
         return wrapper
     return decorator

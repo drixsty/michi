@@ -27,7 +27,13 @@
     "open": "Open",
     "emptyTitle": "No data",
     "syncSuccess": "Sync successful",
-    "syncError": "Sync error"
+    "syncError": "Sync error",
+    "unauthorized": {
+      "title": "Restricted access",
+      "description": "You do not have the necessary permissions to access this area. Please contact your administrator if you believe this is an error.",
+      "goBack": "Go back",
+      "goHome": "Dashboard home"
+    }
   },
   "brand": {
     "tagline": "Precision at the heart of your growth.",
@@ -594,6 +600,20 @@
       "settings": "Settings",
       "billing": "Billing"
     },
+    "roles": {
+      "owner": "Owner",
+      "admin": "Administrator",
+      "manager": "Manager",
+      "viewer": "Viewer",
+      "owner_desc": "Full access, billing management, and organization deletion.",
+      "admin_desc": "Manage members, stores, and inventory.",
+      "manager_desc": "Manage inventory and suppliers.",
+      "viewer_desc": "Read-only access to data.",
+      "ownerDesc": "Full access, billing management, and organization deletion.",
+      "adminDesc": "Manage members, stores, and inventory.",
+      "managerDesc": "Manage inventory and suppliers.",
+      "viewerDesc": "Read-only access to data."
+    },
     "billing": {
       "title": "Subscription & Billing",
       "subtitle": "Manage your Michi plan and your Stripe payment information.",
@@ -648,14 +668,6 @@
       "successBan": "User banned",
       "successUnban": "Ban lifted",
       "successRole": "Role updated: {role}"
-    },
-    "roles": {
-      "admin": "Administrator",
-      "manager": "Manager",
-      "viewer": "Viewer",
-      "adminDesc": "Full access to all settings",
-      "managerDesc": "Inventory and order management",
-      "viewerDesc": "Read-only access"
     },
     "permissions": {
       "team": "Team & Members",
@@ -855,6 +867,18 @@
       "title": "Drop your file here",
       "subtitle": "Supports CSV and Excel formats (.xlsx, .xls). Max size 10MB.",
       "button": "Browse my files"
+    }
+  },
+  "connections": {
+    "title": "Data Sources",
+    "description": "Manage your integrations and data flows to centralize your inventory.",
+    "security": {
+      "title": "Data Security",
+      "description": "All your API keys are encrypted at rest using AES-256 algorithm. Michi never stores your passwords in plain text."
+    },
+    "quotas": {
+      "title": "Quotas & Limits",
+      "description": "Your current plan allows connecting up to 3 data sources simultaneously."
     }
   }
 }

@@ -249,8 +249,19 @@ class ApplicationOrgService:
         return [i for i in all_invitations if i.status == InvitationStatus.PENDING and i.expires_at > datetime.utcnow()]
 
     async def get_current_org(self, org_id: uuid.UUID) -> Optional[OrganizationEntity]:
-        """Récupère les détails d'une organisation."""
-        return await self._orgs.get_by_id(org_id)
+        """
+        Récupère les détails d'une organisation de manière sécurisée.
+        """
+        from loguru import logger
+        try:
+            org = await self._orgs.get_by_id(org_id)
+            if not org:
+                logger.warning(f"Organization {org_id} not found during retrieval")
+                return None
+            return org
+        except Exception as e:
+            logger.error(f"Error retrieving organization {org_id}: {str(e)}")
+            return None
 
     async def update_organization(self, org_id: uuid.UUID, **kwargs) -> Optional[OrganizationEntity]:
         """Met à jour une organisation."""
@@ -269,6 +280,23 @@ class ApplicationOrgService:
             val = bool(kwargs["onboarding_completed"])
             org_model.onboarding_completed = val
             logger.warning(f"[Service] Set onboarding_completed to {val} for Org {org_id}")
+            
+            # Si l'onboarding est terminé, on s'assure que l'utilisateur est bien sur cette org
+            if val:
+                from modules.auth.infrastructure.models import OrganizationMember, User
+                from sqlalchemy import select
+                # On cherche le propriétaire (ou l'utilisateur courant)
+                stmt = select(OrganizationMember).where(
+                    OrganizationMember.organization_id == org_id,
+                    OrganizationMember.role == "OWNER"
+                )
+                res = await self._orgs._db.execute(stmt)
+                member = res.scalar_one_or_none()
+                if member:
+                    user = await self._orgs._db.get(User, member.user_id)
+                    if user:
+                        user.current_organization_id = org_id
+                        logger.info(f"[Service] Force user {user.id} context to Org {org_id}")
         if kwargs.get("onboarding_step") is not None:
             org_model.onboarding_step = str(kwargs["onboarding_step"])
             

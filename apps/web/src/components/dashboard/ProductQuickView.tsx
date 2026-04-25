@@ -38,6 +38,8 @@ import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { LoadingState } from '../ui/LoadingState';
 import { useTranslations } from 'next-intl';
+import { usePermissions, Permission } from '@/hooks/usePermissions';
+import { CanDo } from '@/components/auth/CanDo';
 
 interface ProductQuickViewProps {
   productId: string | null;
@@ -261,6 +263,8 @@ function WhatIfSimulator({
 export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) {
   const t = useTranslations('inventory.quickview');
   const router = useRouter();
+  const { can } = usePermissions();
+  const canEdit = can(Permission.INVENTORY_EDIT);
 
   const { data, loading } = useQuery(GET_PRODUCT_DETAIL, {
     variables: {
@@ -503,22 +507,24 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                         <Settings className="h-3 w-3 text-slate-400" />
                         <h3 className="text-[10px] font-bold text-slate-400 tracking-widest">{t('inventorySettings')}</h3>
                       </div>
-                      <button 
-                        onClick={handleQuickSave}
-                        disabled={saveStatus === 'saving'}
-                        className={cn(
-                          "flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-bold transition-colors",
-                          saveStatus === 'success' ? "bg-emerald-500 text-white shadow-sm" : 
-                          saveStatus === 'saving' ? "bg-slate-100 text-slate-400" :
-                          "bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm"
-                        )}
-                      >
-                        {saveStatus === 'saving' ? t('saving') : saveStatus === 'success' ? (
-                          <><Check className="h-2.5 w-2.5" /> {t('saved')}</>
-                        ) : (
-                          <><Save className="h-2.5 w-2.5" /> {t('save')}</>
-                        )}
-                      </button>
+                      <CanDo permission={Permission.INVENTORY_EDIT}>
+                        <button 
+                          onClick={handleQuickSave}
+                          disabled={saveStatus === 'saving'}
+                          className={cn(
+                            "flex items-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-bold transition-colors",
+                            saveStatus === 'success' ? "bg-emerald-500 text-white shadow-sm" : 
+                            saveStatus === 'saving' ? "bg-slate-100 text-slate-400" :
+                            "bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm"
+                          )}
+                        >
+                          {saveStatus === 'saving' ? t('saving') : saveStatus === 'success' ? (
+                            <><Check className="h-2.5 w-2.5" /> {t('saved')}</>
+                          ) : (
+                            <><Save className="h-2.5 w-2.5" /> {t('save')}</>
+                          )}
+                        </button>
+                      </CanDo>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -527,8 +533,9 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                         <input 
                           type="number"
                           value={leadTime}
-                          onChange={(e) => setLeadTime(parseInt(e.target.value) || 0)}
-                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900"
+                          onChange={(e) => canEdit && setLeadTime(parseInt(e.target.value) || 0)}
+                          readOnly={!canEdit}
+                          className={cn("w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900", !canEdit && "opacity-60 cursor-not-allowed")}
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -536,29 +543,32 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                         <input 
                           type="number"
                           value={moq}
-                          onChange={(e) => setMoq(parseInt(e.target.value) || 0)}
-                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900"
+                          onChange={(e) => canEdit && setMoq(parseInt(e.target.value) || 0)}
+                          readOnly={!canEdit}
+                          className={cn("w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900", !canEdit && "opacity-60 cursor-not-allowed")}
                         />
                       </div>
                        <div className="col-span-1 space-y-1.5">
                          <p className="text-[9px] font-bold text-slate-400 ml-0.5">{t('purchasePrice')}</p>
                         <input 
-                          type="number"
-                          step="0.01"
-                          value={costPrice}
-                          onChange={(e) => setCostPrice(parseFloat(e.target.value) || 0)}
-                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900"
-                        />
+                           type="number"
+                           step="0.01"
+                           value={costPrice}
+                           onChange={(e) => canEdit && setCostPrice(parseFloat(e.target.value) || 0)}
+                           readOnly={!canEdit}
+                           className={cn("w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900", !canEdit && "opacity-60 cursor-not-allowed")}
+                         />
                       </div>
                        <div className="col-span-1 space-y-1.5">
                          <p className="text-[9px] font-bold text-slate-400 ml-0.5">{t('sellingPrice')}</p>
                         <input 
-                          type="number"
-                          step="0.01"
-                          value={salePrice}
-                          onChange={(e) => setSalePrice(parseFloat(e.target.value) || 0)}
-                          className="w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900"
-                        />
+                           type="number"
+                           step="0.01"
+                           value={salePrice}
+                           onChange={(e) => canEdit && setSalePrice(parseFloat(e.target.value) || 0)}
+                           readOnly={!canEdit}
+                           className={cn("w-full h-8 px-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all font-medium text-slate-900", !canEdit && "opacity-60 cursor-not-allowed")}
+                         />
                       </div>
                        <div className="col-span-2 space-y-1.5">
                          <p className="text-[9px] font-bold text-slate-400 ml-0.5">{t('channelWeight')}</p>

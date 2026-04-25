@@ -21,9 +21,14 @@ import { cn } from '@/lib/utils';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ProductQuickView } from '@/components/dashboard/ProductQuickView';
 import { useTranslations } from 'next-intl';
+import { usePermissions, Permission } from '@/hooks/usePermissions';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { CanDo } from '@/components/auth/CanDo';
 
 export default function ProductDetailPage() {
   const t = useTranslations('inventory.details');
+  const { can } = usePermissions();
+  const canEdit = can(Permission.INVENTORY_EDIT);
   const { id } = useParams();
   const router = useRouter();
   const [leadTimeDelta, setLeadTimeDelta] = useState(0);
@@ -117,6 +122,7 @@ export default function ProductDetailPage() {
   const impactOnStockout = leadTimeDelta > 0 ? t('increasedRisk') : t('improvedSecurity');
 
   return (
+    <PermissionGuard permission={Permission.INVENTORY_VIEW}>
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Header Navigation */}
       <div className="flex items-center gap-4">
@@ -246,8 +252,9 @@ export default function ProductDetailPage() {
                   max="3.0"
                   step="0.1"
                   value={boostFactor}
-                  onChange={(e) => setBoostFactor(parseFloat(e.target.value))}
-                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer transition-all [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-lg [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-indigo-600 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:-mt-1.5"
+                  onChange={(e) => canEdit && setBoostFactor(parseFloat(e.target.value))}
+                  disabled={!canEdit}
+                  className={cn("w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer transition-all [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-lg [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-indigo-600 [&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:-mt-1.5", !canEdit && "opacity-50 cursor-not-allowed")}
                   style={{
                     background: `linear-gradient(to right, #4f46e5 0%, #4f46e5 ${((boostFactor - 0.5) / 2.5) * 100}%, #f1f5f9 ${((boostFactor - 0.5) / 2.5) * 100}%, #f1f5f9 100%)`
                   }}
@@ -291,8 +298,9 @@ export default function ProductDetailPage() {
                    step="0.01"
                    min="0.1"
                    value={boostFactor.toFixed(2)}
-                   onChange={(e) => setBoostFactor(parseFloat(e.target.value) || 1.0)}
-                   className="w-20 h-10 border-2 border-indigo-200 rounded-lg text-sm font-black text-indigo-700 text-center focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 bg-white transition-all duration-300"
+                   onChange={(e) => canEdit && setBoostFactor(parseFloat(e.target.value) || 1.0)}
+                   readOnly={!canEdit}
+                   className={cn("w-20 h-10 border-2 border-indigo-200 rounded-lg text-sm font-black text-indigo-700 text-center focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 bg-white transition-all duration-300", !canEdit && "opacity-50 cursor-not-allowed")}
                  />
               </div>
               
@@ -323,8 +331,9 @@ export default function ProductDetailPage() {
                   type="number" 
                   step="0.1"
                   value={stockWeight.toFixed(2)}
-                  onChange={(e) => setStockWeight(parseFloat(e.target.value) || 1.0)}
-                  className="w-20 h-10 border rounded-lg text-sm font-bold text-center focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20"
+                  onChange={(e) => canEdit && setStockWeight(parseFloat(e.target.value) || 1.0)}
+                  readOnly={!canEdit}
+                  className={cn("w-20 h-10 border rounded-lg text-sm font-bold text-center focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20", !canEdit && "opacity-50 cursor-not-allowed")}
                 />
               </div>
               <p className="text-[11px] text-muted-foreground text-sentence leading-relaxed">
@@ -334,10 +343,12 @@ export default function ProductDetailPage() {
                 {[0.5, 1.0, 1.5, 2.0].map(val => (
                   <button 
                     key={val}
-                    onClick={() => setStockWeight(val)}
+                    onClick={() => canEdit && setStockWeight(val)}
+                    disabled={!canEdit}
                     className={cn(
                       "flex-1 py-2 text-[10px] font-bold rounded-md border transition-colors",
-                      stockWeight === val ? "bg-amber-100 border-amber-200 text-amber-700" : "bg-white hover:bg-slate-50 text-slate-500"
+                      stockWeight === val ? "bg-amber-100 border-amber-200 text-amber-700" : "bg-white hover:bg-slate-50 text-slate-500",
+                      !canEdit && "opacity-50 cursor-not-allowed"
                     )}
                   >
                     {val === 1.0 ? t('normal') : val > 1.0 ? `High (${val}x)` : `Low (${val}x)`}
@@ -530,16 +541,18 @@ export default function ProductDetailPage() {
         </div>
 
         <div className="mt-6 pt-6 border-t flex justify-end">
-           <button
-             onClick={handleSave}
-             disabled={isSaving}
-             className={cn(
-               "px-6 py-2.5 bg-slate-900 text-white rounded-md text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm",
-               isSaving && "opacity-70 cursor-not-allowed"
-             )}
-           >
-             {isSaving ? t('saving') : t('saveButton')}
-           </button>
+           <CanDo permission={Permission.INVENTORY_EDIT}>
+             <button
+               onClick={handleSave}
+               disabled={isSaving}
+               className={cn(
+                 "px-6 py-2.5 bg-slate-900 text-white rounded-md text-xs font-bold hover:bg-slate-800 transition-colors shadow-sm",
+                 isSaving && "opacity-70 cursor-not-allowed"
+               )}
+             >
+               {isSaving ? t('saving') : t('saveButton')}
+             </button>
+           </CanDo>
         </div>
       </div>
 
@@ -548,5 +561,6 @@ export default function ProductDetailPage() {
         onClose={() => setSelectedChannelId(null)}
       />
     </div>
+    </PermissionGuard>
   );
 }

@@ -23,21 +23,24 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { useStore } from '@/context/StoreContext';
 import { useTranslations } from 'next-intl';
 
+import { usePermissions, Permission } from '@/hooks/usePermissions';
+
 function NavLinks() {
   const t = useTranslations('navigation');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'overview';
+  const { hasPermission } = usePermissions();
 
   const navItems = [
-    { id: 'overview', label: t('overview'), icon: LayoutDashboard, href: '/dashboard' },
-    { id: 'inventory', label: t('inventory'), icon: Package, href: '/dashboard?tab=inventory' },
-    { id: 'decisions', label: t('decisions'), icon: BarChart3, href: '/dashboard?tab=decisions' },
+    { id: 'overview', label: t('overview'), icon: LayoutDashboard, href: '/dashboard', permission: Permission.ORG_VIEW },
+    { id: 'inventory', label: t('inventory'), icon: Package, href: '/dashboard?tab=inventory', permission: Permission.INVENTORY_VIEW },
+    { id: 'decisions', label: t('decisions'), icon: BarChart3, href: '/dashboard?tab=decisions', permission: Permission.FORECAST_VIEW },
   ];
 
   return (
     <div className="hidden md:flex items-center gap-1 flex-1">
-      {navItems.map((item) => {
+      {navItems.filter(item => hasPermission(item.permission)).map((item) => {
         const isProductDetail = pathname.startsWith('/dashboard/product');
         const isDashboardHome = pathname === '/dashboard';
 
@@ -77,6 +80,7 @@ export function Navbar() {
   const [isNotificationOpen, setIsNotificationOpen] = React.useState(false);
 
   const { user, currentOrganization } = useStore();
+  const { hasPermission } = usePermissions();
 
   const { data: alertsData } = useQuery(GET_UNREAD_ALERTS, {
     skip: !user || !currentOrganization,
@@ -185,23 +189,27 @@ export function Navbar() {
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span>{t('myProfile')}</span>
                       </Link>
-                      <Link
-                        href="/dashboard?tab=organization"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
-                      >
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                        <span>{t('myOrg')}</span>
-                      </Link>
-                      <Link
-                        href="/dashboard/settings/connections"
-                        id="nav-integrations"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
-                      >
-                        <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-                        <span>Intégrations</span>
-                      </Link>
+                      {hasPermission(Permission.ORG_EDIT) && (
+                        <Link
+                          href="/dashboard?tab=organization"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span>{t('myOrg')}</span>
+                        </Link>
+                      )}
+                      {hasPermission(Permission.SETTINGS_MANAGE_APIS) && (
+                        <Link
+                          href="/dashboard/settings/connections"
+                          id="nav-integrations"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                        >
+                          <Database className="h-4 w-4 text-muted-foreground" />
+                          <span>Intégrations</span>
+                        </Link>
+                      )}
                       <div className="h-px bg-border my-1" />
                       <button
                         onClick={() => {

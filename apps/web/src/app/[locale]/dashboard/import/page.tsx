@@ -15,6 +15,8 @@ import { cn } from '@/lib/utils';
 
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { Permission } from '@/hooks/usePermissions';
 
 import { SMART_IMPORT } from '@/graphql/mutations/ingestCSV';
 
@@ -155,6 +157,7 @@ export default function SmartImportPage() {
   // --- Renderers ---
 
   return (
+    <PermissionGuard permission={Permission.INVENTORY_IMPORT}>
     <div className="max-w-5xl mx-auto py-4 px-4 space-y-4 animate-in fade-in duration-500 relative">
       
       {/* Loading Overlays */}
@@ -513,5 +516,6 @@ export default function SmartImportPage() {
 
       </AnimatePresence>
     </div>
+    </PermissionGuard>
   );
 }

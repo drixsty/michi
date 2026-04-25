@@ -93,60 +93,36 @@
 ### 2.1 ERD (Entity-Relationship Diagram)
 
 ```
-┌─────────────────┐
-│     USERS       │
-├─────────────────┤
-│ id (UUID, PK)   │──┐
-│ email (String)  │  │
-│ hashed_password │  │
-│ shop_id (UUID)  │  │ 1:N
-│ created_at      │  │
-└─────────────────┘  │
-                     │
-                     ▼
-┌─────────────────────────────────────────┐
-│              PRODUCTS                   │
-├─────────────────────────────────────────┤
-│ id (UUID, PK)                           │──┐
-│ shop_id (UUID, FK → users)              │  │
-│ sku (String, unique per shop)           │  │
-│ title (String)                          │  │
-│ current_inventory (Int)                 │  │ 1:N
-│ lead_time_days (Int, default=14)        │  │
-│ moq (Int, default=1)                    │  │
-│ created_at, updated_at                  │  │
-└─────────────────────────────────────────┘  │
-                                              │
-                     ┌────────────────────────┘
-                     │
-                     ▼
-┌───────────────────────────────────────────────┐
-│           DAILY_SALES_LOGS                    │
-├───────────────────────────────────────────────┤
-│ id (UUID, PK)                                 │
-│ product_id (UUID, FK → products)              │
-│ date (Date)                                   │
-│ units_sold (Int)                              │
-│ end_of_day_stock (Int)                        │
-│ created_at                                    │
-│                                               │
-│ UNIQUE CONSTRAINT (product_id, date)          │
-└───────────────────────────────────────────────┘
-                     │
-                     │ Traité par algorithme
-                     ▼
-┌───────────────────────────────────────────────┐
-│           CLEANED_DEMAND                      │
-├───────────────────────────────────────────────┤
-│ id (UUID, PK)                                 │
-│ product_id (UUID, FK → products)              │
-│ date (Date)                                   │
-│ theoretical_units_sold (Float)                │
-│ is_outlier (Boolean)                          │
-│ created_at                                    │
-│                                               │
-│ UNIQUE CONSTRAINT (product_id, date)          │
-└───────────────────────────────────────────────┘
+┌─────────────────┐      ┌──────────────────────────┐
+│     USERS       │      │      ORGANIZATIONS       │
+├─────────────────┤      ├──────────────────────────┤
+│ id (UUID, PK)   │      │ id (UUID, PK)            │
+│ email (String)  │      │ name (String)            │
+│ hashed_password │      │ plan (String)            │
+└─────────────────┘      └──────────────────────────┘
+        │                             │
+        │      ┌──────────────────────┘
+        ▼      ▼
+┌──────────────────────────┐      ┌──────────────────────────┐
+│   ORGANIZATION_MEMBERS   │      │         PRODUCTS         │
+├──────────────────────────┤      ├──────────────────────────┤
+│ org_id (FK)              │      │ id (UUID, PK)            │
+│ user_id (FK)             │◀─────│ org_id (FK)              │
+│ role (String)            │      │ sku (String)             │
+│ permissions (JSONB)      │      │ lead_time_days (Int)     │
+└──────────────────────────┘      └──────────────────────────┘
+                                          │
+                                          │ 1:N
+                                          ▼
+┌──────────────────────────┐      ┌──────────────────────────┐
+│     DAILY_SALES_LOGS     │      │     PURCHASE_ORDERS      │
+├──────────────────────────┤      ├──────────────────────────┤
+│ product_id (FK)          │      │ id (UUID, PK)            │
+│ units_sold (Int)         │◀─────│ product_id (FK)          │
+│ date (Date)              │      │ quantity (Int)           │
+└──────────────────────────┘      │ status (String)          │
+                                  │ expected_arrival (Date)  │
+                                  └──────────────────────────┘
 ```
 
 ### 2.2 Tables Détaillées (PostgreSQL DDL)
@@ -1245,6 +1221,52 @@ async def load_products(keys: List[str]) -> List[Product]:
     return [products.get(key) for key in keys]
 
 product_loader = DataLoader(load_fn=load_products)
+```
+
+### 7.3 Système RBAC (Role-Based Access Control)
+
+Michi implémente un système de contrôle d'accès basé sur les rôles (RBAC) granulaire pour supporter les environnements "Enterprise".
+
+**Architecture "Safe by Default" :**
+- Toute nouvelle mutation ou query est interdite par défaut si aucun décorateur n'est présent.
+- Les permissions sont stockées sous forme de `JSONB` dans la table `organization_members`.
+
+**Structure des Permissions :**
+```python
+# apps/api/src/modules/auth/domain/permissions.py
+class PermissionCode(str, Enum):
+    # Inventory
+    INVENTORY_VIEW = "inventory:view"
+    INVENTORY_EDIT = "inventory:edit"
+    
+    # Forecasting
+    FORECAST_VIEW = "forecast:view"
+    FORECAST_RUN = "forecast:run"
+    
+    # Team
+    ORG_VIEW = "org:view"
+    ORG_EDIT = "org:edit"
+    MEMBER_INVITE = "member:invite"
+```
+
+**Utilisation du Décorateur :**
+```python
+@strawberry.mutation
+@require_permission(PermissionCode.INVENTORY_EDIT)
+async def create_purchase_order(self, info, input: CreatePOInput) -> PurchaseOrder:
+    # Si l'utilisateur n'a pas la permission, une MichiException(UNAUTHORIZED) est levée
+    return await inventory_service.create_purchase_order(input)
+```
+
+**Frontend (CanDo) :**
+Le frontend utilise le hook `useCanDo` pour masquer dynamiquement les éléments d'interface non autorisés.
+```tsx
+const { canDo } = useStore();
+return (
+  {canDo(Permission.INVENTORY_EDIT) && (
+    <Button onClick={handleOrder}>Commander</Button>
+  )}
+);
 ```
 
 ---

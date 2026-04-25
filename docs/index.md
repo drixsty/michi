@@ -223,10 +223,11 @@ Bienvenue dans la documentation complète du projet Michi 道 !
 
 ## 🔍 Recherche par Sujet
 
-### Authentification JWT
-- [architecture.md](architecture.md) → Section 7.1
+### Authentification & Sécurité (RBAC)
+- [architecture.md](architecture.md) → Section 7 (Auth & RBAC)
 - [prd.md](prd.md) → Epic 0 (US 0.1, 0.2)
-- Code : `backend/src/modules/auth/`
+- [tracker.md](tracker.md) → Sprint 23 (Security Hardening)
+- Code : `apps/api/src/modules/auth/`
 
 ### Algorithmes Data Science
 - [architecture.md](architecture.md) → Section 5

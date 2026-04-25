@@ -10,6 +10,8 @@ from uuid import UUID
 
 from core.graphql.context import GraphQLContext
 from core.exceptions import UnauthenticatedException
+from modules.auth.adapters.decorators import require_permission
+from modules.auth.domain.permissions import PermissionCode
 from .graphql_types import (
     DecisionCenterOverviewType, 
     FinancialKpiType, 
@@ -76,6 +78,7 @@ class DecisionQuery:
 @strawberry.type
 class DecisionMutation:
     @strawberry.mutation
+    @require_permission(PermissionCode.ORG_EDIT)
     async def update_strategic_settings(
         self, 
         info: Info[GraphQLContext, None], 

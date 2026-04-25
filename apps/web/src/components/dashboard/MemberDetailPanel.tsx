@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { usePermissions, Permission } from '@/hooks/usePermissions';
+import { CanDo } from '@/components/auth/CanDo';
 
 const UPDATE_MEMBER_PERMISSIONS = gql`
   mutation UpdateMemberPermissions($userId: ID!, $permissions: String!) {
@@ -76,6 +78,7 @@ export function MemberDetailPanel({
   const tRoles = useTranslations('organization.roles');
   const tPerms = useTranslations('organization.permissions');
   const tCommon = useTranslations('common');
+  const { can } = usePermissions();
 
   const PERMISSION_CATEGORIES = [
     {
@@ -142,7 +145,7 @@ export function MemberDetailPanel({
 
   if (!isOpen || (!member && !invitation)) return null;
 
-  const isAdmin = currentUserRole.toLowerCase() === 'admin';
+  const isAdmin = can(Permission.ORG_MANAGE_MEMBERS);
   
   const email = isMember ? member.user.email : invitation.email;
   const firstName = isMember ? member.user.firstName : '';
@@ -309,33 +312,35 @@ export function MemberDetailPanel({
           </section>
 
           {isMember && (
-            <section className="space-y-3">
-              <h3 className="text-[13px] font-semibold text-foreground px-1 font-bold">{t('roleAccess')}</h3>
-              <div className="grid grid-cols-1 gap-2">
-                {['ADMIN', 'MANAGER', 'VIEWER'].map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => handleChangeRole(r)}
-                    className={cn(
-                      "flex items-center justify-between px-4 py-3 rounded-lg border transition-all text-left",
-                      role === r.toLowerCase() 
-                        ? "bg-primary/5 border-primary/20 ring-1 ring-primary/10" 
-                        : "bg-white border-border hover:bg-muted"
-                    )}
-                  >
-                    <div>
-                      <p className={cn("text-[13px] font-semibold", role === r.toLowerCase() ? "text-primary" : "text-foreground")}>
-                        {tRoles(r.toLowerCase())}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
-                        {tRoles(`${r.toLowerCase()}Desc`)}
-                      </p>
-                    </div>
-                    {role === r.toLowerCase() && <CheckCircle2 className="h-4 w-4 text-primary" />}
-                  </button>
-                ))}
-              </div>
-            </section>
+            <CanDo permission={Permission.ORG_MANAGE_MEMBERS}>
+              <section className="space-y-3">
+                <h3 className="text-[13px] font-semibold text-foreground px-1 font-bold">{t('roleAccess')}</h3>
+                <div className="grid grid-cols-1 gap-2">
+                  {['ADMIN', 'MANAGER', 'VIEWER'].map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => handleChangeRole(r)}
+                      className={cn(
+                        "flex items-center justify-between px-4 py-3 rounded-lg border transition-all text-left",
+                        role === r.toLowerCase() 
+                          ? "bg-primary/5 border-primary/20 ring-1 ring-primary/10" 
+                          : "bg-white border-border hover:bg-muted"
+                      )}
+                    >
+                      <div>
+                        <p className={cn("text-[13px] font-semibold", role === r.toLowerCase() ? "text-primary" : "text-foreground")}>
+                          {tRoles(r.toLowerCase())}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {tRoles(`${r.toLowerCase()}Desc`)}
+                        </p>
+                      </div>
+                      {role === r.toLowerCase() && <CheckCircle2 className="h-4 w-4 text-primary" />}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </CanDo>
           )}
 
           {isMember && role !== 'admin' && isAdmin && (
@@ -384,45 +389,47 @@ export function MemberDetailPanel({
             </section>
           )}
 
-          <section className="space-y-3 pt-6 border-t border-border">
-            <h3 className="text-[13px] font-semibold text-red-500 px-1">{t('dangerZone')}</h3>
-            
-            <div className="space-y-2">
-              {isMember ? (
-                <>
+          <CanDo permission={Permission.ORG_MANAGE_MEMBERS}>
+            <section className="space-y-3 pt-6 border-t border-border">
+              <h3 className="text-[13px] font-semibold text-red-500 px-1">{t('dangerZone')}</h3>
+              
+              <div className="space-y-2">
+                {isMember ? (
+                  <>
+                    <button 
+                      onClick={() => setShowConfirm('remove')}
+                      className="w-full h-11 flex items-center justify-between px-4 rounded-lg bg-red-50/50 border border-red-100 text-red-600 hover:bg-red-50 transition-all text-[13px] font-semibold"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Trash2 className="h-4 w-4" />
+                        {t('remove')}
+                      </div>
+                    </button>
+
+                    <button 
+                      onClick={() => setShowConfirm('ban')}
+                      className="w-full h-11 flex items-center justify-between px-4 rounded-lg bg-foreground text-background hover:opacity-90 transition-all text-[13px] font-semibold"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Ban className="h-4 w-4" />
+                        {t('ban')}
+                      </div>
+                    </button>
+                  </>
+                ) : (
                   <button 
-                    onClick={() => setShowConfirm('remove')}
+                    onClick={() => setShowConfirm('delete_invite')}
                     className="w-full h-11 flex items-center justify-between px-4 rounded-lg bg-red-50/50 border border-red-100 text-red-600 hover:bg-red-50 transition-all text-[13px] font-semibold"
                   >
                     <div className="flex items-center gap-3">
                       <Trash2 className="h-4 w-4" />
-                      {t('remove')}
+                      {t('cancelInvite')}
                     </div>
                   </button>
-
-                  <button 
-                    onClick={() => setShowConfirm('ban')}
-                    className="w-full h-11 flex items-center justify-between px-4 rounded-lg bg-foreground text-background hover:opacity-90 transition-all text-[13px] font-semibold"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Ban className="h-4 w-4" />
-                      {t('ban')}
-                    </div>
-                  </button>
-                </>
-              ) : (
-                <button 
-                  onClick={() => setShowConfirm('delete_invite')}
-                  className="w-full h-11 flex items-center justify-between px-4 rounded-lg bg-red-50/50 border border-red-100 text-red-600 hover:bg-red-50 transition-all text-[13px] font-semibold"
-                >
-                  <div className="flex items-center gap-3">
-                    <Trash2 className="h-4 w-4" />
-                    {t('cancelInvite')}
-                  </div>
-                </button>
-              )}
-            </div>
-          </section>
+                )}
+              </div>
+            </section>
+          </CanDo>
         </div>
 
         {/* Confirmation Modal */}
