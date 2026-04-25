@@ -7,8 +7,14 @@ import { Loader2 } from 'lucide-react';
 
 const GET_ONBOARDING_STATUS = gql`
   query GetOnboardingStatus {
+    me {
+      id
+      hasOrganization
+      emailVerifiedAt
+    }
     currentOrganization {
       id
+      plan
       onboardingCompleted
     }
   }
@@ -28,17 +34,48 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
   });
 
   useEffect(() => {
-    if (!loading && data?.currentOrganization) {
-      const isCompleted = data.currentOrganization.onboardingCompleted;
-      const isOnboardingPage = pathname.includes('/onboarding');
-      
-      if (!isCompleted && !isOnboardingPage) {
-        router.replace('/onboarding');
-      } else if (isCompleted && isOnboardingPage) {
-        router.replace('/dashboard');
+    if (!loading) {
+      if (data?.me) {
+        const isEmailVerified = !!data.me.emailVerifiedAt;
+        const isVerifyEmailPage = pathname.includes('/verify-email');
+
+        // Force email verification if not verified
+        if (!isEmailVerified && !isVerifyEmailPage) {
+           router.replace('/verify-email');
+           return;
+        }
+
+        if (!data.me.hasOrganization && !pathname.includes('/pricing') && !isVerifyEmailPage) {
+           router.replace('/pricing');
+           return;
+        }
+      }
+
+      if (data?.currentOrganization) {
+        const isCompleted = data.currentOrganization.onboardingCompleted;
+        const hasPlan = !!data.currentOrganization.plan && data.currentOrganization.plan !== "";
+        const isOnboardingPage = pathname.includes('/onboarding');
+        const isPricingPage = pathname.includes('/pricing');
+        
+        // Force pricing if no plan selected
+        if (!hasPlan && !isPricingPage) {
+           router.replace('/pricing');
+           return;
+        }
+
+        if (!isCompleted && !isOnboardingPage && !isPricingPage) {
+          router.replace('/onboarding');
+        } else if (isCompleted && (isOnboardingPage || (isPricingPage && hasPlan))) {
+          router.replace('/dashboard');
+        } else {
+          // État valide : soit complété sur dashboard, soit non-complété sur onboarding
+          setIsChecking(false);
+        }
       } else {
-        // État valide : soit complété sur dashboard, soit non-complété sur onboarding
-        setIsChecking(false);
+         // Pas d'organisation et on est bien sur /pricing (géré plus haut)
+         if (pathname.includes('/pricing')) {
+             setIsChecking(false);
+         }
       }
     } else if (error) {
       // En cas d'erreur, on laisse passer pour éviter de bloquer l'utilisateur

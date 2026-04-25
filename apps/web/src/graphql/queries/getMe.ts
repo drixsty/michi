@@ -9,6 +9,7 @@ export const GET_ME: TypedDocumentNode<GetMeQuery, GetMeQueryVariables> = gql`
       firstName
       lastName
       currentOrganizationId
+      emailVerifiedAt
       createdAt
       organizations {
         organizationId

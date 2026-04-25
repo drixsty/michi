@@ -220,6 +220,17 @@ class ApplicationOrgService:
             await self._users._db.flush()
             return False
 
+        user_model = await self._users.get_model_by_id(user_id)
+        if not user_model:
+            return False
+
+        # Vérification stricte : l'email du compte doit correspondre à l'email invité
+        if user_model.email.lower() != invitation.email.lower():
+            raise MichiException(
+                message="Impossible d'accepter cette invitation avec ce compte. Veuillez vous connecter avec l'adresse e-mail qui a reçu l'invitation.",
+                code=ErrorCode.FORBIDDEN
+            )
+
         member = OrganizationMember(
             user_id=user_id,
             organization_id=invitation.organization_id,
@@ -228,9 +239,7 @@ class ApplicationOrgService:
         await self._memberships.save(member)
         invitation.status = InvitationStatus.ACCEPTED
 
-        user_model = await self._users.get_model_by_id(user_id)
-        if user_model:
-            user_model.current_organization_id = invitation.organization_id
+        user_model.current_organization_id = invitation.organization_id
 
         await self._users._db.flush()
         return True

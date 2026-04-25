@@ -1,4 +1,41 @@
 {
+  "verifyEmail": {
+    "title": "Verify your email",
+    "description": "We've sent a confirmation link to your email address. Please click the link to activate your account.",
+    "verifying": "Verifying your account...",
+    "success": "Your email has been successfully verified!",
+    "redirecting": "Redirecting you to Michi...",
+    "error": "The verification link is invalid or has expired.",
+    "backToLogin": "Back to login",
+    "resend": "Resend email",
+    "resendCooldown": "Resend in {seconds}s",
+    "resendSuccess": "Email resent!",
+    "checkSpam": "Don't forget to check your spam folder."
+  },
+  "pricing": {
+    "title": "Choose your plan",
+    "subtitle": "Unlock AI power for your inventory forecasting. No commitment.",
+    "period": "/month",
+    "select": "Select",
+    "popular": "Most popular",
+    "plans": {
+      "basic": {
+        "name": "Michi Basic",
+        "description": "Ideal for small catalogs.",
+        "features": ["Up to 100 SKUs", "1 user", "Community support"]
+      },
+      "pro": {
+        "name": "Michi Pro",
+        "description": "For your AI forecasting and alerts.",
+        "features": ["Unlimited SKUs", "Multi-user access", "AI Forecasting", "Stockout alerts", "Priority support"]
+      },
+      "enterprise": {
+        "name": "Michi Enterprise",
+        "description": "Complex omnichannel operations.",
+        "features": ["All Pro features", "Guaranteed SLA", "Dedicated Account Manager", "API Access", "SSO"]
+      }
+    }
+  },
   "legal": {
     "cookieTitle": "Respecting your privacy",
     "cookieDesc": "We use cookies to improve your experience, analyze traffic and ensure the security of your forecasting data.",

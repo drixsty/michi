@@ -6,8 +6,8 @@ import strawberry
 from typing import Optional, List
 import uuid
 
-from core.exceptions import UnauthenticatedException
-from core.graphql.types import InvitationType
+from core.exceptions import UnauthenticatedException, MichiException, ErrorCode
+from core.graphql.types import InvitationType, InvitationPreviewType
 from modules.auth.adapters.decorators import require_permission, rate_limit
 from modules.auth.domain.permissions import PermissionCode
 
@@ -38,6 +38,46 @@ class InvitationQuery:
                 expires_at=i.expires_at
             ) for i in invitations
         ]
+
+    @strawberry.field(name="invitationPreview")
+    async def invitation_preview(self, info, code: str) -> InvitationPreviewType:
+        """Récupère les détails publics d'une invitation via son code (Pas d'authentification requise)."""
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+        from modules.auth.infrastructure.persistence.models import Invitation
+        from core.database.models import User
+
+        stmt = (
+            select(Invitation)
+            .options(selectinload(Invitation.organization))
+            .where(Invitation.code == code)
+        )
+        res = await info.context.db.execute(stmt)
+        invitation = res.scalars().first()
+
+        if not invitation:
+            raise MichiException(message="Invitation introuvable ou invalide", code=ErrorCode.NOT_FOUND)
+
+        if str(invitation.status).split(".")[-1] != "PENDING":
+             raise MichiException(message="Cette invitation n'est plus valide", code=ErrorCode.BAD_REQUEST)
+
+        invited_by_name = "Utilisateur inconnu"
+        invited_by_email = ""
+        
+        if invitation.invited_by_id:
+             user_res = await info.context.db.execute(select(User).where(User.id == invitation.invited_by_id))
+             inviting_user = user_res.scalars().first()
+             if inviting_user:
+                 invited_by_name = f"{inviting_user.first_name} {inviting_user.last_name}".strip()
+                 invited_by_email = inviting_user.email
+
+        return InvitationPreviewType(
+            organization_name=invitation.organization.name if invitation.organization else "Organisation Inconnue",
+            role=str(invitation.role).split(".")[-1],
+            invited_by_name=invited_by_name,
+            invited_by_email=invited_by_email,
+            expires_at=invitation.expires_at
+        )
 
 from modules.auth.adapters.decorators import require_permission, rate_limit
 from modules.auth.domain.permissions import PermissionCode

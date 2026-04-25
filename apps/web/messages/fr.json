@@ -1,4 +1,41 @@
 {
+  "verifyEmail": {
+    "title": "Vérifiez votre e-mail",
+    "description": "Nous avons envoyé un lien de confirmation à votre adresse e-mail. Veuillez cliquer sur ce lien pour activer votre compte.",
+    "verifying": "Vérification de votre compte...",
+    "success": "Votre e-mail a été vérifié avec succès !",
+    "redirecting": "Vous allez être redirigé vers Michi...",
+    "error": "Le lien de vérification est invalide ou a expiré.",
+    "backToLogin": "Retour à la connexion",
+    "resend": "Renvoyer l'e-mail",
+    "resendCooldown": "Renvoyer dans {seconds}s",
+    "resendSuccess": "E-mail renvoyé !",
+    "checkSpam": "N'oubliez pas de vérifier vos courriers indésirables."
+  },
+  "pricing": {
+    "title": "Choisissez votre plan",
+    "subtitle": "Débloquez la puissance de l'IA pour vos prévisions de stocks. Sans engagement.",
+    "period": "/mois",
+    "select": "Sélectionner",
+    "popular": "Le plus populaire",
+    "plans": {
+      "basic": {
+        "name": "Michi Basic",
+        "description": "Idéal pour les petits catalogues.",
+        "features": ["Jusqu'à 100 SKUs", "1 utilisateur", "Support communautaire"]
+      },
+      "pro": {
+        "name": "Michi Pro",
+        "description": "Pour vos prévisions et alertes IA.",
+        "features": ["SKUs illimités", "Accès multi-utilisateurs", "Prévisions IA", "Alertes de rupture", "Support prioritaire"]
+      },
+      "enterprise": {
+        "name": "Michi Enterprise",
+        "description": "Opérations omnicanales complexes.",
+        "features": ["Toutes les fonctionnalités Pro", "SLA Garanti", "Account Manager Dédié", "API Access", "SSO"]
+      }
+    }
+  },
   "legal": {
     "cookieTitle": "Respect de votre vie privée",
     "cookieDesc": "Nous utilisons des cookies pour améliorer votre expérience, analyser le trafic et assurer la sécurité de vos données de forecasting.",

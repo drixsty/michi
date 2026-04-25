@@ -179,7 +179,42 @@ class EmailService:
             return True
         except Exception as e:
             logger.error(f"[EmailService] Failed to send reset email to {to_email}: {str(e)}")
-            return False
+
+    async def send_verification_email(self, to_email: str, verification_link: str):
+        """Envoie l'e-mail de vérification de compte lors de l'inscription."""
+        logger.debug(f"[EmailService] Preparing verification email for {to_email}")
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "Vérifiez votre compte Michi 道"
+        message["From"] = settings.EMAIL_FROM
+        message["To"] = to_email
+
+        html_content = f"""
+        <html>
+            <body>
+                <h2>Bienvenue sur Michi !</h2>
+                <p>Merci de vous être inscrit. Pour activer votre compte et accéder à vos prévisions IA, veuillez cliquer sur le bouton ci-dessous :</p>
+                <a href="{verification_link}" style="background-color: #7c3aed; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    Vérifier mon e-mail
+                </a>
+                <p>Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :</p>
+                <p>{verification_link}</p>
+                <br/>
+                <p>L'équipe Michi 道</p>
+            </body>
+        </html>
+        """
+        message.attach(MIMEText(html_content, "html"))
+
+        if settings.ENVIRONMENT == "development" or settings.BILLING_MODE == "MOCK":
+            logger.info(f"[EmailService] MOCK SEND VERIFICATION to {to_email}: {verification_link}")
+            return True
+
+        # TODO: Implémentation réelle via SMTP ou API (Resend/SendGrid)
+        return True
+
     async def send_periodic_report(
         self, 
         to_email: str, 

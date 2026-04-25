@@ -19,6 +19,7 @@ class Organization(Base):
     
     # Billing info
     stripe_customer_id = Column(String(255), nullable=True)
+    stripe_subscription_id = Column(String(255), nullable=True)
     plan = Column(String(50), default="BASIC") # BASIC, PRO, ENTERPRISE
     subscription_status = Column(String(50), default="ACTIVE")
     
@@ -53,6 +54,9 @@ class User(Base):
     hashed_password = Column(String(255), nullable=True)
     google_id = Column(String(255), unique=True, nullable=True, index=True)
     
+    email_verified_at = Column(DateTime, nullable=True)
+    verification_token = Column(String(255), nullable=True, index=True)
+
     current_organization_id = Column(GUID, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     

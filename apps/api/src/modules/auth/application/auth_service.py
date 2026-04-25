@@ -10,6 +10,7 @@ que les resolvers migrent via US 21.9).
 """
 
 import uuid
+from datetime import datetime
 from dataclasses import dataclass
 from typing import Optional
 
@@ -128,12 +129,47 @@ class ApplicationAuthService:
         )
         return AuthResult(token=token, user_model=user_model)
 
+    async def verify_email(self, token: str) -> bool:
+        """Valide un jeton de vérification et marque l'email comme vérifié."""
+        user = await self._users.get_by_verification_token(token)
+        if not user:
+            return False
+            
+        user.email_verified_at = datetime.utcnow()
+        user.verification_token = None # Consommé
+        
+        await self._users.save(user)
+        await self._users._db.flush()
+        return True
+
+    async def resend_verification_email(self, email: str) -> bool:
+        """Rénvoie un e-mail de vérification avec un nouveau token."""
+        user = await self._users.get_model_by_email(email)
+        if not user or user.email_verified_at:
+            return False
+            
+        # Nouveau token pour plus de sécurité
+        new_token = str(uuid.uuid4())
+        user.verification_token = new_token
+        await self._users.save(user)
+        await self._users._db.flush()
+        
+        if self._email:
+            from core.config.settings import settings
+            verify_link = f"{settings.FRONTEND_URL}/verify-email?token={new_token}"
+            from loguru import logger
+            logger.info(f"[AuthService] Requesting verification email resend for {user.email}")
+            await self._email.send_verification_email(user.email, verify_link)
+            
+        return True
+
     async def register(
         self,
         email: str,
         password: str,
         first_name: str,
         last_name: str,
+        create_default_org: bool = True,
     ) -> AuthResult:
         """
         Crée un compte utilisateur sans organisation.
@@ -151,22 +187,71 @@ class ApplicationAuthService:
 
         from modules.auth.domain.value_objects import HashedPassword
         hashed = self._hasher.hash(password)
+        # Génération du token de vérification (ex: uuid)
+        verification_token = str(uuid.uuid4())
+
         user_model = User(
-            email=email,
+            email=email.lower(),
             first_name=first_name,
             last_name=last_name,
-            hashed_password=hashed.value,
+            hashed_password=self._hasher.hash_password(password),
+            is_active=True,
+            verification_token=verification_token,
+            email_verified_at=None, # Non vérifié par défaut
             organizations=[],
         )
         await self._users.save(user_model)
+
+        # Envoi de l'email de vérification
+        if self._email:
+            from core.config.settings import settings
+            # L'URL de vérification pointe vers le frontend qui appellera la mutation verifyEmail
+            verify_link = f"{settings.FRONTEND_URL}/verify-email?token={verification_token}"
+            from loguru import logger
+            logger.info(f"[AuthService] Requesting verification email for {email}")
+            await self._email.send_verification_email(email, verify_link)
+
+        if create_default_org:
+            org_name = f"Michi de {first_name or email.split('@')[0]}"
+            org_model = Organization(
+                name=org_name,
+                slug=f"org-{uuid.uuid4().hex[:8]}",
+                plan="" # Force un plan vide pour obliger le passage par /pricing
+            )
+            await self._orgs.save(org_model)
+
+            member = OrganizationMember(
+                user_id=user_model.id,
+                organization_id=org_model.id,
+                role=UserRole.OWNER,
+            )
+            await self._memberships.save(member)
+            user_model.current_organization_id = org_model.id
+            
+            # Si l'utilisateur a été invité, on pourrait auto-vérifier son email
+            # mais par sécurité on garde la vérification par lien sauf si c'est une invitation de confiance.
+            # Pour l'instant on laisse tel quel.
+
+            await self._users._db.flush()
+
+            if self._billing:
+                stripe_id = await self._billing.create_customer(
+                    name=org_model.name,
+                    email=user_model.email,
+                    org_id=str(org_model.id),
+                )
+                if stripe_id:
+                    org_model.stripe_customer_id = stripe_id
+                    await self._users._db.flush()
         
         # Explicit commit to ensure user is visible to immediate subsequent requests (e.g., onboarding)
         await self._users._db.commit()
-        print(f">>> [DEBUG] REGISTERED USER ID: {user_model.id} (EMAIL: {user_model.email}) <<<")
+        from loguru import logger
+        logger.info(f">>> [DEBUG] REGISTERED USER ID: {user_model.id} (EMAIL: {user_model.email}) <<<")
 
         token = self._tokens.create_access_token(
             user_id=user_model.id,
-            org_id=None,
+            org_id=user_model.current_organization_id,
             email=user_model.email,
         )
         return AuthResult(token=token, user_model=user_model)
@@ -190,15 +275,21 @@ class ApplicationAuthService:
             google_model = await self._users.get_by_google_id(google_id)
             if google_model:
                 user_model = await self._users.get_model_by_id(google_model.id)
+        else:
+            # Utilisateur trouvé par email : on lie le google_id s'il est manquant
+            if not user_model.google_id:
+                user_model.google_id = google_id
+                await self._users._db.flush()
 
         if not user_model:
-            # Création auto compte + org
+            # Création
             user_model = User(
-                email=email,
-                google_id=google_id,
+                email=email.lower(),
                 first_name=first_name,
                 last_name=last_name,
-                hashed_password=None,
+                google_id=google_id,
+                email_verified_at=datetime.utcnow(), # Google est une source fiable
+                is_active=True
             )
             await self._users.save(user_model)
 

@@ -153,6 +153,10 @@ class UserType:
     created_at: datetime
     two_factor_enabled: bool
     preferences: str
+    google_id: Optional[str] = None
+    email_verified_at: Optional[datetime] = None
+    has_organization: bool = False
+    onboarding_completed: bool = False
     
     # List of organizations the user belongs to
     organizations: List[OrganizationMemberType]
@@ -191,6 +195,17 @@ class UserType:
         except Exception:
             pass
 
+        # Check if user has an org and if onboarding is done
+        has_org = len(orgs_list) > 0
+        onboarding_done = False
+        try:
+            for m in orgs_list:
+                if m.organization and m.organization.onboarding_completed:
+                    onboarding_done = True
+                    break
+        except Exception:
+            pass
+
         return cls(
             id=strawberry.ID(str(user.id)),
             email=user.email,
@@ -200,7 +215,11 @@ class UserType:
             two_factor_enabled=user.two_factor_enabled if hasattr(user, 'two_factor_enabled') else False,
             created_at=user.created_at,
             preferences=prefs_str,
-            organizations=orgs_list
+            google_id=user.google_id,
+            email_verified_at=user.email_verified_at,
+            has_organization=has_org,
+            onboarding_completed=onboarding_done,
+            organizations=orgs_list,
         )
 
 from typing import Annotated
@@ -533,6 +552,15 @@ class InvitationType:
     created_at: datetime
     expires_at: datetime
 
+@strawberry.type
+class InvitationPreviewType:
+    """Type InvitationPreview GraphQL (SaaS)"""
+    organization_name: str
+    role: str
+    invited_by_name: str
+    invited_by_email: str
+    expires_at: datetime
+
 @strawberry.input
 class LoginInput:
     """Input pour mutation login (SaaS)"""
@@ -546,11 +574,13 @@ class RegisterInput:
     password: str
     first_name: str
     last_name: str
+    invitation_code: Optional[str] = None
 
 @strawberry.input
 class GoogleLoginInput:
     """Input pour authentification Google (SaaS)"""
     id_token: str
+    invitation_code: Optional[str] = None
 
 @strawberry.type
 class TwoFactorSetupType:

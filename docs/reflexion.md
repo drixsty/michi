@@ -36,6 +36,9 @@ michi
     - *Intégration terminée : BillingService (Stripe), EmailService (SMTP/SendGrid), et Security Vault (Chiffrement AES-256 des clés API).*
 - mettre en place la gestion des cookies et des conditions d'utilisation [Terminé ✅]
     - *Cadre Légal & UX Premium : Implémentation d'une bannière de consentement cookies 'Glassmorphism' avec personnalisation granulaire. Création des pages /legal/terms et /legal/privacy avec un design 'Enterprise-Grade' (radius lg, typographie robuste, navigation latérale).*
+- Implementer tout le parcours de création de compte jusq'au choix du plan payant ou l'invitation [Terminé ✅]
+    - *Parcours Client Fluide : Inscription -> Vérification E-mail Bloquante -> Pricing Compact (FR/EN) -> Onboarding Pas à Pas. Intégration d'un système de vérification robuste avec contrôle de renvoi professionnel (cooldown 60s).*
+- Mettre en place une vérification d'e-mail totalement bloquante à l'inscription [Terminé ✅]
+    - *Sécurité SaaS : Accès au produit interdit tant que l'e-mail n'est pas validé. Gestion de l'idempotence pour éviter les erreurs de "lien expiré" en cas de double-clic. Intégration i18n complète.*
 - préparer la mise en production
-- test complet de la création de compte jusq'au choix du plan payant ou l'invitation et la double auth avec l'envoie de mail 
-- test complet de l'application
+- test complet de la création de compte jusq'au choix du plan payant ou l'invitation et la double auth avec l'envoie de mail [Terminé ✅]- test complet de l'application

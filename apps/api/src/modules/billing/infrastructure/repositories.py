@@ -25,12 +25,12 @@ class SQLAlchemyBillingRepository(IBillingRepository):
                 customer_id=org.stripe_customer_id,
                 plan=BillingPlan(org.plan) if org.plan else BillingPlan.BASIC,
                 status=SubscriptionStatus(org.subscription_status) if org.subscription_status else SubscriptionStatus.ACTIVE,
-                subscription_id=None # Pas stocké dans org pour le moment
+                subscription_id=org.stripe_subscription_id
             )
         except Exception:
             return None
             
-    async def update_org_billing_info(self, org_id: str, customer_id: str, plan: str, status: str) -> bool:
+    async def update_org_billing_info(self, org_id: str, customer_id: str, plan: str, status: str, subscription_id: Optional[str] = None) -> bool:
         try:
             target_id = uuid.UUID(org_id)
             result = await self._db.execute(select(Organization).where(Organization.id == target_id))
@@ -44,11 +44,21 @@ class SQLAlchemyBillingRepository(IBillingRepository):
                 org.plan = plan.upper()
             if status:
                 org.subscription_status = status.upper()
+            if subscription_id:
+                org.stripe_subscription_id = subscription_id
                 
             await self._db.flush()
             return True
         except Exception:
             return False
+
+    async def get_org_id_by_subscription(self, subscription_id: str) -> Optional[str]:
+        try:
+            result = await self._db.execute(select(Organization.id).where(Organization.stripe_subscription_id == subscription_id))
+            org_id = result.scalar_one_or_none()
+            return str(org_id) if org_id else None
+        except Exception:
+            return None
             
     async def get_org_admin_email(self, org_id: str) -> Optional[str]:
         """Récupère l'email du premier administrateur trouvé pour l'org"""

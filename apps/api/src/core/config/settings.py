@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000"
+    FRONTEND_URL: str = "http://localhost:3000"
     
     # Mock Data
     USE_MOCK_SHOPIFY: bool = True
@@ -69,6 +70,11 @@ class Settings(BaseSettings):
     # Cron / Task Scheduler (Sprint 21)
     CRON_REPORTING_ENABLED: bool = True
     CRON_REPORTING_HOUR: int = 8 # Heure d'envoi des rapports journaliers (0-23)
+    
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_CALLBACK_URL: str = ""
     
     model_config = SettingsConfigDict(
         env_file=".env",

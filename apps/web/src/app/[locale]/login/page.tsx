@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, Lock, Mail, Info, KeyRound, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMutation } from '@apollo/client';
 import { LOGIN, VERIFY_2FA } from '@/graphql/mutations/login';
+import { ACCEPT_INVITATION } from '@/graphql/mutations/invitation';
 import { GoogleLogin } from '@react-oauth/google';
 import { GOOGLE_LOGIN } from '@/graphql/mutations/googleLogin';
 import { useTranslations } from 'next-intl';
@@ -25,15 +26,34 @@ export default function LoginPage() {
   const [mfaCode, setMfaCode] = useState('');
   const [isUsingRecovery, setIsUsingRecovery] = useState(false);
 
+  const searchParams = useSearchParams();
+  const inviteCode = searchParams.get('invite');
+
+  const [acceptInvitation] = useMutation(ACCEPT_INVITATION);
+
+  const handlePostLoginRouting = async (token: string, mfaRequired: boolean, mfaTokenValue?: string) => {
+    if (mfaRequired) {
+      setMfaToken(mfaTokenValue || null);
+      setErrorMessage(null);
+      return;
+    }
+
+    localStorage.setItem('michi_token', token);
+
+    if (inviteCode) {
+      try {
+        await acceptInvitation({ variables: { code: inviteCode } });
+      } catch (err) {
+        console.error('Failed to accept invitation during login:', err);
+      }
+    }
+    
+    router.push('/dashboard');
+  };
+
   const [login, { loading: loginLoading }] = useMutation(LOGIN, {
     onCompleted: (data: any) => {
-      if (data.login.mfaRequired) {
-        setMfaToken(data.login.mfaToken);
-        setErrorMessage(null);
-      } else {
-        localStorage.setItem('michi_token', data.login.token);
-        router.push('/dashboard');
-      }
+      handlePostLoginRouting(data.login.token, data.login.mfaRequired, data.login.mfaToken);
     },
     onError: (err) => {
       console.error('Login Error:', err);
@@ -43,8 +63,7 @@ export default function LoginPage() {
 
   const [verify2fa, { loading: verifyLoading }] = useMutation(VERIFY_2FA, {
     onCompleted: (data) => {
-      localStorage.setItem('michi_token', data.verify2fa.token);
-      router.push('/dashboard');
+      handlePostLoginRouting(data.verify2fa.token, false);
     },
     onError: (err) => {
       setErrorMessage(err.message);
@@ -53,8 +72,7 @@ export default function LoginPage() {
 
   const [googleLogin, { loading: googleLoading }] = useMutation(GOOGLE_LOGIN, {
     onCompleted: (data) => {
-      localStorage.setItem('michi_token', data.googleLogin.token);
-      router.push('/dashboard');
+      handlePostLoginRouting(data.googleLogin.token, false);
     },
     onError: (err) => {
       console.error('Google Login Error:', err);
@@ -255,7 +273,7 @@ export default function LoginPage() {
           <div className="text-center space-y-2">
             <p className="text-[11px] font-medium text-muted-foreground">
               {t('noAccount')}{' '}
-              <Link href="/register" className="text-primary font-bold hover:underline">
+              <Link href={inviteCode ? `/register?invite=${inviteCode}` : "/register"} className="text-primary font-bold hover:underline">
                 {t('registerLink')}
               </Link>
             </p>

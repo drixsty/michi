@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, Lock, Mail, Info, User, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMutation } from '@apollo/client';
@@ -21,12 +21,22 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  const searchParams = useSearchParams();
+  const inviteCode = searchParams.get('invite');
 
   const [register, { loading: mutationLoading }] = useMutation(REGISTER, {
     onCompleted: (data) => {
-      const { token } = data.register;
+      const { token, user } = data.register;
       localStorage.setItem('michi_token', token);
-      router.push('/dashboard?onboarding=true');
+      
+      // Si l'utilisateur a déjà une org (soit via invitation, soit auto-created), 
+      // on le redirige selon son onboarding. S'il n'en a pas, il va vers pricing.
+      if (inviteCode && user.hasOrganization) {
+        router.push('/dashboard?onboarding=true');
+      } else {
+        router.push('/pricing');
+      }
     },
     onError: (err) => {
       console.error("Register Error:", err);
@@ -36,9 +46,14 @@ export default function RegisterPage() {
 
   const [googleLogin] = useMutation(GOOGLE_LOGIN, {
     onCompleted: (data) => {
-      const { token } = data.googleLogin;
+      const { token, user } = data.googleLogin;
       localStorage.setItem('michi_token', token);
-      router.push('/dashboard');
+      
+      if (inviteCode || user.hasOrganization) {
+        router.push(user.onboardingCompleted ? '/dashboard' : '/dashboard?onboarding=true');
+      } else {
+        router.push('/pricing');
+      }
     },
     onError: (err) => {
       console.error("Google Auth Error:", err);
@@ -52,7 +67,13 @@ export default function RegisterPage() {
     try {
       await register({
         variables: {
-          input: { email, password, firstName, lastName }
+          input: { 
+            email, 
+            password, 
+            firstName, 
+            lastName,
+            ...(inviteCode ? { invitationCode: inviteCode } : {})
+          }
         }
       });
     } catch (err) {}
@@ -127,7 +148,14 @@ export default function RegisterPage() {
               <div className="w-full max-w-[240px]">
                 <GoogleLogin
                   onSuccess={(credentialResponse) => {
-                    googleLogin({ variables: { input: { idToken: credentialResponse.credential } } });
+                    googleLogin({ 
+                      variables: { 
+                        input: { 
+                          idToken: credentialResponse.credential,
+                          ...(inviteCode ? { invitationCode: inviteCode } : {})
+                        } 
+                      } 
+                    });
                   }}
                   onError={() => setErrorMessage(t('errorGoogleFailed'))}
                   useOneTap

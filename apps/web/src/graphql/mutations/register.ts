@@ -11,6 +11,8 @@ export const REGISTER: TypedDocumentNode<RegisterMutation, RegisterMutationVaria
         firstName
         lastName
         currentOrganizationId
+        hasOrganization
+        onboardingCompleted
       }
     }
   }
