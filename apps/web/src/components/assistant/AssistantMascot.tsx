@@ -104,17 +104,59 @@ const useAssistant = (endpoint: string = "http://localhost:8001/graphql") => {
     } finally { setIsLoading(false); }
   }, [endpoint, sessionId, fetchSessions]);
 
-  return { messages, sendMessage, sessions, fetchSessions, loadSession, deleteSession, isOpen, setIsOpen, isLoading, sessionId, setSessionId, setMessages };
+  return { 
+    messages, 
+    sendMessage, 
+    sessions, 
+    fetchSessions, 
+    loadSession, 
+    deleteSession, 
+    isOpen, 
+    setIsOpen, 
+    isLoading, 
+    sessionId, 
+    setSessionId, 
+    setMessages,
+    suggestedActions: messages.length > 0 && messages[messages.length - 1].role === 'assistant' 
+      ? ["Optimiser mon stock", "Voir les alertes", "Générer un rapport"] 
+      : []
+  };
 };
+
+const SUGGESTIONS = [
+  { icon: '📊', label: "Analyse de stock", prompt: "Analyse l'état de mon stock actuel." },
+  { icon: '🚨', label: "Risques de rupture", prompt: "Quels sont mes produits à risque de rupture ?" },
+  { icon: '💰', label: "Valeur totale", prompt: "Quelle est la valeur totale de mon stock ?" },
+  { icon: '📈', label: "Prévisions 30j", prompt: "Quelles sont les prévisions de ventes pour le mois prochain ?" },
+];
+
+const COMMON_QUERIES = [
+  "Analyse mon stock actuel",
+  "Quels sont les risques de rupture ?",
+  "Quelle est la valeur de mon stock ?",
+  "Donne-moi les prévisions pour le mois prochain",
+  "Générer un rapport d'inventaire",
+  "Voir les alertes récentes",
+  "Optimiser mes niveaux de stock",
+  "Analyse du produit "
+];
 
 // --- Components ---
 
 export const AssistantMascot = () => {
-  const { messages, sendMessage, sessions, fetchSessions, loadSession, deleteSession, isOpen, setIsOpen, isLoading, sessionId, setSessionId, setMessages } = useAssistant();
+  const { 
+    messages, sendMessage, sessions, fetchSessions, loadSession, deleteSession, 
+    isOpen, setIsOpen, isLoading, sessionId, setSessionId, setMessages, suggestedActions 
+  } = useAssistant();
   const [view, setView] = useState<'home' | 'chat'>('home');
   const [input, setInput] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const filteredQueries = input.trim() && input.length > 1
+    ? COMMON_QUERIES.filter(q => q.toLowerCase().includes(input.toLowerCase()) && q.toLowerCase() !== input.toLowerCase())
+    : [];
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -203,14 +245,14 @@ export const AssistantMascot = () => {
                     className="flex-1 overflow-y-auto p-5 space-y-6"
                   >
                     {/* Welcome Card */}
-                    <div className="bg-slate-50 p-5 rounded-lg border border-slate-100">
+                    <div className="bg-slate-50 p-5 rounded-lg border border-slate-100 mb-4">
                       <h4 className="text-slate-900 font-bold text-base mb-1">Bonjour ! 👋</h4>
-                      <p className="text-slate-500 text-xs leading-relaxed mb-4">Que puis-je faire pour vous aujourd'hui ? Je peux analyser vos stocks ou prévoir vos ruptures.</p>
+                      <p className="text-slate-500 text-xs leading-relaxed mb-4">Bienvenue dans l'assistant stratégique Michi.</p>
                       <button 
                         onClick={startNewChat}
-                        className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors"
+                        className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors shadow-md"
                       >
-                        Nouveau chat <Plus size={16} />
+                        Nouvelle discussion <Plus size={16} />
                       </button>
                     </div>
 
@@ -220,32 +262,52 @@ export const AssistantMascot = () => {
                         <span className="text-[11px] font-bold text-slate-400">Conversations récentes</span>
                         <History size={14} className="text-slate-300" />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {sessions.length === 0 ? (
                           <div className="text-center py-6 border-2 border-dashed border-slate-100 rounded-lg text-slate-400 text-xs">
                             Aucun historique pour le moment
                           </div>
                         ) : (
-                          sessions.slice(0, 4).map((s) => (
-                            <div key={s.sessionId} className="group relative flex items-center gap-2">
-                              <button 
-                                onClick={() => handleSessionClick(s.sessionId)}
-                                className="flex-1 flex items-center justify-between p-3 bg-white border border-slate-100 rounded-lg hover:border-slate-300 transition-all text-left"
-                              >
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400"><MessageSquare size={14} /></div>
-                                  <span className="text-xs text-slate-600 truncate">{s.lastMessage || "Conversation stratégique"}</span>
-                                </div>
-                                <ArrowRight size={14} className="text-slate-300" />
-                              </button>
-                              <button 
-                                onClick={() => deleteSession(s.sessionId)}
-                                className="p-2 text-slate-300 hover:text-red-500 transition-colors"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          ))
+                          sessions.slice(0, 4).map((s) => {
+                            const date = new Date(s.updatedAt);
+                            const now = new Date();
+                            const isToday = date.toDateString() === now.toDateString();
+                            const dateStr = isToday 
+                              ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                              : date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+
+                            return (
+                              <div key={s.sessionId} className="flex items-center gap-2 group">
+                                <button 
+                                  onClick={() => handleSessionClick(s.sessionId)}
+                                  className="flex-1 flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-left"
+                                >
+                                  <div className="w-8 h-8 bg-slate-100 rounded flex items-center justify-center text-slate-400 shrink-0">
+                                    <MessageSquare size={14} />
+                                  </div>
+                                  <div className="flex-1 overflow-hidden">
+                                    <div className="flex justify-between items-center mb-0.5">
+                                      <span className="text-[11px] font-bold text-slate-800 truncate pr-2">
+                                        {s.lastMessage || "Nouvelle discussion"}
+                                      </span>
+                                      <span className="text-[9px] text-slate-400 whitespace-nowrap">{dateStr}</span>
+                                    </div>
+                                    <div className="text-[9px] text-slate-400 uppercase tracking-tighter opacity-60">
+                                      ID: {s.sessionId.slice(0, 8)}
+                                    </div>
+                                  </div>
+                                  <ArrowRight size={14} className="text-slate-300" />
+                                </button>
+                                <button 
+                                  onClick={() => deleteSession(s.sessionId)}
+                                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Supprimer"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            );
+                          })
                         )}
                       </div>
                     </div>
@@ -256,6 +318,32 @@ export const AssistantMascot = () => {
                     className="flex-1 flex flex-col overflow-hidden"
                   >
                     <div ref={scrollRef} className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/50">
+                      {messages.length === 0 && (
+                        <div className="space-y-6 py-4">
+                          <div className="text-center">
+                            <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
+                              <Sparkles size={24} />
+                            </div>
+                            <h4 className="text-slate-900 font-bold text-sm">Comment puis-je vous aider ?</h4>
+                            <p className="text-slate-400 text-[10px] mt-1">Choisissez une suggestion ou tapez votre question.</p>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            {SUGGESTIONS.map((s, i) => (
+                              <button
+                                key={i}
+                                onClick={() => sendMessage(s.prompt)}
+                                className="flex flex-col items-start p-3 bg-white border border-slate-200 rounded-xl hover:border-indigo-400 hover:shadow-md transition-all text-left group"
+                              >
+                                <span className="text-xl mb-2 group-hover:scale-110 transition-transform">{s.icon}</span>
+                                <span className="text-[11px] font-bold text-slate-700 leading-tight mb-1">{s.label}</span>
+                                <span className="text-[9px] text-slate-400 line-clamp-2">{s.prompt}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       {messages.map((msg, i) => (
                         <div key={i} className={`flex items-start gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${msg.role === 'user' ? 'bg-indigo-50 border-indigo-100 text-indigo-600' : 'bg-slate-900 border-slate-800 text-white'}`}>
@@ -287,9 +375,55 @@ export const AssistantMascot = () => {
                           <RotateCcw size={12} className="animate-spin" /> Analyse en cours...
                         </div>
                       )}
+
+                      {!isLoading && suggestedActions.length > 0 && (
+                        <div className="flex flex-wrap gap-2 py-2">
+                          {suggestedActions.map((action, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => sendMessage(action)}
+                              className="px-3 py-1.5 bg-white border border-indigo-100 text-indigo-600 rounded-full text-[10px] font-bold hover:bg-indigo-50 transition-colors shadow-sm"
+                            >
+                              {action}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="p-3 bg-white border-t border-slate-100 shrink-0">
+                    <div className="p-3 bg-white border-t border-slate-100 shrink-0 relative">
+                      {/* Interactive Suggestions Overlay */}
+                      <AnimatePresence>
+                        {filteredQueries.length > 0 && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute bottom-full left-0 right-0 mb-2 mx-3 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden z-20"
+                          >
+                            <div className="bg-slate-50 px-3 py-1.5 border-b border-slate-100 flex items-center gap-2">
+                              <Sparkles size={10} className="text-indigo-500" />
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Suggestions de saisie</span>
+                            </div>
+                            <div className="max-h-32 overflow-y-auto">
+                              {filteredQueries.map((q, i) => (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => {
+                                    setInput(q);
+                                    // Optionnel: focus l'input après sélection
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors border-b border-slate-50 last:border-0"
+                                >
+                                  {q}
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
                       <form onSubmit={handleSubmit} className={`relative flex flex-col bg-slate-50 rounded-lg border transition-all ${editingIndex !== null ? 'border-orange-300' : 'border-slate-200 focus-within:border-indigo-500'}`}>
                         {editingIndex !== null && (
                           <div className="px-3 py-1 bg-orange-100 text-[9px] font-bold text-orange-700 flex justify-between items-center border-b border-orange-200 rounded-t-lg uppercase">

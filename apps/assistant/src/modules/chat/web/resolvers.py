@@ -46,8 +46,11 @@ class ChatQuery:
         return [
             ChatSessionGQL(
                 session_id=s.session_id,
-                updated_at=datetime.utcnow(), # Placeholder car non porté par le domaine pur
-                last_message="Conversation Michi"
+                updated_at=s.updated_at,
+                last_message=(
+                    next((m.content for m in s.messages if m.role.value == "user"), None) or 
+                    "Conversation Michi"
+                )[:50] + ("..." if len(next((m.content for m in s.messages if m.role.value == "user"), ""), "") > 50 else "")
             ) for s in sessions
         ]
 

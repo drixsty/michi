@@ -67,14 +67,16 @@ class SQLAlchemyChatRepository(IChatRepository):
             user_id=db_session.user_id,
             org_id=db_session.org_id,
             messages=messages,
-            metadata=db_session.metadata_json or {}
+            metadata=db_session.metadata_json or {},
+            updated_at=db_session.updated_at
         )
 
     async def list_sessions(self, user_id: str, org_id: str) -> List[ChatSession]:
+        # On charge les sessions avec leurs messages pour extraire le dernier
         stmt = select(ChatSessionModel).where(
             ChatSessionModel.user_id == user_id,
             ChatSessionModel.org_id == org_id
-        ).order_by(ChatSessionModel.updated_at.desc())
+        ).options(selectinload(ChatSessionModel.messages)).order_by(ChatSessionModel.updated_at.desc())
         
         result = await self.db.execute(stmt)
         db_sessions = result.scalars().all()
@@ -84,8 +86,15 @@ class SQLAlchemyChatRepository(IChatRepository):
                 session_id=s.id,
                 user_id=s.user_id,
                 org_id=s.org_id,
-                messages=[], # On ne charge pas les messages pour la liste
-                metadata=s.metadata_json or {}
+                messages=[
+                    ChatMessage(
+                        role=MessageRole(m.role),
+                        content=m.content,
+                        timestamp=m.timestamp
+                    ) for m in s.messages
+                ],
+                metadata=s.metadata_json or {},
+                updated_at=s.updated_at
             ) for s in db_sessions
         ]
 
