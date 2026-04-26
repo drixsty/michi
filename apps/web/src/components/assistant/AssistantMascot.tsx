@@ -12,7 +12,7 @@ const useAssistant = (endpoint: string = "http://localhost:8001/graphql") => {
   const [sessions, setSessions] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(typeof window !== 'undefined' ? localStorage.getItem('michi_assistant_session_id') : null);
 
   const fetchSessions = useCallback(async () => {
     const query = `query { listSessions { sessionId updatedAt lastMessage } }`;
@@ -96,6 +96,7 @@ const useAssistant = (endpoint: string = "http://localhost:8001/graphql") => {
       setMessages(prev => [...prev, { role: 'assistant', content: result.reply }]);
       if (!sessionId) {
         setSessionId(result.sessionId);
+        localStorage.setItem('michi_assistant_session_id', result.sessionId);
         fetchSessions();
       }
     } catch (e) {
@@ -119,16 +120,30 @@ export const AssistantMascot = () => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isLoading, view]);
 
-  useEffect(() => { if (isOpen) fetchSessions(); }, [isOpen, fetchSessions]);
+  useEffect(() => { 
+    if (isOpen) {
+      fetchSessions();
+    }
+  }, [isOpen, fetchSessions]);
+
+  // Initial load if sessionId exists
+  useEffect(() => {
+    if (sessionId && messages.length === 0) {
+      loadSession(sessionId);
+      setView('chat');
+    }
+  }, []); // Only on mount
 
   const startNewChat = () => {
     setSessionId(null);
+    localStorage.removeItem('michi_assistant_session_id');
     setMessages([]);
     setView('chat');
   };
 
   const handleSessionClick = (sid: string) => {
     loadSession(sid);
+    localStorage.setItem('michi_assistant_session_id', sid);
     setView('chat');
   };
 

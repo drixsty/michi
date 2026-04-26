@@ -36,7 +36,7 @@ class ChatQuery:
         if not auth_header: return []
 
         payload = decode_access_token(auth_header.split(" ")[1])
-        user_id = payload.get("sub")
+        user_id = payload.get("user_id")
         org_id = payload.get("org_id")
 
         db = info.context.get("db")
@@ -106,7 +106,7 @@ class ChatMutation:
             jwt_token = auth_header.split(" ")[1]
             try:
                 payload = decode_access_token(jwt_token)
-                user_id = payload.get("sub", "anonymous")
+                user_id = payload.get("user_id", "anonymous")
                 org_id = payload.get("org_id", "anonymous")
             except Exception:
                 pass
