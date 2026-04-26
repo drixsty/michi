@@ -11,6 +11,7 @@ show_help() {
     echo "  setup          Setup complet (docker-up + install + seed)"
     echo "  api            Lance le backend (port 8000)"
     echo "  web            Lance le frontend (port 3000)"
+    echo "  assistant      Lance l'assistant IA (port 8001)"
     echo "  docs           Lance le serveur de documentation (Docusaurus)"
     echo "  docker-up      Demarre PostgreSQL + Redis"
     echo "  docker-down    Arrete les services Docker"
@@ -29,6 +30,8 @@ case "$COMMAND" in
         npm install
         echo -e "\n\033[0;33m[INFO] Installation API (Python)...\033[0m"
         cd "$SCRIPT_DIR/apps/api" && pip install -r requirements.txt && cd "$SCRIPT_DIR"
+        echo -e "\n\033[0;33m[INFO] Installation Assistant (Python)...\033[0m"
+        cd "$SCRIPT_DIR/apps/assistant" && pip install -r requirements.txt && cd "$SCRIPT_DIR"
         echo -e "\n\033[0;33m[INFO] Installation Web (npm)...\033[0m"
         cd "$SCRIPT_DIR/apps/web" && npm install && cd "$SCRIPT_DIR"
         echo -e "\n\033[0;32m[OK] Installation terminee !\033[0m"
@@ -62,6 +65,11 @@ case "$COMMAND" in
     web)
         echo -e "\033[0;36m[RUN] Demarrage Web App (Next.js)...\033[0m"
         cd "$SCRIPT_DIR/apps/web" && npm run dev
+        ;;
+    
+    assistant)
+        echo -e "\033[0;36m[RUN] Demarrage Assistant IA (FastAPI)...\033[0m"
+        cd "$SCRIPT_DIR/apps/assistant" && PYTHONPATH=src python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8001
         ;;
 
     docs)

@@ -2,6 +2,7 @@
 Point d'entrée FastAPI - Michi Backend 
 """
 from fastapi import FastAPI, Request, Depends
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
@@ -29,6 +30,24 @@ from loguru import logger
 import sys
 
 # Configuration Loguru pour filtrer les tracebacks d'auth bruyants
+import logging
+
+class InterceptHandler(logging.Handler):
+    def emit(self, record):
+        # Get corresponding Loguru level if it exists
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        # Find caller from where originated the logged message
+        frame, depth = logging.currentframe(), 2
+        while frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
 def log_filter(record):
     """Filtre pour éviter les tracebacks complets sur les erreurs d'auth attendues"""
     msg = record["message"].lower()
@@ -36,10 +55,23 @@ def log_filter(record):
     if "unauthenticatedexception" in msg or "authentication required" in msg:
         # On ne garde que si c'est taggué [Security] explicitement (audit)
         return "[security]" in msg
+    
+    # Éviter les logs de pollution de strawberry/graphql-core sur les erreurs d'auth
+    if record["extra"].get("exception"):
+        exc = record["extra"]["exception"]
+        if "UnauthenticatedException" in str(exc):
+            return False
+
     return True
 
 logger.remove()
 logger.add(sys.stderr, filter=log_filter, level="INFO")
+
+# Intercepter les logs standards (FastAPI, Uvicorn, GraphQL)
+logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+logging.getLogger("uvicorn.access").handlers = [InterceptHandler()]
+logging.getLogger("strawberry").handlers = [InterceptHandler()]
+
 
 
 @asynccontextmanager
@@ -101,7 +133,10 @@ async def get_context(
     Extrait user_id et org_id du token JWT.
     """
     # Extraire user_id/org_id/email du token JWT
-    user_id, org_id, email = await get_current_user_from_token(request)
+    try:
+        user_id, org_id, email = await get_current_user_from_token(request)
+    except UnauthenticatedException:
+        user_id, org_id, email = None, None, None
     
     # Fallback sur le header si org_id n'est pas dans le token (onboarding/switch)
     if user_id and not org_id:
@@ -131,13 +166,18 @@ async def get_context(
 
 from graphql import GraphQLError
 
-def custom_process_errors(errors: list[GraphQLError], execution_context=None):
+def custom_process_errors(self, errors: list[GraphQLError], execution_context=None):
     """
     Gestionnaire d'erreurs centralisé (Standard DDD/Hexagonal).
     Intercepte les MichiException pour un logging propre sans stacktrace.
     """
+    # Pour Strawberry 0.315+, on récupère les erreurs depuis le résultat si dispo
+    actual_errors = errors
+    if execution_context and hasattr(execution_context, "result") and execution_context.result:
+        actual_errors = execution_context.result.errors or errors
+
     processed_errors = []
-    for error in errors:
+    for error in actual_errors:
         orig = error.original_error
         
         # 1. Gestion des exceptions métier Michi
@@ -175,12 +215,12 @@ def custom_process_errors(errors: list[GraphQLError], execution_context=None):
 # GraphQL Router
 graphql_app = GraphQLRouter(
     schema,
-    graphiql=settings.ENVIRONMENT == "development",
+    graphql_ide="graphiql",
     context_getter=get_context,
 )
 
 # On injecte la gestion d'erreurs personnalisée
-graphql_app.process_errors = custom_process_errors
+graphql_app.process_errors = custom_process_errors.__get__(graphql_app, GraphQLRouter)
 
 app.include_router(graphql_app, prefix="/graphql")
 app.include_router(shopify_auth_router)

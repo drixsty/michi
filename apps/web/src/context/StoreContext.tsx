@@ -137,6 +137,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             setOrganizations(cleaned);
           }
         }
+      } else if (!isAuthPage) {
+        // Fallback: If network query returns null but we thought we were logged in
+        console.warn("[Store] User is null on a non-auth page. Clearing session.");
+        localStorage.removeItem('michi_token');
+        localStorage.removeItem('michi_current_org');
+        if (!pathname.endsWith('/onboarding') && !pathname.includes('/verify-email')) {
+          window.location.href = '/login';
+        }
       }
     }
   });

@@ -1,4 +1,5 @@
 from functools import wraps
+import strawberry
 from typing import List, Union
 import time
 from collections import defaultdict
@@ -25,7 +26,7 @@ def require_plan(min_plan: PlanName):
 
     def decorator(f):
         @wraps(f)
-        async def wrapper(self, info, *args, **kwargs):
+        async def wrapper(self, info: strawberry.types.Info, *args, **kwargs):
             if not info.context.org_id:
                 raise UnauthenticatedException("Action refusée : aucune organisation active.")
                 
@@ -66,7 +67,7 @@ def require_permission(permission: PermissionCode):
     """
     def decorator(f):
         @wraps(f)
-        async def wrapper(self, info, *args, **kwargs):
+        async def wrapper(self, info: strawberry.types.Info, *args, **kwargs):
             if not info.context.user_id:
                 raise UnauthenticatedException("Accès refusé : session expirée ou non identifiée")
             if not info.context.org_id:
@@ -119,7 +120,7 @@ def require_role(allowed_roles: Union[str, List[str]]):
 
     def decorator(f):
         @wraps(f)
-        async def wrapper(self, info, *args, **kwargs):
+        async def wrapper(self, info: strawberry.types.Info, *args, **kwargs):
             if not info.context.user_id:
                 raise UnauthenticatedException("Accès refusé : session expirée ou non identifiée")
             if not info.context.org_id:
@@ -171,7 +172,7 @@ def rate_limit(max_calls: int, window_seconds: int = 60):
     """
     def decorator(f):
         @wraps(f)
-        async def wrapper(self, info, *args, **kwargs):
+        async def wrapper(self, info: strawberry.types.Info, *args, **kwargs):
             # Clé unique : nom_de_la_fonction + user_id (ou IP fallback)
             user_id = str(info.context.user_id) if info.context.user_id else "anonymous"
             key = f"{f.__name__}:{user_id}"

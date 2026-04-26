@@ -162,7 +162,7 @@ class UserType:
     organizations: List[OrganizationMemberType]
 
     @strawberry.field
-    async def is_admin(self, info) -> bool:
+    async def is_admin(self, info: strawberry.types.Info) -> bool:
         """Détecte si l'utilisateur est admin dans l'organisation active."""
         if not info.context.org_id: return False
         active_org_id = str(info.context.org_id)
@@ -351,28 +351,28 @@ class ProductType:
         )
 
     @strawberry.field(name="cleanedDemands")
-    async def cleaned_demands(self, info) -> List[Annotated["CleanedDemandType", strawberry.lazy("src.modules.forecasting.adapters.resolvers")]]:
+    async def cleaned_demands(self, info: strawberry.types.Info) -> List[Annotated["CleanedDemandType", strawberry.lazy("src.modules.forecasting.adapters.resolvers")]]:
         from modules.forecasting.adapters.resolvers import resolve_cleaned_demands
         return await resolve_cleaned_demands(info, str(self.id), self.sku)
 
     @strawberry.field
-    async def channels(self, info) -> List["ChannelBreakdownType"]:
+    async def channels(self, info: strawberry.types.Info) -> List["ChannelBreakdownType"]:
         from modules.inventory.adapters.resolvers import resolve_product_channels
         return await resolve_product_channels(info, self.sku)
 
     @strawberry.field
-    async def prediction(self, info) -> Optional[Annotated["PredictionType", strawberry.lazy("src.modules.forecasting.adapters.resolvers")]]:
+    async def prediction(self, info: strawberry.types.Info) -> Optional[Annotated["PredictionType", strawberry.lazy("src.modules.forecasting.adapters.resolvers")]]:
         from modules.forecasting.adapters.resolvers import resolve_product_prediction
         return await resolve_product_prediction(info, str(self.id), self.sku)
 
     @strawberry.field
-    async def supplier(self, info) -> Optional[SupplierType]:
+    async def supplier(self, info: strawberry.types.Info) -> Optional[SupplierType]:
         if not self.supplier_id: return None
         from modules.inventory.adapters.resolvers import resolve_product_supplier
         return await resolve_product_supplier(info, str(self.supplier_id))
 
     @strawberry.field
-    async def warning_threshold(self, info) -> float:
+    async def warning_threshold(self, info: strawberry.types.Info) -> float:
         pred = await self.prediction(info)
         supp = await self.supplier(info)
         if not pred: return 0.0

@@ -35,6 +35,15 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
 
   useEffect(() => {
     if (!loading) {
+      if (data && !data.me) {
+        // User not logged in
+        const isAuthPage = pathname.includes('/login') || pathname.includes('/register');
+        if (!isAuthPage) {
+          router.replace('/login');
+          return;
+        }
+      }
+
       if (data?.me) {
         const isEmailVerified = !!data.me.emailVerifiedAt;
         const isVerifyEmailPage = pathname.includes('/verify-email');
@@ -78,7 +87,8 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
          }
       }
     } else if (error) {
-      // En cas d'erreur, on laisse passer pour éviter de bloquer l'utilisateur
+      // En cas d'erreur (autre que 401), on laisse passer pour éviter de bloquer l'utilisateur
+      // Si c'est une erreur d'auth, StoreContext s'en chargera aussi
       setIsChecking(false);
     }
   }, [data, loading, error, pathname, router]);

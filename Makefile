@@ -10,6 +10,8 @@ install: ## Installe toutes les dépendances (backend + frontend)
 	npm install
 	@echo "📦 Installation backend (Python)..."
 	cd apps/api && pip install -r requirements.txt
+	@echo "📦 Installation assistant (Python)..."
+	cd apps/assistant && pip install -r requirements.txt
 	@echo ""
 	@echo "✅ Installation terminée !"
 
@@ -50,6 +52,7 @@ schema: ## Exporte le schéma GraphQL (SDL)
 api: dev-backend ## Alias pour dev-backend
 web: dev-frontend ## Alias pour dev-frontend
 mobile: dev-mobile ## Alias pour dev-mobile
+assistant: dev-assistant ## Alias pour dev-assistant
 
 dev-backend: ## Lance le backend (port 8000)
 	@echo "🚀 Démarrage backend..."
@@ -62,6 +65,10 @@ dev-frontend: ## Lance le frontend (port 3000)
 dev-mobile: ## Lance l'application mobile (Expo)
 	@echo "🚀 Démarrage mobile..."
 	cd apps/mobile && npx expo start
+
+dev-assistant: ## Lance l'assistant IA (port 8001)
+	@echo "🚀 Démarrage assistant..."
+	cd apps/assistant && uvicorn --app-dir src main:app --reload --host 0.0.0.0 --port 8001
 
 test: ## Lance tous les tests (backend + frontend + ui)
 	@echo "🧪 Tests backend..."

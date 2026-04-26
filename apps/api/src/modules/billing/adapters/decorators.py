@@ -1,4 +1,5 @@
 from functools import wraps
+import strawberry
 from core.exceptions import SubscriptionRequiredException, UnauthenticatedException
 from core.database.models import Organization
 from sqlalchemy import select
@@ -11,11 +12,11 @@ def require_plan(min_plan: str):
     
     Usage:
         @require_plan("PRO")
-        async def my_resolver(self, info): ...
+        async def my_resolver(self, info: strawberry.types.Info): ...
     """
     def decorator(f):
         @wraps(f)
-        async def wrapper(self, info, *args, **kwargs):
+        async def wrapper(self, info: strawberry.types.Info, *args, **kwargs):
             if not info.context.org_id:
                 raise UnauthenticatedException("Contexte d'organisation manquant")
                 

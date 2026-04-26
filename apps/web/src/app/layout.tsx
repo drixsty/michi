@@ -8,6 +8,7 @@ import { ApolloWrapper } from '@/components/providers/ApolloWrapper';
 import { StoreProvider } from '@/context/StoreContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './globals.css';
+import { AssistantMascot } from '@/components/assistant/AssistantMascot';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -31,6 +32,7 @@ export default function RootLayout({
           <ApolloWrapper>
             <StoreProvider>
               {children}
+              <AssistantMascot />
             </StoreProvider>
           </ApolloWrapper>
         </GoogleOAuthProvider>

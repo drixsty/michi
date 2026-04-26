@@ -53,6 +53,7 @@ class Mutation(
 
 from strawberry.extensions import SchemaExtension
 from core.exceptions import MichiException
+from core.graphql.extensions import MichiExceptionExtension
 import logging
 
 class MaskTracebackExtension(SchemaExtension):
@@ -63,22 +64,23 @@ class MaskTracebackExtension(SchemaExtension):
     def on_operation(self):
         yield
         execution_context = self.execution_context
-        if execution_context.errors:
-            # On parcourt les erreurs pour détecter nos exceptions métier
-            new_errors = []
-            for error in execution_context.errors:
-                orig = error.original_error
+        # Utilisation défensive de getattr pour éviter AttributeError sur ExecutionContext
+        result = getattr(execution_context, "result", None)
+        errors = getattr(result, "errors", []) if result else []
+        
+        if errors:
+            for error in errors:
+                orig = getattr(error, "original_error", None)
                 if isinstance(orig, MichiException):
-                    # On logue une version propre si on veut, mais Strawberry va quand même 
-                    # stocker l'erreur dans execution_context.errors.
-                    # Le but ici est surtout de marquer l'erreur comme 'traitée' moralement
-                    # ou de préparer le terrain pour main.py.
+                    # On marque moralement comme traité
                     pass
-                new_errors.append(error)
 
 # Export du schéma final avec extensions
 schema = strawberry.Schema(
     query=Query, 
     mutation=Mutation,
-    extensions=[MaskTracebackExtension]
+    extensions=[
+        MichiExceptionExtension,
+        MaskTracebackExtension
+    ]
 )

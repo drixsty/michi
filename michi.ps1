@@ -10,6 +10,7 @@ function Show-Help {
     Write-Host "  setup          Setup complet (docker-up + install + seed)"
     Write-Host "  api            Lance le backend (port 8000)"
     Write-Host "  web            Lance le frontend (port 3000)"
+    Write-Host "  assistant      Lance l'assistant IA (port 8001)"
     Write-Host "  docs           Lance le serveur de documentation (Docusaurus)"
     Write-Host "  docker-up      Demarre PostgreSQL + Redis"
     Write-Host "  docker-down    Arrete les services Docker"
@@ -27,6 +28,8 @@ switch ($Command) {
         npm install
         Write-Host "`n[INFO] Installation API (Python)..." -ForegroundColor Yellow
         Set-Location apps/api; pip install -r requirements.txt; Set-Location ../..
+        Write-Host "`n[INFO] Installation Assistant (Python)..." -ForegroundColor Yellow
+        Set-Location apps/assistant; pip install -r requirements.txt; Set-Location ../..
         Write-Host "`n[OK] Installation terminee !" -ForegroundColor Green
     }
 
@@ -60,6 +63,12 @@ switch ($Command) {
     "web" {
         Write-Host "[RUN] Demarrage Web App (Next.js)..." -ForegroundColor Cyan
         Set-Location apps/web; npm run dev; Set-Location ../..
+    }
+    
+    "assistant" {
+        Write-Host "[RUN] Demarrage Assistant IA (FastAPI)..." -ForegroundColor Cyan
+        $env:PYTHONPATH = "src"
+        Set-Location apps/assistant; python -m uvicorn src.main:app --reload --host 0.0.0.0 --port 8001; Set-Location ../..
     }
 
     "docs" {

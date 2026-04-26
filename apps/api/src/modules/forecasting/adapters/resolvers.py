@@ -19,12 +19,12 @@ from core.graphql.types import (
 
 
 # Helpers for cross-module field resolution
-async def resolve_cleaned_demands(info, product_id: str, sku: str) -> List[CleanedDemandType]:
+async def resolve_cleaned_demands(info: strawberry.types.Info, product_id: str, sku: str) -> List[CleanedDemandType]:
     service = info.context.services.forecasting_service
     rows = await service.cleaned_demand_repo.list_by_product(uuid.UUID(product_id), limit=90)
     return [CleanedDemandType.from_db(r) for r in rows]
 
-async def resolve_product_prediction(info, product_id: str, sku: str) -> Optional[PredictionType]:
+async def resolve_product_prediction(info: strawberry.types.Info, product_id: str, sku: str) -> Optional[PredictionType]:
     service = info.context.services.forecasting_service
     p = await service.prediction_repo.get_by_product(uuid.UUID(product_id))
     return PredictionType.from_db(p)
@@ -35,7 +35,7 @@ class ForecastingQuery:
     @require_permission(MichiPermission.INVENTORY_VIEW)
     async def cleaned_demand(
         self,
-        info,
+        info: strawberry.types.Info,
         product_id: strawberry.ID,
         limit: int = 365,
     ) -> List[CleanedDemandType]:
@@ -46,7 +46,7 @@ class ForecastingQuery:
     @strawberry.field
     @require_plan("PRO")
     @require_permission(MichiPermission.FORECAST_VIEW)
-    async def predictions(self, info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
+    async def predictions(self, info: strawberry.types.Info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
         service = info.context.services.forecasting_service
         
         rows = await service.get_predictions(
@@ -58,7 +58,7 @@ class ForecastingQuery:
 
     @strawberry.field
     @require_permission(MichiPermission.FORECAST_VIEW)
-    async def dashboard_kpis(self, info, store_id: Optional[strawberry.ID] = None) -> DashboardKPIType:
+    async def dashboard_kpis(self, info: strawberry.types.Info, store_id: Optional[strawberry.ID] = None) -> DashboardKPIType:
         service = info.context.services.forecasting_service
         kpis = await service.get_dashboard_kpis(
             store_id=str(store_id) if store_id else None,
@@ -75,7 +75,7 @@ class ForecastingQuery:
     @strawberry.field
     @require_plan("PRO")
     @require_permission(MichiPermission.FORECAST_VIEW)
-    async def replenishment_alerts(self, info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
+    async def replenishment_alerts(self, info: strawberry.types.Info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
         """Alias de predictions pour la compatibilité avec le dashboard frontend."""
         return await self.predictions(info, store_id=store_id)
 
@@ -84,7 +84,7 @@ class ForecastingMutation:
     @strawberry.mutation
     @require_plan("PRO")
     @require_permission(MichiPermission.FORECAST_RUN)
-    async def run_cleaning_pipeline(self, info, store_id: strawberry.ID) -> PipelineResultType:
+    async def run_cleaning_pipeline(self, info: strawberry.types.Info, store_id: strawberry.ID) -> PipelineResultType:
         service = info.context.services.forecasting_service
         result = await service.run_cleaning_pipeline(str(store_id))
         await info.context.db.commit()
@@ -100,7 +100,7 @@ class ForecastingMutation:
     @strawberry.mutation
     @require_plan("PRO")
     @require_permission(MichiPermission.FORECAST_RUN)
-    async def run_prediction_pipeline(self, info, store_id: strawberry.ID) -> PredictionRunResultType:
+    async def run_prediction_pipeline(self, info: strawberry.types.Info, store_id: strawberry.ID) -> PredictionRunResultType:
         service = info.context.services.forecasting_service
         result = await service.run_prediction_pipeline(str(store_id))
         await info.context.db.commit()

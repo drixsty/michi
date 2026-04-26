@@ -54,7 +54,7 @@ class ShopifyQuery:
     pass
 
     @strawberry.field
-    async def validate_mock_data(self, info, store_id: strawberry.ID) -> ValidationReportType:
+    async def validate_mock_data(self, info: strawberry.types.Info, store_id: strawberry.ID) -> ValidationReportType:
         if not info.context.user_id:
             raise UnauthenticatedException()
 
@@ -80,13 +80,13 @@ class ShopifyQuery:
 class ShopifyMutation:
     @strawberry.mutation
     @require_permission(MichiPermission.STORES_MANAGE)
-    async def trigger_mock_data_sync(self, info, store_id: Optional[strawberry.ID] = None, platform: str = "shopify") -> IngestionResult:
+    async def trigger_mock_data_sync(self, info: strawberry.types.Info, store_id: Optional[strawberry.ID] = None, platform: str = "shopify") -> IngestionResult:
         """Alias pour la compatibilité avec l'ancien schéma."""
         return await self.trigger_omnichannel_sync(info, store_id)
 
     @strawberry.mutation
     @require_permission(MichiPermission.STORES_MANAGE)
-    async def trigger_omnichannel_sync(self, info, store_id: Optional[strawberry.ID] = None) -> IngestionResult:
+    async def trigger_omnichannel_sync(self, info: strawberry.types.Info, store_id: Optional[strawberry.ID] = None) -> IngestionResult:
         from modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
         from modules.forecasting.application.forecasting_service import ForecastingService
         from modules.forecasting.infrastructure.repositories.cleaned_demand_repository import SQLAlchemyCleanedDemandRepository
@@ -176,7 +176,7 @@ class ShopifyMutation:
     @require_permission(MichiPermission.INVENTORY_EDIT)
     async def update_product_settings(
         self, 
-        info, 
+        info: strawberry.types.Info, 
         id: strawberry.ID, 
         lead_time: int = None, 
         moq: int = None

@@ -15,7 +15,7 @@ from modules.auth.domain.permissions import PermissionCode
 class InvitationQuery:
     @strawberry.field(name="pendingInvitations")
     @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
-    async def pending_invitations(self, info) -> List[InvitationType]:
+    async def pending_invitations(self, info: strawberry.types.Info) -> List[InvitationType]:
         """Liste les invitations en attente (ADMIN/OWNER uniquement — évite la fuite d'emails)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -40,7 +40,7 @@ class InvitationQuery:
         ]
 
     @strawberry.field(name="invitationPreview")
-    async def invitation_preview(self, info, code: str) -> InvitationPreviewType:
+    async def invitation_preview(self, info: strawberry.types.Info, code: str) -> InvitationPreviewType:
         """Récupère les détails publics d'une invitation via son code (Pas d'authentification requise)."""
         from sqlalchemy import select
         from sqlalchemy.orm import selectinload
@@ -87,7 +87,7 @@ class InvitationMutation:
     @strawberry.mutation
     @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
     @rate_limit(max_calls=5, window_seconds=3600)  # Max 5 invitations/heure/user
-    async def invite_member(self, info, email: str, role: str) -> InvitationType:
+    async def invite_member(self, info: strawberry.types.Info, email: str, role: str) -> InvitationType:
         """Invite un nouveau collaborateur (Réservé aux Admins)."""
         if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()
@@ -115,7 +115,7 @@ class InvitationMutation:
         )
 
     @strawberry.mutation
-    async def accept_invitation(self, info, code: str) -> bool:
+    async def accept_invitation(self, info: strawberry.types.Info, code: str) -> bool:
         """Accepte une invitation (Ouvert à l'invité)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -130,7 +130,7 @@ class InvitationMutation:
 
     @strawberry.mutation
     @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
-    async def delete_invitation(self, info, invitation_id: strawberry.ID) -> bool:
+    async def delete_invitation(self, info: strawberry.types.Info, invitation_id: strawberry.ID) -> bool:
         """Supprime/Annule une invitation (Réservé aux Admins)."""
         if not info.context.user_id:
             raise UnauthenticatedException()

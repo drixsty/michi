@@ -22,7 +22,7 @@ from core.graphql.types import (
 )
 
 # Helper functions for ProductType field resolvers
-async def resolve_product_channels(info, sku: str):
+async def resolve_product_channels(info: strawberry.types.Info, sku: str):
     service = info.context.services.omnichannel_service
     
     org_id = info.context.org_id
@@ -43,7 +43,7 @@ async def resolve_product_channels(info, sku: str):
         ) for ch in channels
     ]
 
-async def resolve_product_supplier(info, supplier_id: str):
+async def resolve_product_supplier(info: strawberry.types.Info, supplier_id: str):
     service = info.context.services.inventory_service
     s = await service.supplier_repo.get_by_id(uuid.UUID(supplier_id))
     return SupplierType.from_db(s)
@@ -54,7 +54,7 @@ class InventoryQuery:
     @require_permission(MichiPermission.INVENTORY_VIEW)
     async def products(
         self, 
-        info, 
+        info: strawberry.types.Info, 
         store_id: Optional[strawberry.ID] = None, 
         id: Optional[strawberry.ID] = None
     ) -> List[ProductType]:
@@ -78,7 +78,7 @@ class InventoryQuery:
 
     @strawberry.field
     @require_permission(MichiPermission.INVENTORY_VIEW)
-    async def unread_alerts(self, info, store_id: Optional[strawberry.ID] = None) -> List[AlertType]:
+    async def unread_alerts(self, info: strawberry.types.Info, store_id: Optional[strawberry.ID] = None) -> List[AlertType]:
         service = info.context.services.alert_service
         alerts = await service.get_unread_alerts(
             store_id=str(store_id) if store_id else None,
@@ -88,10 +88,10 @@ class InventoryQuery:
 
     @strawberry.field
     @require_permission(MichiPermission.INVENTORY_VIEW)
-    async def sources(self, info) -> List[StoreType]:
+    async def sources(self, info: strawberry.types.Info) -> List[StoreType]:
         """Retourne les stores de l'organisation active."""
         if not info.context.user_id or not info.context.org_id:
-            raise UnauthenticatedException()
+            return []
         
         service = info.context.services.inventory_service
         stores = await service.store_repo.list_by_organization(uuid.UUID(str(info.context.org_id)))
@@ -99,7 +99,7 @@ class InventoryQuery:
 
     @strawberry.field
     @require_permission(MichiPermission.INVENTORY_VIEW)
-    async def omnichannel_inventory(self, info) -> List[OmnichannelProductType]:
+    async def omnichannel_inventory(self, info: strawberry.types.Info) -> List[OmnichannelProductType]:
         service = info.context.services.omnichannel_service
         items = await service.get_omnichannel_inventory(str(info.context.org_id))
         return [OmnichannelProductType.from_dto(item) for item in items]
@@ -108,7 +108,7 @@ class InventoryQuery:
 class InventoryMutation:
     @strawberry.mutation
     @require_permission(MichiPermission.INVENTORY_EDIT)
-    async def mark_alert_as_read(self, info, alert_id: strawberry.ID) -> bool:
+    async def mark_alert_as_read(self, info: strawberry.types.Info, alert_id: strawberry.ID) -> bool:
         service = info.context.services.alert_service
         res = await service.alert_repo.mark_as_read(uuid.UUID(str(alert_id)))
         await info.context.db.commit()
@@ -118,7 +118,7 @@ class InventoryMutation:
     @require_permission(MichiPermission.INVENTORY_EDIT)
     async def update_product_settings(
         self,
-        info,
+        info: strawberry.types.Info,
         id: strawberry.ID,
         lead_time: Optional[int] = None,
         moq: Optional[int] = None,
@@ -144,7 +144,7 @@ class InventoryMutation:
 
     @strawberry.mutation
     @require_permission(MichiPermission.INVENTORY_VIEW)
-    async def delete_alert(self, info, alert_id: strawberry.ID) -> bool:
+    async def delete_alert(self, info: strawberry.types.Info, alert_id: strawberry.ID) -> bool:
         service = info.context.services.alert_service
         res = await service.alert_repo.delete(uuid.UUID(str(alert_id)))
         await info.context.db.commit()
@@ -154,7 +154,7 @@ class InventoryMutation:
     @require_permission(MichiPermission.STORES_MANAGE)
     async def toggle_source(
         self, 
-        info, 
+        info: strawberry.types.Info, 
         platform: str, 
         connected: bool, 
         store_id: Optional[strawberry.ID] = None
@@ -174,7 +174,7 @@ class InventoryMutation:
     @require_permission(MichiPermission.STORES_MANAGE)
     async def ingest_csv_data(
         self, 
-        info, 
+        info: strawberry.types.Info, 
         store_id: strawberry.ID,
         csv_content: str, 
         sku_col: str = "sku",
@@ -213,7 +213,7 @@ class InventoryMutation:
         )
     @strawberry.mutation
     @require_permission(MichiPermission.STORES_MANAGE)
-    async def analyze_csv(self, info, csv_content: str) -> CsvAnalysisType:
+    async def analyze_csv(self, info: strawberry.types.Info, csv_content: str) -> CsvAnalysisType:
         """Analyse la structure du CSV ou Excel et suggère un mapping."""
         from modules.ingestion.connectors.csv import CSVConnector
         import json
@@ -262,7 +262,7 @@ class InventoryMutation:
     @strawberry.mutation
     @require_permission(MichiPermission.STORES_MANAGE)
     @require_plan(PlanName.PRO)
-    async def update_store_credentials(self, info, input: UpdateCredentialInput) -> CredentialType:
+    async def update_store_credentials(self, info: strawberry.types.Info, input: UpdateCredentialInput) -> CredentialType:
         """Met à jour les credentials chiffrés d'un store."""
         import json
         from modules.inventory.infrastructure.repositories.credential_repository import SQLAlchemyCredentialRepository
@@ -296,7 +296,7 @@ class InventoryMutation:
 
     @strawberry.mutation
     @require_permission(MichiPermission.STORES_MANAGE)
-    async def test_store_connection(self, info, store_id: strawberry.ID) -> TestConnectionResult:
+    async def test_store_connection(self, info: strawberry.types.Info, store_id: strawberry.ID) -> TestConnectionResult:
         """Teste la connexion d'un store avec ses credentials enregistrés."""
         import time
         from modules.inventory.infrastructure.repositories.credential_repository import SQLAlchemyCredentialRepository
@@ -321,7 +321,7 @@ class InventoryMutation:
 
     @strawberry.mutation
     @require_permission(MichiPermission.STORES_MANAGE)
-    async def smart_import(self, info, info_input: SmartImportInput) -> IngestionResult:
+    async def smart_import(self, info: strawberry.types.Info, info_input: SmartImportInput) -> IngestionResult:
         """Exécute l'importation avec le mapping validé par l'utilisateur."""
         import json
         from core.exceptions import DomainValidationError
@@ -375,7 +375,7 @@ class InventoryMutation:
     @require_permission(MichiPermission.INVENTORY_EDIT)
     async def create_purchase_order(
         self, 
-        info, 
+        info: strawberry.types.Info, 
         product_id: strawberry.ID, 
         supplier_id: strawberry.ID, 
         quantity: int

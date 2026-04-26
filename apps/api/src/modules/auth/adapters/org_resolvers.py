@@ -18,10 +18,10 @@ from modules.auth.domain.permissions import PermissionCode
 @strawberry.type
 class OrgQuery:
     @strawberry.field
-    async def current_organization(self, info) -> Optional[OrganizationType]:
+    async def current_organization(self, info: strawberry.types.Info) -> Optional[OrganizationType]:
         """Récupère les détails de l'organisation active."""
         if not info.context.user_id:
-            raise UnauthenticatedException()
+            return None
         
         if not info.context.org_id:
             return None
@@ -32,7 +32,7 @@ class OrgQuery:
 
     @strawberry.field(name="organizationMembers")
     @require_permission(PermissionCode.SETTINGS_VIEW)
-    async def organization_members(self, info) -> List[OrganizationMemberType]:
+    async def organization_members(self, info: strawberry.types.Info) -> List[OrganizationMemberType]:
         """Liste les membres de l'organisation (MANAGER et au-dessus)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -47,7 +47,7 @@ class OrgQuery:
 @strawberry.type
 class OrgMutation:
     @strawberry.mutation
-    async def create_organization(self, info, name: str, plan: str = "BASIC") -> AuthPayload:
+    async def create_organization(self, info: strawberry.types.Info, name: str, plan: str = "BASIC") -> AuthPayload:
         """Crée une nouvelle organisation."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -71,7 +71,7 @@ class OrgMutation:
         )
 
     @strawberry.mutation
-    async def switch_organization(self, info, organization_id: strawberry.ID) -> AuthPayload:
+    async def switch_organization(self, info: strawberry.types.Info, organization_id: strawberry.ID) -> AuthPayload:
         """Bascule de contexte d'organisation."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -91,7 +91,7 @@ class OrgMutation:
 
     @strawberry.mutation
     @require_permission(PermissionCode.ORG_EDIT)
-    async def update_organization(self, info, input: UpdateOrganizationInput) -> Optional[OrganizationType]:
+    async def update_organization(self, info: strawberry.types.Info, input: UpdateOrganizationInput) -> Optional[OrganizationType]:
         """Met à jour les informations de l'organisation (Nom, Devise, Mutualisation)."""
         user_id = info.context.user_id
         if not user_id:
@@ -150,7 +150,7 @@ class OrgMutation:
 
     @strawberry.mutation
     @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
-    async def remove_member(self, info, user_id: strawberry.ID) -> bool:
+    async def remove_member(self, info: strawberry.types.Info, user_id: strawberry.ID) -> bool:
         """Retire un membre de l'organisation."""
         if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()
@@ -165,7 +165,7 @@ class OrgMutation:
 
     @strawberry.mutation
     @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
-    async def update_member_role(self, info, user_id: strawberry.ID, role: str) -> bool:
+    async def update_member_role(self, info: strawberry.types.Info, user_id: strawberry.ID, role: str) -> bool:
         """Change le rôle d'un collaborateur."""
         if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()
@@ -182,7 +182,7 @@ class OrgMutation:
 
     @strawberry.mutation
     @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
-    async def update_member_permissions(self, info, user_id: strawberry.ID, permissions: str) -> Optional[OrganizationMemberType]:
+    async def update_member_permissions(self, info: strawberry.types.Info, user_id: strawberry.ID, permissions: str) -> Optional[OrganizationMemberType]:
         """Met à jour les permissions granulaires d'un membre (permissions passées en string JSON)."""
         if not info.context.user_id or not info.context.org_id:
             raise UnauthenticatedException()

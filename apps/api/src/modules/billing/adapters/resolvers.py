@@ -9,7 +9,7 @@ from .types import InvoiceType
 class BillingQuery:
     @strawberry.field
     @require_permission(MichiPermission.BILLING_VIEW)
-    async def invoices(self, info) -> List[InvoiceType]:
+    async def invoices(self, info: strawberry.types.Info) -> List[InvoiceType]:
         """Récupère l'historique des factures de l'organisation."""
         billing_service = info.context.services.billing_service
         org_id = str(info.context.org_id)
@@ -33,7 +33,7 @@ class BillingQuery:
 class BillingMutation:
     @strawberry.mutation
     @require_permission(MichiPermission.BILLING_MANAGE)
-    async def create_checkout_session(self, info, plan: str, success_url: str, cancel_url: str) -> str:
+    async def create_checkout_session(self, info: strawberry.types.Info, plan: str, success_url: str, cancel_url: str) -> str:
         billing_service = info.context.services.billing_service
         org_id = str(info.context.org_id)
         
@@ -53,7 +53,7 @@ class BillingMutation:
 
     @strawberry.mutation
     @require_permission(MichiPermission.BILLING_MANAGE)
-    async def create_billing_portal_session(self, info, return_url: str) -> str:
+    async def create_billing_portal_session(self, info: strawberry.types.Info, return_url: str) -> str:
         billing_service = info.context.services.billing_service
         org_id = str(info.context.org_id)
         

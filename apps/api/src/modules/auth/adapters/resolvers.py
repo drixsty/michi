@@ -1,3 +1,4 @@
+from typing import Optional
 from core.database.models import Organization, User, OrganizationMember
 """
 Auth Resolvers — Adapters Layer
@@ -22,10 +23,10 @@ from modules.auth.domain.permissions import PermissionCode
 @strawberry.type
 class AuthQuery:
     @strawberry.field
-    async def me(self, info) -> UserType:
+    async def me(self, info: strawberry.types.Info) -> Optional[UserType]:
         """Récupère l'utilisateur connecté."""
         if not info.context.user_id:
-            raise UnauthenticatedException()
+            return None
 
         service = info.context.services.auth_service
         # Force eager load of organizations and their nested organization models
@@ -51,7 +52,7 @@ class AuthQuery:
 @strawberry.type
 class AuthMutation:
     @strawberry.mutation
-    async def login(self, info, input: LoginInput) -> AuthPayload:
+    async def login(self, info: strawberry.types.Info, input: LoginInput) -> AuthPayload:
         """Authentification par email/password."""
         service = info.context.services.auth_service
         result = await service.login(email=input.email, password=input.password)
@@ -65,7 +66,7 @@ class AuthMutation:
         )
 
     @strawberry.mutation
-    async def register(self, info, input: RegisterInput) -> AuthPayload:
+    async def register(self, info: strawberry.types.Info, input: RegisterInput) -> AuthPayload:
         """Inscription manuelle. Gère le cas invitation si invitation_code fourni."""
         service = info.context.services.auth_service
         result = await service.register(
@@ -98,7 +99,7 @@ class AuthMutation:
         )
 
     @strawberry.mutation
-    async def google_login(self, info, input: GoogleLoginInput) -> AuthPayload:
+    async def google_login(self, info: strawberry.types.Info, input: GoogleLoginInput) -> AuthPayload:
         """Authentification via Google (SaaS)."""
         # 1. Vérification du jeton ID Google auprès de Google
         async with httpx.AsyncClient() as client:
@@ -160,7 +161,7 @@ class AuthMutation:
         )
 
     @strawberry.mutation
-    async def verify_email(self, info, token: str) -> bool:
+    async def verify_email(self, info: strawberry.types.Info, token: str) -> bool:
         """Valide le jeton de vérification de l'e-mail."""
         service = info.context.services.auth_service
         
@@ -177,7 +178,7 @@ class AuthMutation:
 
     @strawberry.mutation
     @rate_limit(max_calls=3, window_seconds=600)  # 3 renvois max / 10 min
-    async def resend_verification_email(self, info, email: str) -> bool:
+    async def resend_verification_email(self, info: strawberry.types.Info, email: str) -> bool:
         """Rénvoie l'e-mail de vérification."""
         service = info.context.services.auth_service
         success = await service.resend_verification_email(email)
@@ -187,7 +188,7 @@ class AuthMutation:
 
     @strawberry.mutation
     @rate_limit(max_calls=10, window_seconds=900)  # 10 tentatives / 15 min
-    async def change_password(self, info, input: ChangePasswordInput) -> bool:
+    async def change_password(self, info: strawberry.types.Info, input: ChangePasswordInput) -> bool:
         """Changement de mot de passe."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -202,7 +203,7 @@ class AuthMutation:
         return res
 
     @strawberry.mutation
-    async def update_profile(self, info, input: UpdateProfileInput) -> UserType:
+    async def update_profile(self, info: strawberry.types.Info, input: UpdateProfileInput) -> UserType:
         """Mise à jour du profil utilisateur."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -230,7 +231,7 @@ class AuthMutation:
 
     @strawberry.mutation
     @require_permission(PermissionCode.ORG_MANAGE_MEMBERS)
-    async def toggle_user_status(self, info, user_id: strawberry.ID, active: bool) -> bool:
+    async def toggle_user_status(self, info: strawberry.types.Info, user_id: strawberry.ID, active: bool) -> bool:
         """Active ou désactive un compte utilisateur."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -245,13 +246,13 @@ class AuthMutation:
 
     @strawberry.mutation
     @rate_limit(max_calls=3, window_seconds=3600)  # 3 demandes / heure (anti-spam)
-    async def forgot_password(self, info, input: RequestPasswordResetInput) -> bool:
+    async def forgot_password(self, info: strawberry.types.Info, input: RequestPasswordResetInput) -> bool:
         """Demande de réinitialisation de mot de passe."""
         service = info.context.services.auth_service
         return await service.request_password_reset(input.email)
 
     @strawberry.mutation
-    async def reset_password(self, info, input: ResetPasswordInput) -> bool:
+    async def reset_password(self, info: strawberry.types.Info, input: ResetPasswordInput) -> bool:
         """Réinitialisation effective du mot de passe via token."""
         service = info.context.services.auth_service
         return await service.reset_password(input.token, input.new_password)
@@ -259,7 +260,7 @@ class AuthMutation:
     # --- 2FA Mutations ---
 
     @strawberry.mutation
-    async def setup_2fa(self, info) -> TwoFactorSetupType:
+    async def setup_2fa(self, info: strawberry.types.Info) -> TwoFactorSetupType:
         """Initialise la configuration du 2FA."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -273,7 +274,7 @@ class AuthMutation:
         )
 
     @strawberry.mutation
-    async def confirm_2fa(self, info, secret: str, code: str) -> TwoFactorConfirmResult:
+    async def confirm_2fa(self, info: strawberry.types.Info, secret: str, code: str) -> TwoFactorConfirmResult:
         """Valide et active le 2FA."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -288,7 +289,7 @@ class AuthMutation:
         )
 
     @strawberry.mutation
-    async def disable_2fa(self, info) -> bool:
+    async def disable_2fa(self, info: strawberry.types.Info) -> bool:
         """Désactive le 2FA."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -298,7 +299,7 @@ class AuthMutation:
         return await service.disable_2fa(str(info.context.user_id))
 
     @strawberry.mutation
-    async def verify_2fa(self, info, mfa_token: str, code: str) -> AuthPayload:
+    async def verify_2fa(self, info: strawberry.types.Info, mfa_token: str, code: str) -> AuthPayload:
         """Valide le code 2FA (TOTP ou Recovery Code) pour finaliser le login."""
         service = info.context.services.auth_service
         
@@ -350,7 +351,7 @@ class AuthMutation:
 
     @strawberry.mutation
     @require_permission(PermissionCode.ORG_EXPORT)
-    async def export_user_data(self, info) -> UserDataExportType:
+    async def export_user_data(self, info: strawberry.types.Info) -> UserDataExportType:
         """Exporte l'intégralité des données utilisateur (RGPD)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
@@ -362,7 +363,7 @@ class AuthMutation:
 
     @strawberry.mutation
     @require_permission(PermissionCode.ORG_DELETE)
-    async def delete_account(self, info) -> bool:
+    async def delete_account(self, info: strawberry.types.Info) -> bool:
         """Supprime définitivement le compte et les données (RGPD - Réservé aux Admins pour sécurité)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
