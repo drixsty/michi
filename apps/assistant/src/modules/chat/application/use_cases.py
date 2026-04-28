@@ -29,6 +29,10 @@ class ProcessUserMessageUseCase:
         
         session.add_message(MessageRole.USER, content)
         
+        # Initialize title if not present
+        if not session.title:
+            session.title = content[:60] + ("..." if len(content) > 60 else "")
+        
         # 2. Boucle de raisonnement (Reasoning Loop)
         # On permet jusqu'à 3 tours d'outils pour éviter les boucles infinies
         for _ in range(3):

@@ -61,3 +61,15 @@ class SQLAlchemySupplierRepository(ISupplierRepository):
         
         await self.session.flush()
         return self._to_entity(model)
+
+    async def search(self, query: str, store_ids: List[UUID], limit: int = 5) -> List[SupplierEntity]:
+        stmt = (
+            select(Supplier)
+            .where(
+                Supplier.store_id.in_(store_ids),
+                Supplier.name.ilike(f"%{query}%")
+            )
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return [self._to_entity(m) for m in result.scalars().all()]

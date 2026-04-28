@@ -20,6 +20,7 @@ class ChatSession:
     user_id: str
     org_id: str
     messages: List[ChatMessage] = field(default_factory=list)
+    title: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 

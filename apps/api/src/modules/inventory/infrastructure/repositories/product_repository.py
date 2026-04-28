@@ -122,3 +122,15 @@ class SQLAlchemyProductRepository(IProductRepository):
         stmt = delete(Product).where(Product.store_id == store_id)
         await self.session.execute(stmt)
         await self.session.flush()
+
+    async def search(self, query: str, store_ids: List[UUID], limit: int = 5) -> List[ProductEntity]:
+        stmt = (
+            select(Product)
+            .where(
+                Product.store_id.in_(store_ids),
+                (Product.title.ilike(f"%{query}%")) | (Product.sku.ilike(f"%{query}%"))
+            )
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return [self._to_entity(m) for m in result.scalars().all()]

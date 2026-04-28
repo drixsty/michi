@@ -8,8 +8,8 @@ from loguru import logger
 import uuid
 from uuid import UUID
 
-from modules.inventory.domain.entities import ProductEntity, SalesLogEntity, PlatformSource, PurchaseOrderEntity
-from modules.inventory.domain.ports import IProductRepository, ISalesLogRepository, IStoreRepository, IPurchaseOrderRepository
+from modules.inventory.domain.entities import ProductEntity, SalesLogEntity, PlatformSource, PurchaseOrderEntity, SupplierEntity
+from modules.inventory.domain.ports import IProductRepository, ISalesLogRepository, IStoreRepository, IPurchaseOrderRepository, ISupplierRepository
 from core.exceptions import MichiException, ErrorCode
 
 class InventoryService:
@@ -22,12 +22,14 @@ class InventoryService:
         product_repo: IProductRepository, 
         sales_log_repo: ISalesLogRepository,
         store_repo: IStoreRepository,
-        po_repo: IPurchaseOrderRepository
+        po_repo: IPurchaseOrderRepository,
+        supplier_repo: ISupplierRepository
     ):
         self.product_repo = product_repo
         self.sales_log_repo = sales_log_repo
         self.store_repo = store_repo
         self.po_repo = po_repo
+        self.supplier_repo = supplier_repo
 
     async def get_product(self, product_id: UUID) -> ProductEntity:
         """Récupère un produit ou lève une NotFoundError."""
@@ -119,13 +121,17 @@ class InventoryService:
             "sales_logs_count": len(new_sales_logs)
         }
 
-    async def get_products(self, shop_ids: List[str], product_id: str = None) -> List[ProductEntity]:
+    async def get_products(self, shop_ids: List[str], product_id: str = None, search: str = None) -> List[ProductEntity]:
         """
         Lecture unifiée (Agnostique).
         """
         s_uuids = [UUID(str(sid)) for sid in shop_ids]
         
-        # Détecter si product_id est un UUID ou un SKU
+        # 1. Si recherche par texte (Pour mentions @ etc.)
+        if search:
+            return await self.product_repo.search(search, s_uuids)
+
+        # 2. Détecter si product_id est un UUID ou un SKU
         p_uuid = None
         p_sku = None
         if product_id:
@@ -148,6 +154,17 @@ class InventoryService:
         else:
             items = await self.product_repo.list_by_store(s_uuids)
             return items
+
+    async def get_suppliers(self, shop_ids: List[str], search: str = None) -> List[SupplierEntity]:
+        """Liste les fournisseurs avec filtre de recherche optionnel."""
+        s_uuids = [UUID(str(sid)) for sid in shop_ids]
+        if search:
+            return await self.supplier_repo.search(search, s_uuids)
+        
+        results = []
+        for sid in s_uuids:
+            results.extend(await self.supplier_repo.list_by_store(sid))
+        return results
 
     async def update_product_settings(
         self, 

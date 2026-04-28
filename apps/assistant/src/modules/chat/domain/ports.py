@@ -35,3 +35,9 @@ class IChatRepository(Protocol):
 
     async def delete_session(self, session_id: str) -> bool:
         ...
+
+    async def rename_session(self, session_id: str, title: str) -> bool:
+        ...
+
+    async def truncate_session(self, session_id: str, message_index: int) -> bool:
+        ...

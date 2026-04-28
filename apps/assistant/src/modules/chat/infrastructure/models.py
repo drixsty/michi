@@ -11,6 +11,7 @@ class ChatSessionModel(Base):
     org_id = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    title = Column(String, nullable=True)
     metadata_json = Column(JSON, default={})
 
     messages = relationship("ChatMessageModel", back_populates="session", cascade="all, delete-orphan")

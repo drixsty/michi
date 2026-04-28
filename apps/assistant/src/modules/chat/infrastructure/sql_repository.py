@@ -22,15 +22,16 @@ class SQLAlchemyChatRepository(IChatRepository):
                 id=session.session_id,
                 user_id=session.user_id,
                 org_id=session.org_id,
+                title=session.title,
                 metadata_json=session.metadata
             )
             self.db.add(db_session)
+        else:
+            db_session.title = session.title
+            db_session.metadata_json = session.metadata
+            db_session.updated_at = session.updated_at
 
-        # 2. Synchroniser les messages (Approche simple : on ajoute les nouveaux)
-        # On compare par timestamp ou on vide et on recrée pour le MVP
-        # Ici on va juste ajouter les messages qui n'ont pas d'ID (si on en avait)
-        # Mais le domaine ne porte pas les IDs des messages.
-        # Solution robuste : on vide les messages et on les recrée tous pour préserver l'ordre
+        # 2. Synchroniser les messages
         from sqlalchemy import delete
         await self.db.execute(delete(ChatMessageModel).where(ChatMessageModel.session_id == session.session_id))
         
@@ -67,16 +68,17 @@ class SQLAlchemyChatRepository(IChatRepository):
             user_id=db_session.user_id,
             org_id=db_session.org_id,
             messages=messages,
+            title=db_session.title,
             metadata=db_session.metadata_json or {},
             updated_at=db_session.updated_at
         )
 
     async def list_sessions(self, user_id: str, org_id: str) -> List[ChatSession]:
-        # On charge les sessions avec leurs messages pour extraire le dernier
+        # Optimization: We don't load messages anymore! We use the cached 'title'
         stmt = select(ChatSessionModel).where(
             ChatSessionModel.user_id == user_id,
             ChatSessionModel.org_id == org_id
-        ).options(selectinload(ChatSessionModel.messages)).order_by(ChatSessionModel.updated_at.desc())
+        ).order_by(ChatSessionModel.updated_at.desc())
         
         result = await self.db.execute(stmt)
         db_sessions = result.scalars().all()
@@ -86,13 +88,8 @@ class SQLAlchemyChatRepository(IChatRepository):
                 session_id=s.id,
                 user_id=s.user_id,
                 org_id=s.org_id,
-                messages=[
-                    ChatMessage(
-                        role=MessageRole(m.role),
-                        content=m.content,
-                        timestamp=m.timestamp
-                    ) for m in s.messages
-                ],
+                messages=[], # Messages not needed for listing
+                title=s.title,
                 metadata=s.metadata_json or {},
                 updated_at=s.updated_at
             ) for s in db_sessions
@@ -125,3 +122,19 @@ class SQLAlchemyChatRepository(IChatRepository):
             await self.db.commit()
             return True
         return False
+
+    async def rename_session(self, session_id: str, title: str) -> bool:
+        """Met à jour le titre d'une session"""
+        from sqlalchemy import update
+        try:
+            await self.db.execute(
+                update(ChatSessionModel)
+                .where(ChatSessionModel.id == session_id)
+                .values(title=title)
+            )
+            await self.db.commit()
+            return True
+        except Exception as e:
+            print(f"Error renaming session: {e}")
+            await self.db.rollback()
+            return False

@@ -56,7 +56,8 @@ class InventoryQuery:
         self, 
         info: strawberry.types.Info, 
         store_id: Optional[strawberry.ID] = None, 
-        id: Optional[strawberry.ID] = None
+        id: Optional[strawberry.ID] = None,
+        title: Optional[str] = None
     ) -> List[ProductType]:
         service = info.context.services.inventory_service
         
@@ -70,11 +71,32 @@ class InventoryQuery:
             shop_ids = [str(s.id) for s in stores]
 
         from loguru import logger
-        logger.debug(f"[Inventory] Querying products store_id={store_id}, id={id}, org_id={info.context.org_id}")
+        logger.debug(f"[Inventory] Querying products store_id={store_id}, id={id}, title={title}, org_id={info.context.org_id}")
         
-        items = await service.get_products(shop_ids, product_id=str(id) if id else None)
+        items = await service.get_products(shop_ids, product_id=str(id) if id else None, search=title)
         logger.debug(f"[Inventory] Found {len(items)} products")
         return [ProductType.from_db(p) for p in items]
+
+    @strawberry.field
+    @require_permission(MichiPermission.INVENTORY_VIEW)
+    async def suppliers(
+        self, 
+        info: strawberry.types.Info, 
+        store_id: Optional[strawberry.ID] = None, 
+        name: Optional[str] = None
+    ) -> List[SupplierType]:
+        service = info.context.services.inventory_service
+        
+        if store_id:
+            shop_ids = [str(store_id)]
+        else:
+            org_id = info.context.org_id
+            if not org_id: return []
+            stores = await service.store_repo.list_by_organization(uuid.UUID(str(org_id)))
+            shop_ids = [str(s.id) for s in stores]
+            
+        items = await service.get_suppliers(shop_ids, search=name)
+        return [SupplierType.from_db(s) for s in items]
 
     @strawberry.field
     @require_permission(MichiPermission.INVENTORY_VIEW)

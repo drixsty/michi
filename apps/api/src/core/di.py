@@ -131,7 +131,8 @@ def build_services(db: AsyncSession) -> ServiceContainer:
         product_repo=product_repo,
         sales_log_repo=sales_log_repo,
         store_repo=store_repo,
-        po_repo=po_repo
+        po_repo=po_repo,
+        supplier_repo=supplier_repo
     )
     
     omnichannel_service = OmnichannelService(
