@@ -8,7 +8,7 @@ class MichiApiAdapter(IMichiApiPort):
     def __init__(self):
         self.url = settings.MICHI_API_URL
 
-    async def get_inventory_status(self, org_id: str, jwt: str) -> Dict[str, Any]:
+    async def get_inventory_status(self, org_id: str, jwt: str, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Récupère l'inventaire omnichannel via GraphQL"""
         query = """
         query GetOmnichannelInventory {
@@ -40,11 +40,11 @@ class MichiApiAdapter(IMichiApiPort):
             logger.error(f"[MichiApiAdapter] Connection error: {str(e)}")
             return {"error": str(e)}
 
-    async def get_forecasting_alerts(self, org_id: str, jwt: str) -> List[Dict[str, Any]]:
+    async def get_forecasting_alerts(self, org_id: str, jwt: str, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Récupère les alertes non lues"""
         query = """
-        query GetUnreadAlerts {
-            unreadAlerts {
+        query GetUnreadAlerts($storeId: ID) {
+            unreadAlerts(storeId: $storeId) {
                 id
                 sku
                 type
@@ -53,11 +53,15 @@ class MichiApiAdapter(IMichiApiPort):
             }
         }
         """
+        
+        variables = {}
+        if filters and "store_id" in filters:
+            variables["storeId"] = filters["store_id"]
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     self.url,
-                    json={"query": query},
+                    json={"query": query, "variables": variables},
                     headers={"Authorization": f"Bearer {jwt}", "michi-org-id": org_id}
                 )
                 response.raise_for_status()

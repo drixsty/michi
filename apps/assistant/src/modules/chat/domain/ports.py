@@ -11,15 +11,23 @@ class ILLMProvider(Protocol):
     ) -> Any: # Retourne soit str, soit un objet ToolCall
         ...
 
+    async def stream_response(
+        self, 
+        messages: List[ChatMessage], 
+        tools: Optional[List[Dict[str, Any]]] = None,
+        tool_choice: str = "auto"
+    ) -> Any: # AsyncGenerator yielding either str chunks or tool calls
+        ...
+
     async def classify_intent(self, user_input: str) -> str:
         ...
 
 class IMichiApiPort(Protocol):
     """Port de sortie pour interagir avec l'API Michi principale"""
-    async def get_inventory_status(self, org_id: str, jwt: str) -> Dict[str, Any]:
+    async def get_inventory_status(self, org_id: str, jwt: str, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         ...
 
-    async def get_forecasting_alerts(self, org_id: str, jwt: str) -> List[Dict[str, Any]]:
+    async def get_forecasting_alerts(self, org_id: str, jwt: str, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         ...
 
 class IChatRepository(Protocol):
@@ -40,4 +48,7 @@ class IChatRepository(Protocol):
         ...
 
     async def truncate_session(self, session_id: str, message_index: int) -> bool:
+        ...
+
+    async def rate_message(self, message_id: str, rating: str, feedback_text: Optional[str] = None) -> bool:
         ...

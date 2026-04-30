@@ -1,5 +1,6 @@
 from modules.chat.application.use_cases import ProcessUserMessageUseCase
 from modules.chat.infrastructure.openai_adapter import OpenAIProvider
+from modules.chat.infrastructure.anthropic_adapter import AnthropicProvider
 from modules.chat.infrastructure.michi_api_adapter import MichiApiAdapter
 from modules.chat.infrastructure.sql_repository import SQLAlchemyChatRepository
 from modules.chat.infrastructure.adapters import MockLLMProvider, MockMichiApiAdapter
@@ -9,8 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 class AssistantContainer:
     """Conteneur de dépendances pour l'Assistant (Pattern DI)"""
     def __init__(self):
-        # Choix des adaptateurs selon l'environnement
-        if settings.OPENAI_API_KEY:
+        # Choix des adaptateurs selon l'environnement et priorité
+        if settings.ANTHROPIC_API_KEY:
+            self.llm_provider = AnthropicProvider()
+        elif settings.OPENAI_API_KEY:
             self.llm_provider = OpenAIProvider()
         else:
             self.llm_provider = MockLLMProvider()

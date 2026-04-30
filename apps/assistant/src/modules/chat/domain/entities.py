@@ -12,7 +12,10 @@ class MessageRole(Enum):
 class ChatMessage:
     role: MessageRole
     content: str
-    timestamp: datetime = field(default_factory=datetime.now)
+    id: Optional[str] = None # Added for easier identification in DB/GraphQL
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    rating: Optional[str] = None # UP, DOWN
+    feedback_text: Optional[str] = None
 
 @dataclass
 class ChatSession:

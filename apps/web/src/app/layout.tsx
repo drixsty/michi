@@ -8,7 +8,7 @@ import { ApolloWrapper } from '@/components/providers/ApolloWrapper';
 import { StoreProvider } from '@/context/StoreContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './globals.css';
-import { AssistantMascot } from '@/components/assistant/AssistantMascot';
+import { AssistantMascot } from '@michi/assistant-ui';
 
 const inter = Inter({ subsets: ['latin'] });
 

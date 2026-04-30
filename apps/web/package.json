@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@apollo/client": "3.9.0",
+    "@michi/assistant-ui": "*",
     "@michi/types": "*",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-dialog": "^1.0.5",
@@ -39,7 +40,8 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

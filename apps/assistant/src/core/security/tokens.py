@@ -12,4 +12,6 @@ def decode_access_token(token: str) -> Dict[str, str]:
         )
         return payload
     except JWTError as e:
+        from loguru import logger
+        logger.error(f"[JWT] Decoding failed: {e}")
         raise e

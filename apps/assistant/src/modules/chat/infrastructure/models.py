@@ -24,5 +24,7 @@ class ChatMessageModel(Base):
     role = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
+    rating = Column(String, nullable=True) # UP, DOWN
+    feedback_text = Column(Text, nullable=True)
 
     session = relationship("ChatSessionModel", back_populates="messages")

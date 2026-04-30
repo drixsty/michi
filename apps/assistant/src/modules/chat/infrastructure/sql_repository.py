@@ -27,21 +27,28 @@ class SQLAlchemyChatRepository(IChatRepository):
             )
             self.db.add(db_session)
         else:
+            # Update owner if it was anonymous (session recovery)
+            if db_session.user_id == "anonymous" and session.user_id != "anonymous":
+                db_session.user_id = session.user_id
+                db_session.org_id = session.org_id
+            
             db_session.title = session.title
             db_session.metadata_json = session.metadata
             db_session.updated_at = session.updated_at
 
-        # 2. Synchroniser les messages
+        # 2. Synchroniser les messages (Version simplifiée : on recrée tout mais on garde les IDs si fournis)
         from sqlalchemy import delete
         await self.db.execute(delete(ChatMessageModel).where(ChatMessageModel.session_id == session.session_id))
         
         for msg in session.messages:
             db_msg = ChatMessageModel(
-                id=str(uuid.uuid4()),
+                id=msg.id or str(uuid.uuid4()),
                 session_id=session.session_id,
                 role=msg.role.value,
                 content=msg.content,
-                timestamp=msg.timestamp
+                timestamp=msg.timestamp,
+                rating=msg.rating,
+                feedback_text=msg.feedback_text
             )
             self.db.add(db_msg)
         
@@ -57,9 +64,12 @@ class SQLAlchemyChatRepository(IChatRepository):
 
         messages = [
             ChatMessage(
+                id=msg.id,
                 role=MessageRole(msg.role),
                 content=msg.content,
-                timestamp=msg.timestamp
+                timestamp=msg.timestamp,
+                rating=msg.rating,
+                feedback_text=msg.feedback_text
             ) for msg in sorted(db_session.messages, key=lambda x: x.timestamp)
         ]
 
@@ -73,7 +83,24 @@ class SQLAlchemyChatRepository(IChatRepository):
             updated_at=db_session.updated_at
         )
 
+    async def rate_message(self, message_id: str, rating: str, feedback_text: Optional[str] = None) -> bool:
+        from sqlalchemy import update
+        try:
+            await self.db.execute(
+                update(ChatMessageModel)
+                .where(ChatMessageModel.id == message_id)
+                .values(rating=rating, feedback_text=feedback_text)
+            )
+            await self.db.commit()
+            return True
+        except Exception as e:
+            print(f"Error rating message: {e}")
+            await self.db.rollback()
+            return False
+
     async def list_sessions(self, user_id: str, org_id: str) -> List[ChatSession]:
+        from loguru import logger
+        logger.debug(f"[SQLAlchemyChatRepository] Listing sessions for user={user_id}, org={org_id}")
         # Optimization: We don't load messages anymore! We use the cached 'title'
         stmt = select(ChatSessionModel).where(
             ChatSessionModel.user_id == user_id,

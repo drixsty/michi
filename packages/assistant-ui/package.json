@@ -5,8 +5,19 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "peerDependencies": {
-    "react": ">=18",
     "framer-motion": ">=10",
-    "lucide-react": "*"
+    "lucide-react": "*",
+    "react": ">=18",
+    "react-markdown": "*",
+    "recharts": "*",
+    "remark-gfm": "*",
+    "zod": "*",
+    "zustand": "*"
+  },
+  "dependencies": {
+    "graphql-ws": "^6.0.8"
+  },
+  "devDependencies": {
+    "@types/styled-jsx": "^2.2.9"
   }
 }

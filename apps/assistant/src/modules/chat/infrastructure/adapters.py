@@ -9,6 +9,13 @@ class MockLLMProvider(ILLMProvider):
             return "D'après mes analyses, votre stock est sain, mais le SKU-123 arrive à son point de commande."
         return "Je suis Michi Assistant. Comment puis-je vous aider dans votre gestion de stock aujourd'hui ?"
 
+    async def stream_response(self, messages: List[ChatMessage], tools=None) -> Any:
+        import asyncio
+        response = await self.generate_response(messages, tools)
+        for word in response.split(" "):
+            yield word + " "
+            await asyncio.sleep(0.1)
+
     async def classify_intent(self, user_input: str) -> str:
         if "stock" in user_input.lower() or "inventaire" in user_input.lower():
             return "QUERY_INVENTORY"

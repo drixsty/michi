@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request, Depends, WebSocket
+from typing import Optional, Any
 from fastapi.middleware.cors import CORSMiddleware
 import strawberry
 from strawberry.fastapi import GraphQLRouter
@@ -42,13 +43,18 @@ async def get_db_session():
     async with AsyncSessionLocal() as session:
         yield session
 
+from starlette.requests import Request
+from starlette.websockets import WebSocket
+
 async def get_context(
-    request: Request,
-    db = Depends(get_db_session)
+    request: Request = None,
+    websocket: WebSocket = None,
+    db: Any = Depends(get_db_session)
 ):
     """Context GraphQL injectant la session DB gérée par FastAPI"""
     return {
         "request": request,
+        "websocket": websocket,
         "db": db
     }
 

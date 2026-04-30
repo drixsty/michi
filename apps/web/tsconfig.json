@@ -22,7 +22,8 @@
       "@/*": ["./src/*"],
       "@michi/types": ["../../packages/types/src/index.ts"],
       "@michi/ui": ["../../packages/ui/src/index.ts"]
-    }
+    },
+    "types": ["styled-jsx"]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]

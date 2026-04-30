@@ -20,7 +20,39 @@ const Skeleton = ({ className }: { className?: string }) => (
   <div className={`animate-pulse bg-slate-100 rounded-lg ${className}`} />
 );
 
-const TypedText = ({ text, onComplete }: { text: string, onComplete?: () => void }) => {
+const MarkdownComponents = {
+  a({ children, href, ...props }: any) {
+    const isInternal = href?.startsWith('/dashboard/') || href?.startsWith('/product/') || href?.startsWith('/inventory/');
+    if (isInternal) {
+      return (
+        <Link 
+          href={href} 
+          className="assistant-mention-badge group"
+        >
+          <span className="assistant-mention-icon">
+            <Tag size={10} />
+          </span>
+          <span className="assistant-mention-label">{children}</span>
+        </Link>
+      );
+    }
+    return <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline" {...props}>{children}</a>;
+  },
+  code({ inline, className, children, ...props }: any) {
+    const match = /language-chart/.exec(className || '');
+    if (!inline && match) {
+      try {
+        const config = JSON.parse(String(children));
+        return <AssistantChart config={config} />;
+      } catch (e) {
+        return <code className={className} {...props}>{children}</code>;
+      }
+    }
+    return <code className={className} {...props}>{children}</code>;
+  }
+};
+
+const TypedText = ({ text, onComplete, onUpdate }: { text: string, onComplete?: () => void, onUpdate?: () => void }) => {
   const [displayedText, setDisplayedText] = useState("");
   const [index, setIndex] = useState(0);
 
@@ -29,170 +61,31 @@ const TypedText = ({ text, onComplete }: { text: string, onComplete?: () => void
       const timeout = setTimeout(() => {
         setDisplayedText(prev => prev + text[index]);
         setIndex(prev => prev + 1);
+        onUpdate?.();
       }, 15);
       return () => clearTimeout(timeout);
     } else {
       const timer = setTimeout(() => {
         onComplete?.();
-      }, 300); // Small buffer to ensure user sees the end
+      }, 300);
       return () => clearTimeout(timer);
     }
-  }, [index, text, onComplete]);
+  }, [index, text, onComplete, onUpdate]);
 
-  return <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedText}</ReactMarkdown>;
+  return (
+    <ReactMarkdown 
+      remarkPlugins={[remarkGfm]} 
+      components={MarkdownComponents}
+    >
+      {displayedText}
+    </ReactMarkdown>
+  );
 };
 
-// --- Main Hook ---
-const useAssistant = (endpoint: string = "http://localhost:8001/graphql") => {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [sessions, setSessions] = useState<any[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isNewChatMode, setIsNewChatMode] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-
-  // Load sessionId from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('michi_assistant_session_id');
-      if (saved) setSessionId(saved);
-    }
-  }, []);
-
-  const fetchSessions = useCallback(async () => {
-    const query = `query { listSessions { sessionId updatedAt title lastMessage } }`;
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ query })
-      });
-      const resJson = await response.json();
-      if (resJson.data?.listSessions) setSessions(resJson.data.listSessions);
-    } catch (e) { console.error("Sessions fetch error", e); }
-  }, [endpoint]);
-
-  const loadSession = useCallback(async (sid: string) => {
-    setIsLoading(true);
-    const query = `query { getSession(sessionId: "${sid}") { messages { role content timestamp } } }`;
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ query })
-      });
-      const resJson = await response.json();
-      if (resJson.errors) {
-        console.error("GraphQL Errors in loadSession:", resJson.errors);
-      }
-
-      if (resJson.data?.getSession) {
-        setMessages(resJson.data.getSession.messages || []);
-      } else {
-        console.warn("Session not found or empty response for sid:", sid);
-        // We don't clear immediately to allow retry or debugging
-      }
-    } catch (e) { 
-      console.error("Network or parsing error in loadSession", e);
-      setMessages([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [endpoint]);
-
-  const deleteSession = async (sid: string) => {
-    const query = `mutation { deleteSession(sessionId: "${sid}") }`;
-    try {
-      setSessions(prev => prev.filter(s => s.sessionId !== sid));
-      await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ query })
-      });
-      fetchSessions();
-      if (sessionId === sid) {
-        setSessionId(null);
-        localStorage.removeItem('michi_assistant_session_id');
-        setMessages([]);
-      }
-    } catch (e) { console.error("Delete error", e); fetchSessions(); }
-  };
-
-  const renameSession = async (sid: string, newTitle: string) => {
-    if (!newTitle.trim()) return;
-    const query = `mutation { updateSessionTitle(sessionId: "${sid}", title: "${newTitle}") }`;
-    try {
-      setSessions((prev: any[]) => prev.map((s: any) => s.sessionId === sid ? { ...s, title: newTitle } : s));
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ query })
-      });
-      const resJson = await response.json();
-      console.log("Rename response:", resJson);
-      if (resJson.errors) throw new Error("Rename error: " + JSON.stringify(resJson.errors));
-      return true;
-    } catch (e) { 
-      console.error("Rename failed", e);
-      fetchSessions();
-      return false;
-    }
-  };
-
-  const sendMessage = useCallback(async (content: string, files: File[] = []) => {
-    setIsLoading(true);
-    const userMsg = { 
-      id: `u-${Date.now()}`, 
-      role: 'user', 
-      content, 
-      files: files.map(f => ({ name: f.name, size: f.size })),
-      timestamp: new Date().toISOString() 
-    };
-    setMessages(prev => [...prev, userMsg]);
-
-    // Local Mock for Demo Chart
-    if (content.includes("démo de graphique")) {
-      setTimeout(() => {
-        const reply = "Bien sûr ! Voici une analyse prévisionnelle de vos stocks pour les 6 prochains mois :\n\n```chart\n{\n  \"type\": \"line\",\n  \"title\": \"Prévisions de Stock - Produit Alpha\",\n  \"data\": [\n    {\"name\": \"Jan\", \"value\": 400},\n    {\"name\": \"Fév\", \"value\": 350},\n    {\"name\": \"Mar\", \"value\": 500},\n    {\"name\": \"Avr\", \"value\": 280},\n    {\"name\": \"Mai\", \"value\": 590},\n    {\"name\": \"Juin\", \"value\": 420}\n  ]\n}\n```\n\nOn observe une forte remontée prévue en Mai suite au réapprovisionnement programmé.";
-        setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: reply }]);
-        setIsLoading(false);
-      }, 1000);
-      return;
-    }
-
-    const sessionIdPart = sessionId ? `"${sessionId}"` : "null";
-    const query = `mutation { sendMessage(content: "${content}", sessionId: ${sessionIdPart}) { sessionId reply } }`;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ query })
-      });
-      const resJson = await response.json();
-      if (resJson.data?.sendMessage) {
-        const result = resJson.data.sendMessage;
-        setMessages(prev => [...prev, { id: `a-${Date.now()}`, role: 'assistant', content: result.reply, isNew: true }]);
-        if (!sessionId) {
-          setSessionId(result.sessionId);
-          localStorage.setItem('michi_assistant_session_id', result.sessionId);
-          fetchSessions();
-        }
-      }
-    } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Erreur de connexion au serveur." }]);
-    } finally { setIsLoading(false); }
-  }, [endpoint, sessionId, fetchSessions]);
-
-  return { 
-    messages, sendMessage, sessions, setSessions, fetchSessions, loadSession, deleteSession, renameSession,
-    isOpen, setIsOpen, isLoading, sessionId, setSessionId, setMessages,
-    isNewChatMode, setIsNewChatMode,
-    suggestedActions: messages.length > 0 && messages[messages.length - 1].role === 'assistant' 
-      ? ["Optimiser mon stock", "Voir les alertes", "Générer un rapport"] 
-      : []
-  };
-};
+import { useAssistantState } from '../application/useAssistantState';
+import { useAssistantTranslation } from '../i18n/useAssistantTranslation';
+import { AssistantChart } from './components/AssistantChart';
+import { env } from '../config/env';
 
 const SUGGESTIONS = [
   { icon: '📊', label: "Analyse de stock", prompt: "Analyse l'état de mon stock actuel." },
@@ -203,12 +96,31 @@ const SUGGESTIONS = [
 ];
 
 export const AssistantMascot = () => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isBetaEnabled = process.env.NEXT_PUBLIC_ENABLE_ASSISTANT_BETA === 'true';
+
+  if (!mounted || !isBetaEnabled) return null;
+
+  return <AssistantMascotInner />;
+};
+
+const AssistantMascotInner = () => {
   const pathname = usePathname();
+  const { t } = useAssistantTranslation();
   const { 
-    messages, sendMessage, sessions, setSessions, fetchSessions, loadSession, deleteSession, renameSession,
-    isOpen, setIsOpen, isLoading, sessionId, setSessionId, setMessages,
-    isNewChatMode, setIsNewChatMode, suggestedActions
-  } = useAssistant();
+    messages, sendMessage, sessions, fetchSessions, loadSession, deleteSession, renameSession, rateMessage,
+    isOpen, setIsOpen, isLoading, sessionId, setSessionId, view, setView, startNewChat, isExpanded, setIsExpanded
+  } = useAssistantState();
+
+  const [isNewChatMode, setIsNewChatMode] = useState(false);
+  const suggestedActions = messages.length > 0 && messages[messages.length - 1].role === 'assistant' 
+      ? [t('assistant.suggestions.stock_analysis'), t('assistant.suggestions.out_of_stock_risks'), "Générer un rapport"] 
+      : [];
+
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [ratedMessages, setRatedMessages] = useState<Record<string, 'up' | 'down'>>({});
   const [finishedTypingIds, setFinishedTypingIds] = useState<Set<string>>(new Set());
@@ -241,15 +153,18 @@ export const AssistantMascot = () => {
     setTimeout(() => setCopiedMessageId(null), 2000);
   };
 
-  const handleRate = (id: string, rate: 'up' | 'down') => {
-    const next = { ...ratedMessages, [id]: rate };
+
+
+  const handleRate = (id: string, rate: 'UP' | 'DOWN') => {
+    rateMessage(id, rate);
+    const next = { ...ratedMessages, [id]: rate.toLowerCase() as 'up' | 'down' };
     setRatedMessages(next);
     localStorage.setItem('michi_rated_messages', JSON.stringify(next));
   };
   
   const getContextualSuggestions = () => {
     const base = [...SUGGESTIONS];
-    if (pathname?.includes('inventory')) {
+    if (pathname?.includes('inventory') || pathname?.includes('product')) {
       base.unshift({ icon: '📦', label: "Stock par entrepôt", prompt: "Donne-moi le détail des stocks par entrepôt." });
     }
     if (pathname?.includes('suppliers')) {
@@ -261,12 +176,10 @@ export const AssistantMascot = () => {
     return base.slice(0, 5);
   };
   const dynamicSuggestions = getContextualSuggestions();
-  const [view, setView] = useState<'home' | 'chat' | 'history'>('home');
   const [isEditorEmpty, setIsEditorEmpty] = useState(true);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionSuggestions, setMentionSuggestions] = useState<any[]>([]);
   const [isMentionLoading, setIsMentionLoading] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -331,52 +244,38 @@ export const AssistantMascot = () => {
     }
   }, [isOpen, sessionId, loadSession, messages.length]); 
 
-  // Ultimate auto-scroll logic using ResizeObserver to catch ALL layout changes
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior
+      });
+    }
+  }, []);
+
+  // Stable auto-scroll logic
   useEffect(() => {
     if (view === 'chat' && scrollRef.current) {
-      const element = scrollRef.current;
+      // Immediate scroll
+      scrollToBottom('auto');
       
-      const scrollToBottom = () => {
-        element.scrollTop = element.scrollHeight;
-      };
-
-      // Initial scroll
-      scrollToBottom();
-
-      // Observe size changes (images loading, markdown rendering, etc.)
-      const resizeObserver = new ResizeObserver(() => {
-        scrollToBottom();
-      });
-
-      resizeObserver.observe(element);
+      // Delayed scrolls to catch rendering/animations
+      const t1 = setTimeout(() => scrollToBottom('smooth'), 100);
+      const t2 = setTimeout(() => scrollToBottom('smooth'), 400);
       
-      // Also scroll when dependencies change as a backup
-      scrollToBottom();
-      const timer = setTimeout(scrollToBottom, 100);
-
       return () => {
-        resizeObserver.disconnect();
-        clearTimeout(timer);
+        clearTimeout(t1);
+        clearTimeout(t2);
       };
     }
-  }, [view, messages.length, isLoading]);
-
-  const startNewChat = () => {
-    setSessionId(null);
-    localStorage.removeItem('michi_assistant_session_id');
-    setMessages([]);
-    setIsNewChatMode(true);
-    setView('chat');
-  };
+  }, [view, messages.length, isLoading, sessionId, scrollToBottom]);
 
   const handleSessionClick = (sid: string) => {
     setRenamingSessionId(null);
-    setMessages([]); // Clear current chat to show loading
-    setSessionId(sid);
-    localStorage.setItem('michi_assistant_session_id', sid);
     loadSession(sid);
     setIsNewChatMode(false);
-    setView('chat');
   };
 
 
@@ -386,7 +285,7 @@ export const AssistantMascot = () => {
       return;
     }
     setIsMentionLoading(true);
-    const mainApi = "http://localhost:8000/graphql";
+    const mainApi = env.NEXT_PUBLIC_MAIN_API_URL;
     // Search products, suppliers, and sources
     const gql = `query { 
       products(title: "${query}") { id title sku }
@@ -435,7 +334,7 @@ export const AssistantMascot = () => {
     if (!editor) return;
 
     // Create the badge element
-    const routeType = item.type === 'product' ? 'inventory' : item.type === 'supplier' ? 'suppliers' : 'settings';
+    const routeType = item.type === 'product' ? 'product' : item.type === 'supplier' ? 'suppliers' : 'settings';
     const path = `/dashboard/${routeType}/${item.id}`;
     
     // Use an emoji or a simple SVG for the tag icon since we're in raw HTML
@@ -640,27 +539,64 @@ export const AssistantMascot = () => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <style jsx global>{`
+      <style {...({ jsx: "true", global: "true" } as any)}>{`
+        .assistant-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #e2e8f0 transparent;
+          scrollbar-gutter: stable;
+        }
         .assistant-scrollbar::-webkit-scrollbar {
-          width: 10px;
+          width: 6px;
         }
         .assistant-scrollbar::-webkit-scrollbar-track {
           background: transparent;
         }
         .assistant-scrollbar::-webkit-scrollbar-thumb {
           background-color: #e2e8f0;
-          border-radius: 20px;
-          border: 3px solid transparent;
-          background-clip: padding-box;
-          transition: all 0.3s ease;
-        }
-        .assistant-scrollbar:hover::-webkit-scrollbar-thumb {
-          background-color: #cbd5e1;
-        }
-        .assistant-scrollbar::-webkit-scrollbar-thumb:hover {
-          background-color: #6366f1;
+          border-radius: 10px;
           border: 2px solid transparent;
         }
+        .assistant-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: #cbd5e1;
+        }
+        .assistant-scrollbar::-webkit-scrollbar-thumb:active {
+          background-color: #6366f1;
+        }
+        .assistant-mention-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 2px 8px;
+          margin: 0 2px;
+          border-radius: 6px;
+          font-weight: 700;
+          font-size: 12px;
+          text-decoration: none !important;
+          transition: none;
+          border: 1px solid rgba(99, 102, 241, 0.1);
+          background: rgba(99, 102, 241, 0.05);
+          color: #4f46e5;
+          vertical-align: middle;
+        }
+        .assistant-mention-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0.7;
+        }
+        
+        /* User side overrides */
+        .user-markdown .assistant-mention-badge {
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
+          border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .user-markdown p {
+          margin: 0;
+          color: white;
+        }
+        
         [contenteditable]:empty:before {
           content: attr(data-placeholder);
           color: #94a3b8;
@@ -708,11 +644,11 @@ export const AssistantMascot = () => {
               <div className="flex-1 min-w-0 overflow-hidden">
                 <div className="flex flex-col">
                   <span className="text-[13.5px] font-bold text-slate-900 leading-none truncate pr-4">
-                    {view === 'home' && "Assistant Michi"}
-                    {view === 'history' && "Rechercher une discussion"}
-                    {view === 'chat' && (sessionId && !isNewChatMode ? (sessions.find(s => s.sessionId === sessionId)?.title || "Discussion michi") : "Nouveau chat")}
+                    {view === 'home' && t('assistant.title')}
+                    {view === 'history' && t('assistant.search_discussion')}
+                    {view === 'chat' && (sessionId && !isNewChatMode ? (sessions.find(s => s.sessionId === sessionId)?.title || t('assistant.untitled_discussion')) : t('assistant.new_chat'))}
                   </span>
-                  {view === 'chat' && <span className="text-[10px] text-slate-400 font-medium italic mt-0.5">Conversation active</span>}
+                  {view === 'chat' && <span className="text-[10px] text-slate-400 font-medium italic mt-0.5">{t('assistant.active_conversation')}</span>}
                 </div>
               </div>
 
@@ -752,11 +688,11 @@ export const AssistantMascot = () => {
                         <div className="text-3xl font-serif text-white">道</div>
                       </div>
                       <div className="space-y-4">
-                        <h2 className="text-xl font-bold text-slate-900 tracking-tight">Assistant Michi</h2>
-                        <p className="text-slate-500 text-sm max-w-[280px]">Optimisez vos stocks et vos prévisions en un clin d'œil.</p>
+                        <h2 className="text-xl font-bold text-slate-900 tracking-tight">{t('assistant.title')}</h2>
+                        <p className="text-slate-500 text-sm max-w-[280px]">{t('assistant.subtitle')}</p>
                       </div>
                       <button onClick={startNewChat} className="w-full max-w-[200px] flex items-center justify-center gap-2 bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">
-                        <Plus size={18} /> Nouvelle discussion
+                        <Plus size={18} /> {t('assistant.new_discussion')}
                       </button>
                       <div className="flex flex-wrap justify-center gap-2 max-w-[340px]">
                         {dynamicSuggestions.map((s, i) => (
@@ -769,8 +705,8 @@ export const AssistantMascot = () => {
 
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-bold text-slate-400 tracking-wide">Discussions récentes</span>
-                        <button onClick={() => setView('history')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 tracking-wide flex items-center gap-1">Voir tout <ChevronRight size={10} /></button>
+                        <span className="text-[10px] font-bold text-slate-400 tracking-wide">{t('assistant.recent_discussions')}</span>
+                        <button onClick={() => setView('history')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 tracking-wide flex items-center gap-1">{t('assistant.view_all')} <ChevronRight size={10} /></button>
                       </div>
                       <div className="space-y-1">
                         {isSessionsLoading ? (
@@ -791,8 +727,8 @@ export const AssistantMascot = () => {
                                   <MessageSquare size={14} className="text-slate-400 group-hover:text-indigo-600" />
                                 </div>
                                 <div className="flex flex-col min-w-0">
-                                  <span className="text-[13px] text-slate-700 font-medium truncate group-hover:text-slate-900 max-w-[200px]">{s.title || "Discussion Michi"}</span>
-                                  <span className="text-[10px] text-slate-400 truncate max-w-[220px]">{s.lastMessage || "Ouvrir la conversation"}</span>
+                                  <span className="text-[13px] text-slate-700 font-medium truncate group-hover:text-slate-900 max-w-[200px]">{s.title || t('assistant.untitled_discussion')}</span>
+                                  <span className="text-[10px] text-slate-400 truncate max-w-[220px]">{s.lastMessage || t('assistant.open_conversation')}</span>
                                 </div>
                               </div>
                               <ChevronRight size={14} className="text-slate-200 group-hover:text-slate-400 group-hover:translate-x-0.5 transition-all" />
@@ -1071,7 +1007,17 @@ export const AssistantMascot = () => {
                                 </div>
                               )}
                               {msg.content && (
-                                <div className="bg-indigo-600 px-4 py-2 rounded-2xl rounded-tr-none text-[13.5px] text-white font-medium shadow-sm">{msg.content}</div>
+                                <div className="bg-indigo-600 px-4 py-2 rounded-2xl rounded-tr-none text-[13.5px] text-white font-medium shadow-sm user-markdown">
+                                  <ReactMarkdown 
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                      ...MarkdownComponents,
+                                      p: ({children}) => <p className="m-0">{children}</p>
+                                    }}
+                                  >
+                                    {msg.content}
+                                  </ReactMarkdown>
+                                </div>
                               )}
                             </div>
                           ) : (
@@ -1086,77 +1032,21 @@ export const AssistantMascot = () => {
                                     text={msg.content} 
                                     onComplete={() => {
                                       if (msg.id) setFinishedTypingIds(prev => new Set(prev).add(msg.id));
+                                      scrollToBottom();
                                     }} 
+                                    onUpdate={() => scrollToBottom('auto')}
                                   />
                                 ) : (
                                   <ReactMarkdown 
                                     remarkPlugins={[remarkGfm]}
-                                    components={{
-                                      a({ children, href, ...props }: any) {
-                                        const isInternal = href?.startsWith('/dashboard/');
-                                        if (isInternal) {
-                                          return (
-                                            <Link 
-                                              href={href} 
-                                              className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-md font-bold text-[12px] no-underline hover:bg-indigo-100 transition-all border border-indigo-100/50"
-                                            >
-                                              <Tag size={10} className="shrink-0" />
-                                              {children}
-                                              <ExternalLink size={10} className="shrink-0 opacity-40" />
-                                            </Link>
-                                          );
-                                        }
-                                        return <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline" {...props}>{children}</a>;
-                                      },
-                                      code({ inline, className, children, ...props }: any) {
-                                        const match = /language-chart/.exec(className || '');
-                                        if (!inline && match) {
-                                          try {
-                                            const config = JSON.parse(String(children));
-                                            return (
-                                              <div className="my-4 p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                                                <div className="text-[11px] font-bold text-slate-400 tracking-wide mb-4 flex items-center gap-2">
-                                                  <Database size={12} /> {config.title || "Analyse de données"}
-                                                </div>
-                                                <div className="h-[200px] w-full">
-                                                  <ResponsiveContainer width="100%" height="100%">
-                                                    {config.type === 'bar' ? (
-                                                      <BarChart data={config.data}>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                                        <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-                                                        <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                                                        <Tooltip 
-                                                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
-                                                        />
-                                                        <Bar dataKey="value" fill="#4f46e5" radius={[4, 4, 0, 0]} />
-                                                      </BarChart>
-                                                    ) : (
-                                                      <LineChart data={config.data}>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                                        <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-                                                        <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                                                        <Tooltip />
-                                                        <Line type="monotone" dataKey="value" stroke="#4f46e5" strokeWidth={2} dot={{ fill: '#4f46e5' }} />
-                                                      </LineChart>
-                                                    )}
-                                                  </ResponsiveContainer>
-                                                </div>
-                                              </div>
-                                            );
-                                          } catch (e) {
-                                            return <code className={className} {...props}>{children}</code>;
-                                          }
-                                        }
-                                        return <code className={className} {...props}>{children}</code>;
-                                      }
-                                    }}
+                                    components={MarkdownComponents}
                                   >
                                     {msg.content}
                                   </ReactMarkdown>
                                 )}
                               </div>
                               
-                              {((msg.id && finishedTypingIds.has(msg.id)) || !msg.isNew) && (
+                              {(!msg.isNew || (msg.id && finishedTypingIds.has(msg.id) && !isLoading)) && (
                                 <motion.div 
                                   initial={{ opacity: 0 }} 
                                   animate={{ opacity: 1 }}
@@ -1165,14 +1055,14 @@ export const AssistantMascot = () => {
                                   <div className="flex items-center gap-3 ml-5 mt-2">
                                     <div className="flex items-center gap-1">
                                       <button 
-                                        onClick={() => handleRate(msg.id || i.toString(), 'up')}
+                                        onClick={() => handleRate(msg.id || i.toString(), 'UP')}
                                         title="Pertinent" 
                                         className={`p-1 rounded-md transition-all ${ratedMessages[msg.id || i.toString()] === 'up' ? 'text-indigo-600 bg-indigo-50' : 'text-slate-300 hover:text-indigo-500 hover:bg-indigo-50'}`}
                                       >
                                         <ThumbsUp size={12} fill={ratedMessages[msg.id || i.toString()] === 'up' ? 'currentColor' : 'none'} />
                                       </button>
                                       <button 
-                                        onClick={() => handleRate(msg.id || i.toString(), 'down')}
+                                        onClick={() => handleRate(msg.id || i.toString(), 'DOWN')}
                                         title="Non pertinent" 
                                         className={`p-1 rounded-md transition-all ${ratedMessages[msg.id || i.toString()] === 'down' ? 'text-red-500 bg-red-50' : 'text-slate-300 hover:text-red-500 hover:bg-red-50'}`}
                                       >
@@ -1197,9 +1087,9 @@ export const AssistantMascot = () => {
                                   </div>
                                   
                                   {/* Suggested Actions for the last assistant message */}
-                                  {i === messages.length - 1 && suggestedActions.length > 0 && !isLoading && (
+                                  {i === messages.length - 1 && !isLoading && (
                                     <div className="flex flex-wrap gap-2 ml-5 mt-4">
-                                      {suggestedActions.map((action, idx) => (
+                                      {(msg.suggestedActions || suggestedActions).map((action, idx) => (
                                         <button 
                                           key={idx}
                                           onClick={() => sendMessage(action)}
@@ -1217,14 +1107,14 @@ export const AssistantMascot = () => {
                         </motion.div>
                       ))}
                       {isLoading && (
-                        <motion.div 
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: [0.4, 1, 0.4] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: [0.6, 1, 0.6] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                           className="flex items-center gap-2 ml-5 text-indigo-400 text-[11px] font-medium"
                         >
                           <Sparkles size={12} className="animate-pulse" />
-                          <span>Michi réfléchit...</span>
+                          <span>{t('assistant.michi_thinking')}</span>
                         </motion.div>
                       )}
                     </div>
@@ -1306,7 +1196,7 @@ export const AssistantMascot = () => {
                             className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden z-30"
                           >
                             <div className="bg-slate-50 px-3 py-1.5 border-b border-slate-100 flex items-center justify-between">
-                              <span className="text-[10px] font-bold text-slate-400 tracking-wide">Suggestions de données</span>
+                              <span className="text-[10px] font-bold text-slate-400 tracking-wide">{t('assistant.data_suggestions')}</span>
                               {isMentionLoading && <RotateCcw size={10} className="animate-spin text-slate-400" />}
                             </div>
                             <div className="max-h-48 overflow-y-auto p-1">
@@ -1327,7 +1217,7 @@ export const AssistantMascot = () => {
                               )) : (
                                 !isMentionLoading && (
                                   <div className="px-4 py-3 text-center text-[12px] text-slate-400 italic">
-                                    {mentionQuery.length < 2 ? "Tapez au moins 2 caractères..." : "Aucun résultat trouvé."}
+                                    {mentionQuery.length < 2 ? t('assistant.type_min_chars') : t('assistant.no_results')}
                                   </div>
                                 )
                               )}
@@ -1368,14 +1258,14 @@ export const AssistantMascot = () => {
                             }
                           }}
                           className="w-full bg-transparent border-none outline-none ring-0 focus:ring-0 pt-2 pb-0 px-2 text-[13px] font-medium text-slate-700 placeholder:text-slate-400 min-h-[60px] max-h-[200px] overflow-y-auto assistant-scrollbar"
-                          data-placeholder="Posez une question ou tapez @ pour mentionner..."
+                          data-placeholder={t('assistant.ask_question_placeholder')}
                         />
                         <div className="flex items-center justify-between mt-0">
                           <button 
                             type="button" 
                             onClick={handleFileButtonClick}
                             className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                            title="Joindre un fichier"
+                            title={t('assistant.attach_file')}
                           >
                             <Paperclip size={20} />
                           </button>
@@ -1402,7 +1292,7 @@ export const AssistantMascot = () => {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-xl transition-all ${isOpen ? 'bg-slate-900' : 'bg-indigo-600'}`}
+        className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-xl ${isOpen ? 'bg-slate-900' : 'bg-indigo-600'}`}
       >
         <AnimatePresence mode="wait">
           {isOpen ? (

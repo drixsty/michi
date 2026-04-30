@@ -7,6 +7,7 @@ const config = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
+    '../../packages/assistant-ui/src/**/*.{ts,tsx}',
   ],
   prefix: "",
   theme: {
