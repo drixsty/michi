@@ -1,0 +1,11 @@
+{
+  "name": "@michi/assistant",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "uvicorn --app-dir src main:app --reload --host 0.0.0.0 --port 8001",
+    "test": "pytest",
+    "lint": "echo 'No lint script for assistant yet'",
+    "build": "echo 'No build script for assistant yet'"
+  }
+}

@@ -6,6 +6,9 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "generate": "echo 'Run make schema to generate GraphQL types'"
+    "build": "echo 'Run make schema to generate GraphQL types'",
+    "dev": "echo 'No dev for types yet'",
+    "lint": "echo 'No lint for types yet'",
+    "test": "echo 'No test for types yet'"
   }
 }

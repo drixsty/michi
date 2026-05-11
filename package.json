@@ -1,6 +1,7 @@
 {
   "name": "michi-monorepo",
   "version": "1.0.0",
+  "packageManager": "npm@11.9.0",
   "private": true,
   "description": "Michi 道 - Omnichannel Forecasting Solution",
   "workspaces": [
@@ -8,9 +9,13 @@
     "packages/*"
   ],
   "scripts": {
-    "api:dev": "make dev-backend",
-    "web:dev": "make dev-frontend",
-    "mobile:dev": "make dev-mobile",
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "api:dev": "turbo run dev --filter=@michi/api",
+    "web:dev": "turbo run dev --filter=@michi/web",
+    "landing:dev": "turbo run dev --filter=@michi/landing",
     "test:all": "make test"
   },
   "author": "Michi Team",
@@ -18,6 +23,7 @@
   "devDependencies": {
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "vite": "8.0.8"
+    "vite": "8.0.8",
+    "turbo": "latest"
   }
 }

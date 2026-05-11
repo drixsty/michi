@@ -62,3 +62,6 @@ Thumbs.db
 # --- Michi Cleanup ---
 apps/api/*.txt
 apps/api/logs/
+
+# --- Turbo ---
+.turbo/

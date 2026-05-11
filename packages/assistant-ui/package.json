@@ -4,6 +4,12 @@
   "private": true,
   "main": "./src/index.ts",
   "types": "./src/index.ts",
+  "scripts": {
+    "build": "echo 'No build for assistant-ui yet'",
+    "dev": "echo 'No dev for assistant-ui yet'",
+    "lint": "echo 'No lint for assistant-ui yet'",
+    "test": "echo 'No test for assistant-ui yet'"
+  },
   "peerDependencies": {
     "framer-motion": ">=10",
     "lucide-react": "*",

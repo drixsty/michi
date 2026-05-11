@@ -6,6 +6,9 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
+    "build": "echo 'No build for UI package yet'",
+    "dev": "echo 'No dev for UI package yet'",
+    "lint": "echo 'No lint for UI package yet'",
     "test": "vitest run"
   },
   "dependencies": {

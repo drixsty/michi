@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+}
+
+@layer base {
+  body {
+    @apply bg-michi-dark text-white antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+.glass-morphism {
+  @apply bg-white/5 backdrop-blur-xl border border-white/10;
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-michi-purple to-[#A29BFE];
+}
+
+.hero-gradient {
+  background: radial-gradient(circle at 50% 50%, rgba(108, 92, 231, 0.15) 0%, transparent 50%);
+}
