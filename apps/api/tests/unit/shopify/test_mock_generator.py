@@ -4,7 +4,7 @@ Couverture : génération produits, historique ventes, ruptures, dataset complet
 """
 from datetime import date
 
-from src.modules.shopify.infrastructure.mock_generator import (
+from modules.shopify.infrastructure.mock_generator import (
     generate_mock_products,
     generate_mock_sales,
     generate_full_mock_dataset,

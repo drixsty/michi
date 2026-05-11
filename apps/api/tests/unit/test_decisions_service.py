@@ -2,19 +2,19 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import datetime
-from src.modules.decisions.application.decisions_service import ApplicationDecisionsService
-from src.modules.auth.infrastructure.persistence.models import User
-from src.modules.inventory.domain.entities import PlatformSource
-from src.modules.inventory.infrastructure.persistence.models import Store, Product
-from src.modules.forecasting.infrastructure.persistence.models import Prediction
+from modules.decisions.application.decisions_service import ApplicationDecisionsService
+from modules.auth.infrastructure.persistence.models import User
+from modules.inventory.domain.entities import PlatformSource
+from modules.inventory.infrastructure.persistence.models import Store, Product
+from modules.forecasting.infrastructure.persistence.models import Prediction
 
 from tests.unit.auth.fakes import FakeUserRepository, FakeOrganizationRepository
 from tests.unit.auth.fakes import FakeDb # For the others if needed, but let's use more specific fakes
 
-from src.modules.auth.domain.entities import UserEntity, OrganizationEntity
-from src.modules.auth.domain.value_objects import Email
-from src.modules.inventory.domain.entities import ProductEntity, PlatformSource
-from src.modules.forecasting.domain.entities import PredictionEntity
+from modules.auth.domain.entities import UserEntity, OrganizationEntity
+from modules.auth.domain.value_objects import Email
+from modules.inventory.domain.entities import ProductEntity, PlatformSource
+from modules.forecasting.domain.entities import PredictionEntity
 
 @pytest.mark.asyncio
 async def test_get_overview_no_user():

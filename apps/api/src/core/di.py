@@ -29,6 +29,7 @@ from modules.inventory.infrastructure.repositories.sales_log_repository import S
 from modules.inventory.infrastructure.repositories.alert_repository import SQLAlchemyAlertRepository
 from modules.inventory.infrastructure.repositories.supplier_repository import SQLAlchemySupplierRepository
 from modules.inventory.infrastructure.repositories.purchase_order_repository import SQLAlchemyPurchaseOrderRepository
+from modules.inventory.application.supplier_service import SupplierService
 from modules.inventory.application.email_service import EmailService
 
 # Forecasting
@@ -59,8 +60,9 @@ class ServiceContainer:
     alert_service: AlertService
     forecasting_service: ForecastingService
     decisions_service: ApplicationDecisionsService
-    billing_service: ApplicationBillingService
+    supplier_service: SupplierService
     supplier_analysis_service: SupplierAnalysisService
+    billing_service: ApplicationBillingService
 
 
 def build_services(db: AsyncSession) -> ServiceContainer:
@@ -135,6 +137,11 @@ def build_services(db: AsyncSession) -> ServiceContainer:
         supplier_repo=supplier_repo
     )
     
+    supplier_service = SupplierService(
+        supplier_repo=supplier_repo,
+        po_repo=po_repo
+    )
+    
     omnichannel_service = OmnichannelService(
         product_repo=product_repo,
         store_repo=store_repo,
@@ -145,6 +152,8 @@ def build_services(db: AsyncSession) -> ServiceContainer:
         alert_repo=alert_repo,
         product_repo=product_repo,
         store_repo=store_repo,
+        membership_repo=membership_repo,
+        user_repo=user_repo,
         email_service=email_service
     )
     
@@ -175,5 +184,6 @@ def build_services(db: AsyncSession) -> ServiceContainer:
         forecasting_service=forecasting_service,
         decisions_service=decisions_service,
         billing_service=billing_service,
+        supplier_service=supplier_service,
         supplier_analysis_service=supplier_analysis_service
     )

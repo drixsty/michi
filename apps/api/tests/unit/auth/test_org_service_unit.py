@@ -10,9 +10,9 @@ from datetime import datetime
 
 import pytest
 
-from src.modules.auth.application.org_service import ApplicationOrgService
-from src.modules.auth.domain.entities import UserEntity
-from src.modules.auth.domain.value_objects import Email
+from modules.auth.application.org_service import ApplicationOrgService
+from modules.auth.domain.entities import UserEntity
+from modules.auth.domain.value_objects import Email
 
 from tests.unit.auth.fakes import (
     FakeInvitationRepository,
@@ -175,7 +175,7 @@ async def test_create_invitation_success() -> None:
     service = _make_org_service(invitation_repo=invitation_repo)
     org_id = uuid.uuid4()
 
-    from src.modules.auth.domain.entities import UserRole as DomainUserRole
+    from modules.auth.domain.entities import UserRole as DomainUserRole
     invitation = await service.create_invitation(
         email="bob@test.com",
         organization_id=org_id,
@@ -193,7 +193,7 @@ async def test_create_invitation_generates_code() -> None:
     invitation_repo = FakeInvitationRepository()
     service = _make_org_service(invitation_repo=invitation_repo)
 
-    from src.modules.auth.domain.entities import UserRole as DomainUserRole
+    from modules.auth.domain.entities import UserRole as DomainUserRole
     invitation = await service.create_invitation(
         email="charlie@test.com",
         organization_id=uuid.uuid4(),
@@ -221,7 +221,7 @@ async def test_accept_invitation_success() -> None:
         membership_repo=membership_repo
     )
 
-    from src.modules.auth.domain.entities import UserRole as DomainUserRole
+    from modules.auth.domain.entities import UserRole as DomainUserRole
     invitation = await service.create_invitation(
         email="alice@michi.com",
         organization_id=uuid.uuid4(),

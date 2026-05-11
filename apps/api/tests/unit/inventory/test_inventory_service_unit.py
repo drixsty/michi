@@ -12,11 +12,11 @@ from uuid import UUID
 
 import pytest
 
-from src.modules.inventory.application.inventory_service import InventoryService
-from src.modules.inventory.domain.entities import (
+from modules.inventory.application.inventory_service import InventoryService
+from modules.inventory.domain.entities import (
     AlertEntity, PlatformSource, ProductEntity, SalesLogEntity, StoreEntity
 )
-from src.modules.inventory.domain.ports import (
+from modules.inventory.domain.ports import (
     IAlertRepository, IProductRepository, ISalesLogRepository, IStoreRepository
 )
 

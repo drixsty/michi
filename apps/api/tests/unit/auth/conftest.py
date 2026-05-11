@@ -5,10 +5,10 @@ import pytest
 
 # SQLAlchemy model imports to prevent "failed to locate a name" errors during mapper initialization
 
-from src.modules.auth.application.auth_service import ApplicationAuthService
-from src.modules.auth.application.org_service import ApplicationOrgService
-from src.modules.auth.domain.entities import UserEntity
-from src.modules.auth.domain.value_objects import Email
+from modules.auth.application.auth_service import ApplicationAuthService
+from modules.auth.application.org_service import ApplicationOrgService
+from modules.auth.domain.entities import UserEntity
+from modules.auth.domain.value_objects import Email
 
 from tests.unit.auth.fakes import (
     FakeInvitationRepository,

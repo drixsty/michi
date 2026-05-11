@@ -3,7 +3,9 @@ from core.database.models import Organization, User, OrganizationMember
 OmnichannelService — Application Layer
 Aggregates inventory by SKU across channels.
 """
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
+import io
+import csv
 from datetime import date
 from uuid import UUID
 
@@ -105,9 +107,9 @@ class OmnichannelService:
             
             # Agrégation des KPIs (on prend le plus pessimiste/critique pour le SKU)
             if pred:
-                omni.dominant_run_rate += pred.run_rate
-                omni.total_reorder_quantity += pred.reorder_quantity
-                omni.annual_gross_profit += pred.annual_gross_profit
+                omni.dominant_run_rate += (pred.run_rate or 0.0)
+                omni.total_reorder_quantity += (pred.reorder_quantity or 0)
+                omni.annual_gross_profit += (pred.annual_gross_profit or 0.0)
                 
                 # ABC Rank: on prend le meilleur (A > B > C)
                 if pred.abc_rank and (not omni.abc_rank or pred.abc_rank < omni.abc_rank):
@@ -163,3 +165,36 @@ class OmnichannelService:
             ))
             
         return breakdown
+
+    async def generate_replenishment_csv(self, org_id: str) -> str:
+        """
+        Génère un fichier CSV contenant les besoins de réapprovisionnement
+        pour toute l'organisation, agrégé par SKU.
+        """
+        inventory = await self.get_omnichannel_inventory(org_id)
+        
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Header
+        writer.writerow([
+            "SKU", "Title", "Total Stock", "Dominant Run Rate", 
+            "Days of Stock", "Predicted Stockout Date", "Reorder Quantity", "ABC Rank"
+        ])
+        
+        # Data
+        for item in inventory:
+            if item.total_reorder_quantity > 0 or (item.predicted_stockout_date and (item.predicted_stockout_date - date.today()).days <= 30):
+                dos = (item.total_stock / item.dominant_run_rate) if item.dominant_run_rate > 0 else 999
+                writer.writerow([
+                    item.sku,
+                    item.title,
+                    item.total_stock,
+                    round(item.dominant_run_rate, 2),
+                    round(dos, 1),
+                    item.predicted_stockout_date.isoformat() if item.predicted_stockout_date else "N/A",
+                    item.total_reorder_quantity,
+                    item.abc_rank
+                ])
+                
+        return output.getvalue()

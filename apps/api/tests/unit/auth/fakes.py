@@ -10,7 +10,7 @@ from typing import Optional
 from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID
 
-from src.modules.auth.domain.entities import (
+from modules.auth.domain.entities import (
     InvitationEntity,
     MembershipEntity,
     OrganizationEntity,
@@ -18,8 +18,8 @@ from src.modules.auth.domain.entities import (
     UserRole,
     InvitationStatus,
 )
-from src.modules.auth.domain.value_objects import Email, HashedPassword, OrgSlug, JwtToken
-from src.modules.auth.infrastructure.persistence.models import Invitation
+from modules.auth.domain.value_objects import Email, HashedPassword, OrgSlug, JwtToken
+from modules.auth.infrastructure.persistence.models import Invitation
 
 
 # ---------------------------------------------------------------------------

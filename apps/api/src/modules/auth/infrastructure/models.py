@@ -1,16 +1,11 @@
 from core.database.models import Organization, User, OrganizationMember
 """
 Re-export layer for backward compatibility.
-Implementation moved to src.modules.auth.infrastructure.persistence.models.
+Implementation moved to modules.auth.infrastructure.persistence.models.
 """
-from .persistence.models import (
-    User, 
-    Organization, 
-    OrganizationMember, 
-    UserRole, 
-    Invitation,
-    InvitationStatus
-)
+from core.database.models import User, Organization, OrganizationMember
+from .persistence.models import Invitation, PasswordResetToken
+from core.database.constants import UserRole, InvitationStatus
 
 __all__ = [
     "User",

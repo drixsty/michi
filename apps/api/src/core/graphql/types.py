@@ -351,7 +351,7 @@ class ProductType:
         )
 
     @strawberry.field(name="cleanedDemands")
-    async def cleaned_demands(self, info: strawberry.types.Info) -> List[Annotated["CleanedDemandType", strawberry.lazy("src.modules.forecasting.adapters.resolvers")]]:
+    async def cleaned_demands(self, info: strawberry.types.Info) -> List[Annotated["CleanedDemandType", strawberry.lazy("modules.forecasting.adapters.resolvers")]]:
         from modules.forecasting.adapters.resolvers import resolve_cleaned_demands
         return await resolve_cleaned_demands(info, str(self.id), self.sku)
 
@@ -361,7 +361,7 @@ class ProductType:
         return await resolve_product_channels(info, self.sku)
 
     @strawberry.field
-    async def prediction(self, info: strawberry.types.Info) -> Optional[Annotated["PredictionType", strawberry.lazy("src.modules.forecasting.adapters.resolvers")]]:
+    async def prediction(self, info: strawberry.types.Info) -> Optional[Annotated["PredictionType", strawberry.lazy("modules.forecasting.adapters.resolvers")]]:
         from modules.forecasting.adapters.resolvers import resolve_product_prediction
         return await resolve_product_prediction(info, str(self.id), self.sku)
 

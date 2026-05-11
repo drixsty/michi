@@ -12,9 +12,9 @@ from uuid import UUID
 
 import pytest
 
-from src.modules.forecasting.application.forecasting_service import ForecastingService
-from src.modules.forecasting.domain.entities import CleanedDemandEntity, PredictionEntity
-from src.modules.inventory.domain.entities import ProductEntity, SalesLogEntity, StoreEntity, PlatformSource
+from modules.forecasting.application.forecasting_service import ForecastingService
+from modules.forecasting.domain.entities import CleanedDemandEntity, PredictionEntity
+from modules.inventory.domain.entities import ProductEntity, SalesLogEntity, StoreEntity, PlatformSource
 
 
 # ---------------------------------------------------------------------------

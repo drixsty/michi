@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
-from src.modules.billing.application.service import BillingService
+from modules.billing.application.service import BillingService
 from config import settings
 import uuid
 

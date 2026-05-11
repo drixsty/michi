@@ -3,7 +3,7 @@ from core.database.models import Organization, User, OrganizationMember
 Adaptateurs sécurité Auth — Sprint 21.
 
 Implémentations concrètes des ports IPasswordHasher et ITokenService.
-Délèguent à src.core.security (bcrypt, JWT).
+Délèguent à core.security (bcrypt, JWT).
 """
 
 from core.config import settings
@@ -19,7 +19,7 @@ from modules.auth.domain.value_objects import HashedPassword, JwtToken
 
 
 class BcryptPasswordHasher:
-    """Implémente IPasswordHasher via bcrypt (src.core.security)."""
+    """Implémente IPasswordHasher via bcrypt (core.security)."""
 
     def hash(self, plain_password: str) -> HashedPassword:
         hashed = hash_password(plain_password)
@@ -30,7 +30,7 @@ class BcryptPasswordHasher:
 
 
 class JwtTokenService:
-    """Implémente ITokenService via python-jose (src.core.security)."""
+    """Implémente ITokenService via python-jose (core.security)."""
 
     def create_access_token(
         self,

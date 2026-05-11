@@ -1,6 +1,6 @@
 """
 Re-export layer for backward compatibility.
-Implementation moved to src.modules.inventory.persistence.models.
+Implementation moved to modules.inventory.persistence.models.
 """
 from .persistence.models import (
     PlatformSource, 

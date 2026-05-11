@@ -12,7 +12,7 @@ import math
 from datetime import date, timedelta
 
 
-from src.modules.intelligence.algorithms.predictions import (
+from modules.intelligence.algorithms.predictions import (
     predict_stockout_date,
     calculate_reorder_quantity,
 )

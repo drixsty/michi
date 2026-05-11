@@ -9,9 +9,9 @@ from datetime import datetime
 
 import pytest
 
-from src.modules.auth.application.auth_service import ApplicationAuthService
-from src.modules.auth.domain.entities import UserEntity
-from src.modules.auth.domain.value_objects import Email
+from modules.auth.application.auth_service import ApplicationAuthService
+from modules.auth.domain.entities import UserEntity
+from modules.auth.domain.value_objects import Email
 from exceptions import MichiException, UnauthenticatedException
 
 from tests.unit.auth.fakes import (

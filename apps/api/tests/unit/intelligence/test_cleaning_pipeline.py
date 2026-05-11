@@ -4,7 +4,7 @@ Tests unitaires — intelligence/pipeline/cleaning_pipeline.py
 import pytest
 import pandas as pd
 import numpy as np
-from src.modules.intelligence.pipeline.cleaning_pipeline import run_cleaning_pipeline
+from modules.intelligence.pipeline.cleaning_pipeline import run_cleaning_pipeline
 
 
 def _make_df(n: int = 30, units: float = 5.0, stock: int = 10) -> pd.DataFrame:

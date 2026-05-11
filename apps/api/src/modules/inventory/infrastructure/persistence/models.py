@@ -3,10 +3,9 @@ SQLAlchemy Models — Inventory (Unified Product & Sales History)
 This is the core source of truth for all Michi modules (Forecasting, Alerts, etc.).
 It decouples the store platform (Shopify, Amazon, Woo) from our business logic.
 """
-from sqlalchemy import Column, String, Integer, Float, Date, ForeignKey, DateTime, Enum, Boolean, UniqueConstraint, Uuid, JSON
+from sqlalchemy import Column, String, Integer, Float, Date, ForeignKey, DateTime, Enum, Boolean, UniqueConstraint, JSON
 from sqlalchemy.orm import relationship
-import enum
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from core.database import Base, GUID
@@ -35,8 +34,8 @@ class Store(Base):
     # Store-specific credentials/config (Sprint 15+)
     config = Column(JSON, default={}, nullable=False)
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     __table_args__ = (
         UniqueConstraint('organization_id', 'platform', name='uix_org_platform'),
@@ -66,8 +65,8 @@ class StoreCredential(Base):
     # Public metadata (e.g. AWS Region, Shopify Domain)
     meta = Column(JSON, default={}, nullable=False)
     
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
     store = relationship("Store", back_populates="credentials")
@@ -105,8 +104,8 @@ class Product(Base):
     # Supplier link
     supplier_id = Column(GUID, ForeignKey("suppliers.id", ondelete="SET NULL"), nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
     store = relationship("Store", back_populates="products")
@@ -130,7 +129,7 @@ class Alert(Base):
     is_read = Column(Boolean, default=False, nullable=False)
     severity = Column(Integer, default=1) 
     
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     product = relationship("Product", back_populates="alerts")
 
@@ -168,7 +167,7 @@ class AlertEmail(Base):
 
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     product_id = Column(GUID, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
-    sent_at = Column(DateTime, default=datetime.utcnow)
+    sent_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     alert_type = Column(String(50), default="stockout_imminent")
 
     product = relationship("Product")
@@ -182,7 +181,7 @@ class PurchaseOrder(Base):
     supplier_id = Column(GUID, ForeignKey("suppliers.id", ondelete="CASCADE"), nullable=False)
 
     quantity = Column(Integer, nullable=False)
-    order_date = Column(Date, nullable=False, default=datetime.utcnow().date)
+    order_date = Column(Date, nullable=False, default=lambda: datetime.now(timezone.utc).date())
     expected_arrival_date = Column(Date, nullable=False)
     actual_arrival_date = Column(Date, nullable=True)
 

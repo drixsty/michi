@@ -3,12 +3,23 @@ from typing import AsyncGenerator
 from core.config.settings import settings
 
 # Engine async
+# Configuration conditionnelle de l'engine
+engine_kwargs = {
+    "echo": settings.ENVIRONMENT == "development",
+    "pool_recycle": 3600,
+}
+
+# SQLite ne supporte pas pool_size/max_overflow
+if not settings.DATABASE_URL.startswith("sqlite"):
+    engine_kwargs["pool_size"] = 20
+    engine_kwargs["max_overflow"] = 30
+else:
+    # Pour SQLite in-memory dans les tests, on évite les problèmes de thread
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+
 engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=settings.ENVIRONMENT == "development",
-    pool_recycle=3600,  # Refresh connections every hour
-    pool_size=20,
-    max_overflow=30,
+    **engine_kwargs
 )
 
 # Session factory

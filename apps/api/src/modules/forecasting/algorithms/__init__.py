@@ -2,10 +2,10 @@
 Algorithmes de nettoyage de la demande — re-exports vers intelligence/.
 
 Les implémentations canoniques vivent désormais dans :
-    src.modules.intelligence.algorithms
+    modules.intelligence.algorithms
 
 Ce module maintient la compatibilité ascendante pour tout code qui importait
-depuis src.modules.forecasting.algorithms.*
+depuis modules.forecasting.algorithms.*
 """
 from modules.intelligence.algorithms import (
     calculate_run_rate,

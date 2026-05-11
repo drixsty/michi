@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 
-from src.modules.forecasting.algorithms.out_of_stock_correction import (
+from modules.forecasting.algorithms.out_of_stock_correction import (
     correct_out_of_stock,
     correct_out_of_stock_batch,
     ROLLING_WINDOW,

@@ -7,7 +7,7 @@ import uuid
 from datetime import date, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.modules.shopify.domain.validation import (
+from modules.shopify.domain.validation import (
     DataValidationService,
     VALID_LEAD_TIMES,
     VALID_MOQS,
@@ -15,7 +15,7 @@ from src.modules.shopify.domain.validation import (
     STOCKOUT_RATIO_MAX,
     EXPECTED_DAYS,
 )
-from src.modules.shopify.domain.schemas import ValidationReportSchema
+from modules.shopify.domain.schemas import ValidationReportSchema
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -72,7 +72,7 @@ class TestDataValidationServiceRules:
 
         service = DataValidationService(db)
 
-        from src.modules.shopify.domain.schemas import ValidationIssue
+        from modules.shopify.domain.schemas import ValidationIssue
         # On mock validate() directement pour tester uniquement R2
         with patch.object(service, "validate", new_callable=AsyncMock) as mock_validate:
             mock_validate.return_value = ValidationReportSchema(
@@ -156,7 +156,7 @@ class TestDataValidationServiceRules:
 
     def test_validation_issue_severity_values(self):
         """Les sévérités acceptées sont 'error' et 'warning'."""
-        from src.modules.shopify.domain.schemas import ValidationIssue
+        from modules.shopify.domain.schemas import ValidationIssue
         e = ValidationIssue(rule="R1", severity="error", detail="test")
         w = ValidationIssue(rule="R2", severity="warning", detail="test")
         assert e.severity == "error"

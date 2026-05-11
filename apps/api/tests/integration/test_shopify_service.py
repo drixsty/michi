@@ -1,9 +1,9 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
-from src.modules.shopify.application.service import ShopifyService
-from src.modules.inventory.domain.entities import PlatformSource
-from src.modules.inventory.infrastructure.persistence.models import Product, SalesLog
+from modules.shopify.application.service import ShopifyService
+from modules.inventory.domain.entities import PlatformSource
+from modules.inventory.infrastructure.persistence.models import Product, SalesLog
 
 @pytest.mark.asyncio
 async def test_trigger_mock_sync_success():
@@ -29,7 +29,7 @@ async def test_trigger_mock_sync_success():
     
     db.execute.side_effect = [mock_existing_res, mock_suppliers_res, MagicMock()] # 3rd is delete saleslogs
     
-    with patch("src.modules.shopify.application.service.generate_full_mock_dataset", return_value=(mock_products, mock_sales)):
+    with patch(" modules.shopify.application.service.generate_full_mock_dataset", return_value=(mock_products, mock_sales)):
         service = ShopifyService(db)
         result = await service.trigger_mock_sync(store_id)
         
@@ -63,7 +63,7 @@ async def test_trigger_mock_sync_update_existing():
     
     db.execute.side_effect = [mock_existing_res, mock_suppliers_res, MagicMock()]
     
-    with patch("src.modules.shopify.application.service.generate_full_mock_dataset", return_value=(mock_products, [])):
+    with patch(" modules.shopify.application.service.generate_full_mock_dataset", return_value=(mock_products, [])):
         service = ShopifyService(db)
         await service.trigger_mock_sync(store_id)
         

@@ -4,13 +4,13 @@ SQLAlchemy Models — Forecasting (US 2.3 + US 2.8)
 CleanedDemand: Corrected demand after OOS + IQR pipeline.
 Prediction: Run rate + stockout prediction + order recommendation.
 """
-from sqlalchemy import Column, Date, Float, Boolean, String, Integer, ForeignKey, DateTime, Uuid
+from sqlalchemy import Column, Date, Float, Boolean, String, Integer, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from core.database import Base, GUID
-from modules.inventory.infrastructure.models import Product  # Import requis pour les relations
+from modules.inventory.infrastructure.persistence.models import Product  # Import requis pour les relations
 
 
 class CleanedDemand(Base):
@@ -35,7 +35,7 @@ class CleanedDemand(Base):
     # "none" | "stockout" | "outlier" | "stockout+outlier"
     correction_type = Column(String(20), nullable=False, default="none")
 
-    computed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    computed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     product = relationship("Product", back_populates="cleaned_demands")
 
@@ -79,6 +79,7 @@ class Prediction(Base):
     current_stock_snapshot = Column(Float, nullable=False)
     lead_time_snapshot = Column(Integer, nullable=False)
     moq_snapshot = Column(Integer, nullable=False, default=1)
+    
     # Précision de l'IA (Sprint 10) — Mean Absolute Percentage Error
     # Exprimé en % (ex: 15.5 pour 15.5% d'erreur)
     mape_score = Column(Float, nullable=True)
@@ -88,7 +89,7 @@ class Prediction(Base):
     annual_gross_profit = Column(Float, nullable=True) # Profit annuel estimé
     demand_sigma = Column(Float, nullable=True, default=0.0) # Écart-type de la demande (DS v2)
 
-    computed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    computed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     product = relationship("Product", back_populates="prediction")
 

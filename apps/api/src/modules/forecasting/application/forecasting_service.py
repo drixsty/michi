@@ -22,6 +22,7 @@ from modules.intelligence.algorithms import (
     calculate_reorder_quantity,
     calculate_abc_ranks_batch,
     detect_seasonality_factor,
+    calculate_mape_score,
 )
 
 class ForecastingService:
@@ -208,6 +209,13 @@ class ForecastingService:
                 lead_time_sigma=lt_sigma
             )
 
+            # 5. MAPE Calculation (Sprint 10)
+            product_demand = df[df["product_id"] == pid_str]
+            mape = calculate_mape_score(
+                run_rate=run_rate,
+                recent_sales=product_demand["corrected_units_sold"]
+            )
+
             prediction_entities.append(PredictionEntity(
                 id=uuid.uuid4(),
                 product_id=p.id,
@@ -218,7 +226,7 @@ class ForecastingService:
                 current_stock_snapshot=float(p.current_stock),
                 lead_time_snapshot=int(p.lead_time),
                 moq_snapshot=int(p.moq),
-                mape_score=None,
+                mape_score=mape,
                 abc_rank=row["abc_rank"],
                 annual_gross_profit=row["annual_gross_profit"],
                 demand_sigma=sigma,

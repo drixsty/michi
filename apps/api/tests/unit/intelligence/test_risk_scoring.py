@@ -4,7 +4,7 @@ Tests unitaires — intelligence/analytics/risk_scoring.py
 import pytest
 from datetime import date
 from typing import Any
-from src.modules.intelligence.analytics.risk_scoring import RiskItem, score_products
+from modules.intelligence.analytics.risk_scoring import RiskItem, score_products
 
 
 def _make_sku(

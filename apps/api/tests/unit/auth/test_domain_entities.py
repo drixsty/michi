@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime, timedelta
 
 
-from src.modules.auth.domain.entities import (
+from modules.auth.domain.entities import (
     InvitationEntity,
     InvitationStatus,
     MembershipEntity,
@@ -18,7 +18,7 @@ from src.modules.auth.domain.entities import (
     UserEntity,
     UserRole,
 )
-from src.modules.auth.domain.value_objects import Email, OrgSlug
+from modules.auth.domain.value_objects import Email, OrgSlug
 
 
 # ---------------------------------------------------------------------------

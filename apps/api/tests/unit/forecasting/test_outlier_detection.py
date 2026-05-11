@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 
-from src.modules.forecasting.algorithms.outlier_detection import (
+from modules.forecasting.algorithms.outlier_detection import (
     detect_outliers,
     detect_outliers_batch,
     OUTLIER_ROLLING_WINDOW,

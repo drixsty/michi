@@ -1,7 +1,7 @@
 """
 Tests unitaires — intelligence/analytics/health_score.py
 """
-from src.modules.intelligence.analytics.health_score import calculate_health_score
+from modules.intelligence.analytics.health_score import calculate_health_score
 
 
 class TestHealthScore:

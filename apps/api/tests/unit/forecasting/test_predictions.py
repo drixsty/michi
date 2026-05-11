@@ -11,7 +11,7 @@ import math
 from datetime import date, timedelta
 
 
-from src.modules.forecasting.algorithms.predictions import (
+from modules.forecasting.algorithms.predictions import (
     predict_stockout_date,
     calculate_reorder_quantity,
 )

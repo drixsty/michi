@@ -1,8 +1,8 @@
 import pytest
 from uuid import uuid4
-from src.modules.auth.infrastructure.repositories import SQLAlchemyUserRepository, SQLAlchemyOrganizationRepository
-from src.modules.auth.infrastructure.persistence.models import User, Organization
-from src.modules.auth.domain.value_objects import Email
+from modules.auth.infrastructure.repositories import SQLAlchemyUserRepository, SQLAlchemyOrganizationRepository
+from modules.auth.infrastructure.persistence.models import User, Organization
+from modules.auth.domain.value_objects import Email
 
 @pytest.mark.asyncio
 async def test_user_repository_save_and_get(db_session):

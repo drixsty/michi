@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, DateTime, ForeignKey, Enum, Boolean, JSON
 from sqlalchemy.orm import relationship
 
@@ -27,8 +27,8 @@ class Organization(Base):
     onboarding_completed = Column(Boolean, default=False, nullable=False)
     onboarding_step = Column(String(50), default="welcome") # welcome, identity, connect, sync
 
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     settings = Column(JSON, server_default='{}', default={}, nullable=False) # Currency, etc.
 
@@ -60,8 +60,8 @@ class User(Base):
     current_organization_id = Column(GUID, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     
     # 2FA Security
     two_factor_secret = Column(String(255), nullable=True) # Will store the encrypted TOTP secret
@@ -89,7 +89,7 @@ class OrganizationMember(Base):
     role = Column(Enum(UserRole), default=UserRole.VIEWER, nullable=False)
     permissions = Column(JSON, default={}, nullable=False)
 
-    joined_at = Column(DateTime, default=datetime.utcnow)
+    joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relationships
     organization = relationship("Organization", back_populates="members")

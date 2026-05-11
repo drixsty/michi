@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.forecasting.domain.entities import PredictionEntity
 from modules.forecasting.domain.ports import IPredictionRepository
 from modules.forecasting.infrastructure.persistence.models import Prediction
-from modules.inventory.infrastructure.models import Product, Store
+from modules.inventory.infrastructure.persistence.models import Product, Store
 
 class SQLAlchemyPredictionRepository(IPredictionRepository):
     def __init__(self, session: AsyncSession):

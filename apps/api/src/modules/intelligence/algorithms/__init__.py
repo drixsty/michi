@@ -7,6 +7,7 @@ from .out_of_stock_correction import correct_out_of_stock, correct_out_of_stock_
 from .abc_analysis import calculate_abc_ranks_batch
 from .seasonality import detect_seasonality_factor
 from .predictions import predict_stockout_date, calculate_reorder_quantity
+from .mape import calculate_mape_score
 
 __all__ = [
     "calculate_run_rate",
@@ -21,4 +22,5 @@ __all__ = [
     "detect_seasonality_factor",
     "predict_stockout_date",
     "calculate_reorder_quantity",
+    "calculate_mape_score",
 ]

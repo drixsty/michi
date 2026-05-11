@@ -3,7 +3,7 @@ Tests unitaires — intelligence/analytics/financial_kpis.py
 """
 import pytest
 from typing import Any
-from src.modules.intelligence.analytics.financial_kpis import (
+from modules.intelligence.analytics.financial_kpis import (
     FinancialKpis,
     calculate_financial_kpis,
 )

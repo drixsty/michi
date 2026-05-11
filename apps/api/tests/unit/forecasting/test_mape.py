@@ -18,8 +18,8 @@ import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 
-from src.modules.forecasting.algorithms.out_of_stock_correction import correct_out_of_stock
-from src.modules.forecasting.algorithms.outlier_detection import detect_outliers
+from modules.forecasting.algorithms.out_of_stock_correction import correct_out_of_stock
+from modules.forecasting.algorithms.outlier_detection import detect_outliers
 
 MAPE_THRESHOLD = 15.0   # % maximum acceptable (Sprint 21 : retour au standard initial)
 

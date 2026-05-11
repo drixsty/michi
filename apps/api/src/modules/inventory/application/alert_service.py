@@ -5,12 +5,13 @@ Coordinates stockout checks and alert generation.
 """
 from typing import List, Optional
 from loguru import logger
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from uuid import UUID
 import uuid
 
 from modules.inventory.domain.entities import AlertEntity
 from modules.inventory.domain.ports import IAlertRepository, IProductRepository, IStoreRepository
+from modules.auth.domain.ports import IMembershipRepository, IUserRepository
 from modules.inventory.application.email_service import EmailService
 
 class AlertService:
@@ -22,11 +23,15 @@ class AlertService:
         alert_repo: IAlertRepository, 
         product_repo: IProductRepository,
         store_repo: IStoreRepository,
+        membership_repo: IMembershipRepository,
+        user_repo: IUserRepository,
         email_service: EmailService
     ):
         self.alert_repo = alert_repo
         self.product_repo = product_repo
         self.store_repo = store_repo
+        self.membership_repo = membership_repo
+        self.user_repo = user_repo
         self.email_service = email_service
 
     async def check_for_stockouts(self, store_id: str) -> List[AlertEntity]:
@@ -34,7 +39,7 @@ class AlertService:
         Analyse tous les produits d'un store et génère des alertes + emails.
         """
         logger.info(f"[AlertService] Running stockout check for store {store_id}")
-        s_uuid = UUID(str(store_id))
+        s_uuid = UUID(store_id)
         today = date.today()
 
         # NOTE: Current implementation of AlertService heavily relies on joins with Prediction model.
@@ -49,15 +54,24 @@ class AlertService:
         # en utilisant une query directe (ou on ajoute un port temporaire).
         # On va utiliser le produit directement s'il a déjà les infos (via selectinload dans repo).
         
-        # 2. Chercher les destinataires (Admins de l'org du store)
-        # TODO: Move this to OrgService / OrgRepository
+        # 2. Chercher les destinataires (Admins/Owner de l'org du store)
         store = await self.store_repo.get_by_id(s_uuid)
         if not store:
             return []
 
-        # Recipient lookup logic (Simplified for Hexagonal transition)
-        # In a real DDD, we'd inject an IOrgService or IUserRepository
-        recipient_email = "admin@michi.app" # Mock or specialized lookup
+        # Recipient lookup logic (Fetch organization members)
+        memberships = await self.membership_repo.list_for_org(store.organization_id)
+        # Filter for ADMIN or OWNER (simplified: anyone with a role for now, but should be filtered)
+        recipients = []
+        for m in memberships:
+            user = await self.user_repo.get_by_id(m.user_id)
+            if user:
+                recipients.append(str(user.email))
+        
+        if not recipients:
+            logger.warning(f"[AlertService] No recipients found for organization {store.organization_id}")
+            recipients = ["admin@michi.app"] # Fallback
+
         new_alerts = []
 
         for product in products:
@@ -74,19 +88,20 @@ class AlertService:
                     severity=3,
                     message=f"Rupture imminente détectée pour {product.sku}",
                     is_read=False,
-                    created_at=datetime.utcnow()
+                    created_at=datetime.now(timezone.utc)
                 )
                 await self.alert_repo.save(alert)
                 new_alerts.append(alert)
                 
-                try:
-                    await self.email_service.send_stockout_warning(
-                        recipient_email,
-                        product.title,
-                        product.lead_time
-                    )
-                except Exception as e:
-                    logger.warning(f"[AlertService] Email send failed (non-blocking): {e}")
+                for email in recipients:
+                    try:
+                        await self.email_service.send_stockout_warning(
+                            email,
+                            product.title,
+                            product.lead_time
+                        )
+                    except Exception as e:
+                        logger.warning(f"[AlertService] Email send failed to {email}: {e}")
         
         return new_alerts
 
@@ -98,8 +113,8 @@ class AlertService:
         """
         Récupère les alertes non lues pour l'affichage UI.
         """
-        s_uuid = UUID(str(store_id)) if store_id else None
-        o_uuid = UUID(str(organization_id)) if organization_id else None
+        s_uuid = UUID(store_id) if store_id else None
+        o_uuid = UUID(organization_id) if organization_id else None
         
         if s_uuid:
             store = await self.store_repo.get_by_id(s_uuid)

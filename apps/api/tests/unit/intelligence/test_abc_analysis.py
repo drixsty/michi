@@ -5,7 +5,7 @@ Tests unitaires — ABC Analysis Algorithm
 Nouveau fichier (US 21.30) — couverture : Pareto 70/90/100, edge cases, vectorisation.
 """
 
-from src.modules.intelligence.algorithms.abc_analysis import calculate_abc_ranks_batch
+from modules.intelligence.algorithms.abc_analysis import calculate_abc_ranks_batch
 
 
 def make_products(data: list[dict]) -> pd.DataFrame:

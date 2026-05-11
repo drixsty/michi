@@ -5,7 +5,7 @@ import uuid
 
 from core.database import Base, GUID
 from core.database.constants import UserRole, InvitationStatus
-from core.database.models import Organization, User, OrganizationMember
+# Removed core.database.models import to prevent circularity and double table registration
 
 class Invitation(Base):
     """

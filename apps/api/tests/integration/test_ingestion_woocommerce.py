@@ -1,5 +1,5 @@
 import pytest
-from src.modules.ingestion.connectors.woocommerce import WooCommerceConnector
+from modules.ingestion.connectors.woocommerce import WooCommerceConnector
 
 @pytest.mark.asyncio
 async def test_woocommerce_fetch_products():

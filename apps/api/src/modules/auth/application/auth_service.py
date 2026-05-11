@@ -27,12 +27,7 @@ from modules.auth.infrastructure.repositories import (
     SQLAlchemyOrganizationRepository,
     SQLAlchemyUserRepository,
 )
-from modules.auth.infrastructure.persistence.models import (
-    Organization,
-    OrganizationMember,
-    User,
-    UserRole,
-)
+from core.database.constants import UserRole
 from modules.inventory.application.email_service import EmailService
 from core.exceptions import ErrorCode, MichiException, UnauthenticatedException
 

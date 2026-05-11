@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 
-from src.modules.intelligence.algorithms.run_rate import (
+from modules.intelligence.algorithms.run_rate import (
     calculate_run_rate,
     calculate_run_rate_batch,
     RUN_RATE_WINDOW,

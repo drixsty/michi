@@ -24,13 +24,9 @@ from modules.auth.infrastructure.repositories import (
     SQLAlchemyUserRepository,
 )
 from modules.auth.domain.ports import ITokenService
-from modules.auth.infrastructure.models import (
-    Invitation,
-    InvitationStatus,
-    Organization,
-    OrganizationMember,
-    UserRole,
-)
+from core.database.models import User, Organization, OrganizationMember
+from ..infrastructure.persistence.models import Invitation
+from core.database.constants import UserRole, InvitationStatus
 from core.exceptions import ErrorCode, MichiException
 
 

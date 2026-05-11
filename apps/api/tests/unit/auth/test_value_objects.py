@@ -6,7 +6,7 @@ Couverture : validation + cas limites + comportements métier.
 """
 import pytest
 
-from src.modules.auth.domain.value_objects import Email, HashedPassword, JwtToken, OrgSlug
+from modules.auth.domain.value_objects import Email, HashedPassword, JwtToken, OrgSlug
 
 
 # ---------------------------------------------------------------------------

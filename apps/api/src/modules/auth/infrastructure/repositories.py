@@ -22,14 +22,9 @@ from modules.auth.domain.entities import (
     UserEntity,
 )
 from modules.auth.domain.value_objects import Email, HashedPassword, OrgSlug
-from .persistence.models import (
-    Invitation,
-    InvitationStatus,
-    Organization,
-    OrganizationMember,
-    User,
-    UserRole,
-)
+from core.database.models import User, Organization, OrganizationMember
+from .persistence.models import Invitation, PasswordResetToken
+from core.database.constants import UserRole, InvitationStatus
 
 from .mappers import (
     invitation_to_entity,
@@ -116,12 +111,33 @@ class SQLAlchemyUserRepository:
         return result.scalar_one_or_none()
 
     async def save(
-        self, user: User
+        self, user: UserEntity, hashed_password: Optional[HashedPassword] = None
     ) -> UserEntity:
-        """Persiste un modèle User (add + flush) et retourne l'entité domaine."""
-        self._db.add(user)
+        """Persiste une entité User et retourne l'entité domaine."""
+        model = await self.get_model_by_id(user.id)
+        if not model:
+            model = User(
+                id=user.id,
+                email=user.email,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                hashed_password=hashed_password.value if hashed_password else None,
+                is_active=user.is_active,
+                current_organization_id=user.current_organization_id,
+                preferences=user.preferences
+            )
+            self._db.add(model)
+        else:
+            model.first_name = user.first_name
+            model.last_name = user.last_name
+            model.is_active = user.is_active
+            model.current_organization_id = user.current_organization_id
+            model.preferences = user.preferences
+            if hashed_password:
+                model.hashed_password = hashed_password.value
+
         await self._db.flush()
-        return user_to_entity(user)
+        return user_to_entity(model)
 
     async def update(self, user: UserEntity) -> UserEntity:
         model = await self.get_model_by_id(user.id)
@@ -156,11 +172,27 @@ class SQLAlchemyOrganizationRepository:
         model = result.scalar_one_or_none()
         return org_to_entity(model) if model else None
 
-    async def save(self, org: Organization) -> OrganizationEntity:
-        """Persiste un modèle Organization et retourne l'entité domaine."""
-        self._db.add(org)
+    async def save(self, org: OrganizationEntity) -> OrganizationEntity:
+        """Persiste une entité Organization et retourne l'entité domaine."""
+        result = await self._db.execute(
+            select(Organization).where(Organization.id == org.id)
+        )
+        model = result.scalar_one_or_none()
+        
+        if not model:
+            model = Organization(
+                id=org.id,
+                name=org.name,
+                slug=org.slug,
+                created_at=org.created_at
+            )
+            self._db.add(model)
+        else:
+            model.name = org.name
+            model.slug = org.slug
+
         await self._db.flush()
-        return org_to_entity(org)
+        return org_to_entity(model)
 
     async def list_for_user(self, user_id: UUID) -> list[OrganizationEntity]:
         result = await self._db.execute(
@@ -187,8 +219,29 @@ class SQLAlchemyMembershipRepository:
         model = result.scalar_one_or_none()
         return membership_to_entity(model) if model else None
 
-    async def save(self, model: OrganizationMember) -> MembershipEntity:
-        self._db.add(model)
+    async def save(self, membership: MembershipEntity) -> MembershipEntity:
+        """Persiste une entité Membership."""
+        model = await self.get(membership.organization_id, membership.user_id)
+        if not model:
+            model = OrganizationMember(
+                organization_id=membership.organization_id,
+                user_id=membership.user_id,
+                role=membership.role,
+                permissions=membership.permissions
+            )
+            self._db.add(model)
+        else:
+            # Re-fetch the actual model for update
+            result = await self._db.execute(
+                select(OrganizationMember).where(
+                    OrganizationMember.organization_id == membership.organization_id,
+                    OrganizationMember.user_id == membership.user_id,
+                )
+            )
+            model = result.scalar_one()
+            model.role = membership.role
+            model.permissions = membership.permissions
+
         await self._db.flush()
         return membership_to_entity(model)
 
@@ -275,8 +328,29 @@ class SQLAlchemyInvitationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def save(self, model: Invitation) -> InvitationEntity:
-        self._db.add(model)
+    async def save(self, invitation: InvitationEntity) -> InvitationEntity:
+        """Persiste une entité Invitation."""
+        result = await self._db.execute(
+            select(Invitation).where(Invitation.id == invitation.id)
+        )
+        model = result.scalar_one_or_none()
+
+        if not model:
+            model = Invitation(
+                id=invitation.id,
+                organization_id=invitation.organization_id,
+                email=invitation.email,
+                code=invitation.code,
+                role=invitation.role,
+                status=invitation.status,
+                expires_at=invitation.expires_at,
+                created_by=invitation.created_by
+            )
+            self._db.add(model)
+        else:
+            model.status = invitation.status
+            model.expires_at = invitation.expires_at
+
         await self._db.flush()
         return invitation_to_entity(model)
 

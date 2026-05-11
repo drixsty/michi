@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 from datetime import date, timedelta
 
-from src.modules.forecasting.algorithms.run_rate import (
+from modules.forecasting.algorithms.run_rate import (
     calculate_run_rate,
     calculate_run_rate_batch,
     RUN_RATE_WINDOW,

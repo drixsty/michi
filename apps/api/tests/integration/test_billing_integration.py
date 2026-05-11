@@ -1,7 +1,7 @@
 import pytest
 import uuid
 from httpx import AsyncClient
-from src.modules.auth.infrastructure.persistence.models import Organization, OrganizationMember, UserRole
+from modules.auth.infrastructure.persistence.models import Organization, OrganizationMember, UserRole
 
 @pytest.mark.asyncio
 async def test_feature_gating_basic_plan(db_session, test_user):
@@ -46,7 +46,7 @@ async def test_feature_gating_basic_plan(db_session, test_user):
         "email": test_user.email
     })
     
-    from src.main import app
+    from main import app
     async with AsyncClient(app=app, base_url="http://test") as ac:
         response = await ac.post(
             "/graphql",
@@ -94,7 +94,7 @@ async def test_webhook_upgrade_to_pro(db_session, test_user):
     }
 
     # 3. Appel direct au handler du service (ou via le router avec signature mockée)
-    from src.modules.billing.service import BillingService
+    from modules.billing.service import BillingService
     import stripe
     from unittest.mock import patch
 
