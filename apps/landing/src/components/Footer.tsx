@@ -60,6 +60,7 @@ export const Footer = () => {
           <ul className="space-y-3 text-xs text-muted-foreground">
             <li><a href="/about" className="hover:text-primary transition-colors">{t('links.about')}</a></li>
             <li><a href="/blog" className="hover:text-primary transition-colors">{t('links.blog')}</a></li>
+            <li><a href="/legal" className="hover:text-primary transition-colors">{t('legal')}</a></li>
             <li><a href="#" className="hover:text-primary transition-colors">{t('links.careers')}</a></li>
           </ul>
         </div>
@@ -69,8 +70,8 @@ export const Footer = () => {
       <div className="flex flex-col md:flex-row justify-between items-center pt-6 border-t border-border gap-4">
         <div className="text-muted-foreground text-xs">{t('copyright')}</div>
         <div className="flex gap-6 text-xs text-muted-foreground">
-          <a href="#" className="hover:text-primary transition-colors">{t('links.privacy')}</a>
-          <a href="#" className="hover:text-primary transition-colors">{t('links.terms')}</a>
+          <a href="/privacy" className="hover:text-primary transition-colors">{t('links.privacy')}</a>
+          <a href="/terms" className="hover:text-primary transition-colors">{t('links.terms')}</a>
         </div>
       </div>
     </footer>

@@ -445,13 +445,15 @@
         "title": "Comment l'IA transforme la planification de la demande",
         "description": "Le machine learning change profondément la façon dont les marques prédisent la demande et gèrent leur supply chain.",
         "date": "08 mai 2026",
-        "author": "Expert supply chain"
+        "author": "Expert supply chain",
+        "content": "<h2Inner>L'ère des tableurs est révolue</h2Inner><pInner>La planification traditionnelle de la demande s'appuie sur des données historiques simplistes et des feuilles de calcul Excel. Aujourd'hui, l'intelligence artificielle révolutionne cette approche en intégrant des dizaines de variables complexes en temps réel.</pInner><h3Inner>1. Détection des micro-tendances</h3Inner><pInner>Contrairement aux modèles statistiques classiques, le machine learning peut repérer d'infimes variations dans les comportements d'achat, permettant aux marques d'anticiper des pics de demande imprévus avec une précision redoutable.</pInner><h3Inner>2. Intégration des facteurs externes</h3Inner><pInner>La météo, les jours fériés, ou les campagnes marketing sur les réseaux sociaux influencent massivement les ventes. L'IA est capable d'assimiler ces signaux externes pour ajuster les prévisions dynamiquement, évitant ainsi les surstocks coûteux ou les ruptures frustrantes.</pInner><h3Inner>3. Optimisation continue</h3Inner><pInner>La force principale d'un réseau neuronal réside dans sa capacité d'apprentissage. Chaque jour, le modèle compare ses prédictions avec les ventes réelles et s'ajuste pour devenir de plus en plus performant au fil du temps.</pInner>"
       },
       "multi-channel-guide": {
         "title": "Inventaire multi-canal : le guide complet",
         "description": "Maîtrisez vos stocks sur tous vos canaux de vente — sans la complexité.",
         "date": "05 mai 2026",
-        "author": "Pro de l'e-commerce"
+        "author": "Pro de l'e-commerce",
+        "content": "<h2Inner>La complexité de l'omni-canal</h2Inner><pInner>Vendre simultanément sur Shopify, Amazon et des marketplaces physiques multiplie vos opportunités, mais fragmente dangereusement la visibilité de vos stocks. Ce guide vous montre comment reprendre le contrôle.</pInner><h3Inner>1. Centraliser la donnée d'inventaire</h3Inner><pInner>Le plus grand risque de l'omni-canal est la donnée silotée. Si une commande Amazon vide votre stock sans que Shopify ne soit mis à jour, vous risquez des ventes hors-stock catastrophiques pour votre réputation. Une base de données unique est non négociable.</pInner><h3Inner>2. Allouer intelligemment par canal</h3Inner><pInner>Tous les canaux ne performent pas de la même manière. L'IA permet de comprendre la vélocité de chaque plateforme et de rediriger automatiquement les stocks vers les canaux les plus rentables avant qu'ils ne tombent en rupture.</pInner><h3Inner>3. Maîtriser le buffer stock</h3Inner><pInner>Maintenir un stock de sécurité commun n'est plus suffisant. Chaque canal a sa propre volatilité. Définissez des buffers dynamiques spécifiques à Amazon FBA versus votre entrepôt propre (3PL) pour garantir des taux de service optimaux partout.</pInner>"
       }
     },
     "teamName": "Michi Team",
@@ -467,5 +469,117 @@
   "NotFound": {
     "title": "Page introuvable",
     "button": "Retour à l'accueil"
+  },
+  "Legal": {
+    "privacy": {
+      "title": "Politique de Confidentialité",
+      "subtitle": "Comment nous traitons vos données",
+      "sections": {
+        "intro": {
+          "title": "1. Introduction",
+          "content": "Bienvenue sur Michi. Nous nous engageons à protéger vos données personnelles et votre vie privée. Cette politique de confidentialité explique comment nous collectons, utilisons et protégeons vos informations lorsque vous utilisez nos services de prévision."
+        },
+        "collection": {
+          "title": "2. Données collectées",
+          "content": "Nous collectons les informations que vous nous fournissez directement, notamment :",
+          "items": ["Informations de contact (nom, email, entreprise)", "Données de boutique issues de vos plateformes intégrées (Shopify, Amazon, WooCommerce)", "Données d'utilisation et cookies pour améliorer notre service"]
+        },
+        "usage": {
+          "title": "3. Utilisation de vos données",
+          "content": "Vos données sont principalement utilisées pour :",
+          "items": ["Fournir des prévisions de stock précises", "Communiquer avec vous concernant votre compte", "Améliorer nos modèles d'IA et l'expérience utilisateur", "Assurer la sécurité de notre plateforme"]
+        },
+        "security": {
+          "title": "4. Sécurité des données",
+          "content": "Nous mettons en œuvre un chiffrement de niveau bancaire et des mesures de sécurité pour protéger vos données. Cependant, aucune méthode de transmission sur Internet n'est sûre à 100%, et nous ne pouvons garantir une sécurité absolue."
+        },
+        "rights": {
+          "title": "5. Vos droits",
+          "content": "Conformément au RGPD, vous dispose au droit d'accès, de rectification ou de suppression de vos données personnelles. Vous pouvez exercer ces droits à tout moment en nous contactant à privacy@michi.app."
+        },
+        "changes": {
+          "title": "6. Modifications de cette politique",
+          "content": "Nous pouvons mettre à jour cette politique de temps à autre. Nous vous informerons de tout changement en publiant la nouvelle politique sur cette page et en mettant à jour la date de \"Dernière mise à jour\"."
+        }
+      }
+    },
+    "terms": {
+      "title": "Conditions d'Utilisation",
+      "subtitle": "Les règles d'utilisation de Michi",
+      "sections": {
+        "acceptance": {
+          "title": "1. Acceptation des conditions",
+          "content": "En accédant et en utilisant Michi, vous acceptez d'être lié par ces conditions d'utilisation. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser nos services."
+        },
+        "service": {
+          "title": "2. Description du service",
+          "content": "Michi fournit des outils de prévision omnicanale et de gestion de stock basés sur l'IA. Nous nous réservons le droit de modifier ou d'interrompre toute partie du service à tout moment."
+        },
+        "accounts": {
+          "title": "3. Comptes utilisateurs",
+          "content": "Vous êtes responsable du maintien de la confidentialité de vos identifiants de compte. Vous acceptez de fournir des informations exactes et complètes lors du processus d'inscription."
+        },
+        "ip": {
+          "title": "4. Propriété intellectuelle",
+          "content": "Tout le contenu, les logos et les logiciels utilisés dans Michi sont la propriété de Michi AI Solutions ou de ses concédants de licence et sont protégés par les lois sur la propriété intellectuelle."
+        },
+        "liability": {
+          "title": "5. Limitation de responsabilité",
+          "content": "Michi fournit des prévisions basées sur des données historiques et des modèles d'IA. Nous ne garantissons pas l'exactitude absolue de ces prévisions et ne sommes pas responsables des décisions commerciales prises sur la base de nos données."
+        },
+        "termination": {
+          "title": "6. Résiliation",
+          "content": "Nous nous réservons le droit de résilier ou de suspendre votre accès au service à notre seule discrétion, sans préavis, pour toute conduite que nous estimons violer ces conditions ou être nuisible aux autres utilisateurs."
+        }
+      }
+    },
+    "notice": {
+      "title": "Mentions Légales",
+      "subtitle": "Informations juridiques",
+      "sections": {
+        "editor": {
+          "title": "Éditeur du site",
+          "content": "Le site michi.app est édité par Michi AI Solutions.<br />Statut : SAS (Société par Actions Simplifiée)<br />Siège social : 123 Tech Avenue, 75001 Paris, France<br />RCS : Paris B 123 456 789<br />Numéro de TVA : FR 12 345 678 901"
+        },
+        "director": {
+          "title": "Directeur de la publication",
+          "content": "Nom : Kevin Tsague<br />Contact : contact@michi.app"
+        },
+        "host": {
+          "title": "Hébergeur",
+          "content": "Le site est hébergé par Vercel Inc.<br />Adresse : 440 N Barranca Ave #4133, Covina, CA 91723, United States<br />Site web : https://vercel.com"
+        },
+        "ip": {
+          "title": "Propriété intellectuelle",
+          "content": "La structure générale du site, ainsi que les textes, graphiques, images, sons et vidéos la composant, sont la propriété de l'éditeur. Toute représentation et/ou reproduction et/ou exploitation partielle ou totale des contenus et services proposés par le site, par quelque procédé que ce soit, sans l'autorisation préalable et par écrit de Michi AI Solutions est strictement interdite."
+        }
+      }
+    },
+    "cookies": {
+      "title": "Nous respectons votre vie privée",
+      "description": "Nous utilisons des cookies pour améliorer votre expérience, analyser notre trafic et personnaliser le contenu. Vous pouvez choisir d'accepter tous les cookies ou gérer vos préférences.",
+      "acceptAll": "Tout accepter",
+      "declineAll": "Tout refuser",
+      "manage": "Gérer",
+      "savePreferences": "Enregistrer mes choix",
+      "privacyLink": "Consultez notre politique de confidentialité",
+      "modalTitle": "Préférences de cookies",
+      "modalDesc": "Gérez vos préférences en matière de cookies. Les cookies strictement nécessaires ne peuvent pas être désactivés car ils sont indispensables au fonctionnement du site.",
+      "categories": {
+        "necessary": {
+          "title": "Strictement nécessaires",
+          "desc": "Ces cookies sont indispensables au fonctionnement du site (sécurité, session, préférences de langue). Ils ne peuvent pas être désactivés.",
+          "alwaysActive": "Toujours actif"
+        },
+        "analytics": {
+          "title": "Analytiques",
+          "desc": "Ces cookies nous permettent d'analyser l'utilisation du site afin d'en mesurer et d'en améliorer les performances (Google Analytics)."
+        },
+        "marketing": {
+          "title": "Marketing",
+          "desc": "Ces cookies sont utilisés pour suivre les visiteurs sur les sites Web. Le but est d'afficher des publicités pertinentes et attrayantes (Facebook Pixel, Google Ads)."
+        }
+      }
+    }
   }
 }

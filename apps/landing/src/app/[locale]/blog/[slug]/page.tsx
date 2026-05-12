@@ -27,7 +27,21 @@ export default function BlogPost({ params: { slug } }: { params: { slug: string 
           <div className="flex flex-wrap items-center gap-4 text-muted-foreground text-xs mb-8 pb-8 border-b border-border">
             <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {t(`posts.${slug}.date` as any)}</span>
             <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> {t('teamName')}</span>
-            <button className="flex items-center gap-1.5 hover:text-primary transition-colors ml-auto">
+            <button 
+              onClick={() => {
+                const url = window.location.href;
+                if (navigator.share) {
+                  navigator.share({
+                    title: document.title,
+                    url: url
+                  }).catch(console.error);
+                } else {
+                  navigator.clipboard.writeText(url);
+                  alert("Lien copié dans le presse-papier !");
+                }
+              }}
+              className="flex items-center gap-1.5 hover:text-primary transition-colors ml-auto"
+            >
               <Share2 className="w-3.5 h-3.5" /> {t('share')}
             </button>
           </div>

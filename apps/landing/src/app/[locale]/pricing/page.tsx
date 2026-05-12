@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { Check, ArrowRight } from 'lucide-react';
 
-const PricingCard = ({ plan, isFeatured }: { plan: any; isFeatured?: boolean }) => {
+const PricingCard = ({ plan, planId, isFeatured }: { plan: any; planId: string; isFeatured?: boolean }) => {
   const t = useTranslations('Index');
   return (
     <div className={`p-7 rounded-xl flex flex-col h-full transition-colors ${
@@ -24,7 +24,7 @@ const PricingCard = ({ plan, isFeatured }: { plan: any; isFeatured?: boolean }) 
         </h3>
         <div className="flex items-baseline gap-0.5">
           <span className={`text-3xl font-bold ${isFeatured ? 'text-white' : 'text-foreground'}`}>
-            ${plan.price}
+            {isNaN(Number(plan.price)) ? plan.price : `$${plan.price}`}
           </span>
           {!isNaN(Number(plan.price)) && (
             <span className={`text-xs font-medium ml-1 ${isFeatured ? 'text-white/60' : 'text-muted-foreground'}`}>
@@ -45,13 +45,15 @@ const PricingCard = ({ plan, isFeatured }: { plan: any; isFeatured?: boolean }) 
           </li>
         ))}
       </ul>
-      <button className={`w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-95 ${
+      <a 
+        href={`${process.env.NEXT_PUBLIC_APP_URL}/register?plan=${planId}`}
+        className={`w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-95 flex items-center justify-center ${
         isFeatured
           ? 'bg-white text-primary hover:bg-white/90'
           : 'bg-primary text-white hover:bg-primary/90'
       }`}>
         {t('getStarted')}
-      </button>
+      </a>
     </div>
   );
 };
@@ -59,6 +61,58 @@ const PricingCard = ({ plan, isFeatured }: { plan: any; isFeatured?: boolean }) 
 export default function PricingPage() {
   const t = useTranslations('Index');
   const tPricing = useTranslations('Pricing');
+  
+  const [plans, setPlans] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const res = await fetch(`${apiUrl}/graphql`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+              query GetBillingPlans {
+                billingPlans {
+                  id
+                  name
+                  price
+                  currency
+                  interval
+                  features
+                  isPopular
+                }
+              }
+            `
+          })
+        });
+        const json = await res.json();
+        if (json.data?.billingPlans && json.data.billingPlans.length > 0) {
+          setPlans(json.data.billingPlans);
+        } else {
+          // Fallback to static
+          setPlans([
+            { ...t.raw('pricing.plans.starter'), id: 'BASIC' },
+            { ...t.raw('pricing.plans.pro'), id: 'PRO', isPopular: true },
+            { ...t.raw('pricing.plans.enterprise'), id: 'ENTERPRISE' }
+          ]);
+        }
+      } catch (e) {
+        console.error(e);
+        // Fallback to static
+        setPlans([
+          { ...t.raw('pricing.plans.starter'), id: 'BASIC' },
+          { ...t.raw('pricing.plans.pro'), id: 'PRO', isPopular: true },
+          { ...t.raw('pricing.plans.enterprise'), id: 'ENTERPRISE' }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPlans();
+  }, [t]);
 
   return (
     <div className="overflow-x-hidden min-h-screen">
@@ -86,11 +140,22 @@ export default function PricingPage() {
         </motion.div>
 
         {/* Plans */}
-        <div className="grid md:grid-cols-3 gap-4 items-stretch mb-10">
-          <PricingCard plan={t.raw('pricing.plans.starter')} />
-          <PricingCard plan={t.raw('pricing.plans.pro')} isFeatured />
-          <PricingCard plan={t.raw('pricing.plans.enterprise')} />
-        </div>
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+             <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-4 items-stretch mb-10">
+            {plans.map((plan) => (
+              <PricingCard 
+                key={plan.id} 
+                plan={plan} 
+                planId={plan.id} 
+                isFeatured={plan.isPopular} 
+              />
+            ))}
+          </div>
+        )}
 
         {/* Enterprise CTA */}
         <div className="border border-border rounded-xl p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -100,9 +165,12 @@ export default function PricingPage() {
               {tPricing('enterprise.desc')}
             </p>
           </div>
-          <button className="flex items-center gap-2 border border-border text-foreground px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary transition-all whitespace-nowrap shrink-0">
+          <a 
+            href={process.env.NEXT_PUBLIC_DEMO_URL || 'mailto:contact@michi.app'}
+            className="flex items-center justify-center gap-2 border border-border text-foreground px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary transition-all whitespace-nowrap shrink-0"
+          >
             {tPricing('enterprise.button')} <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          </a>
         </div>
 
       </section>

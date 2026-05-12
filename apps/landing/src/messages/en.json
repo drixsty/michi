@@ -445,13 +445,15 @@
         "title": "How AI is changing inventory planning",
         "description": "Machine learning is transforming how brands predict demand and manage their supply chain.",
         "date": "May 08, 2026",
-        "author": "Supply chain expert"
+        "author": "Supply chain expert",
+        "content": "<h2Inner>The era of spreadsheets is over</h2Inner><pInner>Traditional demand planning relies on simplistic historical data and Excel spreadsheets. Today, Artificial Intelligence is revolutionizing this approach by integrating dozens of complex variables in real-time.</pInner><h3Inner>1. Micro-trend detection</h3Inner><pInner>Unlike classical statistical models, machine learning can spot minute variations in purchasing behavior, allowing brands to anticipate unforeseen demand spikes with formidable accuracy.</pInner><h3Inner>2. Integrating external factors</h3Inner><pInner>Weather, holidays, or social media marketing campaigns massively influence sales. AI can assimilate these external signals to adjust forecasts dynamically, avoiding costly overstock or frustrating stockouts.</pInner><h3Inner>3. Continuous optimization</h3Inner><pInner>The main strength of a neural network lies in its ability to learn. Every day, the model compares its predictions with actual sales and adjusts itself to become increasingly accurate over time.</pInner>"
       },
       "multi-channel-guide": {
         "title": "Multi-channel inventory: the complete guide",
         "description": "Master your inventory across all sales channels — without the chaos.",
         "date": "May 05, 2026",
-        "author": "E-commerce pro"
+        "author": "E-commerce pro",
+        "content": "<h2Inner>The complexity of omnichannel</h2Inner><pInner>Selling simultaneously on Shopify, Amazon, and physical marketplaces multiplies your opportunities, but dangerously fragments your inventory visibility. This guide shows you how to regain control.</pInner><h3Inner>1. Centralize inventory data</h3Inner><pInner>The biggest risk of omnichannel is siloed data. If an Amazon order depletes your stock without Shopify being updated, you risk selling out-of-stock items, which is disastrous for your reputation. A single source of truth is non-negotiable.</pInner><h3Inner>2. Allocate intelligently per channel</h3Inner><pInner>Not all channels perform the same way. AI allows you to understand the velocity of each platform and automatically redirect stock to the most profitable channels before they run out.</pInner><h3Inner>3. Master the buffer stock</h3Inner><pInner>Maintaining a common safety stock is no longer enough. Each channel has its own volatility. Define dynamic buffers specific to Amazon FBA versus your own warehouse (3PL) to guarantee optimal service levels everywhere.</pInner>"
       }
     },
     "teamName": "Michi Team",
@@ -467,5 +469,117 @@
   "NotFound": {
     "title": "Page not found",
     "button": "Back to home"
+  },
+  "Legal": {
+    "privacy": {
+      "title": "Privacy Policy",
+      "subtitle": "How we handle your data",
+      "sections": {
+        "intro": {
+          "title": "1. Introduction",
+          "content": "Welcome to Michi. We are committed to protecting your personal data and your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our forecasting services."
+        },
+        "collection": {
+          "title": "2. Data We Collect",
+          "content": "We collect information that you provide directly to us, including:",
+          "items": ["Contact information (name, email, company)", "Store data from your integrated platforms (Shopify, Amazon, WooCommerce)", "Usage data and cookies to improve our service"]
+        },
+        "usage": {
+          "title": "3. How We Use Your Data",
+          "content": "Your data is used primarily to:",
+          "items": ["Provide accurate inventory forecasts", "Communicate with you about your account", "Improve our AI models and user experience", "Ensure the security of our platform"]
+        },
+        "security": {
+          "title": "4. Data Security",
+          "content": "We implement bank-grade encryption and security measures to protect your data. However, no method of transmission over the internet is 100% secure, and we cannot guarantee absolute security."
+        },
+        "rights": {
+          "title": "5. Your Rights",
+          "content": "Under GDPR, you have the right to access, rectify, or delete your personal data. You can exercise these rights at any time by contacting us at privacy@michi.app."
+        },
+        "changes": {
+          "title": "6. Changes to This Policy",
+          "content": "We may update this policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the \"Last Updated\" date."
+        }
+      }
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "subtitle": "Rules for using Michi",
+      "sections": {
+        "acceptance": {
+          "title": "1. Acceptance of Terms",
+          "content": "By accessing and using Michi, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services."
+        },
+        "service": {
+          "title": "2. Description of Service",
+          "content": "Michi provides AI-powered omnichannel forecasting and inventory management tools. We reserve the right to modify or discontinue any part of the service at any time."
+        },
+        "accounts": {
+          "title": "3. User Accounts",
+          "content": "You are responsible for maintaining the confidentiality of your account credentials. You agree to provide accurate and complete information during the registration process."
+        },
+        "ip": {
+          "title": "4. Intellectual Property",
+          "content": "All content, logos, and software used in Michi are the property of Michi AI Solutions or its licensors and are protected by intellectual property laws."
+        },
+        "liability": {
+          "title": "5. Limitation of Liability",
+          "content": "Michi provides forecasts based on historical data and AI models. We do not guarantee the absolute accuracy of these forecasts and are not liable for any business decisions made based on our data."
+        },
+        "termination": {
+          "title": "6. Termination",
+          "content": "We reserve the right to terminate or suspend your access to the service at our sole discretion, without notice, for conduct that we believe violates these Terms or is harmful to other users."
+        }
+      }
+    },
+    "notice": {
+      "title": "Legal Notice",
+      "subtitle": "Juridical information",
+      "sections": {
+        "editor": {
+          "title": "Site Editor",
+          "content": "The website michi.app is edited by Michi AI Solutions.<br />Status: SAS (Société par Actions Simplifiée)<br />Headquarters: 123 Tech Avenue, 75001 Paris, France<br />RCS: Paris B 123 456 789<br />VAT Number: FR 12 345 678 901"
+        },
+        "director": {
+          "title": "Publication Director",
+          "content": "Name: Kevin Tsague<br />Contact: contact@michi.app"
+        },
+        "host": {
+          "title": "Hosting Provider",
+          "content": "The website is hosted by Vercel Inc.<br />Address: 440 N Barranca Ave #4133, Covina, CA 91723, United States<br />Website: https://vercel.com"
+        },
+        "ip": {
+          "title": "Intellectual Property",
+          "content": "The general structure of the site, as well as the texts, graphics, images, sounds and videos composing it, are the property of the editor. Any representation and/or reproduction and/or partial or total exploitation of the contents and services offered by the site, by any process whatsoever, without the prior and written authorization of Michi AI Solutions is strictly prohibited."
+        }
+      }
+    },
+    "cookies": {
+      "title": "We respect your privacy",
+      "description": "We use cookies to enhance your experience, analyze our traffic, and personalize content. You can choose to accept all cookies or manage your preferences.",
+      "acceptAll": "Accept All",
+      "declineAll": "Decline All",
+      "manage": "Manage",
+      "savePreferences": "Save Preferences",
+      "privacyLink": "Read our privacy policy",
+      "modalTitle": "Cookie Preferences",
+      "modalDesc": "Manage your cookie preferences. Strictly necessary cookies cannot be disabled as they are essential for the website to function properly.",
+      "categories": {
+        "necessary": {
+          "title": "Strictly Necessary",
+          "desc": "These cookies are essential for the website to function (security, session, language preferences). They cannot be disabled.",
+          "alwaysActive": "Always Active"
+        },
+        "analytics": {
+          "title": "Analytics",
+          "desc": "These cookies allow us to analyze site usage to measure and improve performance (e.g., Google Analytics)."
+        },
+        "marketing": {
+          "title": "Marketing",
+          "desc": "These cookies are used to track visitors across websites to display relevant and engaging advertisements (e.g., Facebook Pixel, Google Ads)."
+        }
+      }
+    }
   }
 }

@@ -50,6 +50,19 @@ const sidebars = {
     },
   ],
 
+  deploymentSidebar: [
+    {
+      type: 'category',
+      label: 'Déploiement & Config',
+      collapsed: false,
+      items: [
+        'deployment/overview',
+        'deployment/stripe',
+        'deployment/cookies',
+      ],
+    },
+  ],
+
   algorithmsSidebar: [
     {
       type: 'category',

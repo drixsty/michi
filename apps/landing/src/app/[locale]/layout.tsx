@@ -42,6 +42,7 @@ export function generateViewport() {
 import { NextIntlClientProvider } from 'next-intl';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { CookieConsent } from '@/components/CookieConsent';
 
 export default async function LocaleLayout({
   children,
@@ -65,6 +66,7 @@ export default async function LocaleLayout({
             {children}
           </main>
           <Footer />
+          <CookieConsent />
         </NextIntlClientProvider>
       </body>
     </html>

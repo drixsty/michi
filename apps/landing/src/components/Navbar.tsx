@@ -120,15 +120,15 @@ export const Navbar = () => {
           <div className="hidden sm:block">
             <LanguageSwitcher />
           </div>
-          <a href="/login" className="hidden md:block text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-2 transition-all">
+          <a href={`${process.env.NEXT_PUBLIC_APP_URL}/login`} className="hidden md:block text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-2 transition-all">
             {t('login')}
           </a>
-          <button className="hidden lg:block border border-border hover:bg-secondary text-foreground px-4 py-2 rounded-xl text-xs font-semibold transition-all">
+          <a href={process.env.NEXT_PUBLIC_DEMO_URL || 'mailto:contact@michi.app'} className="hidden lg:block border border-border hover:bg-secondary text-foreground px-4 py-2 rounded-xl text-xs font-semibold transition-all">
             {t('bookDemo')}
-          </button>
-          <button className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all">
+          </a>
+          <a href={`${process.env.NEXT_PUBLIC_APP_URL}/register`} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all">
             {t('getStarted')}
-          </button>
+          </a>
         </div>
       </div>
     </nav>
