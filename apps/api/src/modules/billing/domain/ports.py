@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
-from .entities import Invoice, Subscription, BillingPlan
+from .entities import Invoice, Subscription, BillingPlan, BillingPlanDefinition
 
 class IBillingProvider(ABC):
     """Port sortant pour le fournisseur de paiement (ex: Stripe)"""
@@ -21,6 +21,10 @@ class IBillingProvider(ABC):
         
     @abstractmethod
     async def get_invoices(self, customer_id: str, plan: str) -> List[Invoice]:
+        pass
+
+    @abstractmethod
+    async def get_billing_plans(self) -> List["BillingPlanDefinition"]:
         pass
 
 class IBillingRepository(ABC):

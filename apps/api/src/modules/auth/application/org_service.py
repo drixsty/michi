@@ -89,23 +89,32 @@ class ApplicationOrgService:
         if not user_model:
             raise ValueError(f"User {user_id} / {email} introuvable")
 
+        from datetime import datetime, timezone, timedelta
         slug = f"org-{uuid.uuid4().hex[:8]}"
-        org_model = Organization(name=name, slug=slug, plan=plan.upper())
-        await self._orgs.save(org_model)
+        org_model = Organization(
+            name=name, 
+            slug=slug, 
+            plan=plan.upper(),
+            subscription_status="TRIALING",
+            trial_ends_at=datetime.now(timezone.utc) + timedelta(days=7)
+        )
+        self._orgs._db.add(org_model) # Bypass save to use the model directly
+        await self._orgs._db.flush()
 
         member = OrganizationMember(
             user_id=user_id,
             organization_id=org_model.id,
             role=UserRole.ADMIN,
         )
-        await self._memberships.save(member)
+        self._memberships._db.add(member) # Bypass save to use the model directly
+        await self._memberships._db.flush()
 
-        user_model.current_organization_id = org_model.id
+        user_model.current_organization_id = org_model.id # type: ignore
         
         if self._billing:
             stripe_id = await self._billing.create_customer(
-                name=org_model.name,
-                email=user_model.email,
+                name=str(org_model.name),
+                email=str(user_model.email),
                 org_id=str(org_model.id),
             )
             if stripe_id:
@@ -119,9 +128,9 @@ class ApplicationOrgService:
         await self._users._db.refresh(user_model, ["organizations"])
 
         token = self._tokens.create_access_token(
-            user_id=user_model.id,
-            org_id=org_model.id,
-            email=user_model.email,
+            user_id=uuid.UUID(str(user_model.id)),
+            org_id=uuid.UUID(str(org_model.id)),
+            email=str(user_model.email),
         )
 
         return OrgCreationResult(token=token, user_model=user_model, org_model=org_model)
@@ -144,13 +153,13 @@ class ApplicationOrgService:
         if not user_model:
             raise ValueError(f"User {user_id} introuvable")
 
-        user_model.current_organization_id = organization_id
+        user_model.current_organization_id = organization_id # type: ignore
         await self._users._db.flush()
 
         token = self._tokens.create_access_token(
-            user_id=user_model.id,
+            user_id=uuid.UUID(str(user_model.id)),
             org_id=organization_id,
-            email=user_model.email,
+            email=str(user_model.email),
         )
         return token, user_model
 
@@ -173,17 +182,18 @@ class ApplicationOrgService:
         # 1. Vérifier membre existant via repository
         existing_user = await self._users.get_model_by_email(email)
         if existing_user:
-            memberships = await self._memberships.list_for_user(existing_user.id)
+            memberships = await self._memberships.list_for_user(uuid.UUID(str(existing_user.id)))
             if any(str(m.organization_id) == str(organization_id) for m in memberships):
                 raise MichiException(
                     message=f"L'utilisateur {email} est déjà membre.",
                     code=ErrorCode.ALREADY_MEMBER,
                 )
 
+        from datetime import datetime, timezone, timedelta
         # 2. Vérifier invitation en attente via repository
         pending = await self._invitations.get_pending_invitation(email, organization_id)
         if pending:
-            if pending.expires_at < datetime.utcnow():
+            if pending.expires_at.replace(tzinfo=None) < datetime.now(timezone.utc).replace(tzinfo=None):
                 await self._invitations.delete_invitation(pending.id)
             else:
                 raise MichiException(
@@ -199,10 +209,11 @@ class ApplicationOrgService:
             role=role,
             code=code,
             invited_by_id=invited_by_id,
-            expires_at=datetime.utcnow() + timedelta(days=7),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=7),
             status=InvitationStatus.PENDING,
         )
-        await self._invitations.save(invitation)
+        self._invitations._db.add(invitation) # Bypass save which expects Entity
+        await self._invitations._db.flush()
         return invitation
 
     async def accept_invitation(self, code: str, user_id: uuid.UUID) -> bool:
@@ -211,8 +222,9 @@ class ApplicationOrgService:
         if not invitation or invitation.status != InvitationStatus.PENDING:
             return False
 
-        if invitation.expires_at < datetime.utcnow():
-            invitation.status = InvitationStatus.EXPIRED
+        from datetime import datetime, timezone
+        if invitation.expires_at.replace(tzinfo=None) < datetime.now(timezone.utc).replace(tzinfo=None):
+            invitation.status = InvitationStatus.EXPIRED # type: ignore
             await self._users._db.flush()
             return False
 
@@ -221,7 +233,7 @@ class ApplicationOrgService:
             return False
 
         # Vérification stricte : l'email du compte doit correspondre à l'email invité
-        if user_model.email.lower() != invitation.email.lower():
+        if str(user_model.email).lower() != str(invitation.email).lower():
             raise MichiException(
                 message="Impossible d'accepter cette invitation avec ce compte. Veuillez vous connecter avec l'adresse e-mail qui a reçu l'invitation.",
                 code=ErrorCode.FORBIDDEN
@@ -232,10 +244,10 @@ class ApplicationOrgService:
             organization_id=invitation.organization_id,
             role=invitation.role,
         )
-        await self._memberships.save(member)
-        invitation.status = InvitationStatus.ACCEPTED
+        self._memberships._db.add(member) # Bypass save
+        invitation.status = InvitationStatus.ACCEPTED # type: ignore
 
-        user_model.current_organization_id = invitation.organization_id
+        user_model.current_organization_id = invitation.organization_id # type: ignore
 
         await self._users._db.flush()
         return True
@@ -250,8 +262,9 @@ class ApplicationOrgService:
 
     async def get_pending_invitations(self, org_id: uuid.UUID) -> list[InvitationEntity]:
         """Liste les invitations en attente d'une organisation."""
+        from datetime import datetime, timezone
         all_invitations = await self._invitations.list_for_org(org_id)
-        return [i for i in all_invitations if i.status == InvitationStatus.PENDING and i.expires_at > datetime.utcnow()]
+        return [i for i in all_invitations if i.status == InvitationStatus.PENDING and i.expires_at.replace(tzinfo=None) > datetime.now(timezone.utc).replace(tzinfo=None)]
 
     async def get_current_org(self, org_id: uuid.UUID) -> Optional[OrganizationEntity]:
         """
@@ -278,12 +291,12 @@ class ApplicationOrgService:
         logger.info(f"[Service] Updating Org {org_id}: name={kwargs.get('name')}, completed={kwargs.get('onboarding_completed')}, step={kwargs.get('onboarding_step')}")
 
         if kwargs.get("name") is not None:
-            org_model.name = str(kwargs["name"])
+            org_model.name = str(kwargs["name"]) # type: ignore
         if kwargs.get("settings") is not None:
             org_model.settings = kwargs["settings"]
         if kwargs.get("onboarding_completed") is not None:
             val = bool(kwargs["onboarding_completed"])
-            org_model.onboarding_completed = val
+            org_model.onboarding_completed = val # type: ignore
             logger.warning(f"[Service] Set onboarding_completed to {val} for Org {org_id}")
             
             # Si l'onboarding est terminé, on s'assure que l'utilisateur est bien sur cette org
@@ -300,10 +313,10 @@ class ApplicationOrgService:
                 if member:
                     user = await self._orgs._db.get(User, member.user_id)
                     if user:
-                        user.current_organization_id = org_id
+                        user.current_organization_id = org_id # type: ignore
                         logger.info(f"[Service] Force user {user.id} context to Org {org_id}")
         if kwargs.get("onboarding_step") is not None:
-            org_model.onboarding_step = str(kwargs["onboarding_step"])
+            org_model.onboarding_step = str(kwargs["onboarding_step"]) # type: ignore
             
         await self._orgs._db.flush()
         await self._orgs._db.commit()

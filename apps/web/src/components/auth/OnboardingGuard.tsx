@@ -15,6 +15,8 @@ const GET_ONBOARDING_STATUS = gql`
     currentOrganization {
       id
       plan
+      subscriptionStatus
+      trialEndsAt
       onboardingCompleted
     }
   }
@@ -63,9 +65,25 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
       if (data?.currentOrganization) {
         const isCompleted = data.currentOrganization.onboardingCompleted;
         const hasPlan = !!data.currentOrganization.plan && data.currentOrganization.plan !== "";
+        const subStatus = data.currentOrganization.subscriptionStatus;
+        const trialEndsAt = data.currentOrganization.trialEndsAt;
+        
         const isOnboardingPage = pathname.includes('/onboarding');
         const isPricingPage = pathname.includes('/pricing');
         
+        // Check for trial expiration
+        let isTrialExpired = false;
+        if (subStatus === "TRIALING" && trialEndsAt) {
+          if (new Date() > new Date(trialEndsAt)) {
+            isTrialExpired = true;
+          }
+        }
+
+        if (isTrialExpired && !isPricingPage) {
+          router.replace('/pricing');
+          return;
+        }
+
         // Force pricing if no plan selected
         if (!hasPlan && !isPricingPage) {
            router.replace('/pricing');
@@ -74,10 +92,10 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
 
         if (!isCompleted && !isOnboardingPage && !isPricingPage) {
           router.replace('/onboarding');
-        } else if (isCompleted && (isOnboardingPage || (isPricingPage && hasPlan))) {
+        } else if (isCompleted && (isOnboardingPage || (isPricingPage && hasPlan && !isTrialExpired))) {
           router.replace('/dashboard');
         } else {
-          // État valide : soit complété sur dashboard, soit non-complété sur onboarding
+          // État valide : soit complété sur dashboard, soit non-complété sur onboarding, soit pricing (si trial expired)
           setIsChecking(false);
         }
       } else {

@@ -84,6 +84,9 @@ class ApplicationBillingService:
             
         return await self._provider.get_invoices(sub.customer_id, sub.plan.value)
 
+    async def get_billing_plans(self) -> List["BillingPlanDefinition"]:
+        return await self._provider.get_billing_plans()
+
     async def handle_webhook_event(self, payload: bytes, sig_header: str) -> dict:
         """
         Note: Cette méthode est complexe car elle dépend souvent de signatures spécifiques au provider.

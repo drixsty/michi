@@ -22,6 +22,7 @@ class Organization(Base):
     stripe_subscription_id = Column(String(255), nullable=True)
     plan = Column(String(50), default="BASIC") # BASIC, PRO, ENTERPRISE
     subscription_status = Column(String(50), default="ACTIVE")
+    trial_ends_at = Column(DateTime, nullable=True)
     
     # Onboarding Status
     onboarding_completed = Column(Boolean, default=False, nullable=False)

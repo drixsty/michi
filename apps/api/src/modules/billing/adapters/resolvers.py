@@ -3,10 +3,27 @@ from typing import List
 from core.exceptions import MichiException, ErrorCode
 from modules.auth.adapters.decorators import require_permission
 from modules.auth.domain.constants import MichiPermission
-from .types import InvoiceType
+from .types import InvoiceType, BillingPlanType
 
 @strawberry.type
 class BillingQuery:
+    @strawberry.field
+    async def billingPlans(self, info: strawberry.types.Info) -> List[BillingPlanType]:
+        """Récupère les plans de facturation disponibles. Requête publique."""
+        billing_service = info.context.services.billing_service
+        plans_entities = await billing_service.get_billing_plans()
+        return [
+            BillingPlanType(
+                id=p.id,
+                name=p.name,
+                price=p.price,
+                currency=p.currency,
+                interval=p.interval,
+                features=p.features,
+                is_popular=p.is_popular
+            ) for p in plans_entities
+        ]
+
     @strawberry.field
     @require_permission(MichiPermission.BILLING_VIEW)
     async def invoices(self, info: strawberry.types.Info) -> List[InvoiceType]:

@@ -5,7 +5,7 @@ from loguru import logger
 
 from core.config import settings
 from ..domain.ports import IBillingProvider
-from ..domain.entities import Invoice, BillingPlan
+from ..domain.entities import Invoice, BillingPlan, BillingPlanDefinition
 
 class StripeBillingProvider(IBillingProvider):
     """Implémentation concrète de IBillingProvider utilisant le SDK Stripe"""
@@ -87,18 +87,63 @@ class StripeBillingProvider(IBillingProvider):
             invoices = stripe.Invoice.list(customer=customer_id, limit=10)
             return [
                 Invoice(
-                    id=inv.id,
-                    number=inv.number,
-                    amount=inv.amount_paid / 100.0,
-                    currency=inv.currency.upper(),
-                    status=inv.status.upper(),
+                    id=str(inv.id),
+                    number=str(inv.number),
+                    amount=float(inv.amount_paid) / 100.0,
+                    currency=inv.currency.upper() if inv.currency else "",
+                    status=str(inv.status).upper() if inv.status else "UNKNOWN",
                     date=datetime.fromtimestamp(inv.created),
-                    pdf_url=inv.invoice_pdf,
-                    hosted_url=inv.hosted_invoice_url
+                    pdf_url=inv.invoice_pdf if inv.invoice_pdf else None,
+                    hosted_url=inv.hosted_invoice_url if inv.hosted_invoice_url else None
                 ) for inv in invoices.data
             ]
         except Exception as e:
             logger.error(f"Erreur Stripe (invoices): {str(e)}")
+            return []
+
+    async def get_billing_plans(self) -> List["BillingPlanDefinition"]:
+        if self.mode == "MOCK":
+            return [
+                BillingPlanDefinition(
+                    id="BASIC", name="Starter", price=99.0, currency="EUR", interval="month",
+                    features=["Jusqu'à 50k$/mois de CA", "1 intégration", "Sync quotidienne", "Support email"]
+                ),
+                BillingPlanDefinition(
+                    id="PRO", name="Pro", price=249.0, currency="EUR", interval="month",
+                    features=["Jusqu'à 250k$/mois de CA", "Intégrations illimitées", "Sync horaire", "Support prioritaire"],
+                    is_popular=True
+                ),
+                BillingPlanDefinition(
+                    id="ENTERPRISE", name="Entreprise", price=0.0, currency="EUR", interval="month",
+                    features=["CA illimité", "Délais personnalisés", "API complète", "CSM dédié"]
+                )
+            ]
+        
+        try:
+            # Simple mock fallback if Stripe doesn't have products yet
+            products = stripe.Product.list(active=True)
+            plans = []
+            for prod in products.data:
+                price_id = prod.default_price
+                if not price_id:
+                    continue
+                if isinstance(price_id, str):
+                    price = stripe.Price.retrieve(price_id)
+                else:
+                    price = price_id
+                
+                plans.append(BillingPlanDefinition(
+                    id=prod.metadata.get("plan_id", prod.name.upper()) if prod.metadata else prod.name.upper(),
+                    name=prod.name,
+                    price=float(price.unit_amount) / 100.0 if getattr(price, 'unit_amount', None) else 0.0,
+                    currency=price.currency.upper() if getattr(price, 'currency', None) else "EUR",
+                    interval=str(price.recurring.interval) if getattr(price, 'recurring', None) and getattr(price.recurring, 'interval', None) else "month",
+                    features=[f.name for f in prod.features if hasattr(f, 'name') and f.name] if hasattr(prod, 'features') and getattr(prod, 'features') else [],
+                    is_popular=prod.metadata.get("is_popular", "false").lower() == "true" if prod.metadata else False
+                ))
+            return plans
+        except Exception as e:
+            logger.error(f"Erreur Stripe (plans): {str(e)}")
             return []
 
     def _get_mock_invoices(self, plan: str) -> List[Invoice]:

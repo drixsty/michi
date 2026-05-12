@@ -77,8 +77,15 @@ def require_permission(permission: PermissionCode):
             user_id = uuid.UUID(str(info.context.user_id))
             org_id = uuid.UUID(str(info.context.org_id))
             
-            # Fetch rôle et overrides
-            stmt = select(OrganizationMember.role, OrganizationMember.permissions).where(
+            # Fetch rôle, overrides et statut de facturation
+            stmt = select(
+                OrganizationMember.role, 
+                OrganizationMember.permissions,
+                Organization.subscription_status,
+                Organization.trial_ends_at
+            ).join(
+                Organization, OrganizationMember.organization_id == Organization.id
+            ).where(
                 OrganizationMember.organization_id == org_id,
                 OrganizationMember.user_id == user_id
             )
@@ -88,7 +95,20 @@ def require_permission(permission: PermissionCode):
             if not row:
                 raise UnauthenticatedException("Session invalide : vous n'êtes plus membre de cette organisation")
             
-            user_role_enum, member_perms = row
+            user_role_enum, member_perms, sub_status, trial_ends_at = row
+            
+            # Vérification de l'essai expiré (Sauf pour les actions de facturation)
+            from datetime import datetime, timezone
+            if sub_status == "TRIALING" and trial_ends_at:
+                now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+                end_utc = trial_ends_at.replace(tzinfo=None)
+                if now_utc > end_utc and permission not in [MichiPermission.BILLING_MANAGE, MichiPermission.BILLING_VIEW]:
+                    raise MichiException(
+                        message="Votre période d'essai est terminée. Veuillez choisir un plan pour continuer.",
+                        code=ErrorCode.FORBIDDEN,
+                        logging_level="WARNING"
+                    )
+
             user_role = user_role_enum.value if hasattr(user_role_enum, 'value') else str(user_role_enum).lower()
             
             # Calcul des permissions effectives via le DOMAINE

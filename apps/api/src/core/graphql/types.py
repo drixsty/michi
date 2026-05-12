@@ -39,6 +39,7 @@ class OrganizationType:
     slug: str
     plan: str
     subscription_status: str
+    trial_ends_at: Optional[datetime] = None
     created_at: datetime
     settings: str
     onboarding_completed: bool
@@ -64,6 +65,7 @@ class OrganizationType:
             slug=_val(org.slug),
             plan=_val(org.plan),
             subscription_status=_val(org.subscription_status),
+            trial_ends_at=getattr(org, 'trial_ends_at', None),
             created_at=org.created_at,
             settings=json.dumps(org.settings or {}),
             onboarding_completed=bool(getattr(org, 'onboarding_completed', False)),

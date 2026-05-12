@@ -32,3 +32,13 @@ class Subscription:
     plan: BillingPlan
     status: SubscriptionStatus
     subscription_id: Optional[str] = None
+
+@dataclass
+class BillingPlanDefinition:
+    id: str
+    name: str
+    price: float
+    currency: str
+    interval: str
+    features: List[str]
+    is_popular: bool = False
