@@ -65,13 +65,13 @@ class TestCalculateReorderQuantity:
 
     def test_nominal_case(self):
         """
-        run_rate=10, lead_time=7, moq=50, stock=20, safety=1.5
-        target = 10×7×1.5 = 105 → raw = 85 → arrondi MOQ = 100
+        run_rate=10, lead_time=7, moq=50, stock=20, sigma=0
+        cycle_stock = 10×7 = 70 → raw = 50 → arrondi MOQ = 50
         """
         result = calculate_reorder_quantity(
             run_rate=10.0, lead_time=7, moq=50, current_stock=20.0
         )
-        assert result == 100
+        assert result == 50
 
     def test_stock_sufficient_returns_zero(self):
         """Stock largement suffisant → 0 à commander."""
@@ -83,8 +83,7 @@ class TestCalculateReorderQuantity:
     def test_moq_rounding_up(self):
         """La quantité est toujours arrondie au MOQ supérieur."""
         result = calculate_reorder_quantity(
-            run_rate=1.0, lead_time=1, moq=10, current_stock=0.0,
-            safety_factor=1.0
+            run_rate=1.0, lead_time=1, moq=10, current_stock=0.0
         )
         assert result == 10
         assert result % 10 == 0
@@ -103,13 +102,18 @@ class TestCalculateReorderQuantity:
         )
         assert result == 0
 
-    def test_safety_factor_1(self):
-        """safety_factor=1.0 : couverture exacte du lead time sans marge."""
+    def test_with_sigma_and_safety_stock(self):
+        """
+        run_rate=10, lead_time=5, moq=1, stock=0, sigma=2
+        cycle_stock = 50
+        safety_stock = 1.645 * sqrt(5 * 2^2) = 1.645 * sqrt(20) = 1.645 * 4.47 = 7.35
+        target = 57.35 → result = 58
+        """
         result = calculate_reorder_quantity(
-            run_rate=10.0, lead_time=5, moq=10, current_stock=0.0,
-            safety_factor=1.0
+            run_rate=10.0, lead_time=5, moq=1, current_stock=0.0,
+            sigma=2.0, service_level=0.95
         )
-        assert result == 50
+        assert result == 58
 
     def test_result_is_multiple_of_moq(self):
         """Le résultat est toujours un multiple du MOQ."""
@@ -168,7 +172,7 @@ class TestMapeStockoutPrediction:
         stocks = rng.uniform(10.0, 100.0, n)
         noise = rng.uniform(0.95, 1.05, n)
         actual_qty = [
-            max(0.0, r * lt * 1.5 - s)
+            max(0.0, r * lt - s)
             for r, lt, s in zip(true_rates, lead_times, stocks)
         ]
         predicted_qty = [

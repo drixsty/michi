@@ -127,6 +127,9 @@ class _FakeUserModel:
         self.google_id = entity.google_id
         self.current_organization_id = entity.current_organization_id
         self.is_active = entity.is_active
+        self.two_factor_enabled = False
+        self.email_verified_at = None
+        self.verification_token = None
         self.organizations: list = []
 
 

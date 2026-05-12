@@ -5,14 +5,14 @@ Teste la couche Application avec de faux repositories in-memory.
 Aucun accès DB, aucune dépendance SQLAlchemy.
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 
 import pytest
 
 from modules.auth.application.auth_service import ApplicationAuthService
 from modules.auth.domain.entities import UserEntity
 from modules.auth.domain.value_objects import Email
-from exceptions import MichiException, UnauthenticatedException
+from core.exceptions import MichiException, UnauthenticatedException
 
 from tests.unit.auth.fakes import (
     FakeMembershipRepository,
@@ -44,7 +44,7 @@ def _seed_user(user_repo: FakeUserRepository, email: str = "alice@michi.com") ->
         first_name="Alice",
         last_name="Dupont",
         is_active=True,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
     )
     fake_hash = "$2b$12$" + "x" * 53
     user_repo.seed_user(user, plain_hashed_password=fake_hash)
@@ -94,7 +94,7 @@ async def test_login_google_only_account_raises() -> None:
         first_name="Google",
         last_name="User",
         is_active=True,
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(UTC),
         google_id="google-abc",
     )
     user_repo.seed_user(google_user, plain_hashed_password=None)

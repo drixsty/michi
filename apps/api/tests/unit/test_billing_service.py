@@ -1,66 +1,82 @@
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
-from modules.billing.application.service import BillingService
-from config import settings
+from unittest.mock import MagicMock, AsyncMock
+from modules.billing.application.service import ApplicationBillingService
+from core.config import settings
+from modules.billing.domain.entities import SubscriptionStatus
 import uuid
 
 @pytest.fixture
-def billing_service():
-    with patch.object(settings, 'BILLING_MODE', 'STRIPE'):
-        return BillingService()
+def mock_provider():
+    return AsyncMock()
 
 @pytest.fixture
-def mock_billing_service():
-    with patch.object(settings, 'BILLING_MODE', 'MOCK'):
-        return BillingService()
+def mock_repo():
+    return AsyncMock()
+
+@pytest.fixture
+def billing_service(mock_provider, mock_repo):
+    return ApplicationBillingService(provider=mock_provider, repository=mock_repo)
 
 @pytest.mark.asyncio
-async def test_create_customer_mock(mock_billing_service):
+async def test_create_customer_success(billing_service, mock_provider, mock_repo):
     org_id = str(uuid.uuid4())
-    customer_id = await mock_billing_service.create_customer("Test Org", "admin@test.com", org_id)
-    assert customer_id == f"cus_mock_{org_id[:8]}"
-
-@pytest.mark.asyncio
-async def test_create_customer_stripe_success(billing_service):
-    with patch('stripe.Customer.create') as mock_create:
-        mock_create.return_value.id = "cus_123456"
-        customer_id = await billing_service.create_customer("Test Org", "admin@test.com", "org-123")
-        assert customer_id == "cus_123456"
-        mock_create.assert_called_once()
-
-@pytest.mark.asyncio
-async def test_get_checkout_url_success(billing_service):
-    with patch('stripe.checkout.Session.create') as mock_create:
-        mock_create.return_value.url = "https://checkout.stripe.com/pay/123"
-        url = await billing_service.get_checkout_url("cus_123", "http://success", "http://cancel", "price_123")
-        assert url == "https://checkout.stripe.com/pay/123"
-
-@pytest.mark.asyncio
-async def test_get_invoices_mock(mock_billing_service):
-    invoices = await mock_billing_service.get_invoices("cus_mock", "PRO")
-    assert len(invoices) == 12
-    assert invoices[0]["amount"] == 49.0
-    assert invoices[0]["status"] == "PAID"
-
-@pytest.mark.asyncio
-async def test_get_invoices_mock_basic(mock_billing_service):
-    invoices = await mock_billing_service.get_invoices("cus_mock", "BASIC")
-    assert len(invoices) == 0
-
-@pytest.mark.asyncio
-async def test_mock_upgrade_organization():
-    # We need to mock the DB session for this
-    db = AsyncMock()
-    mock_res = MagicMock()
-    mock_org = MagicMock()
-    mock_res.scalar_one_or_none.return_value = mock_org
-    db.execute.return_value = mock_res
+    mock_provider.create_customer.return_value = "cus_123"
     
-    service = BillingService()
+    customer_id = await billing_service.create_customer("Test Org", "admin@test.com", org_id)
+    
+    assert customer_id == "cus_123"
+    mock_provider.create_customer.assert_called_once_with(
+        name="Test Org",
+        email="admin@test.com",
+        org_id=org_id
+    )
+    mock_repo.update_org_billing_info.assert_called_once_with(
+        org_id, customer_id="cus_123", plan=None, status=None
+    )
+
+@pytest.mark.asyncio
+async def test_create_customer_if_missing_exists(billing_service, mock_repo):
     org_id = str(uuid.uuid4())
-    success = await service.mock_upgrade_organization(db, org_id, "PRO")
+    mock_info = MagicMock()
+    mock_info.customer_id = "cus_existing"
+    mock_repo.get_org_billing_info.return_value = mock_info
+    
+    customer_id = await billing_service.create_customer_if_missing(org_id)
+    
+    assert customer_id == "cus_existing"
+    mock_repo.get_org_billing_info.assert_called_once_with(org_id)
+
+@pytest.mark.asyncio
+async def test_create_checkout_session(billing_service, mock_provider, mock_repo):
+    org_id = str(uuid.uuid4())
+    # Mock customer check
+    mock_info = MagicMock()
+    mock_info.customer_id = "cus_123"
+    mock_repo.get_org_billing_info.return_value = mock_info
+    
+    mock_provider.create_checkout_session.return_value = "https://checkout.url"
+    
+    url = await billing_service.create_checkout_session(
+        org_id=org_id,
+        plan="PRO",
+        success_url="http://success",
+        cancel_url="http://cancel"
+    )
+    
+    assert url == "https://checkout.url"
+    mock_provider.create_checkout_session.assert_called_once()
+
+@pytest.mark.asyncio
+async def test_mock_upgrade_organization(billing_service, mock_repo):
+    org_id = str(uuid.uuid4())
+    mock_repo.update_org_billing_info.return_value = True
+    
+    success = await billing_service.mock_upgrade_organization(org_id, "PRO")
     
     assert success is True
-    assert mock_org.plan == "PRO"
-    assert mock_org.subscription_status == "ACTIVE"
-    db.commit.assert_called_once()
+    mock_repo.update_org_billing_info.assert_called_once_with(
+        org_id=org_id,
+        customer_id=None,
+        plan="PRO",
+        status=SubscriptionStatus.ACTIVE.value
+    )

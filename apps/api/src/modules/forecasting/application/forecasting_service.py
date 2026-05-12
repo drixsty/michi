@@ -4,7 +4,7 @@ import pandas as pd
 ForecastingService — Application Layer
 Pipeline de nettoyage + prédictions opérationnelles (Agnostique Michi).
 """
-from datetime import date, datetime
+from datetime import date, datetime, UTC
 from typing import Optional, List, Dict
 import uuid
 from loguru import logger
@@ -115,7 +115,7 @@ class ForecastingService:
                 is_stockout=bool(row["is_stockout"]),
                 is_outlier=bool(row["is_outlier"]),
                 correction_type=str(row["correction_type"]),
-                computed_at=datetime.utcnow()
+                computed_at=datetime.now(UTC)
             ) for _, row in df.iterrows()
         ]
 
@@ -170,8 +170,12 @@ class ForecastingService:
         df = calculate_run_rate_batch(df)
         latest = df.sort_values("date").groupby("product_id").last().reset_index()
         
-        latest['sale_price'] = latest['product_id'].map(lambda pid: product_map.get(pid).sale_price if product_map.get(pid) else 0)
-        latest['cost_price'] = latest['product_id'].map(lambda pid: product_map.get(pid).cost_price if product_map.get(pid) else 0)
+        def _get_price(pid, attr):
+            p = product_map.get(pid)
+            return getattr(p, attr) if p else 0.0
+
+        latest['sale_price'] = latest['product_id'].map(lambda pid: _get_price(pid, 'sale_price'))
+        latest['cost_price'] = latest['product_id'].map(lambda pid: _get_price(pid, 'cost_price'))
         latest = calculate_abc_ranks_batch(latest)
 
         # 5. Save predictions
@@ -184,7 +188,7 @@ class ForecastingService:
             p = product_map.get(pid_str)
             if not p: continue
 
-            run_rate = float(row["run_rate"]) * (float(p.boost_factor) if p.boost_factor else 1.0)
+            run_rate = row["run_rate"] * (p.boost_factor if p.boost_factor else 1.0)
             sigma = float(row["demand_sigma"]) if "demand_sigma" in row else 0.0
             
             # Récupérer les données de performance du fournisseur associé
@@ -200,9 +204,9 @@ class ForecastingService:
             
             reorder_qty = calculate_reorder_quantity(
                 run_rate=run_rate,
-                lead_time=int(p.lead_time),
-                moq=int(p.moq),
-                current_stock=float(p.current_stock),
+                lead_time=p.lead_time,
+                moq=p.moq,
+                current_stock=p.current_stock,
                 sigma=sigma,
                 service_level=0.95,
                 average_delay=avg_delay,
@@ -220,17 +224,17 @@ class ForecastingService:
                 id=uuid.uuid4(),
                 product_id=p.id,
                 run_rate=run_rate,
-                days_of_stock=float(p.current_stock) / run_rate if run_rate > 0 else None,
+                days_of_stock=p.current_stock / run_rate if run_rate > 0 else None,
                 predicted_stockout_date=stockout_date,
                 reorder_quantity=reorder_qty,
-                current_stock_snapshot=float(p.current_stock),
-                lead_time_snapshot=int(p.lead_time),
-                moq_snapshot=int(p.moq),
+                current_stock_snapshot=p.current_stock,
+                lead_time_snapshot=p.lead_time,
+                moq_snapshot=p.moq,
                 mape_score=mape,
                 abc_rank=row["abc_rank"],
                 annual_gross_profit=row["annual_gross_profit"],
                 demand_sigma=sigma,
-                computed_at=datetime.utcnow()
+                computed_at=datetime.now(UTC)
             ))
 
         for pe in prediction_entities:

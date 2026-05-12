@@ -18,25 +18,26 @@ def _make_df(n: int = 30, units: float = 5.0, stock: int = 10) -> pd.DataFrame:
 class TestCleaningPipeline:
     def test_returns_dataframe_and_float(self) -> None:
         df = _make_df()
-        result_df, run_rate = run_cleaning_pipeline(df, sku="SKU001")
+        result_df, run_rate, sigma = run_cleaning_pipeline(df, sku="SKU001")
         assert isinstance(result_df, pd.DataFrame)
         assert isinstance(run_rate, float)
+        assert isinstance(sigma, float)
 
     def test_run_rate_positive_on_valid_data(self) -> None:
         df = _make_df(n=40, units=5.0)
-        _, run_rate = run_cleaning_pipeline(df)
+        _, run_rate, _ = run_cleaning_pipeline(df)
         assert run_rate > 0
 
     def test_corrected_quantity_column_present(self) -> None:
         df = _make_df()
-        result_df, _ = run_cleaning_pipeline(df)
+        result_df, _, _ = run_cleaning_pipeline(df)
         assert "corrected_quantity" in result_df.columns
 
     def test_oos_correction_applied(self) -> None:
         df = _make_df(n=30, units=5.0, stock=10)
         df.loc[28:, "end_of_day_stock"] = 0
         df.loc[28:, "units_sold"] = 0
-        result_df, _ = run_cleaning_pipeline(df)
+        result_df, _, _ = run_cleaning_pipeline(df)
         assert "theoretical_units_sold" in result_df.columns
 
     def test_missing_columns_raises(self) -> None:
@@ -46,10 +47,10 @@ class TestCleaningPipeline:
 
     def test_outlier_column_present(self) -> None:
         df = _make_df(n=40)
-        result_df, _ = run_cleaning_pipeline(df)
+        result_df, _, _ = run_cleaning_pipeline(df)
         assert "is_outlier" in result_df.columns
 
     def test_iqr_lower_present_for_backward_compat(self) -> None:
         df = _make_df(n=40)
-        result_df, _ = run_cleaning_pipeline(df)
+        result_df, _, _ = run_cleaning_pipeline(df)
         assert "iqr_lower" in result_df.columns

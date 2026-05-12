@@ -10,7 +10,7 @@ que les resolvers migrent via US 21.9).
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC, timedelta
 from dataclasses import dataclass
 from typing import Optional
 
@@ -30,6 +30,7 @@ from modules.auth.infrastructure.repositories import (
 from core.database.constants import UserRole
 from modules.inventory.application.email_service import EmailService
 from core.exceptions import ErrorCode, MichiException, UnauthenticatedException
+from typing import cast, Any
 
 
 @dataclass
@@ -88,7 +89,7 @@ class ApplicationAuthService:
             raise UnauthenticatedException("Compte Google-only — utilisez Google Login")
 
         from modules.auth.domain.value_objects import HashedPassword
-        hashed = HashedPassword(user_model.hashed_password)
+        hashed = HashedPassword(cast(str, user_model.hashed_password))
         
         # Diagnostic logging (Temporary for Sprint 21 Debugging)
         if not self._hasher.verify(password, hashed):
@@ -110,17 +111,17 @@ class ApplicationAuthService:
         if user_model.two_factor_enabled:
             # Generate a temporary token for MFA step (valid for 5 mins)
             mfa_token = self._tokens.create_access_token(
-                user_id=user_model.id,
+                user_id=cast(uuid.UUID, user_model.id),
                 org_id=None,
-                email=user_model.email,
-                expires_delta=300 # 5 minutes
+                email=cast(str, user_model.email),
+                expires_delta=timedelta(minutes=5)
             )
-            return AuthResult(token=JwtToken(""), user_model=user_model, mfa_required=True, mfa_token=mfa_token)
+            return AuthResult(token=JwtToken(""), user_model=user_model, mfa_required=True, mfa_token=mfa_token.value)
 
         token = self._tokens.create_access_token(
-            user_id=user_model.id,
-            org_id=active_org_id,
-            email=user_model.email,
+            user_id=cast(uuid.UUID, user_model.id),
+            org_id=cast(Optional[uuid.UUID], active_org_id),
+            email=cast(str, user_model.email),
         )
         return AuthResult(token=token, user_model=user_model)
 
@@ -130,10 +131,10 @@ class ApplicationAuthService:
         if not user:
             return False
             
-        user.email_verified_at = datetime.utcnow()
-        user.verification_token = None # Consommé
+        user.email_verified_at = cast(Any, datetime.now(UTC))
+        user.verification_token = cast(Any, None) # Consommé
         
-        await self._users.save(user)
+        await self._users.save(cast(UserEntity, user))
         await self._users._db.flush()
         return True
 
@@ -145,8 +146,8 @@ class ApplicationAuthService:
             
         # Nouveau token pour plus de sécurité
         new_token = str(uuid.uuid4())
-        user.verification_token = new_token
-        await self._users.save(user)
+        user.verification_token = cast(Any, new_token)
+        await self._users.save(cast(UserEntity, user))
         await self._users._db.flush()
         
         if self._email:
@@ -154,7 +155,7 @@ class ApplicationAuthService:
             verify_link = f"{settings.FRONTEND_URL}/verify-email?token={new_token}"
             from loguru import logger
             logger.info(f"[AuthService] Requesting verification email resend for {user.email}")
-            await self._email.send_verification_email(user.email, verify_link)
+            await self._email.send_verification_email(cast(str, user.email), verify_link)
             
         return True
 
@@ -189,13 +190,13 @@ class ApplicationAuthService:
             email=email.lower(),
             first_name=first_name,
             last_name=last_name,
-            hashed_password=self._hasher.hash_password(password),
+            hashed_password=hashed.value,
             is_active=True,
             verification_token=verification_token,
             email_verified_at=None, # Non vérifié par défaut
             organizations=[],
         )
-        await self._users.save(user_model)
+        await self._users.save(cast(UserEntity, user_model))
 
         # Envoi de l'email de vérification
         if self._email:
@@ -213,14 +214,16 @@ class ApplicationAuthService:
                 slug=f"org-{uuid.uuid4().hex[:8]}",
                 plan="" # Force un plan vide pour obliger le passage par /pricing
             )
-            await self._orgs.save(org_model)
+            from modules.auth.domain.entities import OrganizationEntity
+            await self._orgs.save(cast(OrganizationEntity, org_model))
 
             member = OrganizationMember(
                 user_id=user_model.id,
                 organization_id=org_model.id,
                 role=UserRole.OWNER,
             )
-            await self._memberships.save(member)
+            from modules.auth.domain.entities import MembershipEntity
+            await self._memberships.save(cast(MembershipEntity, member))
             user_model.current_organization_id = org_model.id
             
             # Si l'utilisateur a été invité, on pourrait auto-vérifier son email
@@ -245,9 +248,9 @@ class ApplicationAuthService:
         logger.info(f">>> [DEBUG] REGISTERED USER ID: {user_model.id} (EMAIL: {user_model.email}) <<<")
 
         token = self._tokens.create_access_token(
-            user_id=user_model.id,
-            org_id=user_model.current_organization_id,
-            email=user_model.email,
+            user_id=cast(uuid.UUID, user_model.id),
+            org_id=cast(Optional[uuid.UUID], user_model.current_organization_id),
+            email=cast(str, user_model.email),
         )
         return AuthResult(token=token, user_model=user_model)
 
@@ -273,7 +276,7 @@ class ApplicationAuthService:
         else:
             # Utilisateur trouvé par email : on lie le google_id s'il est manquant
             if not user_model.google_id:
-                user_model.google_id = google_id
+                user_model.google_id = cast(Any, google_id)
                 await self._users._db.flush()
 
         if not user_model:
@@ -283,24 +286,26 @@ class ApplicationAuthService:
                 first_name=first_name,
                 last_name=last_name,
                 google_id=google_id,
-                email_verified_at=datetime.utcnow(), # Google est une source fiable
+                email_verified_at=cast(Any, datetime.now(UTC)), # Google est une source fiable
                 is_active=True
             )
-            await self._users.save(user_model)
+            await self._users.save(cast(UserEntity, user_model))
 
             org_name = f"Michi de {first_name or email.split('@')[0]}"
             org_model = Organization(
                 name=org_name,
                 slug=f"org-{uuid.uuid4().hex[:8]}",
             )
-            await self._orgs.save(org_model)
+            from modules.auth.domain.entities import OrganizationEntity
+            await self._orgs.save(cast(OrganizationEntity, org_model))
 
             member = OrganizationMember(
                 user_id=user_model.id,
                 organization_id=org_model.id,
                 role=UserRole.ADMIN,
             )
-            await self._memberships.save(member)
+            from modules.auth.domain.entities import MembershipEntity
+            await self._memberships.save(cast(MembershipEntity, member))
             user_model.current_organization_id = org_model.id
             await self._users._db.flush()
 
@@ -315,9 +320,9 @@ class ApplicationAuthService:
                     await self._users._db.flush()
 
         token = self._tokens.create_access_token(
-            user_id=user_model.id,
-            org_id=user_model.current_organization_id,
-            email=user_model.email,
+            user_id=cast(uuid.UUID, user_model.id),
+            org_id=cast(Optional[uuid.UUID], user_model.current_organization_id),
+            email=cast(str, user_model.email),
         )
         return AuthResult(token=token, user_model=user_model)
 
@@ -371,11 +376,11 @@ class ApplicationAuthService:
             return False
             
         from modules.auth.domain.value_objects import HashedPassword
-        if not self._hasher.verify(current_password, HashedPassword(user_model.hashed_password)):
+        if not self._hasher.verify(current_password, HashedPassword(cast(str, user_model.hashed_password))):
             raise MichiException(message="Mot de passe actuel incorrect", code=ErrorCode.UNAUTHENTICATED)
             
         new_hashed = self._hasher.hash(new_password)
-        user_model.hashed_password = new_hashed.value
+        user_model.hashed_password = cast(Any, new_hashed.value)
         await self._users._db.flush()
         return True
 
@@ -408,7 +413,7 @@ class ApplicationAuthService:
 
         # Générer token sécurisé
         token = secrets.token_urlsafe(32)
-        expires_at = datetime.utcnow() + timedelta(hours=1)
+        expires_at = datetime.now(UTC) + timedelta(hours=1)
         
         # Enregistrer le token
         reset_token = PasswordResetToken(
@@ -435,7 +440,7 @@ class ApplicationAuthService:
         """
         Valide le token et change le mot de passe.
         """
-        from datetime import datetime
+        from datetime import datetime, UTC, timedelta
         from sqlalchemy import select
         from modules.auth.infrastructure.persistence.models import PasswordResetToken
         from loguru import logger
@@ -450,19 +455,19 @@ class ApplicationAuthService:
             logger.warning(f"Invalid reset token: {token}")
             return False
             
-        if reset_token.expires_at < datetime.utcnow():
+        if reset_token.expires_at < datetime.now(UTC):
             logger.warning(f"Expired reset token: {token}")
             await self._users._db.delete(reset_token)
             await self._users._db.commit()
             return False
             
         # Changer le mot de passe
-        user_model = await self._users.get_model_by_id(reset_token.user_id)
+        user_model = await self._users.get_model_by_id(cast(uuid.UUID, reset_token.user_id))
         if not user_model:
             return False
             
         new_hashed = self._hasher.hash(new_password)
-        user_model.hashed_password = new_hashed.value
+        user_model.hashed_password = cast(Any, new_hashed.value)
         
         # Supprimer le token utilisé
         await self._users._db.delete(reset_token)

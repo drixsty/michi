@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 from datetime import datetime
 from modules.decisions.application.decisions_service import ApplicationDecisionsService
-from modules.auth.infrastructure.persistence.models import User
+from core.database.models import User
 from modules.inventory.domain.entities import PlatformSource
 from modules.inventory.infrastructure.persistence.models import Store, Product
 from modules.forecasting.infrastructure.persistence.models import Prediction

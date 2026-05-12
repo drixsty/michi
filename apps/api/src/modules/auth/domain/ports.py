@@ -98,7 +98,8 @@ class IPasswordHasher(Protocol):
 class ITokenService(Protocol):
     """Port de génération et validation de tokens JWT."""
 
-    def create_access_token(self, user_id: UUID, org_id: Optional[UUID], email: str) -> JwtToken: ...
+    from datetime import timedelta
+    def create_access_token(self, user_id: UUID, org_id: Optional[UUID], email: str, expires_delta: Optional[timedelta] = None) -> JwtToken: ...
 
     def decode(self, token: JwtToken) -> dict: ...
 

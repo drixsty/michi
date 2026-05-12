@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Optional
 from loguru import logger
 import uuid
 from uuid import UUID
-from datetime import datetime, timedelta
+from datetime import datetime, UTC, timedelta
 
 from modules.inventory.domain.ports import IProductRepository, ISalesLogRepository, IStoreRepository, IAlertRepository
 from modules.inventory.application.email_service import EmailService
@@ -37,7 +37,7 @@ class ReportingService:
         if frequency == "daily": days = 1
         elif frequency == "monthly": days = 30
 
-        today = datetime.utcnow()
+        today = datetime.now(UTC)
         since_date = today - timedelta(days=days)
         date_range = f"{since_date.strftime('%d %b')} - {today.strftime('%d %b')}"
 

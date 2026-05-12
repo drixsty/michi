@@ -10,7 +10,13 @@ class CSVConnector(BaseConnector):
     Connecteur Universel CSV/Excel pour Michi.
     """
 
-    async def fetch_products(self, content: Any, mapping: Dict[str, str], existing_skus: List[str] = None, is_excel: bool = False) -> List[Dict[str, Any]]:
+    async def validate_connection(self, credentials: Dict[str, Any]) -> bool:
+        return True
+
+    async def fetch_all_data(self, shop_id: str) -> Dict[str, Any]:
+        raise NotImplementedError("Use fetch_products and fetch_sales_history with content for CSV")
+
+    async def fetch_products(self, content: Any, mapping: Dict[str, str] = None, existing_skus: List[str] = None, is_excel: bool = False, **kwargs) -> List[Dict[str, Any]]:
         """
         Ingère les produits avec intelligence IA (Déduplication & Fuzzy Matching).
         """
@@ -57,7 +63,7 @@ class CSVConnector(BaseConnector):
             
         return list(unique_products.values())
 
-    async def fetch_sales_history(self, content: Any, mapping: Dict[str, str], is_excel: bool = False) -> List[Dict[str, Any]]:
+    async def fetch_sales_history(self, content: Any, mapping: Dict[str, str] = None, is_excel: bool = False, **kwargs) -> List[Dict[str, Any]]:
         """
         Ingère l'historique avec agrégation, interpolation et détection d'anomalies.
         """

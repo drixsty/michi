@@ -32,11 +32,11 @@ class InventoryService:
         self.supplier_repo = supplier_repo
 
     async def get_product(self, product_id: UUID) -> ProductEntity:
-        """Récupère un produit ou lève une NotFoundError."""
-        from core.exceptions import NotFoundError
+        """Récupère un produit ou lève une NotFoundException."""
+        from core.exceptions import NotFoundException
         product = await self.product_repo.get_by_id(product_id)
         if not product:
-            raise NotFoundError("Product", product_id)
+            raise NotFoundException("Product", str(product_id))
         return product
 
     async def upsert_inventory_data(
@@ -75,10 +75,14 @@ class InventoryService:
             if sku in existing_products:
                 # UPDATE
                 p = existing_products[sku]
-                p.title = p_data["title"]
-                p.current_stock = p_data.get("current_stock", p.current_stock)
-                p.source_platform = platform
-                p.external_id = p_data.get("external_id")
+                from dataclasses import replace
+                p = replace(
+                    p,
+                    title=p_data["title"],
+                    current_stock=p_data.get("current_stock", p.current_stock),
+                    source_platform=platform,
+                    external_id=p_data.get("external_id")
+                )
                 await self.product_repo.save(p)
                 processed_entities.append(p)
             else:

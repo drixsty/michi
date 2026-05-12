@@ -7,7 +7,7 @@ Aucune dépendance PostgreSQL/SQLAlchemy.
 
 import uuid
 from datetime import datetime, date, timedelta
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from uuid import UUID
 
 import pytest
@@ -106,13 +106,28 @@ class FakeStoreRepository:
         self._store[store.id] = store
 
 
+class FakeSupplierRepository:
+    def __init__(self) -> None:
+        self._store: Dict[UUID, Any] = {}
+
+    async def list_by_store(self, store_id: UUID) -> List[Any]:
+        return [s for s in self._store.values() if s.store_id == store_id]
+
+    async def get_by_id(self, supplier_id: UUID) -> Optional[Any]:
+        return self._store.get(supplier_id)
+
+    def seed(self, supplier: Any) -> None:
+        self._store[supplier.id] = supplier
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 def _make_forecasting_service(
     cleaned_demand_repo=None, prediction_repo=None,
-    product_repo=None, sales_log_repo=None, store_repo=None
+    product_repo=None, sales_log_repo=None, store_repo=None,
+    supplier_repo=None
 ):
     return ForecastingService(
         cleaned_demand_repo=cleaned_demand_repo or FakeCleanedDemandRepository(),
@@ -120,6 +135,7 @@ def _make_forecasting_service(
         product_repo=product_repo or FakeProductRepository(),
         sales_log_repo=sales_log_repo or FakeSalesLogRepository(),
         store_repo=store_repo or FakeStoreRepository(),
+        supplier_repo=supplier_repo or FakeSupplierRepository(),
     )
 
 

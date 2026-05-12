@@ -9,6 +9,7 @@ from modules.inventory.infrastructure.models import PlatformSource
 from core.database.models import Organization
 from sqlalchemy import select
 import uuid
+from uuid import UUID
 
 class IngestionService:
     """

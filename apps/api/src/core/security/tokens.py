@@ -1,16 +1,16 @@
-from datetime import datetime, timedelta
-from typing import Optional, Dict
+from datetime import datetime, UTC, timedelta
+from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from core.config.settings import settings
 
-def create_access_token(data: Dict[str, str], expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     """Crée un token JWT."""
     to_encode = data.copy()
     
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(hours=settings.ACCESS_TOKEN_EXPIRE_HOURS)
+        expire = datetime.now(UTC) + timedelta(hours=settings.ACCESS_TOKEN_EXPIRE_HOURS)
     
     to_encode.update({"exp": expire})
     

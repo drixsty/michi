@@ -50,8 +50,14 @@ class WooCommerceConnector(BaseConnector):
     Compatible avec les exports générés depuis wp-admin.
     """
 
+    async def validate_connection(self, credentials: Dict[str, Any]) -> bool:
+        return True
+
+    async def fetch_all_data(self, shop_id: str) -> Dict[str, Any]:
+        raise NotImplementedError("Use fetch_products and fetch_sales_history with content for WooCommerce")
+
     async def fetch_products(
-        self, csv_content: str, mapping: Dict[str, str] | None = None
+        self, csv_content: str, mapping: Dict[str, str] | None = None, **kwargs
     ) -> List[Dict[str, Any]]:
         """
         Ingère les produits depuis un export produits WooCommerce.
@@ -105,7 +111,7 @@ class WooCommerceConnector(BaseConnector):
         return products
 
     async def fetch_sales_history(
-        self, csv_content: str, mapping: Dict[str, str] | None = None
+        self, csv_content: str, mapping: Dict[str, str] | None = None, **kwargs
     ) -> List[Dict[str, Any]]:
         """
         Ingère l'historique de ventes depuis un export commandes WooCommerce.

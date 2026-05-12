@@ -1,0 +1,471 @@
+{
+  "Index": {
+    "title": "Votre stock, <spanInner>toujours au bon niveau.</spanInner>",
+    "description": "Michi se connecte à Shopify, Amazon ou WooCommerce et prédit la demande automatiquement — pour toujours avoir le bon stock au bon moment.",
+    "getStarted": "Commencer gratuitement",
+    "bookDemo": "Réserver une démo",
+    "exploreFeatures": "Voir comment ça marche",
+    "heroBadge": "Prévisions de stock par IA",
+    "stats": {
+      "accuracy": "98%",
+      "accuracyLabel": "Précision des prévisions",
+      "growth": "3.5x",
+      "growthLabel": "Croissance du CA",
+      "reduction": "85%",
+      "reductionLabel": "Moins de ruptures",
+      "integrations": "50+",
+      "integrationsLabel": "Intégrations"
+    },
+    "trustedBy": "500+ marques en croissance nous font confiance",
+    "login": "Connexion",
+    "common": {
+      "aiEngine": "Moteur natif IA",
+      "aiEngineDesc": "Conçu pour traiter des volumes élevés de données omnicanales dès le départ.",
+      "security": "Sécurité entreprise",
+      "securityDesc": "Chiffrement bancaire. Vos données restent sécurisées et privées.",
+      "sync": "Sync en temps réel",
+      "syncDesc": "Synchronisation bidirectionnelle sur tous vos canaux, toujours exacte.",
+      "specs": {
+        "enterprise": "Niveau entreprise",
+        "enterpriseDesc": "Passe à l'échelle à des millions de transactions sans ralentir.",
+        "cloud": "Cloud natif",
+        "cloudDesc": "99,9% de disponibilité. Accessible partout dans le monde."
+      },
+      "featureTeaser": "Le module {title} de Michi utilise un machine learning avancé pour transformer vos données brutes en décisions d'achat précises. Moins d'approximations. Plus de marge.",
+      "capabilities": {
+        "title": "Conçu pour la croissance",
+        "subtitle": "Pour les équipes qui ont dépassé les tableurs et ont besoin de décisions fondées sur la donnée.",
+        "items": {
+          "leadTimes": {
+            "title": "Délais dynamiques",
+            "desc": "S'ajuste en temps réel aux retards fournisseurs et à la variabilité logistique."
+          },
+          "multiLocation": {
+            "title": "Multi-entrepôts",
+            "desc": "Équilibrez vos stocks entre entrepôts et centres FBA automatiquement."
+          },
+          "promotions": {
+            "title": "Prévisions promos",
+            "desc": "Modélisez l'impact de vos campagnes sur vos besoins en stock avant leur lancement."
+          }
+        }
+      }
+    },
+    "integrations": {
+      "title": "S'adapte à vos <spanInner>outils actuels</spanInner>",
+      "description": "Pas de migration. Pas d'exports manuels. Michi se connecte à vos plateformes et synchronise en temps réel.",
+      "viewAll": "Voir les 50+ intégrations"
+    },
+    "workflowSection": {
+      "title": "Opérationnel en quelques minutes. Résultats dès le premier jour.",
+      "subtitle": "Aucune compétence technique requise. Connectez votre boutique et laissez Michi gérer.",
+      "items": {
+        "step1": {
+          "title": "Connectez",
+          "desc": "Un clic pour relier votre boutique. Jusqu'à 2 ans d'historique importés instantanément."
+        },
+        "step2": {
+          "title": "Prévoyez",
+          "desc": "L'IA détecte la saisonnalité, les tendances et les anomalies spécifiques à votre catalogue."
+        },
+        "step3": {
+          "title": "Restockez",
+          "desc": "Alertes de commande précises et bons de commande générés automatiquement — avant la rupture."
+        }
+      }
+    },
+    "comparison": {
+      "title": "Michi vs. les tableurs",
+      "subtitle": "La gestion manuelle ne passe pas à l'échelle. Voici pourquoi 500+ marques ont changé.",
+      "labels": {
+        "feature": "Critère",
+        "spreadsheets": "Tableurs",
+        "michi": "Michi"
+      },
+      "items": {
+        "accuracy": {
+          "title": "Précision",
+          "manual": "Faible — erreur humaine",
+          "michi": "98% — propulsé par l'IA"
+        },
+        "time": {
+          "title": "Temps passé",
+          "manual": "10–20 hrs / mois",
+          "michi": "< 1 hr / mois"
+        },
+        "sync": {
+          "title": "Sync des données",
+          "manual": "Exports CSV manuels",
+          "michi": "Sync API temps réel"
+        },
+        "alerts": {
+          "title": "Alertes rupture",
+          "manual": "Réactif",
+          "michi": "Prédictif"
+        }
+      }
+    },
+    "pricing": {
+      "title": "Tarification simple",
+      "subtitle": "Commencez petit. Évoluez à votre rythme. Résiliez à tout moment.",
+      "monthly": "mois",
+      "plans": {
+        "starter": {
+          "name": "Starter",
+          "price": "99",
+          "features": ["Jusqu'à 50k$/mois de CA", "1 intégration", "Sync quotidienne", "Support email"]
+        },
+        "pro": {
+          "name": "Pro",
+          "price": "249",
+          "features": ["Jusqu'à 250k$/mois de CA", "Intégrations illimitées", "Sync horaire", "Support prioritaire"]
+        },
+        "enterprise": {
+          "name": "Entreprise",
+          "price": "Sur mesure",
+          "features": ["CA illimité", "Délais personnalisés", "API complète", "CSM dédié"]
+        }
+      }
+    },
+    "featuresSection": {
+      "title": "Une seule plateforme. Le contrôle total.",
+      "subtitle": "Tout ce dont les équipes e-commerce modernes ont besoin pour piloter leurs stocks.",
+      "items": {
+        "predictive": {
+          "title": "Prévision de la demande",
+          "description": "Prédit la demande par variante à partir de l'historique et des tendances."
+        },
+        "multisync": {
+          "title": "Sync multi-canaux",
+          "description": "Shopify, Amazon, WooCommerce — un tableau de bord, une source de vérité."
+        },
+        "replenishment": {
+          "title": "Réapprovisionnement auto",
+          "description": "Alertes de commande avec quantités exactes selon vos délais réels."
+        },
+        "risk": {
+          "title": "Détection des risques",
+          "description": "Anticipe les ruptures fournisseurs avant qu'elles impactent vos ventes."
+        },
+        "global": {
+          "title": "Multi-entrepôts",
+          "description": "Pilotez vos stocks partout dans le monde depuis une vue unique."
+        },
+        "profit": {
+          "title": "Visibilité des marges",
+          "description": "Rentabilité réelle après frais de port, de stockage et de plateforme."
+        }
+      }
+    },
+    "cta": {
+      "title": "La prochaine rupture est évitable.",
+      "subtitle": "500+ marques automatisent leurs stocks avec Michi. Sans carte pour commencer.",
+      "button": "Démarrer gratuitement"
+    }
+  },
+  "Footer": {
+    "brandName": "Michi",
+    "description": "Prévisions de stock par IA pour les vendeurs Shopify, Amazon et WooCommerce.",
+    "copyright": "© 2026 Michi. Tous droits réservés.",
+    "product": "Produit",
+    "solutions": "Intégrations",
+    "company": "Entreprise",
+    "legal": "Légal",
+    "links": {
+      "forecasting": "Prévision de la demande",
+      "replenishment": "Réapprovisionnement auto",
+      "unifiedInventory": "Inventaire unifié",
+      "pricing": "Tarifs",
+      "shopify": "Shopify",
+      "amazon": "Amazon FBA",
+      "woo": "WooCommerce",
+      "about": "À propos",
+      "careers": "Carrières",
+      "blog": "Académie",
+      "privacy": "Confidentialité",
+      "terms": "Conditions"
+    }
+  },
+  "Shopify": {
+    "title": "Prévisions de stock Shopify — Michi",
+    "description": "Prévisions de demande par IA pour les vendeurs Shopify. Prédisez la demande, évitez les ruptures et récupérez les ventes perdues.",
+    "hero": {
+      "title": "Conçu pour les vendeurs <spanInner>Shopify</spanInner>",
+      "subtitle": "Un clic pour connecter. Michi prévoit la demande au niveau de la variante et vous dit exactement quand commander."
+    },
+    "workflow": {
+      "title": "Comment ça marche",
+      "step1": {
+        "title": "1. Connexion",
+        "desc": "Intégration en un clic. Catalogue et historique de ventes importés en quelques secondes."
+      },
+      "step2": {
+        "title": "2. Analyse",
+        "desc": "L'IA détecte la saisonnalité, l'impact des promos et les tendances par SKU."
+      },
+      "step3": {
+        "title": "3. Restock",
+        "desc": "Alertes et bons de commande générés automatiquement — prêts à envoyer."
+      }
+    },
+    "faq": {
+      "title": "Questions fréquentes",
+      "q1": "Michi gère-t-il les variantes Shopify ?",
+      "a1": "Oui — Michi prévoit la demande au niveau de chaque variante (taille, couleur, etc.).",
+      "q2": "À quelle fréquence la synchro se fait-elle ?",
+      "a2": "Toutes les heures. Vos niveaux de stock sont toujours à jour.",
+      "q3": "Puis-je connecter plusieurs boutiques Shopify ?",
+      "a3": "Oui. Gérez toutes vos boutiques depuis un seul tableau de bord Michi."
+    },
+    "testimonial": {
+      "quote": "45% de ruptures en moins en trois mois. Michi s'est rentabilisé dès la première semaine.",
+      "author": "Sarah J.",
+      "role": "Responsable opérations, EcoBrand"
+    },
+    "features": {
+      "title": "Ce que vous obtenez",
+      "items": {
+        "sync": "Sync automatique en temps réel avec votre catalogue Shopify complet",
+        "accuracy": "98% de précision jusqu'au niveau de la variante",
+        "alerts": "Alertes de réapprovisionnement intelligentes avant la rupture",
+        "multilocation": "Gestion multi-entrepôts Shopify incluse"
+      }
+    }
+  },
+  "Amazon": {
+    "title": "Prévisions de stock Amazon FBA — Michi",
+    "description": "Prédisez la demande FBA, protégez votre score IPI et arrêtez de deviner vos quantités de restock.",
+    "hero": {
+      "title": "Stoppez les approximations sur <spanInner>Amazon FBA</spanInner>",
+      "subtitle": "Michi calcule les dates et quantités exactes basées sur votre vélocité de vente, la saisonnalité et vos délais FBA."
+    },
+    "workflow": {
+      "title": "Flux d'optimisation FBA",
+      "step1": {
+        "title": "1. Sync FBA",
+        "desc": "Connectez Seller Central. Stocks FBA et historique de ventes synchronisés automatiquement."
+      },
+      "step2": {
+        "title": "2. Délais",
+        "desc": "Michi intègre les délais d'expédition vers les centres FBA — plus jamais de rupture Prime."
+      },
+      "step3": {
+        "title": "3. Restock",
+        "desc": "Recommandations précises pour protéger votre score IPI et éviter les frais de surstock."
+      }
+    },
+    "faq": {
+      "title": "Questions FBA",
+      "q1": "Suivez-vous les frais de stockage longue durée ?",
+      "a1": "Oui — Michi identifie les stocks dormants avant que les frais de stockage longue durée s'appliquent.",
+      "q2": "Le FBA Europe est-il supporté ?",
+      "a2": "Oui. Michi gère vos stocks sur toutes les régions et marketplaces Amazon.",
+      "q3": "Prenez-vous en compte la saisonnalité Amazon ?",
+      "a3": "Absolument. Notre IA détecte les pics spécifiques comme le Prime Day et le Black Friday."
+    },
+    "testimonial": {
+      "quote": "Score IPI +120 points. Les alertes de restock sont incroyablement précises.",
+      "author": "Marc T.",
+      "role": "Vendeur FBA expert"
+    },
+    "features": {
+      "title": "Avantages FBA",
+      "items": {
+        "ipi": "Protégez votre score IPI avec des niveaux de stock optimisés",
+        "velocity": "Suivi en temps réel de la vélocité des ventes par variante",
+        "alerts": "Alertes FBA calées sur vos fenêtres de préparation d'envoi",
+        "fees": "Évitez les frais de stockage avec un équilibrage intelligent"
+      }
+    }
+  },
+  "WooCommerce": {
+    "title": "Planification de stock WooCommerce — Michi",
+    "description": "Prévisions par IA pour les boutiques WooCommerce auto-hébergées. Synchronisez vos stocks, prédisez la demande et scalez sans limites.",
+    "hero": {
+      "title": "Prévisions IA pour <spanInner>WooCommerce</spanInner>",
+      "subtitle": "Planification de demande de niveau entreprise pour votre boutique auto-hébergée. Connexion par API, scaling sans limites."
+    },
+    "workflow": {
+      "title": "Comment ça marche",
+      "step1": {
+        "title": "1. Clé API",
+        "desc": "Générez une clé REST dans WooCommerce et connectez Michi en moins d'une minute."
+      },
+      "step2": {
+        "title": "2. Import",
+        "desc": "On importe votre historique complet pour construire un modèle de prévision sur mesure."
+      },
+      "step3": {
+        "title": "3. Pilotez",
+        "desc": "Alertes de commande et insights stock mis à jour en temps réel."
+      }
+    },
+    "faq": {
+      "title": "Questions WooCommerce",
+      "q1": "Y a-t-il une limite de produits ?",
+      "a1": "Non. Michi s'adapte — 10 références ou 10 000, même performance.",
+      "q2": "Cela ralentit-il mon site WordPress ?",
+      "a2": "Pas du tout. Tout le traitement se fait sur les serveurs Michi via l'API.",
+      "q3": "Puis-je synchroniser WooCommerce avec d'autres canaux ?",
+      "a3": "Oui — liez WooCommerce avec Shopify ou Amazon pour une visibilité omnicanale complète."
+    },
+    "testimonial": {
+      "quote": "5000 SKUs sans recruter un seul planificateur.",
+      "author": "Elena R.",
+      "role": "Fondatrice, ArtisanShop"
+    },
+    "features": {
+      "title": "Ce que les marchands WooCommerce obtiennent",
+      "items": {
+        "sync": "Sync automatique des stocks entre WooCommerce et tous vos canaux",
+        "scaling": "Développez votre boutique avec des décisions basées sur la donnée",
+        "reports": "Rapports de rentabilité et de demande par produit",
+        "automation": "Réapprovisionnement automatisé pour vous concentrer sur la croissance"
+      }
+    }
+  },
+  "Features": {
+    "forecasting": {
+      "title": "Prévision de la demande par IA — Michi",
+      "description": "Prédisez vos ventes futures avec précision. Nos modèles analysent historique, saisonnalité et tendances pour éliminer les approximations.",
+      "hero": {
+        "title": "Sachez ce qui va se vendre <spanInner>avant</spanInner> que ça arrive",
+        "subtitle": "Michi analyse 50+ signaux pour prévoir la demande des semaines à l'avance. Fini les commandes au jugé."
+      }
+    },
+    "replenishment": {
+      "title": "Réapprovisionnement automatisé — Michi",
+      "description": "Alertes de commande intelligentes avant la rupture. Quantités exactes basées sur vos délais et votre vélocité.",
+      "hero": {
+        "title": "Plus jamais <spanInner>en rupture de stock</spanInner>",
+        "subtitle": "Alertes de commande automatisées avec quantités calculées — délais fournisseurs, stock de sécurité et vélocité inclus."
+      }
+    },
+    "unified-inventory": {
+      "title": "Gestion unifiée des stocks — Michi",
+      "description": "Tous vos stocks au même endroit. Gérez Shopify, Amazon et WooCommerce depuis une vue unique et synchronisée.",
+      "hero": {
+        "title": "Tous vos stocks. <spanInner>Une seule vue.</spanInner>",
+        "subtitle": "Michi consolide vos stocks sur tous vos canaux. Fini les angles morts, fini les onglets multiples."
+      }
+    }
+  },
+  "About": {
+    "title": "À propos de Michi",
+    "description": "Nous construisons la couche d'intelligence inventaire pour les marques e-commerce modernes.",
+    "badge": "Pourquoi nous existons",
+    "hero": {
+      "title": "On a construit <spanInner>Michi</spanInner> parce qu'on en avait besoin",
+      "subtitle": "Trop de marques perdaient du CA à cause de mauvaises décisions stock. On a construit l'outil qu'on aurait voulu avoir."
+    },
+    "story": {
+      "badge": "L'origine",
+      "title": "L'origine",
+      "content": "Fondée en 2024, Michi a été créée pour rendre l'IA accessible à toutes les marques e-commerce — pas seulement aux grandes entreprises avec des équipes data. On croit que de meilleures données mènent à de meilleures décisions."
+    },
+    "values": {
+      "trust": {
+        "title": "Confidentialité",
+        "desc": "Vos données sont chiffrées et jamais partagées."
+      },
+      "precision": {
+        "title": "Précision",
+        "desc": "Chaque décision repose sur la donnée, pas sur l'intuition."
+      },
+      "user": {
+        "title": "Pensé pour les ops",
+        "desc": "Conçu par des gens qui ont géré des stocks à grande échelle."
+      },
+      "speed": {
+        "title": "Temps réel",
+        "desc": "Des insights qui se mettent à jour au fil de vos ventes."
+      }
+    },
+    "team": {
+      "title": "Construit par des experts en <spanInner>supply chain</spanInner>"
+    }
+  },
+  "Pricing": {
+    "badge": "Tarification simple",
+    "title": "Des tarifs qui <spanInner>grandissent avec vous</spanInner>",
+    "enterprise": {
+      "title": "Besoin d'une solution sur mesure ?",
+      "desc": "Les marchands à fort volume avec une logistique complexe bénéficient d'un plan personnalisé et d'un support dédié.",
+      "button": "Parler à l'équipe"
+    }
+  },
+  "Navbar": {
+    "brandName": "Michi",
+    "product": "Produit",
+    "integrationsLabel": "Intégrations",
+    "company": "Entreprise",
+    "pricing": "Tarifs",
+    "login": "Connexion",
+    "bookDemo": "Réserver une démo",
+    "getStarted": "Commencer gratuitement",
+    "integrations": {
+      "shopify": "Prévisions et restock pour votre boutique Shopify",
+      "amazon": "Optimisez vos stocks FBA et votre score IPI",
+      "woo": "Planification IA pour WooCommerce auto-hébergé"
+    },
+    "integrationNames": {
+      "shopify": "Shopify",
+      "amazon": "Amazon",
+      "amazonFBA": "Amazon FBA",
+      "woocommerce": "WooCommerce"
+    },
+    "integrationsSlash": "Intégrations /",
+    "resources": {
+      "blogLabel": "Académie",
+      "blog": "Guides, stratégies et études de cas",
+      "aboutLabel": "À propos",
+      "about": "Mission, histoire et équipe"
+    }
+  },
+  "Blog": {
+    "title": "Académie Michi — conseils stock e-commerce",
+    "description": "Guides pratiques et stratégies pour gérer vos stocks plus intelligemment.",
+    "categories": {
+      "strategy": "Stratégie",
+      "forecasting": "Prévisions",
+      "guides": "Guides"
+    },
+    "hero": {
+      "title": "Des insights stock, <spanInner>sans la complexité.</spanInner>",
+      "subtitle": "Guides pratiques pour gérer vos stocks plus intelligemment et croître plus vite."
+    },
+    "posts": {
+      "stockouts-2026": {
+        "title": "5 façons d'éliminer les ruptures de stock en 2026",
+        "description": "Les ruptures coûtent des milliards aux marques e-commerce chaque année. Voici comment le top 1% les évite — et les outils IA qui rendent ça simple.",
+        "date": "10 mai 2026",
+        "content": "<h2Inner>Le coût caché des ruptures</h2Inner><pInner>En 2026, un bouton 'Rupture de Stock' n'est pas qu'une vente manquée — c'est un client perdu au profit d'un concurrent. Les études montrent que 70% des acheteurs changent de marque après une seule rupture. Voici comment le top 1% l'évite.</pInner><h3Inner>1. Dépassez les moyennes mobiles avec l'IA</h3Inner><pInner>Les tableurs statiques et les moyennes sur 30 jours ne suffisent plus. La prévision moderne exige du ML qui intègre saisonnalité, micro-tendances et budgets marketing. Les modèles Michi analysent 50+ variables pour prédire la demande à 98% de précision.</pInner><h3Inner>2. Optimisez votre inventaire multi-entrepôts</h3Inner><pInner>Vendre sur Shopify et Amazon signifie un stock fragmenté. Une rupture sur Amazon alors que votre entrepôt Shopify est plein est un problème de visibilité — pas d'approvisionnement. Une vue unifiée règle ça.</pInner><h3Inner>3. Gestion dynamique des délais fournisseurs</h3Inner><pInner>Les fournisseurs ne sont pas toujours constants. Intégrer des délais dynamiques permet de déclencher vos commandes au moment exact, en tenant compte des aléas logistiques automatiquement.</pInner><h3Inner>4. Calculez votre stock de sécurité scientifiquement</h3Inner><pInner>Le stock de sécurité ne doit pas être une intuition. Utilisez la formule du taux de service pour calculer exactement le buffer nécessaire à couvrir 99% des pics de demande sans immobiliser de trésorerie.</pInner><h3Inner>5. Automatisez vos alertes de réapprovisionnement</h3Inner><pInner>La meilleure stratégie échoue sans exécution. Des alertes automatisées garantissent que vos équipes agissent dès qu'un SKU atteint son point de commande — sans vérification manuelle.</pInner>"
+      },
+      "ai-demand-planning": {
+        "title": "Comment l'IA transforme la planification de la demande",
+        "description": "Le machine learning change profondément la façon dont les marques prédisent la demande et gèrent leur supply chain.",
+        "date": "08 mai 2026",
+        "author": "Expert supply chain"
+      },
+      "multi-channel-guide": {
+        "title": "Inventaire multi-canal : le guide complet",
+        "description": "Maîtrisez vos stocks sur tous vos canaux de vente — sans la complexité.",
+        "date": "05 mai 2026",
+        "author": "Pro de l'e-commerce"
+      }
+    },
+    "teamName": "Michi Team",
+    "backToAcademy": "Retour à l'académie",
+    "share": "Partager",
+    "summary": "Points clés",
+    "summaryContent": "Prévisions IA, visibilité multi-entrepôts et alertes automatisées : les trois piliers d'une stratégie stock sans rupture."
+  },
+  "Metadata": {
+    "title": "Michi — prévisions de stock par IA pour l'e-commerce",
+    "description": "Prédisez la demande, évitez les ruptures et automatisez le réapprovisionnement pour Shopify, Amazon et WooCommerce."
+  },
+  "NotFound": {
+    "title": "Page introuvable",
+    "button": "Retour à l'accueil"
+  }
+}

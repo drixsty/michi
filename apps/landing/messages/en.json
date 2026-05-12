@@ -1,0 +1,470 @@
+{
+  "Index": {
+    "title": "Master your <spanInner>omnichannel</spanInner> <br /> supply chain",
+    "description": "Michi provides AI-driven forecasting for Shopify, Amazon, and WooCommerce sellers. Reduce stockouts, optimize cash flow, and scale with confidence.",
+    "getStarted": "Get started",
+    "bookDemo": "Book a demo",
+    "exploreFeatures": "Explore features",
+    "heroBadge": "Smarter inventory intelligence",
+    "stats": {
+      "accuracy": "98%",
+      "accuracyLabel": "Forecast accuracy",
+      "growth": "3.5x",
+      "growthLabel": "Revenue growth",
+      "reduction": "85%",
+      "reductionLabel": "Stockout reduction",
+      "integrations": "50+",
+      "integrationsLabel": "API integrations"
+    },
+    "trustedBy": "Trusted by fast-growing brands worldwide",
+    "login": "Login",
+    "common": {
+      "aiEngine": "AI-native engine",
+      "aiEngineDesc": "Built from the ground up to handle high-volume omnichannel data.",
+      "security": "Enterprise security",
+      "securityDesc": "Bank-grade encryption for all your catalog and sales history.",
+      "sync": "Automated sync",
+      "syncDesc": "Bidirectional sync ensures your inventory is always accurate.",
+      "specs": {
+        "enterprise": "Enterprise-grade",
+        "enterpriseDesc": "Scalable infrastructure for brands managing millions of transactions.",
+        "cloud": "Cloud-native",
+        "cloudDesc": "99.9% uptime with minimal latency across all global regions."
+      },
+      "featureTeaser": "Leveraging state-of-the-art machine learning, our {title} module provides a competitive edge by transforming raw data into actionable supply chain intelligence. Reduce human error and stop relying on intuition for your biggest capital expenses.",
+      "capabilities": {
+        "title": "Enterprise capabilities",
+        "subtitle": "Unlock the power of your data with our advanced feature set. Designed for high-growth teams that need more than just simple averages.",
+        "items": {
+          "leadTimes": {
+            "title": "Dynamic Lead Times",
+            "desc": "Accounts for supplier delays and shipping volatility automatically."
+          },
+          "multiLocation": {
+            "title": "Multi-Location Support",
+            "desc": "Optimize inventory across multiple warehouses and FBA centers."
+          },
+          "promotions": {
+            "title": "Promotion Impact",
+            "desc": "Model how upcoming sales events will affect your stock requirements."
+          }
+        }
+      }
+    },
+    "integrations": {
+      "title": "Connect your entire <spanInner>ecosystem</spanInner>",
+      "description": "Michi integrates directly with the platforms you already use. No manual CSV uploads, no messy spreadsheets. Just clean, automated data intelligence.",
+      "viewAll": "View all 50+ integrations"
+    },
+    "workflowSection": {
+      "title": "3 steps to inventory intelligence",
+      "subtitle": "Stop guessing and start scaling with our automated forecasting pipeline.",
+      "items": {
+        "step1": {
+          "title": "One-click connect",
+          "desc": "Link your Shopify, Amazon, or WooCommerce store in seconds. We securely ingest up to 2 years of sales history."
+        },
+        "step2": {
+          "title": "AI demand modeling",
+          "desc": "Our machine learning models identify seasonality, trends, and growth patterns specific to your brand."
+        },
+        "step3": {
+          "title": "Automated restock",
+          "desc": "Get precise reorder quantities and dates. Sync back to your ERP or use our generated purchase orders."
+        }
+      }
+    },
+    "comparison": {
+      "title": "Why Michi?",
+      "subtitle": "Stop wasting hours on spreadsheets that are outdated the moment you save them.",
+      "labels": {
+        "feature": "Feature",
+        "spreadsheets": "Traditional spreadsheets",
+        "michi": "Michi AI intelligence"
+      },
+      "items": {
+        "accuracy": {
+          "title": "Accuracy",
+          "manual": "Low (human error)",
+          "michi": "High (AI powered)"
+        },
+        "time": {
+          "title": "Time spent",
+          "manual": "10-20 hrs / month",
+          "michi": "< 1 hr / month"
+        },
+        "sync": {
+          "title": "Data sync",
+          "manual": "Manual CSV exports",
+          "michi": "Real-time API sync"
+        },
+        "alerts": {
+          "title": "Stockout alerts",
+          "manual": "Reactive",
+          "michi": "Predictive & automated"
+        }
+      }
+    },
+    "pricing": {
+      "title": "Transparent pricing",
+      "subtitle": "Choose the plan that fits your current volume and scale as you grow.",
+      "monthly": "monthly",
+      "plans": {
+        "starter": {
+          "name": "Starter",
+          "price": "99",
+          "features": ["Up to $50k monthly revenue", "1 integration", "Daily sync", "Email support"]
+        },
+        "pro": {
+          "name": "Pro",
+          "price": "249",
+          "features": ["Up to $250k monthly revenue", "Unlimited integrations", "Hourly sync", "Priority support"]
+        },
+        "enterprise": {
+          "name": "Enterprise",
+          "price": "Custom",
+          "features": ["Unlimited revenue", "Custom lead times", "API access", "Dedicated success manager"]
+        }
+      }
+    },
+    "featuresSection": {
+      "title": "Everything you need to grow",
+      "subtitle": "Powerful tools designed for modern e-commerce teams managing multiple sales channels.",
+      "items": {
+        "predictive": {
+          "title": "Predictive analytics",
+          "description": "Our AI models analyze historical data and trends to predict future demand with surgical precision."
+        },
+        "multisync": {
+          "title": "Multi-store sync",
+          "description": "Connect Shopify, Amazon, and WooCommerce in one dashboard for a single source of truth."
+        },
+        "replenishment": {
+          "title": "Automated replenishment",
+          "description": "Get smart alerts when it's time to reorder, with calculated quantities based on lead times."
+        },
+        "risk": {
+          "title": "Risk mitigation",
+          "description": "Identify potential supply chain disruptions before they happen with our risk scoring engine."
+        },
+        "global": {
+          "title": "Global operations",
+          "description": "Manage multiple warehouses and currencies effortlessly across international markets."
+        },
+        "profit": {
+          "title": "Profitability insights",
+          "description": "Understand your true margins by accounting for shipping, storage, and platform fees."
+        }
+      }
+    },
+    "cta": {
+      "title": "Ready to scale your supply chain?",
+      "subtitle": "Join hundreds of brands using Michi to automate their forecasting and inventory management.",
+      "button": "Start your free trial"
+    }
+  },
+  "Footer": {
+    "brandName": "Michi",
+    "description": "AI-driven inventory forecasting and supply chain automation for the modern e-commerce world.",
+    "copyright": "© 2026 Michi AI Solutions. All rights reserved.",
+    "product": "Product",
+    "solutions": "Solutions",
+    "company": "Company",
+    "legal": "Legal",
+    "links": {
+      "features": "Features",
+      "integrations": "Integrations",
+      "pricing": "Pricing",
+      "shopify": "Shopify Integration",
+      "amazon": "Amazon FBA",
+      "woo": "WooCommerce",
+      "about": "About Us",
+      "careers": "Careers",
+      "blog": "Michi Academy",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service"
+    }
+  },
+  "Shopify": {
+    "title": "Shopify Inventory Forecasting & Demand Planning",
+    "description": "Automate your Shopify inventory management with AI-powered forecasting. Predict demand, prevent stockouts, and optimize your cash flow.",
+    "hero": {
+      "title": "Precision Forecasting for <spanInner>Shopify</spanInner> Sellers",
+      "subtitle": "Scale your Shopify store with surgical precision. Our AI-driven algorithms analyze your historical sales data to provide accurate replenishment recommendations."
+    },
+    "workflow": {
+      "title": "How Michi works with Shopify",
+      "step1": {
+        "title": "1. Connect",
+        "desc": "One-click integration with your Shopify store. We securely import your catalog and sales history."
+      },
+      "step2": {
+        "title": "2. Analyze",
+        "desc": "Our AI analyzes seasonality, trends, and promotions to predict future demand per SKU."
+      },
+      "step3": {
+        "title": "3. Action",
+        "desc": "Receive automated restock alerts and purchase orders directly in your dashboard."
+      }
+    },
+    "faq": {
+      "title": "Shopify integration FAQ",
+      "q1": "Does Michi support Shopify variants?",
+      "a1": "Yes, Michi forecasts demand at the individual variant level (size, color, etc.) for maximum accuracy.",
+      "q2": "Is the stock sync real-time?",
+      "a2": "Michi syncs with Shopify every hour to ensure your inventory levels are always up to date.",
+      "q3": "Can I manage multiple Shopify stores?",
+      "a3": "Absolutely. You can connect multiple Shopify instances and manage them from a single unified dashboard."
+    },
+    "testimonial": {
+      "quote": "Michi transformed how we handle our Shopify stock. We've reduced stockouts by 45% in just three months.",
+      "author": "Sarah J.",
+      "role": "Operations Manager at EcoBrand"
+    },
+    "features": {
+      "title": "Why choose Michi for Shopify?",
+      "items": {
+        "sync": "Real-time automated sync with your Shopify catalog",
+        "accuracy": "98% forecast accuracy across all variants",
+        "alerts": "Smart replenishment alerts to prevent stockouts",
+        "multilocation": "Support for multiple Shopify warehouse locations"
+      }
+    }
+  },
+  "Amazon": {
+    "title": "Amazon FBA Inventory Forecasting & Restock Alerts",
+    "description": "Optimize your Amazon FBA inventory. Predict demand, avoid stockouts, and manage your IPI score with Michi's advanced AI forecasting.",
+    "hero": {
+      "title": "Smarter Restocking for <spanInner>Amazon</spanInner> FBA",
+      "subtitle": "Stop guessing your Amazon FBA restock quantities. Michi calculates precise order dates and amounts based on your sales velocity and FBA lead times."
+    },
+    "workflow": {
+      "title": "FBA optimization flow",
+      "step1": {
+        "title": "1. FBA sync",
+        "desc": "Connect your Seller Central account to sync FBA inventory and sales history automatically."
+      },
+      "step2": {
+        "title": "2. Lead time analysis",
+        "desc": "Michi factors in shipping times to FBA centers to ensure you never run out of prime stock."
+      },
+      "step3": {
+        "title": "3. Restock",
+        "desc": "Get exact shipment recommendations to maintain your IPI score and avoid overstock fees."
+      }
+    },
+    "faq": {
+      "title": "Amazon FBA FAQ",
+      "q1": "Does it track FBA storage fees?",
+      "a1": "Yes, Michi helps you identify slow-moving stock to minimize long-term storage fees.",
+      "q2": "Is European FBA (EFN/Pan-Euro) supported?",
+      "a2": "Absolutely. Michi manages inventory across all Amazon regions and marketplaces seamlessly.",
+      "q3": "Does it account for Amazon seasonality?",
+      "a3": "Our AI specifically identifies Amazon-specific peaks like Prime Day and Black Friday."
+    },
+    "testimonial": {
+      "quote": "Our IPI score jumped by 120 points after switching to Michi. The restock alerts are incredibly accurate.",
+      "author": "Mark T.",
+      "role": "FBA Power Seller"
+    },
+    "features": {
+      "title": "Dominate Amazon with Michi",
+      "items": {
+        "ipi": "Maintain a healthy IPI score by optimizing your inventory levels",
+        "velocity": "Real-time tracking of sales velocity across all SKU variants",
+        "alerts": "Custom restock alerts specifically for FBA shipment preparation",
+        "fees": "Reduce storage fees by avoiding overstocking and dead inventory"
+      }
+    }
+  },
+  "WooCommerce": {
+    "title": "WooCommerce Inventory Planning & Stock Control",
+    "description": "Powerful inventory forecasting for WooCommerce stores. Synchronize your stock and predict future demand to scale your self-hosted shop.",
+    "hero": {
+      "title": "AI-Powered Planning for <spanInner>WooCommerce</spanInner>",
+      "subtitle": "Bring enterprise-grade demand forecasting to your WooCommerce store. Michi seamlessly integrates to provide actionable inventory insights."
+    },
+    "workflow": {
+      "title": "WooCommerce integration process",
+      "step1": {
+        "title": "1. API key",
+        "desc": "Generate a secure REST API key in WooCommerce and connect Michi in seconds."
+      },
+      "step2": {
+        "title": "2. Data import",
+        "desc": "We import your historical orders and products to build your custom forecasting model."
+      },
+      "step3": {
+        "title": "3. Control",
+        "desc": "Manage your self-hosted inventory with the power of modern AI analytics."
+      }
+    },
+    "faq": {
+      "title": "WooCommerce FAQ",
+      "q1": "Is there a limit on the number of products?",
+      "a1": "No, Michi scales with your store, whether you have 10 or 10,000 SKUs.",
+      "q2": "Does it slow down my WordPress site?",
+      "a2": "Not at all. Michi processes all data on our high-performance servers via the API.",
+      "q3": "Can I sync Woo with other channels?",
+      "a3": "Yes, Michi is built for omnichannel. Link your Woo store with Shopify or Amazon effortlessly."
+    },
+    "testimonial": {
+      "quote": "Michi allowed us to scale our WooCommerce store to 5,000 SKUs without hiring a full-time planner.",
+      "author": "Elena R.",
+      "role": "Founder, ArtisanShop"
+    },
+    "features": {
+      "title": "WooCommerce optimization",
+      "items": {
+        "sync": "Automated stock synchronization between Woo and other channels",
+        "scaling": "Scale your self-hosted store with data-backed inventory decisions",
+        "reports": "Detailed profitability and demand reports for your products",
+        "automation": "Automate replenishment tasks and focus on growing your brand"
+      }
+    }
+  },
+  "Features": {
+    "forecasting": {
+      "title": "AI-Driven Demand Forecasting Software",
+      "description": "Predict future sales with surgical precision. Our AI models analyze historical data, seasonality, and trends to eliminate guesswork in your inventory planning.",
+      "hero": {
+        "title": "Predict the Future of Your <spanInner>Sales</spanInner>",
+        "subtitle": "Stop relying on spreadsheets. Michi uses advanced machine learning to forecast demand, helping you optimize stock levels and increase profitability."
+      }
+    },
+    "replenishment": {
+      "title": "Automated Inventory Replenishment Tool",
+      "description": "Never miss a sale again. Michi monitors your stock levels across all channels and alerts you exactly when and how much to reorder based on lead times.",
+      "hero": {
+        "title": "Automated <spanInner>Stock</spanInner> Optimization",
+        "subtitle": "Get smart reorder recommendations that account for supplier lead times, safety stock, and predicted velocity."
+      }
+    },
+    "unified-inventory": {
+      "title": "Unified Omnichannel Inventory Management",
+      "description": "Merge your Shopify, Amazon, and WooCommerce stocks into a single view. Eliminate data silos and manage your inventory levels with total visibility.",
+      "hero": {
+        "title": "A <spanInner>Single</spanInner> View for All Your Stock",
+        "subtitle": "Michi centralizes your inventory data from all sales channels for perfect synchronization and unmatched accuracy."
+      }
+    }
+  },
+  "About": {
+    "title": "About Michi | Our Mission",
+    "description": "Discover how Michi is revolutionizing the e-commerce supply chain through AI.",
+    "badge": "Our Mission",
+    "hero": {
+      "title": "Building the future of <spanInner>logistics</spanInner>",
+      "subtitle": "Michi was born out of frustration with complex spreadsheets and unforeseen stockouts. Our mission is to empower every brand with the predictive intelligence tools used by industry giants."
+    },
+    "story": {
+      "badge": "Our Story",
+      "title": "Our Story",
+      "content": "Founded in 2024, Michi aims to democratize AI for e-commerce sellers. We believe that data shouldn't be a burden, but a massive lever for growth."
+    },
+    "values": {
+      "trust": {
+        "title": "Trust First",
+        "desc": "Your data is secure and private."
+      },
+      "precision": {
+        "title": "Precision",
+        "desc": "AI built for accuracy."
+      },
+      "user": {
+        "title": "User Centric",
+        "desc": "Designed for operations."
+      },
+      "speed": {
+        "title": "Speed",
+        "desc": "Insights in real-time."
+      }
+    },
+    "team": {
+      "title": "Built by experts in <spanInner>supply chain</spanInner>"
+    }
+  },
+  "Pricing": {
+    "badge": "Flexible Plans",
+    "title": "Pricing built for <spanInner>growth</spanInner>",
+    "enterprise": {
+      "title": "Need a custom solution?",
+      "desc": "For high-volume merchants with complex logistics, we offer personalized enterprise plans.",
+      "button": "Contact Sales"
+    }
+  },
+  "Navbar": {
+    "brandName": "Michi",
+    "product": "Product",
+    "integrationsLabel": "Integrations",
+    "company": "Company",
+    "pricing": "Pricing",
+    "login": "Login",
+    "bookDemo": "Book a Demo",
+    "getStarted": "Get Started",
+    "integrations": {
+      "shopify": "Connect your Shopify store",
+      "amazon": "Optimize your FBA stocks",
+      "woo": "Scale your Woo store"
+    },
+    "integrationNames": {
+      "shopify": "Shopify",
+      "amazon": "Amazon",
+      "amazonFBA": "Amazon FBA",
+      "woocommerce": "WooCommerce"
+    },
+    "integrationsSlash": "Integrations /",
+    "resources": {
+      "blogLabel": "Michi Academy",
+      "blog": "Articles & Case Studies",
+      "aboutLabel": "About Us",
+      "about": "Our Mission & Team"
+    }
+  },
+  "Blog": {
+    "title": "Michi Academy | Inventory Management Insights",
+    "description": "Expert advice, guides, and case studies on e-commerce inventory forecasting, supply chain optimization, and business growth.",
+    "categories": {
+      "strategy": "Strategy",
+      "forecasting": "Forecasting",
+      "guides": "Guides"
+    },
+    "hero": {
+      "title": "Master Your <spanInner>Inventory</spanInner> Knowledge",
+      "subtitle": "Discover strategies to reduce stockouts and optimize your supply chain."
+    },
+    "posts": {
+      "stockouts-2026": {
+        "title": "5 Proven Strategies to Reduce Stockouts in 2026",
+        "description": "Stockouts cost e-commerce brands billions every year. Discover how to leverage AI, multi-location logic, and real-time data to keep your shelves full and your customers happy.",
+        "date": "May 10, 2026",
+        "content": "<h2Inner>The Hidden Cost of Stockouts</h2Inner><pInner>In the hyper-competitive world of 2026 e-commerce, a 'Sold Out' button isn't just a missed sale—it's a customer lost to a competitor. Research shows 70% of shoppers switch brands after a single stockout experience. Here's how the top 1% of brands avoid this.</pInner><h3Inner>1. Move Beyond Moving Averages with AI</h3Inner><pInner>Static spreadsheets and 30-day averages no longer cut it. Modern forecasting requires machine learning that integrates seasonality, micro-trends, and marketing budgets. Michi's AI models analyze over 50 variables to predict demand with 98% accuracy.</pInner><h3Inner>2. Optimize for Multi-Warehouse Inventory</h3Inner><pInner>If you're selling on Shopify and Amazon, your stock is fragmented. A stockout on Amazon while your Shopify warehouse is full is a visibility failure. You need a unified view that intelligently allocates inventory based on channel velocity.</pInner><h3Inner>3. Dynamic Lead Time Management</h3Inner><pInner>Suppliers aren't always consistent. Integrating dynamic lead times ensures you trigger orders at exactly the right moment, accounting for global logistics delays.</pInner><h3Inner>4. The Science of Safety Stock</h3Inner><pInner>Safety stock shouldn't be a 'gut feeling'. Use the service level formula to calculate exactly the buffer needed to cover 99% of demand spikes without tying up too much capital.</pInner><h3Inner>5. Real-Time Replenishment Alerts</h3Inner><pInner>The best strategy is useless without action. Automated alerts ensure your ops teams know the second a SKU hits its reorder point.</pInner>"
+      },
+      "ai-demand-planning": {
+        "title": "How AI is Revolutionizing Demand Planning",
+        "description": "Artificial intelligence is transforming how businesses manage their inventory.",
+        "date": "May 08, 2026",
+        "author": "Supply Chain Expert"
+      },
+      "multi-channel-guide": {
+        "title": "The Ultimate Guide to Multi-Channel Inventory",
+        "description": "Master your inventory across all your sales channels simultaneously.",
+        "date": "May 05, 2026",
+        "author": "E-commerce Pro"
+      }
+    },
+    "teamName": "Michi Team",
+    "backToAcademy": "Back to Academy",
+    "share": "Share",
+    "summary": "Summary",
+    "summaryContent": "This article explores how to transform your supply chain using AI and data-driven decisions."
+  },
+  "Metadata": {
+    "title": "Michi 道 | Omnichannel Forecasting Solutions",
+    "description": "Scale your business with AI-powered omnichannel forecasting. Integrate Shopify, Amazon, and WooCommerce seamlessly."
+  },
+  "NotFound": {
+    "title": "Page Not Found",
+    "button": "Return Home"
+  }
+}

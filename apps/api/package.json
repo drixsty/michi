@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "uvicorn --app-dir src main:app --reload --host 0.0.0.0 --port 8000",
+    "dev": "python -m uvicorn --app-dir src main:app --reload --host 0.0.0.0 --port 8000",
     "test": "python -m pytest",
     "lint": "echo 'No lint script for API yet'",
     "build": "echo 'No build script for API yet'"

@@ -42,6 +42,12 @@ async def test_credential_repository_encryption(db_session):
     
     # 4. Vérifier que c'est chiffré en DB (texte brut absent)
     from sqlalchemy import text
-    result = await db_session.execute(text(f"SELECT encrypted_api_key FROM store_credentials WHERE store_id = '{store.id}'"))
+    # SQLite stores GUID as CHAR(32) hex without dashes
+    store_id_hex = "%.32x" % store.id.int
+    result = await db_session.execute(
+        text("SELECT encrypted_api_key FROM store_credentials WHERE store_id = :store_id"),
+        {"store_id": store_id_hex}
+    )
     encrypted_val = result.scalar()
+    assert encrypted_val is not None
     assert "michi_123" not in encrypted_val

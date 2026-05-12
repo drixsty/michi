@@ -48,11 +48,11 @@ PROD-003,20,-2"""
     assert len(anomalies) == 2
     
     # Vérification de l'erreur sur PROD-002
-    prod2_error = next(a for a in anomalies if a["row_index"] == 1)
+    prod2_error = next(a for a in anomalies if a["row"] == 1)
     assert prod2_error["errors"]["stock"] == "NEGATIVE_VALUE"
     
     # Vérification de l'erreur sur PROD-003
-    prod3_error = next(a for a in anomalies if a["row_index"] == 2)
+    prod3_error = next(a for a in anomalies if a["row"] == 2)
     assert prod3_error["errors"]["units_sold"] == "NEGATIVE_VALUE"
 
 @pytest.mark.asyncio

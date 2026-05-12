@@ -1,7 +1,7 @@
 import pytest
 from uuid import uuid4
 from modules.auth.infrastructure.repositories import SQLAlchemyUserRepository, SQLAlchemyOrganizationRepository
-from modules.auth.infrastructure.persistence.models import User, Organization
+from core.database.models import User, Organization
 from modules.auth.domain.value_objects import Email
 
 @pytest.mark.asyncio

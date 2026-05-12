@@ -72,7 +72,7 @@ class StoreCredential(Base):
     store = relationship("Store", back_populates="credentials")
 
     def __repr__(self):
-        return f"<Store {self.name} ({self.platform.value})>"
+        return f"<StoreCredential {self.id}>"
 
 class Product(Base):
     __tablename__ = "products"

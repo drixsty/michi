@@ -14,7 +14,8 @@ import pytest
 
 from modules.inventory.application.inventory_service import InventoryService
 from modules.inventory.domain.entities import (
-    AlertEntity, PlatformSource, ProductEntity, SalesLogEntity, StoreEntity
+    AlertEntity, PlatformSource, ProductEntity, SalesLogEntity, StoreEntity,
+    PurchaseOrderEntity, SupplierEntity
 )
 from modules.inventory.domain.ports import (
     IAlertRepository, IProductRepository, ISalesLogRepository, IStoreRepository
@@ -46,10 +47,12 @@ class FakeProductRepository:
         product = self._store.get(product_id)
         if not product:
             return None
-        for k, v in kwargs.items():
-            if hasattr(product, k):
-                setattr(product, k, v)
-        return product
+        from dataclasses import replace
+        # On ne garde que les clés valides pour ProductEntity
+        valid_kwargs = {k: v for k, v in kwargs.items() if hasattr(product, k)}
+        new_product = replace(product, **valid_kwargs)
+        self._store[product_id] = new_product
+        return new_product
 
     async def delete_by_store(self, store_id: UUID) -> None:
         self._store = {k: v for k, v in self._store.items() if v.store_id != store_id}
@@ -94,15 +97,54 @@ class FakeStoreRepository:
         self._store[store.id] = store
 
 
+class FakePurchaseOrderRepository:
+    def __init__(self) -> None:
+        self._store: Dict[UUID, PurchaseOrderEntity] = {}
+
+    async def get_by_id(self, po_id: UUID) -> Optional[PurchaseOrderEntity]:
+        return self._store.get(po_id)
+
+    async def save(self, po: PurchaseOrderEntity) -> PurchaseOrderEntity:
+        self._store[po.id] = po
+        return po
+
+    async def list_by_store(self, store_id: UUID) -> List[PurchaseOrderEntity]:
+        return [po for po in self._store.values() if po.store_id == store_id]
+
+    async def list_by_supplier(self, supplier_id: UUID, status: Optional[str] = None) -> List[PurchaseOrderEntity]:
+        return [po for po in self._store.values() if po.supplier_id == supplier_id and (not status or po.status == status)]
+
+
+class FakeSupplierRepository:
+    def __init__(self) -> None:
+        self._store: Dict[UUID, SupplierEntity] = {}
+
+    async def get_by_id(self, supplier_id: UUID) -> Optional[SupplierEntity]:
+        return self._store.get(supplier_id)
+
+    async def list_by_store(self, store_id: UUID) -> List[SupplierEntity]:
+        return [s for s in self._store.values() if s.store_id == store_id]
+
+    async def save(self, supplier: SupplierEntity) -> SupplierEntity:
+        self._store[supplier.id] = supplier
+        return supplier
+
+    async def search(self, query: str, store_ids: List[UUID], limit: int = 5) -> List[SupplierEntity]:
+        results = [s for s in self._store.values() if (query.lower() in s.name.lower()) and s.store_id in store_ids]
+        return results[:limit]
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_inventory_service(product_repo=None, sales_log_repo=None, store_repo=None):
+def _make_inventory_service(product_repo=None, sales_log_repo=None, store_repo=None, po_repo=None, supplier_repo=None):
     return InventoryService(
         product_repo=product_repo or FakeProductRepository(),
         sales_log_repo=sales_log_repo or FakeSalesLogRepository(),
         store_repo=store_repo or FakeStoreRepository(),
+        po_repo=po_repo or FakePurchaseOrderRepository(),
+        supplier_repo=supplier_repo or FakeSupplierRepository(),
     )
 
 
