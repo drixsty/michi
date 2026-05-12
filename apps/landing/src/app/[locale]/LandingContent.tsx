@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 const FeatureCard = ({ icon: Icon, title, description }: { icon: any, title: string, description: string }) => (
-  <div className="p-5 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors group">
+  <div className="p-5 rounded-lg bg-card border border-border hover:border-primary/30 transition-colors group">
     <Icon className="w-4 h-4 text-primary mb-3" />
     <h3 className="text-sm font-semibold mb-1 text-foreground tracking-tight">{title}</h3>
     <p className="text-muted-foreground text-xs leading-relaxed">{description}</p>
@@ -51,10 +51,10 @@ export default function LandingContent() {
             {t('description')}
           </p>
           <div className="flex items-center justify-center gap-2.5">
-            <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all">
+            <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all">
               {t('getStarted')} <ArrowRight className="w-3.5 h-3.5" />
             </button>
-            <button className="border border-border text-foreground px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary transition-all">
+            <button className="border border-border text-foreground px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-secondary transition-all">
               {t('bookDemo')}
             </button>
           </div>
@@ -75,7 +75,7 @@ export default function LandingContent() {
 
       {/* Stats */}
       <section className="max-w-3xl mx-auto mb-14 px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 border border-border rounded-xl divide-x divide-border">
+        <div className="grid grid-cols-2 md:grid-cols-4 border border-border rounded-lg divide-x divide-border">
           {[
             { label: t('stats.accuracyLabel'), value: t('stats.accuracy') },
             { label: t('stats.growthLabel'), value: t('stats.growth') },
@@ -102,7 +102,7 @@ export default function LandingContent() {
             { icon: BarChart3, step: 'step2' },
             { icon: Shield, step: 'step3' }
           ].map((item, idx) => (
-            <div key={idx} className="p-5 rounded-xl bg-card border border-border">
+            <div key={idx} className="p-5 rounded-lg bg-card border border-border">
               <div className="text-[10px] font-bold text-primary mb-2 tracking-widest uppercase">
                 {String(idx + 1).padStart(2, '0')}
               </div>
@@ -120,7 +120,7 @@ export default function LandingContent() {
           <h2 className="text-base font-semibold text-foreground mb-1">{t('comparison.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('comparison.subtitle')}</p>
         </div>
-        <div className="rounded-xl border border-border overflow-hidden">
+        <div className="rounded-lg border border-border overflow-hidden">
           <div className="grid grid-cols-3 bg-secondary/50 px-5 py-3 border-b border-border">
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t('comparison.labels.feature')}</div>
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">{t('comparison.labels.spreadsheets')}</div>
@@ -176,15 +176,15 @@ export default function LandingContent() {
               {t('integrations.description')}
             </p>
             <div className="flex flex-wrap gap-3 mb-5">
-              <a href="/integrations/shopify" className="px-4 py-2.5 rounded-xl bg-card flex items-center gap-2.5 hover:border-primary/40 transition-colors border border-border">
+              <a href="/integrations/shopify" className="px-4 py-2.5 rounded-lg bg-card flex items-center gap-2.5 hover:border-primary/40 transition-colors border border-border">
                 <ShoppingCart className="w-4 h-4 text-primary" />
                 <span className="text-sm font-semibold">{tNavbar('integrationNames.shopify')}</span>
               </a>
-              <a href="/integrations/amazon" className="px-4 py-2.5 rounded-xl bg-card flex items-center gap-2.5 hover:border-orange-400/40 transition-colors border border-border">
+              <a href="/integrations/amazon" className="px-4 py-2.5 rounded-lg bg-card flex items-center gap-2.5 hover:border-orange-400/40 transition-colors border border-border">
                 <Globe className="w-4 h-4 text-orange-500" />
                 <span className="text-sm font-semibold">{tNavbar('integrationNames.amazon')}</span>
               </a>
-              <a href="/integrations/woocommerce" className="px-4 py-2.5 rounded-xl bg-card flex items-center gap-2.5 hover:border-blue-400/40 transition-colors border border-border">
+              <a href="/integrations/woocommerce" className="px-4 py-2.5 rounded-lg bg-card flex items-center gap-2.5 hover:border-blue-400/40 transition-colors border border-border">
                 <Boxes className="w-4 h-4 text-blue-500" />
                 <span className="text-sm font-semibold">{tNavbar('integrationNames.woocommerce')}</span>
               </a>
@@ -196,7 +196,7 @@ export default function LandingContent() {
 
           {/* Visual */}
           <div className="w-full lg:w-72 shrink-0">
-            <div className="border border-border rounded-xl overflow-hidden">
+            <div className="border border-border rounded-lg overflow-hidden">
               <div className="px-5 py-3 border-b border-border bg-secondary/40">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Connected channels</p>
               </div>
@@ -221,10 +221,10 @@ export default function LandingContent() {
 
       {/* CTA */}
       <section className="max-w-5xl mx-auto mb-20 px-6 border-t border-border pt-12">
-        <div className="bg-primary rounded-xl px-8 py-10 text-center text-white">
+        <div className="bg-primary rounded-lg px-8 py-10 text-center text-white">
           <h2 className="text-xl font-bold mb-2 tracking-tight">{t('cta.title')}</h2>
           <p className="text-white/70 text-sm mb-6 max-w-sm mx-auto leading-relaxed">{t('cta.subtitle')}</p>
-          <button className="bg-white text-primary hover:bg-white/90 px-8 py-2.5 rounded-xl font-semibold text-sm transition-all">
+          <button className="bg-white text-primary hover:bg-white/90 px-8 py-2.5 rounded-lg font-semibold text-sm transition-all">
             {t('cta.button')}
           </button>
         </div>

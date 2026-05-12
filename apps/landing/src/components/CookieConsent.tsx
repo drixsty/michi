@@ -102,13 +102,13 @@ export const CookieConsent = () => {
                 <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto shrink-0">
                   <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-semibold border border-border bg-transparent text-foreground hover:bg-muted transition-colors shadow-sm"
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-lg text-sm font-semibold border border-border bg-transparent text-foreground hover:bg-muted transition-colors shadow-sm"
                   >
                     {t('manage')}
                   </button>
                   <button 
                     onClick={handleAcceptAll}
-                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
                   >
                     {t('acceptAll')}
                   </button>
@@ -236,13 +236,13 @@ export const CookieConsent = () => {
               <div className="p-6 border-t border-border flex flex-col sm:flex-row justify-end gap-3 bg-muted/10">
                 <button 
                   onClick={handleDeclineAll}
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold border border-border bg-transparent text-foreground hover:bg-muted transition-colors shadow-sm"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-lg text-sm font-semibold border border-border bg-transparent text-foreground hover:bg-muted transition-colors shadow-sm"
                 >
                   {t('declineAll')}
                 </button>
                 <button 
                   onClick={handleSavePreferences}
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
                 >
                   {t('savePreferences')}
                 </button>
@@ -254,3 +254,4 @@ export const CookieConsent = () => {
     </>
   );
 };
+

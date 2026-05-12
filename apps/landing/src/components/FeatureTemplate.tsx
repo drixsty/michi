@@ -47,10 +47,10 @@ export const FeatureTemplate = ({ iconName, featureKey }: FeatureTemplateProps) 
             {t(`${featureKey}.hero.subtitle` as any)}
           </p>
           <div className="flex items-center justify-center gap-2.5">
-            <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all">
+            <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all">
               {tIndex('getStarted')} <ArrowRight className="w-3.5 h-3.5" />
             </button>
-            <button className="border border-border text-foreground px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary transition-all">
+            <button className="border border-border text-foreground px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-secondary transition-all">
               {tIndex('bookDemo')}
             </button>
           </div>
@@ -59,7 +59,7 @@ export const FeatureTemplate = ({ iconName, featureKey }: FeatureTemplateProps) 
 
       {/* Stats row */}
       <section className="max-w-3xl mx-auto px-6 mb-14">
-        <div className="grid grid-cols-3 border border-border rounded-xl divide-x divide-border">
+        <div className="grid grid-cols-3 border border-border rounded-lg divide-x divide-border">
           {[
             { value: tIndex('stats.accuracy'), label: tIndex('stats.accuracyLabel') },
             { value: tIndex('stats.reduction'), label: tIndex('stats.reductionLabel') },
@@ -81,7 +81,7 @@ export const FeatureTemplate = ({ iconName, featureKey }: FeatureTemplateProps) 
         </div>
         <div className="grid md:grid-cols-3 gap-3">
           {(['leadTimes', 'multiLocation', 'promotions'] as const).map((key) => (
-            <div key={key} className="p-5 rounded-xl border border-border bg-card">
+            <div key={key} className="p-5 rounded-lg border border-border bg-card">
               <Check className="w-3.5 h-3.5 text-primary mb-3" />
               <h3 className="text-sm font-semibold text-foreground mb-1 leading-snug">
                 {tIndex(`common.capabilities.items.${key}.title` as any)}
@@ -102,7 +102,7 @@ export const FeatureTemplate = ({ iconName, featureKey }: FeatureTemplateProps) 
             { icon: Cloud, title: tIndex('common.specs.cloud'), desc: tIndex('common.specs.cloudDesc') },
             { icon: Zap, title: tIndex('common.aiEngine'), desc: tIndex('common.aiEngineDesc') }
           ].map((item, i) => (
-            <div key={i} className="p-5 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors">
+            <div key={i} className="p-5 rounded-lg border border-border bg-card hover:border-primary/30 transition-colors">
               <item.icon className="w-4 h-4 text-primary mb-3" />
               <h3 className="text-sm font-semibold text-foreground mb-1">{item.title}</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
@@ -114,3 +114,4 @@ export const FeatureTemplate = ({ iconName, featureKey }: FeatureTemplateProps) 
     </div>
   );
 };
+

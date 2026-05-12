@@ -8,7 +8,7 @@ import { Check, ArrowRight } from 'lucide-react';
 const PricingCard = ({ plan, planId, isFeatured }: { plan: any; planId: string; isFeatured?: boolean }) => {
   const t = useTranslations('Index');
   return (
-    <div className={`p-7 rounded-xl flex flex-col h-full transition-colors ${
+    <div className={`p-7 rounded-lg flex flex-col h-full transition-colors ${
       isFeatured
         ? 'bg-primary text-white border border-primary'
         : 'bg-card border border-border hover:border-primary/30'
@@ -47,7 +47,7 @@ const PricingCard = ({ plan, planId, isFeatured }: { plan: any; planId: string; 
       </ul>
       <a 
         href={`${process.env.NEXT_PUBLIC_APP_URL}/register?plan=${planId}`}
-        className={`w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-95 flex items-center justify-center ${
+        className={`w-full py-3 rounded-lg font-semibold text-sm transition-all active:scale-95 flex items-center justify-center ${
         isFeatured
           ? 'bg-white text-primary hover:bg-white/90'
           : 'bg-primary text-white hover:bg-primary/90'
@@ -158,7 +158,7 @@ export default function PricingPage() {
         )}
 
         {/* Enterprise CTA */}
-        <div className="border border-border rounded-xl p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="border border-border rounded-lg p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
             <h2 className="text-sm font-semibold text-foreground mb-1">{tPricing('enterprise.title')}</h2>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
@@ -167,7 +167,7 @@ export default function PricingPage() {
           </div>
           <a 
             href={process.env.NEXT_PUBLIC_DEMO_URL || 'mailto:contact@michi.app'}
-            className="flex items-center justify-center gap-2 border border-border text-foreground px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary transition-all whitespace-nowrap shrink-0"
+            className="flex items-center justify-center gap-2 border border-border text-foreground px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-secondary transition-all whitespace-nowrap shrink-0"
           >
             {tPricing('enterprise.button')} <ArrowRight className="w-3.5 h-3.5" />
           </a>

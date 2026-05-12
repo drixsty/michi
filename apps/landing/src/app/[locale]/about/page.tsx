@@ -49,7 +49,7 @@ export default function AboutPage() {
             <p className="text-sm text-muted-foreground leading-relaxed mb-8">{t('story.content')}</p>
 
             {/* Brand mark */}
-            <div className="inline-flex items-center gap-3 px-4 py-3 border border-border rounded-xl bg-card">
+            <div className="inline-flex items-center gap-3 px-4 py-3 border border-border rounded-lg bg-card">
               <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center font-bold text-white text-base">道</div>
               <div>
                 <p className="text-sm font-semibold text-foreground">Michi</p>
@@ -65,7 +65,7 @@ export default function AboutPage() {
             </span>
             <div className="grid grid-cols-2 gap-3">
               {values.map(({ icon: Icon, key }) => (
-                <div key={key} className="p-4 border border-border rounded-xl bg-card">
+                <div key={key} className="p-4 border border-border rounded-lg bg-card">
                   <Icon className="w-4 h-4 text-primary mb-2.5" />
                   <h4 className="text-sm font-semibold text-foreground mb-0.5">
                     {t(`values.${key}.title` as any)}
@@ -92,7 +92,7 @@ export default function AboutPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="group">
-              <div className="aspect-square bg-secondary rounded-xl mb-3 border border-border group-hover:border-primary/30 transition-colors" />
+              <div className="aspect-square bg-secondary rounded-lg mb-3 border border-border group-hover:border-primary/30 transition-colors" />
               <div className="w-20 h-3 bg-muted rounded-full mb-1.5 opacity-40" />
               <div className="w-14 h-2.5 bg-muted rounded-full opacity-25" />
             </div>

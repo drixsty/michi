@@ -57,7 +57,7 @@ export default function BlogPost({ params: { slug } }: { params: { slug: string 
               pInner: (chunks) => <p className="mb-4">{chunks}</p>
             })}
 
-            <div className="bg-secondary border border-border p-5 rounded-xl mt-8">
+            <div className="bg-secondary border border-border p-5 rounded-lg mt-8">
               <h2 className="text-sm font-semibold text-foreground mb-2">{t('summary')}</h2>
               <p className="text-xs text-muted-foreground leading-relaxed">{t('summaryContent')}</p>
             </div>

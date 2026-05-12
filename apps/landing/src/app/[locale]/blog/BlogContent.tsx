@@ -7,7 +7,7 @@ import { ArrowRight, BookOpen, Calendar, User } from 'lucide-react';
 
 const BlogCard = ({ category, title, date, author, slug }: { category: string, title: string, date: string, author: string, slug: string }) => (
   <a href={`/blog/${slug}`} className="block group">
-    <div className="bg-card rounded-xl overflow-hidden border border-border hover:border-primary/30 transition-colors">
+    <div className="bg-card rounded-lg overflow-hidden border border-border hover:border-primary/30 transition-colors">
       <div className="h-36 bg-secondary flex items-center justify-center">
         <BookOpen className="w-7 h-7 text-muted-foreground/20" />
       </div>

@@ -85,10 +85,10 @@ export const IntegrationTemplate = ({ namespace, iconName, platformName }: Integ
               {t('hero.subtitle')}
             </p>
             <div className="flex items-center gap-2.5">
-              <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all">
+              <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all">
                 {tIndex('getStarted')} <ArrowRight className="w-3.5 h-3.5" />
               </button>
-              <button className="border border-border text-foreground px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-secondary transition-all">
+              <button className="border border-border text-foreground px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-secondary transition-all">
                 {tIndex('bookDemo')}
               </button>
             </div>
@@ -101,7 +101,7 @@ export const IntegrationTemplate = ({ namespace, iconName, platformName }: Integ
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <div className="border border-border rounded-xl overflow-hidden">
+            <div className="border border-border rounded-lg overflow-hidden">
               <div className="px-5 py-3 border-b border-border bg-secondary/40">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                   {t('features.title')}
@@ -126,7 +126,7 @@ export const IntegrationTemplate = ({ namespace, iconName, platformName }: Integ
         <h2 className="text-base font-semibold text-foreground mb-8">{t('workflow.title')}</h2>
         <div className="grid md:grid-cols-3 gap-5">
           {(['step1', 'step2', 'step3'] as const).map((step, idx) => (
-            <div key={step} className="relative p-5 rounded-xl border border-border bg-card">
+            <div key={step} className="relative p-5 rounded-lg border border-border bg-card">
               <div className="text-[10px] font-bold text-primary mb-2 tracking-widest uppercase">
                 {String(idx + 1).padStart(2, '0')}
               </div>
@@ -154,3 +154,4 @@ export const IntegrationTemplate = ({ namespace, iconName, platformName }: Integ
     </div>
   );
 };
+

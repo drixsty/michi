@@ -41,7 +41,7 @@ const NavDropdown = ({ title, items, isOpen, onMouseEnter, onMouseLeave }: {
         initial={{ opacity: 0, y: 6 }}
         animate={isOpen ? { opacity: 1, y: 0 } : { opacity: 0, y: 6 }}
         transition={{ duration: 0.15 }}
-        className="w-full bg-background border border-border rounded-xl p-4 overflow-hidden"
+        className="w-full bg-background border border-border rounded-lg p-4 overflow-hidden"
       >
         <div className="grid gap-1">
           {items.map((item, idx) => (
@@ -123,10 +123,10 @@ export const Navbar = () => {
           <a href={`${process.env.NEXT_PUBLIC_APP_URL}/login`} className="hidden md:block text-xs font-semibold text-muted-foreground hover:text-foreground px-3 py-2 transition-all">
             {t('login')}
           </a>
-          <a href={process.env.NEXT_PUBLIC_DEMO_URL || 'mailto:contact@michi.app'} className="hidden lg:block border border-border hover:bg-secondary text-foreground px-4 py-2 rounded-xl text-xs font-semibold transition-all">
+          <a href={process.env.NEXT_PUBLIC_DEMO_URL || 'mailto:contact@michi.app'} className="hidden lg:block border border-border hover:bg-secondary text-foreground px-4 py-2 rounded-lg text-xs font-semibold transition-all">
             {t('bookDemo')}
           </a>
-          <a href={`${process.env.NEXT_PUBLIC_APP_URL}/register`} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all">
+          <a href={`${process.env.NEXT_PUBLIC_APP_URL}/register`} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-all">
             {t('getStarted')}
           </a>
         </div>
@@ -134,3 +134,4 @@ export const Navbar = () => {
     </nav>
   );
 };
+

@@ -13,7 +13,7 @@ export default function NotFound() {
         <p className="text-foreground text-xl mb-10 font-bold tracking-tight">{t('title')}</p>
         <a 
           href="/" 
-          className="inline-block bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-xl font-bold transition-all shadow-xl shadow-primary/20"
+          className="inline-block bg-primary hover:bg-primary/90 text-white px-10 py-4 rounded-lg font-bold transition-all shadow-xl shadow-primary/20"
         >
           {t('button')}
         </a>
