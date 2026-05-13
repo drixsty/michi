@@ -36,7 +36,7 @@ export default function LandingContent() {
     <div className="relative overflow-x-hidden">
 
       {/* Hero */}
-      <section className="max-w-3xl mx-auto pt-28 pb-14 px-6 text-center">
+      <section className="max-w-3xl mx-auto pt-28 pb-14 px-4 sm:px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <span className="inline-block px-3 py-1 rounded-lg bg-secondary border border-border text-muted-foreground text-[10px] font-bold tracking-widest uppercase mb-5">
             {t('heroBadge')}
@@ -50,11 +50,11 @@ export default function LandingContent() {
           <p className="max-w-lg mx-auto text-muted-foreground text-[0.9rem] mb-7 leading-relaxed">
             {t('description')}
           </p>
-          <div className="flex items-center justify-center gap-2.5">
-            <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all">
-              {t('getStarted')} <ArrowRight className="w-3.5 h-3.5" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5">
+            <button className="bg-primary hover:bg-primary/90 text-white px-6 py-3 min-h-[44px] rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+              {t('getStarted')} <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </button>
-            <button className="border border-border text-foreground px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-secondary transition-all">
+            <button className="border border-border text-foreground px-6 py-3 min-h-[44px] rounded-lg text-sm font-semibold hover:bg-secondary transition-all flex items-center justify-center">
               {t('bookDemo')}
             </button>
           </div>
@@ -62,7 +62,7 @@ export default function LandingContent() {
       </section>
 
       {/* Trusted by */}
-      <section className="max-w-3xl mx-auto mb-14 px-6 text-center">
+      <section className="max-w-3xl mx-auto mb-14 px-4 sm:px-6 text-center">
         <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest mb-6 opacity-50">{t('trustedBy')}</p>
         <div className="flex flex-wrap justify-center items-center gap-10 opacity-25">
           <ShoppingCart className="w-7 h-7" />
@@ -74,7 +74,7 @@ export default function LandingContent() {
       </section>
 
       {/* Stats */}
-      <section className="max-w-3xl mx-auto mb-14 px-6">
+      <section className="max-w-3xl mx-auto mb-14 px-4 sm:px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 border border-border rounded-lg divide-x divide-border">
           {[
             { label: t('stats.accuracyLabel'), value: t('stats.accuracy') },
@@ -82,7 +82,7 @@ export default function LandingContent() {
             { label: t('stats.reductionLabel'), value: t('stats.reduction') },
             { label: t('stats.integrationsLabel'), value: t('stats.integrations') },
           ].map((stat, idx) => (
-            <div key={idx} className="py-4 text-center">
+            <div key={idx} className={`py-4 text-center ${idx < 2 ? 'border-b border-border md:border-b-0' : ''}`}>
               <div className="text-lg font-bold text-primary mb-0.5">{stat.value}</div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{stat.label}</div>
             </div>
@@ -91,12 +91,12 @@ export default function LandingContent() {
       </section>
 
       {/* Workflow */}
-      <section className="max-w-5xl mx-auto mb-14 px-6 border-t border-border pt-12">
+      <section className="max-w-5xl mx-auto mb-14 px-4 sm:px-6 border-t border-border pt-12">
         <div className="mb-8">
           <h2 className="text-base font-semibold text-foreground mb-1">{t('workflowSection.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('workflowSection.subtitle')}</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
           {[
             { icon: Rocket, step: 'step1' },
             { icon: BarChart3, step: 'step2' },
@@ -115,25 +115,41 @@ export default function LandingContent() {
       </section>
 
       {/* Comparison */}
-      <section className="max-w-3xl mx-auto mb-14 px-6 border-t border-border pt-12">
+      <section className="max-w-3xl mx-auto mb-14 px-4 sm:px-6 border-t border-border pt-12">
         <div className="mb-6">
           <h2 className="text-base font-semibold text-foreground mb-1">{t('comparison.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('comparison.subtitle')}</p>
         </div>
         <div className="rounded-lg border border-border overflow-hidden">
-          <div className="grid grid-cols-3 bg-secondary/50 px-5 py-3 border-b border-border">
+          {/* Desktop header: 3 cols */}
+          <div className="hidden md:grid grid-cols-3 bg-secondary/50 px-5 py-3 border-b border-border">
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t('comparison.labels.feature')}</div>
             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">{t('comparison.labels.spreadsheets')}</div>
             <div className="text-[10px] font-bold text-primary uppercase tracking-widest text-center">{t('comparison.labels.michi')}</div>
           </div>
+          {/* Mobile header: 2 cols */}
+          <div className="md:hidden grid grid-cols-2 bg-secondary/50 px-4 py-2.5 border-b border-border">
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-center">{t('comparison.labels.spreadsheets')}</div>
+            <div className="text-[10px] font-bold text-primary uppercase tracking-widest text-center">{t('comparison.labels.michi')}</div>
+          </div>
+
           {Object.keys(t.raw('comparison.items')).map((key, idx, arr) => (
-            <div key={key} className={`grid grid-cols-3 px-5 py-3.5 items-center ${idx !== arr.length - 1 ? 'border-b border-border' : ''}`}>
-              <div className="text-sm font-semibold text-foreground">{t(`comparison.items.${key}.title` as any)}</div>
-              <div className="flex justify-center items-center gap-1.5 text-xs text-red-500/70 italic">
-                <X className="w-3.5 h-3.5 shrink-0" /> {t(`comparison.items.${key}.manual` as any)}
+            <div key={key} className={`px-4 md:px-5 py-3.5 ${idx !== arr.length - 1 ? 'border-b border-border' : ''}`}>
+              {/* Feature title: full-width label on mobile only */}
+              <div className="md:hidden text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">
+                {t(`comparison.items.${key}.title` as any)}
               </div>
-              <div className="flex justify-center items-center gap-1.5 text-xs text-emerald-600 font-medium">
-                <Check className="w-3.5 h-3.5 shrink-0" /> {t(`comparison.items.${key}.michi` as any)}
+              <div className="grid grid-cols-2 md:grid-cols-3 items-center gap-2">
+                {/* Desktop: feature name in col 1 */}
+                <div className="hidden md:block text-sm font-semibold text-foreground">
+                  {t(`comparison.items.${key}.title` as any)}
+                </div>
+                <div className="flex justify-center items-center gap-1.5 text-xs text-red-500/70 italic">
+                  <X className="w-3.5 h-3.5 shrink-0" /> {t(`comparison.items.${key}.manual` as any)}
+                </div>
+                <div className="flex justify-center items-center gap-1.5 text-xs text-emerald-600 font-medium">
+                  <Check className="w-3.5 h-3.5 shrink-0" /> {t(`comparison.items.${key}.michi` as any)}
+                </div>
               </div>
             </div>
           ))}
@@ -141,12 +157,12 @@ export default function LandingContent() {
       </section>
 
       {/* Features grid */}
-      <section id="features" className="max-w-5xl mx-auto mb-14 px-6 border-t border-border pt-12">
+      <section id="features" className="max-w-5xl mx-auto mb-14 px-4 sm:px-6 border-t border-border pt-12">
         <div className="mb-6">
           <h2 className="text-base font-semibold text-foreground mb-1">{t('featuresSection.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('featuresSection.subtitle')}</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-3">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
           <a href="/features/forecasting">
             <FeatureCard icon={TrendingUp} title={t('featuresSection.items.predictive.title')} description={t('featuresSection.items.predictive.description')} />
           </a>
@@ -163,7 +179,7 @@ export default function LandingContent() {
       </section>
 
       {/* Integrations */}
-      <section id="integrations" className="max-w-5xl mx-auto mb-14 px-6 border-t border-border pt-12">
+      <section id="integrations" className="max-w-5xl mx-auto mb-14 px-4 sm:px-6 border-t border-border pt-12">
         <div className="flex flex-col lg:flex-row items-start gap-12">
           <div className="flex-1">
             <h2 className="text-base font-semibold text-foreground mb-2">
@@ -176,16 +192,16 @@ export default function LandingContent() {
               {t('integrations.description')}
             </p>
             <div className="flex flex-wrap gap-3 mb-5">
-              <a href="/integrations/shopify" className="px-4 py-2.5 rounded-lg bg-card flex items-center gap-2.5 hover:border-primary/40 transition-colors border border-border">
-                <ShoppingCart className="w-4 h-4 text-primary" />
+              <a href="/integrations/shopify" className="px-4 min-h-[44px] rounded-lg bg-card flex items-center gap-2.5 hover:border-primary/40 transition-colors border border-border">
+                <ShoppingCart className="w-4 h-4 text-primary shrink-0" />
                 <span className="text-sm font-semibold">{tNavbar('integrationNames.shopify')}</span>
               </a>
-              <a href="/integrations/amazon" className="px-4 py-2.5 rounded-lg bg-card flex items-center gap-2.5 hover:border-orange-400/40 transition-colors border border-border">
-                <Globe className="w-4 h-4 text-orange-500" />
+              <a href="/integrations/amazon" className="px-4 min-h-[44px] rounded-lg bg-card flex items-center gap-2.5 hover:border-orange-400/40 transition-colors border border-border">
+                <Globe className="w-4 h-4 text-orange-500 shrink-0" />
                 <span className="text-sm font-semibold">{tNavbar('integrationNames.amazon')}</span>
               </a>
-              <a href="/integrations/woocommerce" className="px-4 py-2.5 rounded-lg bg-card flex items-center gap-2.5 hover:border-blue-400/40 transition-colors border border-border">
-                <Boxes className="w-4 h-4 text-blue-500" />
+              <a href="/integrations/woocommerce" className="px-4 min-h-[44px] rounded-lg bg-card flex items-center gap-2.5 hover:border-blue-400/40 transition-colors border border-border">
+                <Boxes className="w-4 h-4 text-blue-500 shrink-0" />
                 <span className="text-sm font-semibold">{tNavbar('integrationNames.woocommerce')}</span>
               </a>
             </div>
@@ -220,11 +236,11 @@ export default function LandingContent() {
       </section>
 
       {/* CTA */}
-      <section className="max-w-5xl mx-auto mb-20 px-6 border-t border-border pt-12">
-        <div className="bg-primary rounded-lg px-8 py-10 text-center text-white">
+      <section className="max-w-5xl mx-auto mb-20 px-4 sm:px-6 border-t border-border pt-12">
+        <div className="bg-primary rounded-lg px-5 sm:px-8 py-8 sm:py-10 text-center text-white">
           <h2 className="text-xl font-bold mb-2 tracking-tight">{t('cta.title')}</h2>
           <p className="text-white/70 text-sm mb-6 max-w-sm mx-auto leading-relaxed">{t('cta.subtitle')}</p>
-          <button className="bg-white text-primary hover:bg-white/90 px-8 py-2.5 rounded-lg font-semibold text-sm transition-all">
+          <button className="bg-white text-primary hover:bg-white/90 px-8 min-h-[44px] rounded-lg font-semibold text-sm transition-all inline-flex items-center justify-center">
             {t('cta.button')}
           </button>
         </div>

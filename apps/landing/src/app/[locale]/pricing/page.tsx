@@ -116,7 +116,7 @@ export default function PricingPage() {
 
   return (
     <div className="overflow-x-hidden min-h-screen">
-      <section className="max-w-5xl mx-auto pt-28 pb-20 px-6">
+      <section className="max-w-5xl mx-auto pt-28 pb-20 px-4 sm:px-6">
 
         {/* Header */}
         <motion.div
@@ -167,7 +167,7 @@ export default function PricingPage() {
           </div>
           <a 
             href={process.env.NEXT_PUBLIC_DEMO_URL || 'mailto:contact@michi.app'}
-            className="flex items-center justify-center gap-2 border border-border text-foreground px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-secondary transition-all whitespace-nowrap shrink-0"
+            className="flex items-center justify-center gap-2 border border-border text-foreground px-5 min-h-[44px] rounded-lg text-sm font-semibold hover:bg-secondary transition-all whitespace-nowrap shrink-0"
           >
             {tPricing('enterprise.button')} <ArrowRight className="w-3.5 h-3.5" />
           </a>

@@ -415,6 +415,132 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
 
   const selectedCount = Object.keys(rowSelection).length;
 
+  // ─── Mobile Card View ───────────────────────────────────────────────────────
+  const MobileCardView = () => (
+    <div className="space-y-2">
+      {filteredProducts.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <div className="p-3 bg-slate-50 rounded-full">
+            <Layers className="h-6 w-6 text-slate-300" />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-xs font-bold text-slate-900 tracking-widest">{tCommon('emptyTitle')}</p>
+            <p className="text-[10px] text-slate-400 italic">{tInventory('emptySubtitle')}</p>
+          </div>
+        </div>
+      ) : (
+        filteredProducts.map((p) => {
+          const stock = p.totalStock ?? p.currentStock;
+          const threshold = p.warningThreshold ?? 10;
+          const isCritical = stock === 0;
+          const isWarning = !isCritical && stock <= threshold;
+          const rank = p.abcRank ?? p.prediction?.abcRank ?? 'C';
+          const dateStr = p.predictedStockoutDate ?? p.prediction?.predictedStockoutDate;
+          const qty = p.totalReorderQuantity ?? p.prediction?.reorderQuantity ?? 0;
+
+          const rankStyles: Record<string, string> = {
+            A: 'bg-violet-50 text-violet-700 border-violet-200',
+            B: 'bg-blue-50 text-blue-700 border-blue-200',
+            C: 'bg-slate-50 text-slate-600 border-slate-200',
+          };
+
+          return (
+            <div
+              key={p.id ?? p.sku}
+              onClick={() => onRowClick?.(p.id ?? p.sku)}
+              className="bg-white border border-slate-100 rounded-xl p-4 space-y-3 active:bg-slate-50 transition-colors cursor-pointer shadow-sm"
+            >
+              {/* Top row: name + ABC badge */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <div className={cn(
+                      "h-2 w-2 rounded-full shrink-0",
+                      isCritical ? "bg-red-500" : isWarning ? "bg-amber-400" : "bg-emerald-400"
+                    )} />
+                    <p className="text-sm font-semibold text-slate-900 truncate">{p.title}</p>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground font-mono uppercase ml-3.5">{p.sku}</p>
+                </div>
+                <span className={cn(
+                  "px-2 py-0.5 rounded-md text-[10px] font-black border shrink-0",
+                  rankStyles[rank] ?? rankStyles.C
+                )}>
+                  {rank}
+                </span>
+              </div>
+
+              {/* Mid row: stock + stockout + reorder */}
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-slate-50 rounded-lg py-2 px-1">
+                  <p className={cn(
+                    "text-base font-bold",
+                    isCritical ? "text-red-500" : isWarning ? "text-amber-500" : "text-slate-800"
+                  )}>
+                    {stock}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground font-medium mt-0.5">{t('stock')}</p>
+                </div>
+                <div className="bg-slate-50 rounded-lg py-2 px-1">
+                  {dateStr ? (
+                    <>
+                      <p className="text-[11px] font-bold text-amber-600">
+                        {new Date(dateStr).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground font-medium mt-0.5">{t('stockout')}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[11px] text-muted-foreground">—</p>
+                      <p className="text-[9px] text-muted-foreground font-medium mt-0.5">{t('stockout')}</p>
+                    </>
+                  )}
+                </div>
+                <div className="bg-slate-50 rounded-lg py-2 px-1">
+                  {qty > 0 ? (
+                    <>
+                      <p className="text-[11px] font-bold text-primary">+{Math.round(qty)}</p>
+                      <p className="text-[9px] text-muted-foreground font-medium mt-0.5">{t('reorder')}</p>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500 mx-auto" />
+                      <p className="text-[9px] text-muted-foreground font-medium mt-0.5">{t('reorder')}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom row: sources + open button */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  {Array.from(new Set((p.channels || []).map((c: any) => c.platform.toLowerCase()))).map((platform: any, i) => {
+                    const Icon = PLATFORM_ICONS[platform as PlatformSource] || Globe;
+                    return (
+                      <div key={i} className="p-1.5 rounded-md bg-slate-100 text-slate-500">
+                        <Icon className="h-3 w-3" />
+                      </div>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/dashboard/product/${p.id ?? p.sku}`);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors min-h-[36px]"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {tCommon('open')}
+                </button>
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+
   return (
     <div className="relative space-y-4">
       {/* Table Headers & Global Filters */}
@@ -462,7 +588,13 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-100 bg-white overflow-hidden shadow-none">
+      {/* Mobile card view */}
+      <div className="md:hidden">
+        <MobileCardView />
+      </div>
+
+      {/* Desktop table view */}
+      <div className="hidden md:block rounded-xl border border-slate-100 bg-white overflow-hidden shadow-none">
         <div className="overflow-x-auto no-scrollbar">
           <table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
             <thead className="bg-slate-100/50 border-b border-slate-200">
@@ -538,8 +670,8 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
         </div>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between px-2">
+      {/* Pagination — desktop only (mobile has all cards at once) */}
+      <div className="hidden md:flex items-center justify-between px-2">
         <div className="text-xs font-bold text-muted-foreground tracking-widest">
           {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
         </div>

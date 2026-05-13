@@ -20,7 +20,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-[#F9FAFB] selection:bg-primary/10">
       {/* HEADER NAV */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link 
             href="/login" 
             className="inline-flex items-center gap-2 text-[13px] font-bold text-slate-500 hover:text-primary transition-all group"
@@ -37,7 +37,7 @@ export default function TermsPage() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-12 lg:py-20 flex flex-col lg:flex-row gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-20 flex flex-col lg:flex-row gap-8 lg:gap-12">
         
         {/* SIDEBAR NAVIGATION (DESKTOP) */}
         <aside className="hidden lg:block w-64 shrink-0 h-fit sticky top-32">
@@ -72,7 +72,7 @@ export default function TermsPage() {
               <Scale className="w-3 h-3" />
               Document Juridique
             </div>
-            <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
               {t('terms')}
             </h1>
             <div className="flex items-center gap-4 text-[13px] text-slate-400 font-medium">
@@ -84,7 +84,7 @@ export default function TermsPage() {
 
           <div className="space-y-16">
             <section id="acceptance" className="scroll-mt-32 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-lg shadow-slate-200">1</span>
                 Acceptation des conditions
               </h2>
@@ -97,7 +97,7 @@ export default function TermsPage() {
             </section>
 
             <section id="service" className="scroll-mt-32 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-lg shadow-slate-200">2</span>
                 Nature du Service
               </h2>
@@ -119,7 +119,7 @@ export default function TermsPage() {
             </section>
 
             <section id="accounts" className="scroll-mt-32 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-lg shadow-slate-200">3</span>
                 Gestion et Sécurité des Comptes
               </h2>
@@ -140,7 +140,7 @@ export default function TermsPage() {
             </section>
 
             <section id="intellectual" className="scroll-mt-32 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-lg shadow-slate-200">4</span>
                 Propriété Intellectuelle
               </h2>
@@ -155,7 +155,7 @@ export default function TermsPage() {
             </section>
 
             <section id="liability" className="scroll-mt-32 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-xs font-bold shadow-lg shadow-slate-200">5</span>
                 Limitation de Responsabilité
               </h2>
@@ -168,7 +168,7 @@ export default function TermsPage() {
             </section>
           </div>
 
-          <footer className="mt-32 py-12 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6">
+          <footer className="mt-16 sm:mt-32 py-8 sm:py-12 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-[12px]">道</div>
               <span className="text-sm font-bold text-slate-900">Michi 道 Protocol</span>

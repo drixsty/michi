@@ -39,7 +39,7 @@ export default function BlogContent() {
     <div className="overflow-x-hidden min-h-screen">
 
       {/* Hero */}
-      <section className="max-w-3xl mx-auto pt-28 pb-14 px-6 text-center">
+      <section className="max-w-3xl mx-auto pt-28 pb-14 px-4 sm:px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <h1 className="text-[1.9rem] md:text-[2.6rem] font-bold mb-3 tracking-tight leading-[1.2] text-foreground">
             {t.rich('hero.title', {
@@ -53,7 +53,7 @@ export default function BlogContent() {
       </section>
 
       {/* Posts */}
-      <section className="max-w-5xl mx-auto px-6 pb-20 border-t border-border pt-12">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 pb-20 border-t border-border pt-12">
         <div className="grid md:grid-cols-3 gap-4">
           {posts.map((post, idx) => (
             <BlogCard key={idx} {...post} />

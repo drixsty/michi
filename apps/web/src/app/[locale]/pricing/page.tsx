@@ -78,7 +78,7 @@ export default function PricingPage() {
               key={plan.id}
               className={cn(
                 "relative bg-white rounded-lg p-6 border flex flex-col transition-all duration-300",
-                plan.popular ? "border-primary shadow-xl scale-[1.02] z-10" : "border-slate-200 shadow-sm hover:shadow-md"
+                plan.popular ? "border-primary shadow-xl md:scale-[1.02] z-10" : "border-slate-200 shadow-sm hover:shadow-md"
               )}
             >
               {plan.popular && (
@@ -111,7 +111,7 @@ export default function PricingPage() {
                 onClick={() => handleSelectPlan(plan.id)}
                 disabled={loading}
                 className={cn(
-                  "w-full py-2.5 rounded-lg font-bold text-[13px] transition-all flex items-center justify-center gap-2",
+                  "w-full min-h-[44px] py-2 rounded-lg font-bold text-[13px] transition-all flex items-center justify-center gap-2",
                   plan.popular 
                     ? "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20" 
                     : "bg-slate-100 text-slate-900 hover:bg-slate-200"

@@ -29,7 +29,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <InteractiveTour />
       <React.Suspense fallback={null}>
         <Navbar />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
           <div className="animate-in fade-in duration-700">
             {children}
           </div>

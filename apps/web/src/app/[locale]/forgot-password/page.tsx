@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <form onSubmit={handleSubmit} className="space-y-4 bg-white p-8 rounded-3xl border border-slate-100">
+              <form onSubmit={handleSubmit} className="space-y-4 bg-white p-5 sm:p-8 rounded-3xl border border-slate-100">
                 {error && (
                   <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-red-600 text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
                     <AlertCircle className="h-4 w-4" />
@@ -97,7 +97,7 @@ export default function ForgotPasswordPage() {
                   )}
                 </button>
 
-                <Link href="/login" className="flex items-center justify-center gap-2 text-xs font-bold text-slate-400 hover:text-primary transition-colors py-2">
+                <Link href="/login" className="flex items-center justify-center gap-2 text-xs font-bold text-slate-400 hover:text-primary transition-colors min-h-[44px]">
                   <ArrowLeft className="h-3 w-3" />
                   {t('backToLogin')}
                 </Link>

@@ -166,7 +166,7 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 gap-3">
         <p className="text-[10px] text-slate-400 font-medium italic">
           Les rapports sont envoyés à 08:00 (Fuseau horaire de l'organisation).
         </p>

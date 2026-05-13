@@ -34,7 +34,7 @@ export function DashboardHeader({
           <button
             onClick={onExport}
             data-testid="export-button"
-            className="inline-flex h-9 items-center justify-center rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium shadow-none transition-colors hover:bg-accent hover:text-accent-foreground"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-input bg-background px-4 py-2 text-sm font-medium shadow-none transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             <Download className="mr-2 h-4 w-4" />
             <span>{t('export')}</span>
@@ -44,7 +44,7 @@ export function DashboardHeader({
             disabled={syncing}
             id="inventory-sync-btn"
             data-testid="sync-button"
-            className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-none transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-none transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
           >
             <span>{syncing ? t('syncing') : t('sync')}</span>
           </button>

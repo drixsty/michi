@@ -20,7 +20,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-[#F9FAFB] selection:bg-primary/10">
       {/* HEADER NAV */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link 
             href="/login" 
             className="inline-flex items-center gap-2 text-[13px] font-bold text-slate-500 hover:text-emerald-600 transition-all group"
@@ -37,7 +37,7 @@ export default function PrivacyPage() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-12 lg:py-20 flex flex-col lg:flex-row gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-20 flex flex-col lg:flex-row gap-8 lg:gap-12">
         
         {/* SIDEBAR NAVIGATION (DESKTOP) */}
         <aside className="hidden lg:block w-64 shrink-0 h-fit sticky top-32">
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
               <ShieldCheck className="w-3 h-3" />
               Confidentialité Garantie
             </div>
-            <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight">
               {t('privacy')}
             </h1>
             <div className="flex items-center gap-4 text-[13px] text-slate-400 font-medium">
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
 
           <div className="space-y-16">
             <section id="transparency" className="scroll-mt-32 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-lg shadow-emerald-100">1</span>
                 Transparence des données
               </h2>
@@ -96,7 +96,7 @@ export default function PrivacyPage() {
             </section>
 
             <section id="security" className="scroll-mt-32 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-lg shadow-emerald-100">2</span>
                 Sécurité et Chiffrement
               </h2>
@@ -124,7 +124,7 @@ export default function PrivacyPage() {
             </section>
 
             <section id="usage" className="scroll-mt-32 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-lg shadow-emerald-100">3</span>
                 Utilisation des données
               </h2>
@@ -139,7 +139,7 @@ export default function PrivacyPage() {
             </section>
 
             <section id="rights" className="scroll-mt-32 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-lg shadow-emerald-100">4</span>
                 Vos Droits (RGPD)
               </h2>
@@ -164,7 +164,7 @@ export default function PrivacyPage() {
             </section>
 
             <section id="cookies" className="scroll-mt-32 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow-lg shadow-emerald-100">5</span>
                 Gestion des Cookies
               </h2>
@@ -175,11 +175,11 @@ export default function PrivacyPage() {
                 <div className="flex flex-col md:flex-row gap-4 pt-2">
                   <button 
                     onClick={() => window.dispatchEvent(new Event('michi_open_cookie_settings'))}
-                    className="flex-1 h-10 bg-slate-900 text-white rounded-lg text-[12px] font-bold hover:bg-slate-800 transition-all"
+                    className="flex-1 min-h-[44px] bg-slate-900 text-white rounded-lg text-[12px] font-bold hover:bg-slate-800 transition-all"
                   >
                     Gérer mes préférences
                   </button>
-                  <Link href="/legal/terms" className="flex-1 h-10 border border-slate-200 text-slate-600 rounded-lg text-[12px] font-bold hover:bg-slate-50 flex items-center justify-center gap-2 transition-all">
+                  <Link href="/legal/terms" className="flex-1 min-h-[44px] border border-slate-200 text-slate-600 rounded-lg text-[12px] font-bold hover:bg-slate-50 flex items-center justify-center gap-2 transition-all">
                     Conditions d'Utilisation
                     <ExternalLink className="w-3.5 h-3.5" />
                   </Link>
@@ -188,7 +188,7 @@ export default function PrivacyPage() {
             </section>
           </div>
 
-          <footer className="mt-32 py-12 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6">
+          <footer className="mt-16 sm:mt-32 py-8 sm:py-12 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-[12px]">
                 <Lock className="w-4 h-4" />

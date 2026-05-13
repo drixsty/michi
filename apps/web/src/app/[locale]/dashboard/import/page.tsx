@@ -218,7 +218,7 @@ export default function SmartImportPage() {
 
             <div 
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-200 rounded-3xl p-12 flex flex-col items-center justify-center bg-white hover:bg-slate-50/50 hover:border-primary/30 transition-all cursor-pointer group"
+              className="border-2 border-dashed border-slate-200 rounded-3xl p-6 sm:p-12 flex flex-col items-center justify-center bg-white hover:bg-slate-50/50 hover:border-primary/30 transition-all cursor-pointer group"
             >
               <input 
                 type="file" 

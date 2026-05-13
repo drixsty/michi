@@ -1,4 +1,79 @@
 {
+  "landing": {
+    "nav": {
+      "features": "Fonctionnalités",
+      "howItWorks": "Comment ça marche",
+      "pricing": "Tarifs",
+      "login": "Connexion",
+      "cta": "Démarrer gratuitement"
+    },
+    "hero": {
+      "badge": "Nouveau · Prévisions IA Omnicanal",
+      "title1": "Stoppez les ruptures.",
+      "title2": "Libérez votre trésorerie.",
+      "subtitle": "Michi synchronise Shopify, Amazon et WooCommerce pour prévoir vos besoins en stock avec une précision de 98%. En moins de 48h.",
+      "ctaPrimary": "Démarrer gratuitement",
+      "ctaSecondary": "Voir comment ça marche",
+      "socialProof": "font confiance à Michi"
+    },
+    "stats": {
+      "stockouts": "Ruptures en moins",
+      "accuracy": "Précision IA",
+      "channels": "Canaux supportés",
+      "setup": "Mise en place"
+    },
+    "features": {
+      "title": "Tout ce dont vous avez besoin",
+      "subtitle": "Un seul outil pour piloter votre supply chain de bout en bout.",
+      "ai": {
+        "title": "Prévisions IA Ultra-précises",
+        "desc": "Notre algorithme analyse votre historique de ventes et anticipe la demande avec un intervalle de confiance à 95%. Fini les estimations à la main."
+      },
+      "omni": {
+        "title": "Omnicanal Natif",
+        "desc": "Shopify, WooCommerce, Amazon et CSV synchronisés en temps réel dans un inventaire unifié. Une seule source de vérité."
+      },
+      "alerts": {
+        "title": "Alertes Rupture Proactives",
+        "desc": "Recevez des alertes avant la rupture, avec des recommandations de commande automatiques basées sur votre délai fournisseur."
+      },
+      "decisions": {
+        "title": "Centre de Décision Financier",
+        "desc": "Visualisez le capital immobilisé, le revenu à risque et l'analyse ABC de votre inventaire pour des décisions éclairées."
+      }
+    },
+    "howItWorks": {
+      "title": "Opérationnel en 48h",
+      "subtitle": "Aucune compétence technique requise.",
+      "steps": {
+        "connect": {
+          "title": "Connectez vos sources",
+          "desc": "Liez Shopify, WooCommerce ou Amazon en quelques clics. Import CSV disponible pour démarrer immédiatement."
+        },
+        "analyze": {
+          "title": "L'IA analyse vos données",
+          "desc": "Michi ingère votre historique et calibre ses modèles de prévision automatiquement. Pas de configuration complexe."
+        },
+        "pilot": {
+          "title": "Pilotez avec confiance",
+          "desc": "Recevez des recommandations de commande claires et évitez ruptures et surstocks coûteux dès le premier jour."
+        }
+      }
+    },
+    "integrations": {
+      "label": "Compatible avec vos plateformes"
+    },
+    "cta": {
+      "badge": "Essai gratuit · Sans carte bancaire",
+      "title": "Prêt à transformer votre supply chain ?",
+      "subtitle": "Rejoignez +500 marchands qui ont déjà réduit leurs ruptures de 40% avec Michi.",
+      "button": "Démarrer l'essai gratuit",
+      "noCb": "Aucune carte bancaire requise. 14 jours offerts."
+    },
+    "footer": {
+      "rights": "© 2025 Michi 道. Tous droits réservés."
+    }
+  },
   "verifyEmail": {
     "title": "Vérifiez votre e-mail",
     "description": "Nous avons envoyé un lien de confirmation à votre adresse e-mail. Veuillez cliquer sur ce lien pour activer votre compte.",

@@ -71,7 +71,7 @@ export default function MembersSettingsPage() {
         </div>
 
         <PermissionGuard permission={Permission.ORG_MANAGE_MEMBERS}>
-          <button className="h-10 bg-slate-900 text-white px-4 rounded-lg text-[13px] font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-[0.98]">
+          <button className="h-11 bg-slate-900 text-white px-4 rounded-lg text-[13px] font-bold flex items-center gap-2 hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-[0.98]">
             <UserPlus className="w-4 h-4" />
             Inviter un membre
           </button>
@@ -184,7 +184,7 @@ export default function MembersSettingsPage() {
                         <button 
                           key={role}
                           className={cn(
-                            "h-9 rounded-lg text-[11px] font-bold border transition-all",
+                            "h-11 rounded-lg text-[11px] font-bold border transition-all",
                             selectedMember.role === role 
                               ? "bg-slate-900 text-white border-slate-900" 
                               : "bg-white text-slate-500 border-slate-200 hover:border-slate-300"
@@ -210,11 +210,11 @@ export default function MembersSettingsPage() {
 
                 <CanDo permission={Permission.ORG_MANAGE_MEMBERS}>
                   <div className="pt-4 flex flex-col gap-2">
-                    <button className="w-full h-10 bg-primary text-white rounded-lg text-[12px] font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                    <button className="w-full h-11 bg-primary text-white rounded-lg text-[12px] font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2">
                       <Check className="w-4 h-4" />
                       Enregistrer les droits
                     </button>
-                    <button className="w-full h-10 border border-red-200 text-red-600 rounded-lg text-[12px] font-bold hover:bg-red-50 transition-all flex items-center justify-center gap-2">
+                    <button className="w-full h-11 border border-red-200 text-red-600 rounded-lg text-[12px] font-bold hover:bg-red-50 transition-all flex items-center justify-center gap-2">
                       <ShieldAlert className="w-4 h-4" />
                       Révoquer l'accès
                     </button>

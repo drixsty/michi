@@ -61,7 +61,7 @@ export const IntegrationTemplate = ({ namespace, iconName, platformName }: Integ
     <div className="overflow-x-hidden">
 
       {/* Hero */}
-      <section className="max-w-5xl mx-auto pt-28 pb-14 px-6">
+      <section className="max-w-5xl mx-auto pt-28 pb-14 px-4 sm:px-6">
         <div className="flex flex-col lg:flex-row gap-12 items-start">
 
           {/* Left */}
@@ -84,11 +84,11 @@ export const IntegrationTemplate = ({ namespace, iconName, platformName }: Integ
             <p className="text-muted-foreground text-[0.9rem] mb-7 leading-relaxed max-w-md">
               {t('hero.subtitle')}
             </p>
-            <div className="flex items-center gap-2.5">
-              <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all">
-                {tIndex('getStarted')} <ArrowRight className="w-3.5 h-3.5" />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              <button className="bg-primary hover:bg-primary/90 text-white px-6 min-h-[44px] rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+                {tIndex('getStarted')} <ArrowRight className="w-3.5 h-3.5 shrink-0" />
               </button>
-              <button className="border border-border text-foreground px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-secondary transition-all">
+              <button className="border border-border text-foreground px-6 min-h-[44px] rounded-lg text-sm font-semibold hover:bg-secondary transition-all flex items-center justify-center">
                 {tIndex('bookDemo')}
               </button>
             </div>
@@ -122,7 +122,7 @@ export const IntegrationTemplate = ({ namespace, iconName, platformName }: Integ
       </section>
 
       {/* How it works */}
-      <section className="max-w-5xl mx-auto px-6 pb-14 border-t border-border pt-12">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 pb-14 border-t border-border pt-12">
         <h2 className="text-base font-semibold text-foreground mb-8">{t('workflow.title')}</h2>
         <div className="grid md:grid-cols-3 gap-5">
           {(['step1', 'step2', 'step3'] as const).map((step, idx) => (
@@ -142,7 +142,7 @@ export const IntegrationTemplate = ({ namespace, iconName, platformName }: Integ
       </section>
 
       {/* FAQ */}
-      <section className="max-w-3xl mx-auto px-6 pb-20 border-t border-border pt-12">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-20 border-t border-border pt-12">
         <h2 className="text-base font-semibold text-foreground mb-5">{t('faq.title')}</h2>
         <div>
           <FAQItem question={t('faq.q1')} answer={t('faq.a1')} />

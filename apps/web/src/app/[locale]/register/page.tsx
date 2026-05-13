@@ -183,7 +183,7 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div className="space-y-0.5">
                   <label className="text-[10px] font-bold text-slate-500 ml-1">{t('firstNameLabel')}</label>
                   <div className="relative group">

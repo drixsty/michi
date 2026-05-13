@@ -17,6 +17,7 @@ export default function LoginPage() {
   const t = useTranslations('auth.login');
   const tBrand = useTranslations('brand');
   const t2fa = useTranslations('profile.twoFactor');
+  const tCommon = useTranslations('common');
 
   const router = useRouter();
   const [email, setEmail] = useState('dev@michi.com');
@@ -217,7 +218,7 @@ export default function LoginPage() {
                     }}
                     className="text-[11px] font-medium text-muted-foreground hover:text-foreground underline transition-all w-full text-center"
                   >
-                    {useTranslations('common')('cancel')}
+                    {tCommon('cancel')}
                   </button>
                 </div>
               </div>

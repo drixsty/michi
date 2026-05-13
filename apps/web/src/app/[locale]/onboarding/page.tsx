@@ -274,7 +274,7 @@ export default function OnboardingPage() {
                         key={goal.id}
                         onClick={() => setSelectedGoal(goal.id)}
                         className={cn(
-                          "flex items-center gap-3 w-full p-4 rounded-lg border transition-all text-left",
+                          "flex items-center gap-3 w-full p-4 min-h-[60px] rounded-lg border transition-all text-left",
                           selectedGoal === goal.id 
                             ? "border-slate-900 bg-slate-900 text-white shadow-lg shadow-slate-900/10" 
                             : "border-slate-100 bg-slate-50 hover:bg-white hover:border-slate-200"
@@ -364,7 +364,7 @@ export default function OnboardingPage() {
                 </button>
                 <button 
                   onClick={handleBack}
-                  className="w-full h-10 text-slate-400 hover:text-slate-900 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                  className="w-full h-11 text-slate-400 hover:text-slate-900 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                   {t('goal.back')}

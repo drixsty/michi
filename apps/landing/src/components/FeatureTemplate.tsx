@@ -32,7 +32,7 @@ export const FeatureTemplate = ({ iconName, featureKey }: FeatureTemplateProps) 
     <div className="overflow-x-hidden">
 
       {/* Hero */}
-      <section className="max-w-3xl mx-auto pt-28 pb-12 px-6 text-center">
+      <section className="max-w-3xl mx-auto pt-28 pb-12 px-4 sm:px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-primary/5 border border-border mb-5">
             <Icon className="w-5 h-5 text-primary" />
@@ -46,11 +46,11 @@ export const FeatureTemplate = ({ iconName, featureKey }: FeatureTemplateProps) 
           <p className="text-muted-foreground text-[0.9rem] max-w-lg mx-auto mb-7 leading-relaxed">
             {t(`${featureKey}.hero.subtitle` as any)}
           </p>
-          <div className="flex items-center justify-center gap-2.5">
-            <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all">
-              {tIndex('getStarted')} <ArrowRight className="w-3.5 h-3.5" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5">
+            <button className="bg-primary hover:bg-primary/90 text-white px-6 py-3 min-h-[44px] rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98]">
+              {tIndex('getStarted')} <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </button>
-            <button className="border border-border text-foreground px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-secondary transition-all">
+            <button className="border border-border text-foreground px-6 py-3 min-h-[44px] rounded-lg text-sm font-semibold hover:bg-secondary transition-all flex items-center justify-center">
               {tIndex('bookDemo')}
             </button>
           </div>
@@ -58,7 +58,7 @@ export const FeatureTemplate = ({ iconName, featureKey }: FeatureTemplateProps) 
       </section>
 
       {/* Stats row */}
-      <section className="max-w-3xl mx-auto px-6 mb-14">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 mb-14">
         <div className="grid grid-cols-3 border border-border rounded-lg divide-x divide-border">
           {[
             { value: tIndex('stats.accuracy'), label: tIndex('stats.accuracyLabel') },
@@ -74,7 +74,7 @@ export const FeatureTemplate = ({ iconName, featureKey }: FeatureTemplateProps) 
       </section>
 
       {/* Capabilities */}
-      <section className="max-w-3xl mx-auto px-6 pb-14 border-t border-border pt-12">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-14 border-t border-border pt-12">
         <div className="mb-7">
           <h2 className="text-base font-semibold text-foreground mb-1">{tIndex('common.capabilities.title')}</h2>
           <p className="text-sm text-muted-foreground max-w-md leading-relaxed">{tIndex('common.capabilities.subtitle')}</p>
@@ -95,7 +95,7 @@ export const FeatureTemplate = ({ iconName, featureKey }: FeatureTemplateProps) 
       </section>
 
       {/* Specs */}
-      <section className="max-w-3xl mx-auto px-6 pb-20 border-t border-border pt-12">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-20 border-t border-border pt-12">
         <div className="grid md:grid-cols-3 gap-3">
           {[
             { icon: ShieldCheck, title: tIndex('common.specs.enterprise'), desc: tIndex('common.specs.enterpriseDesc') },

@@ -19,7 +19,7 @@ export default function AboutPage() {
     <div className="overflow-x-hidden min-h-screen">
 
       {/* Hero */}
-      <section className="max-w-3xl mx-auto pt-28 pb-14 px-6 text-center">
+      <section className="max-w-3xl mx-auto pt-28 pb-14 px-4 sm:px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-primary mb-5">
             {t('badge')}
@@ -37,7 +37,7 @@ export default function AboutPage() {
       </section>
 
       {/* Story + Values */}
-      <section className="max-w-5xl mx-auto px-6 pb-14 border-t border-border pt-12">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 pb-14 border-t border-border pt-12">
         <div className="grid md:grid-cols-2 gap-12 items-start">
 
           {/* Story */}
@@ -82,7 +82,7 @@ export default function AboutPage() {
       </section>
 
       {/* Team */}
-      <section className="max-w-5xl mx-auto px-6 pb-20 border-t border-border pt-12">
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 pb-20 border-t border-border pt-12">
         <h2 className="text-base font-semibold text-foreground mb-8">
           {t.rich('team.title', {
             spanInner: (chunks) => <span className="text-gradient-purple">{chunks}</span>,

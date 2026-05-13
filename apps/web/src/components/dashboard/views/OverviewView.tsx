@@ -84,26 +84,27 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                             <AlertCircle className="h-4 w-4" />}
                     </div>
 
-                    <div className="flex-1 min-w-0 pr-16">
+                    <div className="flex-1 min-w-0">
                       <p className="text-[10px] text-slate-400 mb-0.5">
                         {format(new Date(a.createdAt), 'dd MMM HH:mm', { locale: fr })}
                       </p>
-                      <p className="text-xs font-medium text-slate-700 leading-snug truncate">
+                      <p className="text-xs font-medium text-slate-700 leading-snug line-clamp-2">
                         {a.message.replace(/^(alerte|danger|attention)\s*:\s*/i, '')}
                       </p>
                     </div>
 
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                    {/* Always visible on mobile, hover-reveal on desktop */}
+                    <div className="flex items-center gap-1 md:absolute md:right-2 md:top-1/2 md:-translate-y-1/2 md:opacity-0 md:group-hover:opacity-100 transition-all shrink-0">
                       <Link
                         href={`/dashboard/product/${a.productId}`}
-                        className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-primary transition-all shadow-sm"
+                        className="p-2 md:p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-primary transition-all shadow-sm min-w-[36px] min-h-[36px] flex items-center justify-center"
                         title={t('open')}
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Link>
                       <button
                         onClick={() => onDeleteAlert(a.id)}
-                        className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 transition-all shadow-sm"
+                        className="p-2 md:p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 transition-all shadow-sm min-w-[36px] min-h-[36px] flex items-center justify-center"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -150,29 +151,25 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                     onClick={() => onProductClick(p.id || p.sku)}
                     className="group relative flex items-center justify-between px-2 py-3 hover:bg-slate-50 transition-all cursor-pointer rounded-lg"
                   >
-                    <div className="min-w-0 flex-1 pr-4">
+                    <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium text-foreground truncate">{p.title}</p>
                       <p className="text-[10px] text-muted-foreground">Sku: {p.sku}</p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <div className="text-right group-hover:opacity-0 transition-opacity">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-right">
                         <p className="text-xs font-bold text-foreground">{p.totalStock}</p>
                         <p className="text-[9px] text-muted-foreground">{t('units')}</p>
                       </div>
-
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onProductClick(p.id || p.sku);
-                          }}
-                          className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-primary transition-all shadow-none flex items-center gap-1.5"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          <span className="text-[10px] font-bold tracking-widest">{t('open')}</span>
-                        </button>
-                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onProductClick(p.id || p.sku);
+                        }}
+                        className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:text-primary transition-all min-w-[36px] min-h-[36px] flex items-center justify-center"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </div>
                 ))}

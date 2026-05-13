@@ -19,7 +19,7 @@ const LanguageSwitcher = () => {
   return (
     <button 
       onClick={toggleLanguage}
-      className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-secondary transition-all text-[13px] font-bold text-muted-foreground hover:text-foreground"
+      className="flex items-center gap-1.5 px-3 min-h-[44px] rounded-lg hover:bg-secondary transition-all text-[13px] font-bold text-muted-foreground hover:text-foreground"
     >
       <span className={locale === 'en' ? 'text-primary' : ''}>EN</span>
       <span className="text-border">/</span>

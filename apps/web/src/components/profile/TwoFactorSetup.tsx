@@ -129,7 +129,7 @@ export function TwoFactorSetup({ isEnabled, onStatusChange }: TwoFactorSetupProp
             </p>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => copyToClipboard(recoveryCodes.join('\n'))}
               className="flex-1 h-10 border border-border rounded-lg text-[12px] font-bold text-muted-foreground hover:bg-muted transition-all flex items-center justify-center gap-2"
@@ -211,7 +211,7 @@ export function TwoFactorSetup({ isEnabled, onStatusChange }: TwoFactorSetupProp
         <h2 className="text-[13px] font-semibold text-foreground">{t('title')}</h2>
       </div>
       
-      <div className="p-5 flex items-center justify-between gap-4">
+      <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex gap-4">
           <div className={cn(
             "w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors border",
@@ -245,7 +245,7 @@ export function TwoFactorSetup({ isEnabled, onStatusChange }: TwoFactorSetupProp
           onClick={() => isEnabled ? disable2fa() : generateSetup()}
           disabled={loadingSetup || loadingDisable}
           className={cn(
-            "h-9 px-4 rounded-lg text-[12px] font-semibold transition-all flex items-center gap-2 shrink-0 border",
+            "h-9 px-4 rounded-lg text-[12px] font-semibold transition-all flex items-center justify-center gap-2 shrink-0 border w-full sm:w-auto whitespace-nowrap",
             isEnabled 
               ? "text-red-600 hover:bg-red-50 border-red-100" 
               : "bg-foreground text-background border-foreground hover:opacity-90"
