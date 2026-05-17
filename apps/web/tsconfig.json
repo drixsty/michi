@@ -21,7 +21,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@michi/types": ["../../packages/types/src/index.ts"],
-      "@michi/ui": ["../../packages/ui/src/index.ts"]
+      "@michi/ui": ["../../packages/ui/src/index.ts"],
+      "@michi/assistant-ui": ["../../packages/assistant-ui/src/index.ts"]
     },
     "types": ["styled-jsx"]
   },
