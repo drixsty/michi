@@ -266,7 +266,7 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
   const { can } = usePermissions();
   const canEdit = can(Permission.INVENTORY_EDIT);
 
-  const { data, loading } = useQuery(GET_PRODUCT_DETAIL, {
+  const { data, loading, error } = useQuery(GET_PRODUCT_DETAIL, {
     variables: {
       id: productId!
     },
@@ -366,6 +366,12 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
             >
             {loading && !product ? (
               <LoadingState className="flex-1" message={t('loading')} />
+            ) : error || (!loading && !product) ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3 p-8 text-center">
+                <AlertCircle className="h-8 w-8 text-slate-300" />
+                <p className="text-sm font-semibold text-slate-500">{t('loadError')}</p>
+                <p className="text-xs text-slate-400">{error?.message ?? t('productNotFound')}</p>
+              </div>
             ) : product ? (
 
               <>

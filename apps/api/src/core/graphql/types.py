@@ -452,7 +452,7 @@ class CleanedDemandType:
 
 
     @classmethod
-    def from_db_legacy(cls, r):
+    def from_db(cls, r):
         if not r: return None
         return cls(
             id=strawberry.ID(str(r.id)),
