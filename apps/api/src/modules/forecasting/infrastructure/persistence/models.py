@@ -35,7 +35,7 @@ class CleanedDemand(Base):
     # "none" | "stockout" | "outlier" | "stockout+outlier"
     correction_type = Column(String(20), nullable=False, default="none")
 
-    computed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    computed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     product = relationship("Product", back_populates="cleaned_demands")
 
@@ -89,7 +89,7 @@ class Prediction(Base):
     annual_gross_profit = Column(Float, nullable=True) # Profit annuel estimé
     demand_sigma = Column(Float, nullable=True, default=0.0) # Écart-type de la demande (DS v2)
 
-    computed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    computed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     product = relationship("Product", back_populates="prediction")
 

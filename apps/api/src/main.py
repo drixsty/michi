@@ -42,7 +42,7 @@ class InterceptHandler(logging.Handler):
 
         # Find caller from where originated the logged message
         frame, depth = logging.currentframe(), 2
-        while frame.f_code.co_filename == logging.__file__:
+        while frame and frame.f_code.co_filename == logging.__file__:
             frame = frame.f_back
             depth += 1
 
@@ -193,6 +193,8 @@ def custom_process_errors(self, errors: list[GraphQLError], execution_context=No
                 logger.warning(log_msg)
             
             # Formater pour GraphQL
+            if error.extensions is None:
+                error.extensions = {}
             error.extensions.update({
                 "code": orig.code,
                 "details": orig.details
@@ -203,6 +205,8 @@ def custom_process_errors(self, errors: list[GraphQLError], execution_context=No
             # On logue l'erreur réelle avec stacktrace uniquement pour les erreurs système
             logger.critical(f"[System Error] {str(orig)}", exception=orig)
             error.message = "Internal Server Error"
+            if error.extensions is None:
+                error.extensions = {}
             error.extensions.update({"code": "INTERNAL_ERROR"})
         
         else:
@@ -220,7 +224,7 @@ graphql_app = GraphQLRouter(
 )
 
 # On injecte la gestion d'erreurs personnalisée
-graphql_app.process_errors = custom_process_errors.__get__(graphql_app, GraphQLRouter)
+setattr(graphql_app, "process_errors", custom_process_errors.__get__(graphql_app, GraphQLRouter))
 
 app.include_router(graphql_app, prefix="/graphql")
 app.include_router(shopify_auth_router)

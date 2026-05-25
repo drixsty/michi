@@ -145,7 +145,17 @@ class ReentrantAsyncLock:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         self.release()
 
-class SerializedAsyncSession:
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    class SerializedAsyncSession(AsyncSession):
+        pass
+else:
+    class SerializedAsyncSession:
+        pass
+
+
+class SerializedAsyncSession(SerializedAsyncSession):
     """
     Wrapper pour SQLAlchemy AsyncSession qui sérialise toutes les opérations asynchrones.
     

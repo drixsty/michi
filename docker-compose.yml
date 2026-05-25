@@ -33,6 +33,21 @@ services:
       timeout: 5s
       retries: 5
 
+  # Mailpit (SMTP Mock & Web Mailbox)
+  mailpit:
+    image: axllent/mailpit:v1.15
+    container_name: michi-mailpit
+    ports:
+      - "1025:1025" # SMTP Port
+      - "8025:8025" # Web UI Port
+    environment:
+      - MP_MAX_MESSAGES=500
+      - MP_DATA_FILE=/data/mailpit.db
+    volumes:
+      - mailpit_data:/data
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
+  mailpit_data:

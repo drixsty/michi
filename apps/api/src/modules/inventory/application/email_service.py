@@ -28,7 +28,8 @@ class EmailService:
         from email.mime.text import MIMEText
 
         # Charger le template HTML
-        template_path = os.path.join(os.path.dirname(__file__), "templates", "purchase_order.html")
+        template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
+        template_path = os.path.join(template_dir, "purchase_order.html")
         try:
             with open(template_path, "r", encoding="utf-8") as f:
                 html_content = f.read()
@@ -66,15 +67,17 @@ class EmailService:
             return True
 
         try:
-            await aiosmtplib.send(
-                message,
-                hostname=settings.SMTP_HOST,
-                port=settings.SMTP_PORT,
-                username=settings.SMTP_USER,
-                password=settings.SMTP_PASSWORD,
-                use_tls=True if settings.SMTP_PORT == 465 else False,
-                start_tls=True if settings.SMTP_PORT == 587 else False,
-            )
+            kwargs = {
+                "hostname": settings.SMTP_HOST,
+                "port": settings.SMTP_PORT,
+                "use_tls": True if settings.SMTP_PORT == 465 else False,
+                "start_tls": True if settings.SMTP_PORT == 587 else False,
+            }
+            if settings.SMTP_USER and settings.SMTP_PASSWORD:
+                kwargs["username"] = settings.SMTP_USER
+                kwargs["password"] = settings.SMTP_PASSWORD
+
+            await aiosmtplib.send(message, **kwargs)
             logger.success(f"[EmailService] PO #{po_id} sent to {to_email}")
             return True
         except Exception as e:
@@ -112,15 +115,17 @@ class EmailService:
             return True
 
         try:
-            await aiosmtplib.send(
-                message,
-                hostname=settings.SMTP_HOST,
-                port=settings.SMTP_PORT,
-                username=settings.SMTP_USER,
-                password=settings.SMTP_PASSWORD,
-                use_tls=True if settings.SMTP_PORT == 465 else False,
-                start_tls=True if settings.SMTP_PORT == 587 else False,
-            )
+            kwargs = {
+                "hostname": settings.SMTP_HOST,
+                "port": settings.SMTP_PORT,
+                "use_tls": True if settings.SMTP_PORT == 465 else False,
+                "start_tls": True if settings.SMTP_PORT == 587 else False,
+            }
+            if settings.SMTP_USER and settings.SMTP_PASSWORD:
+                kwargs["username"] = settings.SMTP_USER
+                kwargs["password"] = settings.SMTP_PASSWORD
+
+            await aiosmtplib.send(message, **kwargs)
             logger.success(f"[EmailService] Email sent to {to_email} for {product_title}")
             return True
         except Exception as e:
@@ -166,15 +171,17 @@ class EmailService:
             return True
 
         try:
-            await aiosmtplib.send(
-                message,
-                hostname=settings.SMTP_HOST,
-                port=settings.SMTP_PORT,
-                username=settings.SMTP_USER,
-                password=settings.SMTP_PASSWORD,
-                use_tls=True if settings.SMTP_PORT == 465 else False,
-                start_tls=True if settings.SMTP_PORT == 587 else False,
-            )
+            kwargs = {
+                "hostname": settings.SMTP_HOST,
+                "port": settings.SMTP_PORT,
+                "use_tls": True if settings.SMTP_PORT == 465 else False,
+                "start_tls": True if settings.SMTP_PORT == 587 else False,
+            }
+            if settings.SMTP_USER and settings.SMTP_PASSWORD:
+                kwargs["username"] = settings.SMTP_USER
+                kwargs["password"] = settings.SMTP_PASSWORD
+
+            await aiosmtplib.send(message, **kwargs)
             logger.success(f"[EmailService] Reset email sent to {to_email}")
             return True
         except Exception as e:
@@ -208,12 +215,27 @@ class EmailService:
         """
         message.attach(MIMEText(html_content, "html"))
 
-        if settings.ENVIRONMENT == "development" or settings.BILLING_MODE == "MOCK":
+        if settings.ENVIRONMENT == "development" and settings.SMTP_PASSWORD == "your_password":
             logger.info(f"[EmailService] MOCK SEND VERIFICATION to {to_email}: {verification_link}")
             return True
 
-        # TODO: Implémentation réelle via SMTP ou API (Resend/SendGrid)
-        return True
+        try:
+            kwargs = {
+                "hostname": settings.SMTP_HOST,
+                "port": settings.SMTP_PORT,
+                "use_tls": True if settings.SMTP_PORT == 465 else False,
+                "start_tls": True if settings.SMTP_PORT == 587 else False,
+            }
+            if settings.SMTP_USER and settings.SMTP_PASSWORD:
+                kwargs["username"] = settings.SMTP_USER
+                kwargs["password"] = settings.SMTP_PASSWORD
+
+            await aiosmtplib.send(message, **kwargs)
+            logger.success(f"[EmailService] Verification email sent to {to_email}")
+            return True
+        except Exception as e:
+            logger.error(f"[EmailService] Failed to send verification email to {to_email}: {str(e)}")
+            return False
 
     async def send_periodic_report(
         self, 
@@ -234,7 +256,8 @@ class EmailService:
         from email.mime.multipart import MIMEMultipart
         from email.mime.text import MIMEText
 
-        template_path = os.path.join(os.path.dirname(__file__), "templates", "periodic_report.html")
+        template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
+        template_path = os.path.join(template_dir, "periodic_report.html")
         try:
             with open(template_path, "r", encoding="utf-8") as f:
                 html_content = f.read()
@@ -289,15 +312,17 @@ class EmailService:
             return True
 
         try:
-            await aiosmtplib.send(
-                message,
-                hostname=settings.SMTP_HOST,
-                port=settings.SMTP_PORT,
-                username=settings.SMTP_USER,
-                password=settings.SMTP_PASSWORD,
-                use_tls=True if settings.SMTP_PORT == 465 else False,
-                start_tls=True if settings.SMTP_PORT == 587 else False,
-            )
+            kwargs = {
+                "hostname": settings.SMTP_HOST,
+                "port": settings.SMTP_PORT,
+                "use_tls": True if settings.SMTP_PORT == 465 else False,
+                "start_tls": True if settings.SMTP_PORT == 587 else False,
+            }
+            if settings.SMTP_USER and settings.SMTP_PASSWORD:
+                kwargs["username"] = settings.SMTP_USER
+                kwargs["password"] = settings.SMTP_PASSWORD
+
+            await aiosmtplib.send(message, **kwargs)
             logger.success(f"[EmailService] Report sent to {to_email}")
             return True
         except Exception as e:

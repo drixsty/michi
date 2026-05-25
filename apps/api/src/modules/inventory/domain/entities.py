@@ -12,6 +12,9 @@ class PlatformSource(Enum):
     SHOPIFY = "SHOPIFY"
     WOOCOMMERCE = "WOOCOMMERCE"
     AMAZON = "AMAZON"
+    EBAY = "EBAY"
+    ETSY = "ETSY"
+    FAIRE = "FAIRE"
     CSV = "CSV"
     CUSTOM = "CUSTOM"
 

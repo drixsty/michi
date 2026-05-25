@@ -28,8 +28,8 @@ class Organization(Base):
     onboarding_completed = Column(Boolean, default=False, nullable=False)
     onboarding_step = Column(String(50), default="welcome") # welcome, identity, connect, sync
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     settings = Column(JSON, server_default='{}', default={}, nullable=False) # Currency, etc.
 
@@ -61,8 +61,8 @@ class User(Base):
     current_organization_id = Column(GUID, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
     
     # 2FA Security
     two_factor_secret = Column(String(255), nullable=True) # Will store the encrypted TOTP secret
@@ -90,7 +90,7 @@ class OrganizationMember(Base):
     role = Column(Enum(UserRole), default=UserRole.VIEWER, nullable=False)
     permissions = Column(JSON, default={}, nullable=False)
 
-    joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    joined_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     # Relationships
     organization = relationship("Organization", back_populates="members")

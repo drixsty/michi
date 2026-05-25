@@ -34,8 +34,8 @@ class Store(Base):
     # Store-specific credentials/config (Sprint 15+)
     config = Column(JSON, default={}, nullable=False)
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     __table_args__ = (
         UniqueConstraint('organization_id', 'platform', name='uix_org_platform'),
@@ -65,8 +65,8 @@ class StoreCredential(Base):
     # Public metadata (e.g. AWS Region, Shopify Domain)
     meta = Column(JSON, default={}, nullable=False)
     
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     # Relationships
     store = relationship("Store", back_populates="credentials")
@@ -104,8 +104,8 @@ class Product(Base):
     # Supplier link
     supplier_id = Column(GUID, ForeignKey("suppliers.id", ondelete="SET NULL"), nullable=True)
 
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), onupdate=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     # Relationships
     store = relationship("Store", back_populates="products")
@@ -129,7 +129,7 @@ class Alert(Base):
     is_read = Column(Boolean, default=False, nullable=False)
     severity = Column(Integer, default=1) 
     
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
 
     product = relationship("Product", back_populates="alerts")
 
@@ -167,7 +167,7 @@ class AlertEmail(Base):
 
     id = Column(GUID, primary_key=True, default=uuid.uuid4)
     product_id = Column(GUID, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
-    sent_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    sent_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     alert_type = Column(String(50), default="stockout_imminent")
 
     product = relationship("Product")

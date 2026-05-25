@@ -115,7 +115,7 @@ class ForecastingService:
                 is_stockout=bool(row["is_stockout"]),
                 is_outlier=bool(row["is_outlier"]),
                 correction_type=str(row["correction_type"]),
-                computed_at=datetime.now(UTC)
+                computed_at=datetime.now(UTC).replace(tzinfo=None)
             ) for _, row in df.iterrows()
         ]
 
@@ -234,7 +234,7 @@ class ForecastingService:
                 abc_rank=row["abc_rank"],
                 annual_gross_profit=row["annual_gross_profit"],
                 demand_sigma=sigma,
-                computed_at=datetime.now(UTC)
+                computed_at=datetime.now(UTC).replace(tzinfo=None)
             ))
 
         for pe in prediction_entities:

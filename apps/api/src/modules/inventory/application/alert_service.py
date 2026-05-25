@@ -88,7 +88,7 @@ class AlertService:
                     severity=3,
                     message=f"Rupture imminente détectée pour {product.sku}",
                     is_read=False,
-                    created_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(timezone.utc).replace(tzinfo=None)
                 )
                 await self.alert_repo.save(alert)
                 new_alerts.append(alert)
