@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Seed script démo — Sprint 2 (US 1.5)
+Seed script démo — Sprint 2 (US 1.5) refactoré pour l'architecture DDD.
 
-Réinitialise et régénère un dataset mock complet pour un shop donné.
+Réinitialise et régénère un dataset mock complet pour un store donné.
 Utile pour préparer une démo propre en moins de 10 secondes.
 
 Usage:
@@ -15,49 +15,51 @@ import argparse
 import sys
 import uuid
 from pathlib import Path
+from datetime import datetime, timezone
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Ajouter src/ au sys.path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import select, delete
 
-from config import settings
-from modules.auth.models import User, Organization, OrganizationMember
-from modules.inventory.models import Product, SalesLog, Alert, Supplier, PurchaseOrder, Store, AlertEmail
-from modules.forecasting.models import CleanedDemand, Prediction
-from modules.forecasting.application.forecasting_service import ForecastingService
-from modules.inventory.application.alert_service import AlertService
-from modules.shopify.mock_generator import generate_full_mock_dataset
-from database import Base
+from core.config import settings
+from core.database import Base
+from core.database.models import User, Organization, OrganizationMember
+from core.database.constants import UserRole
+from core.security.hashing import hash_password
+from core.di import build_services
+
+from modules.inventory.domain.entities import PlatformSource
+from modules.inventory.infrastructure.persistence.models import Product, SalesLog, Alert, Supplier, PurchaseOrder, Store, AlertEmail
+from modules.forecasting.infrastructure.persistence.models import CleanedDemand, Prediction
+from modules.shopify.infrastructure.mock_generator import generate_full_mock_dataset
 
 
 async def get_or_create_demo_shop(session: AsyncSession) -> tuple[str, str, str]:
     """
     Récupère ou crée l'utilisateur de démo.
-    Retourne (email, shop_id, organization_id).
+    Retourne (email, store_id, organization_id).
     """
-    from modules.auth.infrastructure.persistence.models import Organization, OrganizationMember, UserRole
-    
     email = "dev@michi.com"
     result = await session.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
     
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    
     if not user:
         print(f"   [INFO] Creation utilisateur de demo {email}...")
-        shop_id = uuid.uuid4()
-        from modules.auth.infrastructure.persistence.models import User as AuthUser
-        from security import hash_password
-        user = AuthUser(
+        user = User(
             email=email,
             hashed_password=hash_password("password123"),
-            shop_id=shop_id
+            is_active=True,
+            created_at=now,  # type: ignore
+            updated_at=now  # type: ignore
         )
         session.add(user)
         await session.flush()
-    else:
-        shop_id = user.shop_id
 
-    # S'assurer d'avoir une organisation (Sprint 16+)
+    # S'assurer d'avoir une organisation
     member_res = await session.execute(
         select(OrganizationMember).where(OrganizationMember.user_id == user.id)
     )
@@ -65,33 +67,57 @@ async def get_or_create_demo_shop(session: AsyncSession) -> tuple[str, str, str]
     
     if not member:
         print("   [INFO] Creation organisation de demo...")
-        org = Organization(name="Michi Demo Org", slug=f"demo-{uuid.uuid4().hex[:6]}")
+        org = Organization(
+            name="Michi Demo Org", 
+            slug=f"demo-{uuid.uuid4().hex[:6]}",
+            created_at=now,
+            updated_at=now
+        )
         session.add(org)
         await session.flush()
         
         member = OrganizationMember(
             organization_id=org.id,
             user_id=user.id,
-            role=UserRole.ADMIN
+            role=UserRole.ADMIN,
+            joined_at=now
         )
         session.add(member)
         user.current_organization_id = org.id
+        user.updated_at = now  # type: ignore
         await session.flush()
         org_id = org.id
     else:
         org_id = member.organization_id
         if not user.current_organization_id:
             user.current_organization_id = org_id
+            user.updated_at = now  # type: ignore
             await session.flush()
 
-    return email, str(shop_id), str(org_id)
+    # S'assurer d'avoir un store (Shopify par défaut)
+    store_res = await session.execute(
+        select(Store).where(Store.organization_id == org_id).where(Store.platform == PlatformSource.SHOPIFY)
+    )
+    store = store_res.scalar_one_or_none()
+    if not store:
+        print("   [INFO] Creation store de demo...")
+        store = Store(
+            id=uuid.uuid4(),
+            organization_id=org_id,
+            name="Shopify Global",
+            platform=PlatformSource.SHOPIFY,
+            connected=True,
+            created_at=now,  # type: ignore
+            updated_at=now  # type: ignore
+        )
+        session.add(store)
+        await session.flush()
+
+    return email, str(store.id), str(org_id)
 
 
 async def reset_and_seed(shop_id: str, count: int, session: AsyncSession) -> dict:
     """Supprime les données existantes et régénère le dataset mock."""
-    # Supprimer les données existantes (ordres importants pour FKs)
-    from modules.inventory.models import Alert, AlertEmail, SalesLog
-    from modules.forecasting.models import CleanedDemand, Prediction
     
     # On supprime tout ce qui est lié aux produits de ce shop
     p_ids_query = select(Product.id).where(Product.store_id == shop_id)
@@ -111,7 +137,14 @@ async def reset_and_seed(shop_id: str, count: int, session: AsyncSession) -> dic
     # Générer le nouveau dataset
     products_data, sales_data = generate_full_mock_dataset(count=count, store_id=shop_id)
 
-    products = [Product(**p) for p in products_data]
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    products = []
+    for p in products_data:
+        p_obj = Product(**p)
+        p_obj.created_at = now  # type: ignore
+        p_obj.updated_at = now  # type: ignore
+        products.append(p_obj)
+        
     session.add_all(products)
     await session.flush()
 
@@ -169,21 +202,42 @@ async def main(shop_id: str | None, count: int) -> None:
         # SEED BOUTIQUE LYON (Sprint 13 QA)
         print("Scénario Multi-boutique (Lyon)...")
         shop_lyon_id = str(uuid.uuid4())
+        
+        # S'assurer de créer le store Lyon
+        org_res = await session.execute(select(Organization.id))
+        org_id = org_res.scalars().first()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        store_lyon = Store(
+            id=uuid.UUID(shop_lyon_id),
+            organization_id=org_id,
+            name="WooCommerce Lyon",
+            platform=PlatformSource.WOOCOMMERCE,
+            connected=True,
+            created_at=now,  # type: ignore
+            updated_at=now  # type: ignore
+        )
+        session.add(store_lyon)
+        await session.flush()
+        
         # On génère moins de produits pour Lyon, certains partagent le même SKU
         await reset_and_seed(shop_id=shop_lyon_id, count=10, session=session)
 
         # Calculer les prédictions pour les deux shops
         print("Calcul des predictions IA (Paris & Lyon)...")
-        forecasting_service = ForecastingService(session)
+        services = build_services(session)
+        forecasting_service = services.forecasting_service
+        
         await forecasting_service.run_cleaning_pipeline(shop_id)
         await forecasting_service.run_prediction_pipeline(shop_id)
         await forecasting_service.run_cleaning_pipeline(shop_lyon_id)
         await forecasting_service.run_prediction_pipeline(shop_lyon_id)
         
         print("Generation des alertes...")
-        alert_service = AlertService(session)
+        alert_service = services.alert_service
         await alert_service.check_for_stockouts(shop_id)
         await alert_service.check_for_stockouts(shop_lyon_id)
+        
+        await session.commit()
 
     await engine.dispose()
 

@@ -32,7 +32,7 @@ export default function RegisterPage() {
       
       // Si l'utilisateur a déjà une org (soit via invitation, soit auto-created), 
       // on le redirige selon son onboarding. S'il n'en a pas, il va vers pricing.
-      if (inviteCode && user.hasOrganization) {
+      if (inviteCode && (user as any).hasOrganization) {
         router.push('/dashboard?onboarding=true');
       } else {
         router.push('/pricing');
@@ -49,8 +49,8 @@ export default function RegisterPage() {
       const { token, user } = data.googleLogin;
       localStorage.setItem('michi_token', token);
       
-      if (inviteCode || user.hasOrganization) {
-        router.push(user.onboardingCompleted ? '/dashboard' : '/dashboard?onboarding=true');
+      if (inviteCode || (user as any).hasOrganization) {
+        router.push((user as any).onboardingCompleted ? '/dashboard' : '/dashboard?onboarding=true');
       } else {
         router.push('/pricing');
       }

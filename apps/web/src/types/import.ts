@@ -36,4 +36,6 @@ export interface SmartImportResult {
   success: boolean;
   message: string;
   count?: number;
+  productsCount?: number;
+  salesLogsCount?: number;
 }

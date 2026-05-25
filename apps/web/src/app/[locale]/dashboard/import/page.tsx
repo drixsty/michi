@@ -365,7 +365,7 @@ export default function SmartImportPage() {
         )}
 
         {/* STEP 3: PREVIEW */}
-        {step === 'preview' && (
+        {step === 'preview' && analysis && (
           <motion.div
             key="preview"
             initial={{ opacity: 0, scale: 0.98 }}

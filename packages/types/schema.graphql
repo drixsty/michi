@@ -9,8 +9,20 @@ type AlertType {
 }
 
 type AuthPayload {
-  token: String!
-  user: UserType!
+  token: String
+  user: UserType
+  mfaRequired: Boolean!
+  mfaToken: String
+}
+
+type BillingPlanType {
+  id: String!
+  name: String!
+  price: Float!
+  currency: String!
+  interval: String!
+  features: [String!]!
+  isPopular: Boolean!
 }
 
 input ChangePasswordInput {
@@ -39,6 +51,24 @@ type CleanedDemandType {
   isOutlier: Boolean!
   correctionType: String!
   computedAt: DateTime!
+}
+
+type CredentialType {
+  id: ID!
+  storeId: ID!
+  apiKeyLastChars: String
+  hasToken: Boolean!
+  meta: String!
+  updatedAt: DateTime!
+}
+
+type CsvAnalysisType {
+  columns: [String!]!
+  columnTypes: String!
+  suggestedMapping: [MappingSuggestionType!]!
+  sampleData: String!
+  anomalies: String!
+  impactSummary: String
 }
 
 type DashboardKPIType {
@@ -77,6 +107,7 @@ type FinancialKpiType {
 
 input GoogleLoginInput {
   idToken: String!
+  invitationCode: String = null
 }
 
 type IngestionResult {
@@ -85,6 +116,14 @@ type IngestionResult {
   platform: String!
   productsCount: Int!
   salesLogsCount: Int!
+}
+
+type InvitationPreviewType {
+  organizationName: String!
+  role: String!
+  invitedByName: String!
+  invitedByEmail: String!
+  expiresAt: DateTime!
 }
 
 type InvitationType {
@@ -114,13 +153,29 @@ input LoginInput {
   password: String!
 }
 
+type MappingSuggestionType {
+  targetField: String!
+  csvColumn: String!
+  confidence: Float!
+}
+
 type Mutation {
   login(input: LoginInput!): AuthPayload!
   register(input: RegisterInput!): AuthPayload!
   googleLogin(input: GoogleLoginInput!): AuthPayload!
+  verifyEmail(token: String!): Boolean!
+  resendVerificationEmail(email: String!): Boolean!
   changePassword(input: ChangePasswordInput!): Boolean!
   updateProfile(input: UpdateProfileInput!): UserType!
   toggleUserStatus(userId: ID!, active: Boolean!): Boolean!
+  forgotPassword(input: RequestPasswordResetInput!): Boolean!
+  resetPassword(input: ResetPasswordInput!): Boolean!
+  setup2fa: TwoFactorSetupType!
+  confirm2fa(secret: String!, code: String!): TwoFactorConfirmResult!
+  disable2fa: Boolean!
+  verify2fa(mfaToken: String!, code: String!): AuthPayload!
+  exportUserData: UserDataExportType!
+  deleteAccount: Boolean!
   createOrganization(name: String!, plan: String! = "BASIC"): AuthPayload!
   switchOrganization(organizationId: ID!): AuthPayload!
   updateOrganization(input: UpdateOrganizationInput!): OrganizationType
@@ -131,15 +186,20 @@ type Mutation {
   acceptInvitation(code: String!): Boolean!
   deleteInvitation(invitationId: ID!): Boolean!
   markAlertAsRead(alertId: ID!): Boolean!
+  updateProductSettings(id: ID!, leadTime: Int = null, moq: Int = null, boostFactor: Float = null, stockWeight: Float = null, costPrice: Float = null, salePrice: Float = null): ProductType!
   deleteAlert(alertId: ID!): Boolean!
   toggleSource(platform: String!, connected: Boolean!, storeId: ID = null): StoreType!
   ingestCsvData(storeId: ID!, csvContent: String!, skuCol: String! = "sku", dateCol: String! = "date", salesCol: String! = "sales", stockCol: String! = "stock", titleCol: String! = "title"): IngestionResult!
+  analyzeCsv(csvContent: String!): CsvAnalysisType!
+  updateStoreCredentials(input: UpdateCredentialInput!): CredentialType!
+  testStoreConnection(storeId: ID!): TestConnectionResult!
+  smartImport(infoInput: SmartImportInput!): IngestionResult!
+  createPurchaseOrder(productId: ID!, supplierId: ID!, quantity: Int!): PurchaseOrderType!
   runCleaningPipeline(storeId: ID!): PipelineResultType!
   runPredictionPipeline(storeId: ID!): PredictionRunResultType!
   updateStrategicSettings(currency: String = null, isMutualized: Boolean = null): Boolean!
   triggerMockDataSync(storeId: ID = null, platform: String! = "shopify"): IngestionResult!
   triggerOmnichannelSync(storeId: ID = null): IngestionResult!
-  updateProductSettings(id: ID!, leadTime: Int!, moq: Int!): ProductType!
   createCheckoutSession(plan: String!, successUrl: String!, cancelUrl: String!): String!
   createBillingPortalSession(returnUrl: String!): String!
 }
@@ -165,6 +225,7 @@ type OrganizationMemberType {
   userId: ID!
   role: String!
   permissions: String!
+  computedPermissions: [String!]!
   organization: OrganizationType
   user: UserType
 }
@@ -175,8 +236,11 @@ type OrganizationType {
   slug: String!
   plan: String!
   subscriptionStatus: String!
+  trialEndsAt: DateTime
   createdAt: DateTime!
   settings: String!
+  onboardingCompleted: Boolean!
+  onboardingStep: String!
 }
 
 type PipelineResultType {
@@ -236,12 +300,25 @@ type ProductType {
   warningThreshold: Float!
 }
 
+type PurchaseOrderType {
+  id: ID!
+  productId: ID!
+  supplierId: ID!
+  quantity: Int!
+  orderDate: String!
+  expectedArrivalDate: String!
+  actualArrivalDate: String
+  status: String!
+}
+
 type Query {
-  me: UserType!
+  me: UserType
   currentOrganization: OrganizationType
   organizationMembers: [OrganizationMemberType!]!
   pendingInvitations: [InvitationType!]!
-  products(storeId: ID = null, id: ID = null): [ProductType!]!
+  invitationPreview(code: String!): InvitationPreviewType!
+  products(storeId: ID = null, id: ID = null, title: String = null): [ProductType!]!
+  suppliers(storeId: ID = null, name: String = null): [SupplierType!]!
   unreadAlerts(storeId: ID = null): [AlertType!]!
   sources: [StoreType!]!
   omnichannelInventory: [OmnichannelProductType!]!
@@ -251,6 +328,7 @@ type Query {
   replenishmentAlerts(storeId: ID = null): [PredictionType!]!
   financialOverview(storeId: ID = null, channel: String = null): DecisionCenterOverviewType!
   validateMockData(storeId: ID!): ValidationReportType!
+  billingPlans: [BillingPlanType!]!
   invoices: [InvoiceType!]!
 }
 
@@ -259,6 +337,22 @@ input RegisterInput {
   password: String!
   firstName: String!
   lastName: String!
+  invitationCode: String = null
+}
+
+input RequestPasswordResetInput {
+  email: String!
+}
+
+input ResetPasswordInput {
+  token: String!
+  newPassword: String!
+}
+
+input SmartImportInput {
+  storeId: ID!
+  csvContent: String!
+  mapping: String!
 }
 
 type StoreType {
@@ -280,6 +374,12 @@ type SupplierType {
   leadTimeSigma: Float!
 }
 
+type TestConnectionResult {
+  success: Boolean!
+  message: String!
+  latencyMs: Int
+}
+
 type TopRiskType {
   productId: ID!
   sku: String!
@@ -295,10 +395,33 @@ type TopRiskType {
   salePrice: Float!
 }
 
+type TwoFactorConfirmResult {
+  success: Boolean!
+  recoveryCodes: [String!]
+}
+
+type TwoFactorSetupType {
+  secret: String!
+  provisioningUri: String!
+}
+
+input UpdateCredentialInput {
+  storeId: ID!
+  accessToken: String = null
+  apiKey: String = null
+  apiSecret: String = null
+  metaJson: String = "{}"
+}
+
 input UpdateOrganizationInput {
   name: String = null
   currency: String = null
   isMutualized: Boolean = null
+  reportEnabled: Boolean = null
+  reportFrequency: String = null
+  reportRecipients: String = null
+  onboardingCompleted: Boolean = null
+  onboardingStep: String = null
 }
 
 input UpdateProfileInput {
@@ -309,6 +432,10 @@ input UpdateProfileInput {
   minSeverity: Int = null
 }
 
+type UserDataExportType {
+  dataJson: String!
+}
+
 type UserType {
   id: ID!
   email: String!
@@ -316,7 +443,12 @@ type UserType {
   lastName: String
   currentOrganizationId: ID
   createdAt: DateTime!
+  twoFactorEnabled: Boolean!
   preferences: String!
+  googleId: String
+  emailVerifiedAt: DateTime
+  hasOrganization: Boolean!
+  onboardingCompleted: Boolean!
   organizations: [OrganizationMemberType!]!
   isAdmin: Boolean!
 }
