@@ -105,7 +105,7 @@ class WooCommerceConnector(BaseConnector):
             products.append({
                 "sku": str(row["SKU"]).strip(),
                 "title": str(row["Name"]).strip(),
-                "current_stock": int(stock_values.iloc[i]),
+                "current_stock": int(stock_values.values[i]),
             })
 
         return products
