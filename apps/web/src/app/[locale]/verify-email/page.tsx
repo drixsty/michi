@@ -110,10 +110,10 @@ export default function VerifyEmailPage() {
           {status === 'idle' ? t('description') :
            status === 'pending' ? t('verifying') :
            status === 'success' ? t('redirecting') :
-           t('error')}
+           t('errorDescription')}
         </p>
 
-        {status === 'idle' && (
+        {(status === 'idle' || status === 'error') && (
           <div className="space-y-4">
              <div className="p-4 bg-slate-50 rounded-lg text-[13px] text-slate-600 leading-relaxed border border-slate-100">
                {t('checkSpam')}

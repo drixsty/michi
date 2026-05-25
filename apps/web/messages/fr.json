@@ -81,6 +81,7 @@
     "success": "Votre e-mail a été vérifié avec succès !",
     "redirecting": "Vous allez être redirigé vers Michi...",
     "error": "Le lien de vérification est invalide ou a expiré.",
+    "errorDescription": "Ce lien a expiré ou est invalide. Vous pouvez en demander un nouveau ci-dessous.",
     "backToLogin": "Retour à la connexion",
     "resend": "Renvoyer l'e-mail",
     "resendCooldown": "Renvoyer dans {seconds}s",
@@ -654,6 +655,8 @@
     "emptySubtitle": "Aucun produit ne correspond à votre sélection.",
     "quickview": {
       "loading": "Chargement du produit...",
+      "loadError": "Impossible de charger les détails du produit.",
+      "productNotFound": "Produit introuvable.",
       "error": "Impossible de charger les détails du produit.",
       "sku": "SKU",
       "copySku": "Copier le SKU",

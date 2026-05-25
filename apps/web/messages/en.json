@@ -81,6 +81,7 @@
     "success": "Your email has been successfully verified!",
     "redirecting": "Redirecting you to Michi...",
     "error": "The verification link is invalid or has expired.",
+    "errorDescription": "This link has expired or is invalid. You can request a new one below.",
     "backToLogin": "Back to login",
     "resend": "Resend email",
     "resendCooldown": "Resend in {seconds}s",
@@ -592,6 +593,8 @@
     "emptySubtitle": "No products match your selection.",
     "quickview": {
       "loading": "Loading product...",
+      "loadError": "Unable to load product details.",
+      "productNotFound": "Product not found.",
       "error": "Impossible to load product details.",
       "sku": "SKU",
       "copySku": "Copy SKU",

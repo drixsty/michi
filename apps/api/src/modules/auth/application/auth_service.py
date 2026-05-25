@@ -16,10 +16,8 @@ from typing import Optional
 
 from modules.auth.domain.entities import UserEntity
 from modules.auth.domain.ports import (
-    IOrganizationRepository,
     IPasswordHasher,
     ITokenService,
-    IUserRepository,
 )
 from modules.auth.domain.value_objects import Email, JwtToken
 from modules.auth.infrastructure.repositories import (
@@ -130,11 +128,13 @@ class ApplicationAuthService:
         user = await self._users.get_by_verification_token(token)
         if not user:
             return False
-            
+
+        # Modification directe sur le modèle SQLAlchemy déjà en session.
+        # Ne pas appeler save() ici : save() appelle get_model_by_id() avec
+        # populate_existing=True, ce qui recharge depuis la DB avant flush
+        # et écrase les changements en mémoire.
         user.email_verified_at = cast(Any, datetime.now(UTC))
-        user.verification_token = cast(Any, None) # Consommé
-        
-        await self._users.save(cast(UserEntity, user))
+        user.verification_token = cast(Any, None)
         await self._users._db.flush()
         return True
 
@@ -143,11 +143,10 @@ class ApplicationAuthService:
         user = await self._users.get_model_by_email(email)
         if not user or user.email_verified_at:
             return False
-            
-        # Nouveau token pour plus de sécurité
+
+        # Même raison que verify_email : modifier directement, pas via save()
         new_token = str(uuid.uuid4())
         user.verification_token = cast(Any, new_token)
-        await self._users.save(cast(UserEntity, user))
         await self._users._db.flush()
         
         if self._email:
@@ -197,6 +196,13 @@ class ApplicationAuthService:
             organizations=[],
         )
         await self._users.save(cast(UserEntity, user_model))
+
+        # save() ne persiste pas verification_token (champ infra absent de UserEntity).
+        # On le réécrit directement sur le modèle retourné par la session.
+        saved_model = await self._users.get_model_by_email(email)
+        if saved_model:
+            saved_model.verification_token = cast(Any, verification_token)
+            await self._users._db.flush()
 
         # Envoi de l'email de vérification
         if self._email:
