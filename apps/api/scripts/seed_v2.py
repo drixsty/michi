@@ -7,7 +7,9 @@ Usage: python scripts/seed_v2.py
 import asyncio
 import sys
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, cast
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -37,7 +39,14 @@ async def seed():
         existing = result.scalar_one_or_none()
 
         if existing:
-            print(f"[SKIP] Utilisateur {DEMO_EMAIL} déjà présent.")
+            # Mettre à jour email_verified_at si non défini (comptes créés avant le fix)
+            if not existing.email_verified_at:
+                existing.email_verified_at = cast(Any, datetime.now(timezone.utc).replace(tzinfo=None))
+                existing.verification_token = cast(Any, None)
+                await session.commit()
+                print(f"[UPDATE] email_verified_at mis à jour pour {DEMO_EMAIL}")
+            else:
+                print(f"[SKIP] Utilisateur {DEMO_EMAIL} déjà présent et vérifié.")
             await engine.dispose()
             return
 
@@ -53,7 +62,7 @@ async def seed():
         session.add(org)
         await session.flush()
 
-        # Créer l'utilisateur
+        # Créer l'utilisateur (email pré-vérifié en dev — pas de flow email requis)
         user = User(
             id=uuid.uuid4(),
             email=DEMO_EMAIL,
@@ -61,6 +70,7 @@ async def seed():
             last_name="User",
             hashed_password=hash_password(DEMO_PASSWORD),
             current_organization_id=org.id,
+            email_verified_at=datetime.now(timezone.utc).replace(tzinfo=None),
             preferences={},
         )
         session.add(user)
@@ -78,6 +88,7 @@ async def seed():
 
         print(f"[OK] Utilisateur créé : {DEMO_EMAIL} / {DEMO_PASSWORD}")
         print(f"[OK] Organisation     : {DEMO_ORG} (slug: {DEMO_SLUG})")
+        print(f"[OK] email_verified_at défini (bypass vérification en dev)")
 
     await engine.dispose()
 
