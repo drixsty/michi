@@ -406,8 +406,8 @@
     "kpis": {
       "immobilized": "Immobilized capital",
       "marketValue": "Market value",
-      "revenueAtRisk": "Revenue at risk",
-      "lossEstimate": "Estimated loss (30d)",
+      "revenueAtRisk": "Reorder value",
+      "lossEstimate": "Orders to place (future need)",
       "avgCoverage": "Avg coverage",
       "days": "days"
     },
@@ -450,8 +450,8 @@
     "healthySub": "Optimized stock",
     "inventoryValue": "Stock value",
     "inventoryValueSub": "Purchase price (CAPEX)",
-    "revenueAtRisk": "Revenue at risk",
-    "revenueAtRiskSub": "Potential loss (30d)",
+    "revenueAtRisk": "Reorder value",
+    "revenueAtRiskSub": "Orders to place (future need)",
     "units": "Units"
   },
   "overview": {

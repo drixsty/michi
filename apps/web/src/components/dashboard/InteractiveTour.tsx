@@ -120,8 +120,11 @@ export function InteractiveTour() {
   useEffect(() => {
     const completed = localStorage.getItem('michi_tour_completed');
     if (!completed) {
-      const timer = setTimeout(() => setActive(true), 3000);
-      return () => clearTimeout(timer);
+      // Uniquement sur desktop (largeur >= 768px)
+      if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+        const timer = setTimeout(() => setActive(true), 3000);
+        return () => clearTimeout(timer);
+      }
     }
   }, []);
 

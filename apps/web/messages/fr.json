@@ -363,8 +363,8 @@
     "healthySub": "Stock optimisé",
     "inventoryValue": "Valeur stock",
     "inventoryValueSub": "Prix d'achat (CAPEX)",
-    "revenueAtRisk": "Revenu à risque",
-    "revenueAtRiskSub": "Manque à gagner (30j)",
+    "revenueAtRisk": "Valeur à réapprovisionner",
+    "revenueAtRiskSub": "Commandes à passer (besoin futur)",
     "units": "Unités"
   },
   "decisions": {
@@ -399,8 +399,8 @@
     "kpis": {
       "immobilized": "Capital immobilisé",
       "marketValue": "Valeur marchande",
-      "revenueAtRisk": "Revenu à risque",
-      "lossEstimate": "Perte estimée (30j)",
+      "revenueAtRisk": "Valeur à réapprovisionner",
+      "lossEstimate": "Commandes à passer (besoin futur)",
       "avgCoverage": "Couverture moyenne",
       "days": "jours"
     },

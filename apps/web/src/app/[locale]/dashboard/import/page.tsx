@@ -290,13 +290,14 @@ export default function SmartImportPage() {
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-slate-700 capitalize">{target.replace('_', ' ')}</span>
                             {isAISuggested && (
-                              <div 
-                                className={cn(
-                                  "w-1.5 h-1.5 rounded-full",
-                                  confidence > 0.8 ? "bg-emerald-500" : confidence > 0.5 ? "bg-amber-500" : "bg-red-500"
-                                )} 
-                                title={`Confiance IA: ${Math.round(confidence * 100)}%`}
-                              />
+                              <span className={cn(
+                                "px-2 py-0.5 rounded-md text-[8px] font-extrabold border shrink-0 transition-all",
+                                confidence > 0.8 ? "bg-emerald-50 text-emerald-700 border-emerald-100 shadow-sm shadow-emerald-50" :
+                                confidence > 0.5 ? "bg-amber-50 text-amber-700 border-amber-100" :
+                                "bg-red-50 text-red-700 border-red-100"
+                              )}>
+                                {confidence > 0.8 ? "🟢 Élevé" : confidence > 0.5 ? "🟡 Moyen" : "🔴 Faible"}
+                              </span>
                             )}
                           </div>
                         </div>

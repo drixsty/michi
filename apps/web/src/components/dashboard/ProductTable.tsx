@@ -709,8 +709,16 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
                 </div>
                 <span className="text-xs font-bold tracking-tight">{t('groupedActions')}</span>
               </div>
-
+ 
               <div className="flex items-center gap-2">
+                <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-[10px] font-bold tracking-widest text-slate-300">
+                  <Clock className="h-3.5 w-3.5" />
+                  Délais
+                </button>
+                <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-[10px] font-bold tracking-widest text-slate-300">
+                  <Layers className="h-3.5 w-3.5" />
+                  Fournisseur
+                </button>
                 <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-xs font-bold tracking-widest">
                   <Download className="h-3.5 w-3.5" />
                   {tCommon('export')}

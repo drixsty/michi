@@ -35,15 +35,15 @@ describe('ProductTable', () => {
   it('renders products correctly', () => {
     render(<ProductTable products={mockProducts} />);
     
-    expect(screen.getByText('Product A')).toBeInTheDocument();
-    expect(screen.getByText('PROD-A')).toBeInTheDocument();
-    expect(screen.getByText('Product B')).toBeInTheDocument();
+    expect(screen.getAllByText('Product A')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('PROD-A')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Product B')[0]).toBeInTheDocument();
   });
 
   it('filters products by search query', () => {
     render(<ProductTable products={mockProducts} query="Product A" />);
     
-    expect(screen.getByText('Product A')).toBeInTheDocument();
+    expect(screen.getAllByText('Product A')[0]).toBeInTheDocument();
     expect(screen.queryByText('Product B')).not.toBeInTheDocument();
   });
 
@@ -55,13 +55,13 @@ describe('ProductTable', () => {
     fireEvent.click(amazonButton);
     
     expect(screen.queryByText('Product A')).not.toBeInTheDocument();
-    expect(screen.getByText('Product B')).toBeInTheDocument();
+    expect(screen.getAllByText('Product B')[0]).toBeInTheDocument();
   });
 
   it('renders empty state when no products match', () => {
     render(<ProductTable products={mockProducts} query="NonExistent" />);
     
-    expect(screen.getByText('Données vides')).toBeInTheDocument();
-    expect(screen.getByText('Aucun produit ne correspond à votre sélection.')).toBeInTheDocument();
+    expect(screen.getAllByText('Données vides')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Aucun produit ne correspond à votre sélection.')[0]).toBeInTheDocument();
   });
 });

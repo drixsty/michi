@@ -236,8 +236,11 @@ function WhatIfSimulator({
 
       {/* Results */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="text-center p-2 bg-white rounded-lg border border-slate-100">
-          <p className="text-[7px] font-bold text-slate-400 mb-0.5">{t('stockoutRisk')}</p>
+        <div className="text-center p-2 bg-white rounded-lg border border-slate-100 group relative">
+          <p className="text-[7px] font-bold text-slate-400 mb-0.5 flex items-center justify-center gap-1 cursor-help" title="Probabilité statistique de rupture de stock calculée à partir des variations combinées de la demande et des délais fournisseur.">
+            {t('stockoutRisk')}
+            <Info className="h-2 w-2 text-slate-300" />
+          </p>
           <p className={cn("text-sm font-black transition-colors", ros > 5 ? "text-red-600" : "text-emerald-600")}>
             {ros.toFixed(1)}%
           </p>
@@ -248,8 +251,11 @@ function WhatIfSimulator({
             {simStockoutDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
           </p>
         </div>
-        <div className="text-center p-2 bg-white rounded-lg border border-slate-100">
-          <p className="text-[7px] font-bold text-slate-400 mb-0.5">{t('holdingCost')}</p>
+        <div className="text-center p-2 bg-white rounded-lg border border-slate-100 group relative">
+          <p className="text-[7px] font-bold text-slate-400 mb-0.5 flex items-center justify-center gap-1 cursor-help" title="Coût annuel estimé pour stocker les marchandises en sur-stock (estimé à 20% de la valeur d'achat par an).">
+            {t('holdingCost')}
+            <Info className="h-2 w-2 text-slate-300" />
+          </p>
           <p className={cn("text-[9px] font-black", dailyHoldingCost > 1 ? "text-amber-600" : "text-slate-500")}>
             {dailyHoldingCost > 0.01 ? t('currencyPerDay', { amount: dailyHoldingCost.toFixed(2) }) : "—"}
           </p>
@@ -634,8 +640,11 @@ export function ProductQuickView({ productId, onClose }: ProductQuickViewProps) 
                             +{product.supplier.averageDelayDays.toFixed(1)}j.
                           </p>
                         </div>
-                        <div className="text-center p-2 bg-white rounded-lg border border-emerald-100 shadow-sm">
-                          <p className="text-[7px] font-bold text-slate-400 mb-0.5 uppercase tracking-tighter">{t('variability')}</p>
+                        <div className="text-center p-2 bg-white rounded-lg border border-emerald-100 shadow-sm group relative">
+                          <p className="text-[7px] font-bold text-slate-400 mb-0.5 uppercase tracking-tighter flex items-center justify-center gap-1 cursor-help" title="Écart-type du délai de livraison du fournisseur. Indique la régularité des livraisons.">
+                            {t('variability')}
+                            <Info className="h-2 w-2 text-slate-300" />
+                          </p>
                           <p className="text-sm font-black text-slate-900">
                             σ {product.supplier.leadTimeSigma.toFixed(1)}j.
                           </p>
