@@ -32,12 +32,26 @@ import {
   Zap,
   Activity,
   Info,
-  Clock
+  Clock,
+  Check,
+  ChevronDown
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import { useQuery, useMutation, gql } from '@apollo/client';
+import { UPDATE_PRODUCT_SETTINGS } from '@/graphql/mutations/updateProduct';
+
+const GET_SUPPLIERS = gql`
+  query GetSuppliers {
+    suppliers {
+      id
+      name
+    }
+  }
+`;
+
 
 const PLATFORM_ICONS: Record<PlatformSource, any> = {
   shopify: ShoppingCart,
@@ -58,6 +72,120 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
   const tInventory = useTranslations('inventory');
   const tCommon = useTranslations('common');
   const router = useRouter();
+
+  const [isLeadTimeModalOpen, setIsLeadTimeModalOpen] = useState(false);
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+  const [newLeadTime, setNewLeadTime] = useState('');
+  const [selectedSupplierId, setSelectedSupplierId] = useState('');
+  const [isSupplierDropdownOpen, setIsSupplierDropdownOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const [updateProduct] = useMutation(UPDATE_PRODUCT_SETTINGS);
+  const { data: suppliersData } = useQuery(GET_SUPPLIERS);
+  
+  const suppliers = suppliersData?.suppliers || [];
+
+  const selectedSupplierName = useMemo(() => {
+    if (!selectedSupplierId) return "Choisir un fournisseur";
+    if (selectedSupplierId === "null") return "Aucun (désassigner)";
+    const found = suppliers.find((s: any) => s.id === selectedSupplierId);
+    return found ? found.name : "Choisir un fournisseur";
+  }, [selectedSupplierId, suppliers]);
+
+  const handleExportSelected = () => {
+    try {
+      const selectedRows = table.getSelectedRowModel().rows.map(r => r.original);
+      if (selectedRows.length === 0) return;
+      
+      const headers = ['Produit', 'SKU', 'Stock Actuel', 'ABC', 'Délai Fournisseur (jours)', 'MOQ', 'Date de Rupture Prévisible', 'Quantité de Réapprovisionnement'];
+      const rows = selectedRows.map(p => {
+        const stock = p.totalStock ?? p.currentStock ?? 0;
+        const rank = p.abcRank ?? p.prediction?.abcRank ?? 'C';
+        const lead = p.leadTime ?? 14;
+        const moq = p.moq ?? 0;
+        const dateStr = p.predictedStockoutDate ?? p.prediction?.predictedStockoutDate ?? '—';
+        const qty = p.totalReorderQuantity ?? p.prediction?.reorderQuantity ?? 0;
+        return [
+          `"${p.title.replace(/"/g, '""')}"`,
+          p.sku,
+          stock,
+          rank,
+          lead,
+          moq,
+          dateStr,
+          Math.round(qty)
+        ];
+      });
+      const csvContent = [headers, ...rows].map(e => e.join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `michi_bulk_export_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Export error", err);
+    }
+  };
+
+  const handleApplyLeadTime = async () => {
+    if (!newLeadTime) return;
+    setIsUpdating(true);
+    try {
+      const selectedProductIds = table.getSelectedRowModel().rows.map(r => r.original.id);
+      
+      await Promise.all(
+        selectedProductIds.map(productId =>
+          updateProduct({
+            variables: {
+              id: productId,
+              leadTime: parseInt(newLeadTime)
+            }
+          })
+        )
+      );
+      
+      setIsLeadTimeModalOpen(false);
+      setNewLeadTime('');
+      setRowSelection({});
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to update lead times", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleApplySupplier = async () => {
+    setIsUpdating(true);
+    try {
+      const selectedProductIds = table.getSelectedRowModel().rows.map(r => r.original.id);
+      
+      const supplierIdParam = selectedSupplierId === 'null' ? null : selectedSupplierId;
+      
+      await Promise.all(
+        selectedProductIds.map(productId =>
+          updateProduct({
+            variables: {
+              id: productId,
+              supplierId: supplierIdParam
+            }
+          })
+        )
+      );
+      
+      setIsSupplierModalOpen(false);
+      setSelectedSupplierId('');
+      setRowSelection({});
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to update suppliers", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -108,27 +236,50 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
       id: 'select',
       size: 40,
       minSize: 40,
-      header: ({ table }) => (
-        <div className="flex justify-center w-full">
-          <input
-            type="checkbox"
-            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
-            checked={table.getIsAllPageRowsSelected()}
-            onChange={table.getToggleAllPageRowsSelectedHandler()}
-          />
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="flex justify-center w-full">
-          <input
-            type="checkbox"
-            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
-            checked={row.getIsSelected()}
-            onChange={row.getToggleSelectedHandler()}
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      ),
+      header: ({ table }) => {
+        const isAllSelected = table.getIsAllPageRowsSelected();
+        const isSomeSelected = table.getIsSomePageRowsSelected();
+        return (
+          <div className="flex justify-center w-full">
+            <button
+              onClick={table.getToggleAllPageRowsSelectedHandler()}
+              className={cn(
+                "h-4 w-4 shrink-0 rounded border transition-all flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer",
+                isAllSelected
+                  ? "bg-primary border-primary text-white"
+                  : isSomeSelected
+                  ? "bg-primary/50 border-primary text-white"
+                  : "bg-white border-slate-300 hover:border-slate-400 text-transparent"
+              )}
+              aria-label="Sélectionner tous les produits"
+            >
+              {(isAllSelected || isSomeSelected) && <Check className="h-3 w-3 stroke-[3]" />}
+            </button>
+          </div>
+        );
+      },
+      cell: ({ row }) => {
+        const isSelected = row.getIsSelected();
+        return (
+          <div className="flex justify-center w-full">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                row.toggleSelected(!isSelected);
+              }}
+              className={cn(
+                "h-4 w-4 shrink-0 rounded border transition-all flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer",
+                isSelected
+                  ? "bg-primary border-primary text-white"
+                  : "bg-white border-slate-300 hover:border-slate-400 text-transparent"
+              )}
+              aria-label="Sélectionner le produit"
+            >
+              {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+            </button>
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'title',
@@ -700,38 +851,243 @@ export function ProductTable({ products, query = '', onRowClick }: ProductTableP
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4"
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-xl px-4"
           >
-            <div className="bg-foreground text-background px-6 py-4 rounded-2xl shadow-2xl flex items-center justify-between border border-white/10 backdrop-blur-md bg-opacity-95">
-              <div className="flex items-center gap-3">
-                <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-white">
+            <div className="bg-slate-950/95 text-white pl-5 pr-4 py-3.5 rounded-2xl shadow-2xl flex items-center justify-between border border-white/10 backdrop-blur-md">
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-lg shadow-primary/20">
                   {selectedCount}
                 </div>
-                <span className="text-xs font-bold tracking-tight">{t('groupedActions')}</span>
+                <span className="text-xs font-bold tracking-tight whitespace-nowrap text-white">
+                  {t('groupedActions')}
+                </span>
               </div>
  
-              <div className="flex items-center gap-2">
-                <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-[10px] font-bold tracking-widest text-slate-300">
-                  <Clock className="h-3.5 w-3.5" />
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  onClick={() => setIsLeadTimeModalOpen(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all text-[10px] font-bold tracking-widest text-slate-200 border border-white/5"
+                >
+                  <Clock className="h-3.5 w-3.5 text-slate-400" />
                   Délais
                 </button>
-                <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-[10px] font-bold tracking-widest text-slate-300">
-                  <Layers className="h-3.5 w-3.5" />
+                <button
+                  onClick={() => setIsSupplierModalOpen(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all text-[10px] font-bold tracking-widest text-slate-200 border border-white/5"
+                >
+                  <Layers className="h-3.5 w-3.5 text-slate-400" />
                   Fournisseur
                 </button>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors text-xs font-bold tracking-widest">
+                <button
+                  onClick={handleExportSelected}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white active:scale-[0.98] transition-all text-[10px] font-black tracking-widest shadow-md shadow-primary/20"
+                >
                   <Download className="h-3.5 w-3.5" />
                   {tCommon('export')}
                 </button>
+                <div className="w-[1px] h-5 bg-white/10 mx-0.5" />
                 <button
                   onClick={() => setRowSelection({})}
-                  className="p-1.5 rounded-full hover:bg-white/10 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-all active:scale-95 shrink-0"
+                  title="Annuler la sélection"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Lead Time Batch Modal */}
+      <AnimatePresence>
+        {isLeadTimeModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-zinc-950 border border-white/10 text-white rounded-2xl p-6 w-full max-w-sm shadow-2xl flex flex-col gap-4"
+            >
+              <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                <h3 className="text-sm font-bold tracking-tight text-white">Mettre à jour les délais</h3>
+                <button
+                  onClick={() => setIsLeadTimeModalOpen(false)}
+                  className="p-1 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] tracking-wider text-slate-400 font-bold block mb-1">
+                  Délai de livraison du fournisseur (en jours)
+                </label>
+                <input
+                  type="number"
+                  placeholder="Ex. 14"
+                  value={newLeadTime}
+                  onChange={(e) => setNewLeadTime(e.target.value)}
+                  className="w-full bg-zinc-900/80 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary text-white transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  min="0"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setIsLeadTimeModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/5 transition-colors border border-white/10 text-slate-300"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleApplyLeadTime}
+                  disabled={isUpdating || !newLeadTime}
+                  className="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-xl text-xs font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                >
+                  {isUpdating ? 'En cours...' : 'Appliquer'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+ 
+      {/* Supplier Batch Modal */}
+      <AnimatePresence>
+        {isSupplierModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-zinc-950 border border-white/10 text-white rounded-2xl p-6 w-full max-w-sm shadow-2xl flex flex-col gap-4"
+            >
+              <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                <h3 className="text-sm font-bold tracking-tight text-white">Mettre à jour le fournisseur</h3>
+                <button
+                  onClick={() => setIsSupplierModalOpen(false)}
+                  className="p-1 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] tracking-wider text-slate-400 font-bold block mb-1">
+                  Sélectionner le fournisseur
+                </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsSupplierDropdownOpen(!isSupplierDropdownOpen)}
+                    className="w-full flex items-center justify-between bg-zinc-900/80 border border-white/10 hover:border-white/20 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary text-white transition-all cursor-pointer text-left"
+                  >
+                    <span className={cn(
+                      !selectedSupplierId ? "text-slate-400" : "text-white"
+                    )}>
+                      {selectedSupplierName}
+                    </span>
+                    <ChevronDown 
+                      className="h-4 w-4 text-slate-400 shrink-0 transition-transform duration-200" 
+                      style={{ transform: isSupplierDropdownOpen ? 'rotate(180deg)' : 'none' }} 
+                    />
+                  </button>
+
+                  <AnimatePresence>
+                    {isSupplierDropdownOpen && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-30" 
+                          onClick={() => setIsSupplierDropdownOpen(false)} 
+                        />
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute left-0 right-0 mt-2 z-40 max-h-60 overflow-y-auto rounded-xl border border-white/10 bg-zinc-950/95 backdrop-blur-md shadow-2xl p-1.5 scrollbar-thin scrollbar-thumb-white/10"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSupplierId("");
+                              setIsSupplierDropdownOpen(false);
+                            }}
+                            className={cn(
+                              "w-full text-left px-3 py-2 text-sm rounded-lg transition-all flex items-center justify-between cursor-pointer",
+                              !selectedSupplierId 
+                                ? "bg-primary/10 text-primary font-medium" 
+                                : "text-slate-400 hover:text-white hover:bg-white/5"
+                            )}
+                          >
+                            <span>Choisir un fournisseur</span>
+                            {!selectedSupplierId && <Check className="h-3.5 w-3.5" />}
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSupplierId("null");
+                              setIsSupplierDropdownOpen(false);
+                            }}
+                            className={cn(
+                              "w-full text-left px-3 py-2 text-sm rounded-lg transition-all flex items-center justify-between cursor-pointer",
+                              selectedSupplierId === "null" 
+                                ? "bg-primary/10 text-primary font-medium" 
+                                : "text-slate-300 hover:text-white hover:bg-white/5"
+                            )}
+                          >
+                            <span>Aucun (désassigner)</span>
+                            {selectedSupplierId === "null" && <Check className="h-3.5 w-3.5" />}
+                          </button>
+
+                          {suppliers.length > 0 && (
+                            <div className="h-[1px] bg-white/5 my-1" />
+                          )}
+
+                          {suppliers.map((s: any) => {
+                            const isCurrent = selectedSupplierId === s.id;
+                            return (
+                              <button
+                                key={s.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedSupplierId(s.id);
+                                  setIsSupplierDropdownOpen(false);
+                                }}
+                                className={cn(
+                                  "w-full text-left px-3 py-2 text-sm rounded-lg transition-all flex items-center justify-between cursor-pointer",
+                                  isCurrent 
+                                    ? "bg-primary/10 text-primary font-medium" 
+                                    : "text-slate-300 hover:text-white hover:bg-white/5"
+                                )}
+                              >
+                                <span className="truncate">{s.name}</span>
+                                {isCurrent && <Check className="h-3.5 w-3.5" />}
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setIsSupplierModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold hover:bg-white/5 transition-colors border border-white/10 text-slate-300"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleApplySupplier}
+                  disabled={isUpdating || !selectedSupplierId}
+                  className="bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-xl text-xs font-bold transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
+                >
+                  {isUpdating ? 'En cours...' : 'Appliquer'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

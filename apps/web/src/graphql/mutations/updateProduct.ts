@@ -8,7 +8,8 @@ export const UPDATE_PRODUCT_SETTINGS = gql`
     $boostFactor: Float,
     $stockWeight: Float,
     $costPrice: Float,
-    $salePrice: Float
+    $salePrice: Float,
+    $supplierId: ID
   ) {
     updateProductSettings(
       id: $id, 
@@ -17,7 +18,8 @@ export const UPDATE_PRODUCT_SETTINGS = gql`
       boostFactor: $boostFactor,
       stockWeight: $stockWeight,
       costPrice: $costPrice,
-      salePrice: $salePrice
+      salePrice: $salePrice,
+      supplierId: $supplierId
     ) {
       id
       title
@@ -27,6 +29,10 @@ export const UPDATE_PRODUCT_SETTINGS = gql`
       currentStock
       boostFactor
       stockWeight
+      supplier {
+        id
+        name
+      }
     }
   }
 `;

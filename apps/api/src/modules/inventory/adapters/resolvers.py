@@ -7,7 +7,7 @@ Thin resolvers delegating to Application Services.
 _MAX_PAGE_SIZE = 500  # plafond absolu pour éviter les requêtes abusives
 import csv
 import strawberry
-from typing import List, Optional, Annotated
+from typing import List, Optional, Annotated, Any
 import uuid
 import asyncio
 import time
@@ -152,18 +152,24 @@ class InventoryMutation:
         boost_factor: Optional[float] = None,
         stock_weight: Optional[float] = None,
         cost_price: Optional[float] = None,
-        sale_price: Optional[float] = None
+        sale_price: Optional[float] = None,
+        supplier_id: Optional[strawberry.ID] = None
     ) -> ProductType:
         service = info.context.services.inventory_service
         
         # Prepare kwargs for update_settings
-        updates = {}
+        updates: dict[str, Any] = {}
         if lead_time is not None: updates["lead_time"] = lead_time
         if moq is not None: updates["moq"] = moq
         if boost_factor is not None: updates["boost_factor"] = boost_factor
         if stock_weight is not None: updates["stock_weight"] = stock_weight
         if cost_price is not None: updates["cost_price"] = cost_price
         if sale_price is not None: updates["sale_price"] = sale_price
+        if supplier_id is not None:
+            if not supplier_id or str(supplier_id).lower() in ("null", "none"):
+                updates["supplier_id"] = None
+            else:
+                updates["supplier_id"] = uuid.UUID(str(supplier_id))
 
         updated_p = await service.update_product_settings(str(id), **updates)
         await info.context.db.commit()

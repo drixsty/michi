@@ -9,7 +9,17 @@
       "Bash(PYTHONPATH=src python -m alembic current)",
       "Bash(PYTHONPATH=src python -m alembic revision --autogenerate -m \"check_drift\")",
       "Bash(PYTHONPATH=src python scripts/seed_v2.py)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(git check-ignore *)",
+      "Bash(python -m pytest tests/unit/intelligence/ tests/unit/forecasting/ -x -q)",
+      "Bash(docker compose *)",
+      "Bash(python -m pytest apps/api/tests/unit/ -q --tb=short --rootdir=apps/api -p no:cacheprovider)",
+      "Bash(python -m pytest tests/unit/ -q --tb=short)",
+      "Bash(python -m pytest tests/unit/intelligence/test_run_rate.py tests/unit/intelligence/test_abc_analysis.py tests/unit/intelligence/test_predictions.py tests/unit/forecasting/test_forecasting_service_unit.py -q --tb=long)",
+      "Bash(python -m pytest tests/unit/ -x -q)",
+      "Bash(python -m alembic heads)",
+      "Bash(python -m alembic upgrade head)"
     ]
   }
 }
