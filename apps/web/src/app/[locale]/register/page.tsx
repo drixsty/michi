@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { PasswordInput } from '@/components/ui/PasswordInput';
+import { setAuthToken } from '@/lib/auth';
 
 export default function RegisterPage() {
   const t = useTranslations('auth.register');
@@ -28,7 +29,7 @@ export default function RegisterPage() {
   const [register, { loading: mutationLoading }] = useMutation(REGISTER, {
     onCompleted: (data) => {
       const { token, user } = data.register;
-      localStorage.setItem('michi_token', token);
+      setAuthToken(token);
       
       // Si l'utilisateur a déjà une org (soit via invitation, soit auto-created), 
       // on le redirige selon son onboarding. S'il n'en a pas, il va vers pricing.
@@ -47,7 +48,7 @@ export default function RegisterPage() {
   const [googleLogin] = useMutation(GOOGLE_LOGIN, {
     onCompleted: (data) => {
       const { token, user } = data.googleLogin;
-      localStorage.setItem('michi_token', token);
+      setAuthToken(token);
       
       if (inviteCode || (user as any).hasOrganization) {
         router.push((user as any).onboardingCompleted ? '/dashboard' : '/dashboard?onboarding=true');

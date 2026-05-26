@@ -596,8 +596,9 @@ class TwoFactorConfirmResult:
 
 @strawberry.type
 class AuthPayload:
-    """Payload retourné par login"""
+    """Payload retourné par login / refresh"""
     token: Optional[str] = None
+    refresh_token: Optional[str] = None
     user: Optional[UserType] = None
     mfa_required: bool = False
     mfa_token: Optional[str] = None

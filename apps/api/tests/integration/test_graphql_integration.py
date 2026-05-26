@@ -25,8 +25,8 @@ async def test_login_mutation(client, test_user):
             "query": query,
             "variables": {
                 "input": {
-                    "email": "test@michi.com",
-                    "password": "testpassword"
+                    "email": test_user.email,
+                    "password": "password123"
                 }
             }
         }
@@ -39,7 +39,7 @@ async def test_login_mutation(client, test_user):
     assert "data" in data
     assert "login" in data["data"]
     assert "token" in data["data"]["login"]
-    assert data["data"]["login"]["user"]["email"] == "test@michi.com"
+    assert data["data"]["login"]["user"]["email"] == test_user.email
 
 
 @pytest.mark.asyncio
@@ -62,20 +62,19 @@ async def test_me_query_without_auth(client):
     assert response.status_code == 200
     data = response.json()
     
-    # Doit retourner une erreur d'authentification
-    assert "errors" in data
-    assert any("Authentication required" in str(error) or "UNAUTHENTICATED" in str(error) for error in data["errors"])
+    # Doit retourner None sans erreur d'exécution GraphQL
+    assert "data" in data
+    assert data["data"]["me"] is None
 
 
 @pytest.mark.asyncio
 @pytest.mark.integration
-async def test_me_query_with_auth(client, auth_token):
+async def test_me_query_with_auth(client, test_user, auth_token):
     """Test query me avec authentification"""
     query = """
         query {
             me {
                 email
-                shopId
             }
         }
     """
@@ -91,7 +90,7 @@ async def test_me_query_with_auth(client, auth_token):
     
     assert "data" in data
     assert "me" in data["data"]
-    assert data["data"]["me"]["email"] == "test@michi.com"
+    assert data["data"]["me"]["email"] == test_user.email
 
 
 @pytest.mark.asyncio

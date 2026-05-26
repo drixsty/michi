@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import StaticPool
+from sqlalchemy import select
 from httpx import AsyncClient
 
 # 1. Setup environment variables BEFORE core imports
@@ -16,6 +17,7 @@ os.environ["JWT_SECRET"] = "test_secret_key_123_test_secret_key_123"
 os.environ["JWT_ALGORITHM"] = "HS256"
 os.environ["STRIPE_SECRET_KEY"] = "sk_test_mock"
 os.environ["STRIPE_WEBHOOK_SECRET"] = "whsec_mock"
+os.environ["BILLING_MODE"] = "STRIPE"
 os.environ["SHOPIFY_API_KEY"] = "mock_key"
 os.environ["SHOPIFY_API_SECRET"] = "mock_secret"
 os.environ["SMTP_HOST"] = "localhost"
@@ -102,3 +104,30 @@ async def client(db_session) -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+async def auth_token(test_user) -> str:
+    """Generate a valid JWT token for the test user."""
+    from core.security import create_access_token
+    token_data = {
+        "user_id": str(test_user.id),
+        "org_id": str(test_user.current_organization_id),
+        "email": test_user.email
+    }
+    return create_access_token(token_data)
+
+
+@pytest.fixture(scope="function")
+def auth_headers(auth_token) -> dict[str, str]:
+    """Provide authentication headers for integration tests."""
+    return {"Authorization": f"Bearer {auth_token}"}
+
+
+@pytest.fixture(scope="function")
+async def test_organization(db_session, test_user) -> Organization:
+    """Retrieve the test organization associated with the test user."""
+    result = await db_session.execute(
+        select(Organization).where(Organization.id == test_user.current_organization_id)
+    )
+    return result.scalar_one()

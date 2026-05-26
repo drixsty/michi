@@ -46,15 +46,21 @@ class ForecastingQuery:
     @strawberry.field
     @require_plan("PRO")
     @require_permission(MichiPermission.FORECAST_VIEW)
-    async def predictions(self, info: strawberry.types.Info, store_id: Optional[strawberry.ID] = None) -> List[PredictionType]:
+    async def predictions(
+        self,
+        info: strawberry.types.Info,
+        store_id: Optional[strawberry.ID] = None,
+        limit: int = 200,
+        offset: int = 0,
+    ) -> List[PredictionType]:
+        _MAX_PAGE_SIZE = 500
+        capped = min(max(1, limit), _MAX_PAGE_SIZE)
         service = info.context.services.forecasting_service
-        
         rows = await service.get_predictions(
             org_id=str(info.context.org_id) if info.context.org_id else None,
-            store_id=str(store_id) if store_id else None
+            store_id=str(store_id) if store_id else None,
         )
-            
-        return [PredictionType.from_db(r) for r in rows]
+        return [PredictionType.from_db(r) for r in rows[offset: offset + capped]]
 
     @strawberry.field
     @require_permission(MichiPermission.FORECAST_VIEW)

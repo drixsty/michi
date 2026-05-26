@@ -26,6 +26,7 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { useStore } from '@/context/StoreContext';
 import { useTranslations } from 'next-intl';
 import { usePermissions, Permission } from '@/hooks/usePermissions';
+import { clearAuthToken } from '@/lib/auth';
 
 function NavLinks() {
   const t = useTranslations('navigation');
@@ -282,7 +283,7 @@ export function Navbar() {
                       <button
                         onClick={() => {
                           setIsUserMenuOpen(false);
-                          localStorage.removeItem('michi_token');
+                          clearAuthToken();
                           router.push('/login');
                           router.refresh();
                         }}

@@ -60,8 +60,9 @@ async def test_update_credentials_e2e(client, auth_headers, db_session):
     
     # 4. Vérification du chiffrement en base de données
     # On vide le cache de session pour forcer une relecture DB
+    store_id = store.id
     db_session.expire_all()
-    stmt = select(StoreCredential).where(StoreCredential.store_id == store.id)
+    stmt = select(StoreCredential).where(StoreCredential.store_id == store_id)
     result = await db_session.execute(stmt)
     db_cred = result.scalar()
     

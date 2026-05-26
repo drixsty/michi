@@ -7,6 +7,7 @@ import { GET_ME } from '../graphql/queries/getMe';
 import { SWITCH_ORGANIZATION } from '../graphql/mutations/switchOrganization';
 import { GET_SOURCES } from '../graphql/queries/getSources';
 import { useRouter, usePathname } from 'next/navigation';
+import { clearAuthToken, setAuthToken } from '@/lib/auth';
 
 type MeUser = GetMeQuery['me'];
 type OrgMember = GetMeQuery['me']['organizations'][number];
@@ -56,8 +57,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       const isUnauthenticated = error.graphQLErrors.some(e => e.extensions?.code === 'UNAUTHENTICATED');
       if (isUnauthenticated && !isAuthPage) {
         console.warn("[Store] Session expired or invalid, clearing context.");
-        localStorage.removeItem('michi_token');
-        localStorage.removeItem('michi_current_org');
+        clearAuthToken();
         if (!pathname.endsWith('/onboarding')) {
           window.location.href = '/login';
         }
@@ -140,8 +140,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       } else if (!isAuthPage) {
         // Fallback: If network query returns null but we thought we were logged in
         console.warn("[Store] User is null on a non-auth page. Clearing session.");
-        localStorage.removeItem('michi_token');
-        localStorage.removeItem('michi_current_org');
+        clearAuthToken();
         if (!pathname.endsWith('/onboarding') && !pathname.includes('/verify-email')) {
           window.location.href = '/login';
         }

@@ -1,10 +1,11 @@
 import pytest
 import uuid
 from httpx import AsyncClient
-from modules.auth.infrastructure.persistence.models import Organization, OrganizationMember, UserRole
+from core.database.models import Organization, OrganizationMember
+from core.database.constants import UserRole
 
 @pytest.mark.asyncio
-async def test_feature_gating_basic_plan(db_session, test_user):
+async def test_feature_gating_basic_plan(db_session, test_user, client):
     """
     Test 1: Vérifie que le décorateur @require_plan bloque l'accès
     aux prédictions pour un utilisateur en plan 'BASIC'.
@@ -39,30 +40,28 @@ async def test_feature_gating_basic_plan(db_session, test_user):
     # On simule l'appel GraphQL (ici on peut utiliser le client de test)
     # Pour ce test, on va simuler le contexte GraphQL manuellement si besoin, 
     # mais passer par le client HTTP est plus réaliste.
-    from security import create_access_token
+    from core.security import create_access_token
     token = create_access_token({
         "user_id": str(test_user.id),
         "org_id": str(org.id),
         "email": test_user.email
     })
     
-    from main import app
-    async with AsyncClient(app=app, base_url="http://test") as ac:
-        response = await ac.post(
-            "/graphql",
-            json={"query": query},
-            headers={"Authorization": f"Bearer {token}"}
-        )
+    response = await client.post(
+        "/graphql",
+        json={"query": query},
+        headers={"Authorization": f"Bearer {token}"}
+    )
     
     res_json = response.json()
     # On vérifie si l'accès est bloqué par une erreur attendue (SUBSCRIPTION_REQUIRED ou context issues)
     assert "errors" in res_json
     error_msg = str(res_json["errors"][0])
-    assert any(code in error_msg for code in ["SUBSCRIPTION_REQUIRED", "Organisation non trouvée"]), f"L'accès n'a pas été bloqué comme attendu. Réponse: {res_json}"
+    assert any(code in error_msg for code in ["SUBSCRIPTION_REQUIRED", "Organisation non trouvée", "plan PRO", "PRO ou supérieur"]), f"L'accès n'a pas été bloqué comme attendu. Réponse: {res_json}"
 
 
 @pytest.mark.asyncio
-async def test_webhook_upgrade_to_pro(db_session, test_user):
+async def test_webhook_upgrade_to_pro(db_session, test_user, client):
     """
     Test 3: Simule un webhook Stripe réussi et vérifie l'upgrade de l'organisation.
     """
@@ -79,7 +78,7 @@ async def test_webhook_upgrade_to_pro(db_session, test_user):
 
     # 2. Simuler le payload Stripe
     payload = {
-        "id": "evt_test123", # ID manquant précédemment
+        "id": "evt_test123",
         "type": "checkout.session.completed",
         "data": {
             "object": {
@@ -87,28 +86,26 @@ async def test_webhook_upgrade_to_pro(db_session, test_user):
                 "subscription": "sub_test123",
                 "metadata": {
                     "plan": "PRO",
-                    "organization_id": str(org.id)
+                    "org_id": str(org.id)
                 }
             }
         }
     }
 
-    # 3. Appel direct au handler du service (ou via le router avec signature mockée)
-    from modules.billing.service import BillingService
+    # 3. Appel au webhook via le client HTTP en mockant stripe.Webhook.construct_event
     import stripe
     from unittest.mock import patch
 
-    service = BillingService()
-    
-    # On mocke stripe.Webhook.construct_event pour bypasser la vérification de signature
     with patch("stripe.Webhook.construct_event") as mock_construct:
         mock_construct.return_value = payload
         
-        await service.handle_webhook_event(
-            payload=b"dummy",
-            sig_header="dummy",
-            db=db_session
+        response = await client.post(
+            "/api/billing/webhook",
+            content=b"dummy",
+            headers={"Stripe-Signature": "dummy"}
         )
+
+    assert response.status_code == 200
 
     # 4. Vérifier l'upgrade
     await db_session.refresh(org)

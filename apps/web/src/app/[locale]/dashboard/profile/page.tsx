@@ -24,6 +24,7 @@ import { useTranslations } from 'next-intl';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import Link from 'next/link';
 import { TwoFactorSetup } from '@/components/profile/TwoFactorSetup';
+import { clearAuthToken } from '@/lib/auth';
 
 const GET_ME = gql`
   query GetMe {
@@ -257,7 +258,7 @@ export default function ProfilePage() {
 
         <button
           onClick={() => {
-            localStorage.removeItem('michi_token');
+            clearAuthToken();
             router.push('/login');
           }}
           className="flex items-center justify-center sm:justify-start gap-2 px-3 py-1.5 rounded-lg text-[13px] font-medium text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100 w-full sm:w-auto"

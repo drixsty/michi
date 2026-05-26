@@ -29,13 +29,13 @@ from modules.auth.infrastructure.persistence.models import Invitation
 class FakeDb:
     """Simule la session SQLAlchemy pour flush(), commit(), etc."""
 
-    def __init__(self) -> None:
+    def __init__(self, parent_repo=None) -> None:
         self.flush = AsyncMock()
         self.commit = AsyncMock()
         self.rollback = AsyncMock()
-        self.add = MagicMock()
+        self.add = MagicMock(side_effect=lambda x: parent_repo.store_from_db_add(x) if parent_repo else None)
         self.refresh = AsyncMock()
-        self.execute = AsyncMock()
+        self.execute = MagicMock(return_value=MagicMock())
         self.scalar = AsyncMock()
         self.scalars = AsyncMock()
 
@@ -51,14 +51,18 @@ class FakeUserRepository:
         self._store: dict[UUID, UserEntity] = {}
         self._passwords: dict[UUID, str] = {}
         # Expose _db pour compatibilité avec AuthService (appelle self._users._db.flush())
-        self._db = FakeDb()
+        self._db = FakeDb(self)
+
+    def store_from_db_add(self, obj) -> None:
+        self._store[obj.id] = obj
 
     async def get_by_id(self, user_id: UUID) -> Optional[UserEntity]:
         return self._store.get(user_id)
 
     async def get_by_email(self, email: Email) -> Optional[UserEntity]:
         for user in self._store.values():
-            if user.email.value == email.value:
+            user_email = user.email.value if hasattr(user.email, "value") else user.email
+            if user_email == email.value:
                 return user
         return None
 
@@ -83,7 +87,8 @@ class FakeUserRepository:
 
     async def get_model_by_email(self, email: str) -> Optional[_FakeUserModel]:
         for uid, user in self._store.items():
-            if user.email.value == email:
+            user_email = user.email.value if hasattr(user.email, "value") else user.email
+            if user_email == email:
                 pwd = self._passwords.get(uid)
                 return _FakeUserModel(user, pwd)
         return None
@@ -120,7 +125,7 @@ class _FakeUserModel:
 
     def __init__(self, entity: UserEntity, hashed_password: Optional[str]) -> None:
         self.id = entity.id
-        self.email = entity.email.value
+        self.email = entity.email.value if hasattr(entity.email, "value") else entity.email
         self.first_name = entity.first_name
         self.last_name = entity.last_name
         self.hashed_password = hashed_password
@@ -142,7 +147,13 @@ class FakeOrganizationRepository:
 
     def __init__(self) -> None:
         self._store: dict[UUID, OrganizationEntity] = {}
-        self._db = FakeDb()
+        self._db = FakeDb(self)
+
+    def store_from_db_add(self, obj) -> None:
+        if getattr(obj, "id") is None:
+            import uuid
+            obj.id = uuid.uuid4()
+        self._store[obj.id] = obj
 
     async def get_by_id(self, org_id: UUID) -> Optional[OrganizationEntity]:
         return self._store.get(org_id)
@@ -156,6 +167,9 @@ class FakeOrganizationRepository:
     async def save(self, org: OrganizationEntity | object) -> OrganizationEntity | object:
         """Saves either an Entity or an ORM model (leakage) to the fake store."""
         if hasattr(org, "id"):
+            if getattr(org, "id") is None:
+                import uuid
+                org.id = uuid.uuid4()
             self._store[org.id] = org # type: ignore
         return org
 
@@ -172,7 +186,10 @@ class FakeMembershipRepository:
 
     def __init__(self) -> None:
         self._store: dict[tuple[UUID, UUID], MembershipEntity] = {}
-        self._db = FakeDb()
+        self._db = FakeDb(self)
+
+    def store_from_db_add(self, obj) -> None:
+        self._store[(obj.organization_id, obj.user_id)] = obj
 
     async def get(self, org_id: UUID, user_id: UUID) -> Optional[MembershipEntity]:
         return self._store.get((org_id, user_id))
@@ -201,7 +218,10 @@ class FakeInvitationRepository:
 
     def __init__(self) -> None:
         self._store: dict[str, InvitationEntity] = {}
-        self._db = FakeDb()
+        self._db = FakeDb(self)
+
+    def store_from_db_add(self, obj) -> None:
+        self._store[obj.code] = obj
 
     async def get_by_code(self, code: str) -> Optional[InvitationEntity]:
         return self._store.get(code)

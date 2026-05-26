@@ -161,6 +161,7 @@ async def test_register_new_user_has_no_org() -> None:
         password="pass",
         first_name="Charlie",
         last_name="Brown",
+        create_default_org=False,
     )
     assert result.user_model.current_organization_id is None
 

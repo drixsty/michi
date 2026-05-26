@@ -58,8 +58,13 @@ class AuthMutation:
         result = await service.login(email=input.email, password=input.password)
         await info.context.db.commit()
         
+        from core.security import create_refresh_token
+        access_token = result.token.value if result.token and result.token.value else None
+        refresh = create_refresh_token(str(result.user_model.id)) if result.user_model and not result.mfa_required else None
+
         return AuthPayload(
-            token=result.token.value if result.token and result.token.value else None,
+            token=access_token,
+            refresh_token=refresh,
             user=UserType.from_db(result.user_model) if result.user_model else None,
             mfa_required=result.mfa_required,
             mfa_token=result.mfa_token
@@ -367,7 +372,54 @@ class AuthMutation:
         """Supprime définitivement le compte et les données (RGPD - Réservé aux Admins pour sécurité)."""
         if not info.context.user_id:
             raise UnauthenticatedException()
-            
+
         from modules.auth.application.gdpr_service import GdprService
         service = GdprService()
         return await service.delete_user_account(uuid.UUID(str(info.context.user_id)))
+
+    @strawberry.mutation
+    @rate_limit(max_calls=10, window_seconds=60)
+    async def refresh_token(self, info: strawberry.types.Info, token: str) -> AuthPayload:
+        """
+        Échange un refresh token valide contre un nouvel access token + refresh token (rotation).
+        Le refresh token est à usage unique — le précédent est invalidé par sa courte durée de vie.
+        """
+        from core.security import decode_refresh_token, create_refresh_token, create_access_token
+        from jose import JWTError
+        from sqlalchemy import select
+        from core.database.models import User, OrganizationMember
+
+        try:
+            user_id_str = decode_refresh_token(token)
+        except JWTError:
+            raise MichiException(
+                message="Refresh token invalide ou expiré",
+                code=ErrorCode.UNAUTHENTICATED,
+            )
+
+        uid = uuid.UUID(user_id_str)
+        db = info.context.db
+
+        # Vérifier que l'utilisateur existe et est actif
+        user = await db.get(User, uid)
+        if not user or not user.is_active:
+            raise MichiException(
+                message="Utilisateur introuvable ou désactivé",
+                code=ErrorCode.UNAUTHENTICATED,
+            )
+
+        # Récupérer l'organisation courante pour l'inclure dans le nouveau token
+        org_id = str(user.current_organization_id) if user.current_organization_id else None
+
+        new_access = create_access_token({
+            "user_id": str(uid),
+            "org_id": org_id,
+            "email": str(user.email),
+        })
+        new_refresh = create_refresh_token(str(uid))
+
+        return AuthPayload(
+            token=new_access,
+            refresh_token=new_refresh,
+            user=UserType.from_db(user),
+        )

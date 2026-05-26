@@ -43,9 +43,20 @@ async def test_analyze_csv_mutation(client, auth_token):
 
 @pytest.mark.asyncio
 @pytest.mark.integration
-async def test_smart_import_mutation(client, auth_token, test_organization):
-    # D'abord on récupère un store_id (ou on en crée un via mutation si nécessaire)
-    # Pour le test on suppose qu'il y a un store par défaut ou on utilise l'ID de l'organisation
+async def test_smart_import_mutation(client, auth_token, test_organization, db_session):
+    # D'abord on prépare le store nécessaire pour l'import
+    from modules.inventory.infrastructure.persistence.models import Store
+    import uuid
+    
+    store = Store(
+        id=uuid.uuid4(),
+        organization_id=test_organization.id,
+        name="Test Store",
+        platform="SHOPIFY",
+        connected=True
+    )
+    db_session.add(store)
+    await db_session.commit()
     
     # On commence par lister les sources pour avoir un ID
     sources_query = "query { sources { id } }"
@@ -54,7 +65,7 @@ async def test_smart_import_mutation(client, auth_token, test_organization):
 
     mutation = """
         mutation SmartImport($input: SmartImportInput!) {
-            smartImport(input: $input) {
+            smartImport(infoInput: $input) {
                 success
                 message
                 productsCount

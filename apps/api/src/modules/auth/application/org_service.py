@@ -1,4 +1,5 @@
 from core.database.models import Organization, User, OrganizationMember
+from loguru import logger
 """
 Application OrgService (DDD) — Sprint 21.
 
@@ -81,9 +82,9 @@ class ApplicationOrgService:
             await asyncio.sleep(1.0)
             user_model = await self._users.get_model_by_id(user_id)
             
-        # Sprint 22 Extension: Secondary fallback - lookup by Email
+        # Secondary fallback — lookup by email when ID lookup fails after retry
         if not user_model and email:
-            print(f">>> [DEBUG] USER ID {user_id} NOT FOUND, TRYING EMAIL FALLBACK: {email} <<<")
+            logger.warning(f"[OrgService] User ID {user_id} not found after retry, falling back to email lookup")
             user_model = await self._users.get_model_by_email(email)
 
         if not user_model:

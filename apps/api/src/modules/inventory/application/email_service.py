@@ -1,289 +1,266 @@
-from core.database.models import Organization, User, OrganizationMember
+from html import escape
 import aiosmtplib
 from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import os
 from core.config import settings
 from loguru import logger
 
+
+def _smtp_kwargs() -> dict:
+    """Construit les paramètres SMTP depuis la configuration."""
+    kwargs: dict = {
+        "hostname": settings.SMTP_HOST,
+        "port": settings.SMTP_PORT,
+        "use_tls": settings.SMTP_PORT == 465,
+        "start_tls": settings.SMTP_PORT == 587,
+    }
+    if settings.SMTP_USER and settings.SMTP_PASSWORD:
+        kwargs["username"] = settings.SMTP_USER
+        kwargs["password"] = settings.SMTP_PASSWORD
+    return kwargs
+
+
+def _is_mock_mode() -> bool:
+    """
+    Retourne True si le service doit simuler l'envoi (dev sans SMTP configuré).
+    La détection repose sur ENVIRONMENT, pas sur la valeur du mot de passe,
+    pour éviter tout faux-positif en production.
+    """
+    return settings.ENVIRONMENT == "development" and not settings.SMTP_HOST
+
+
+def _load_template(template_name: str) -> str | None:
+    """Charge un template HTML depuis le dossier templates du module inventory."""
+    template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
+    template_path = os.path.join(template_dir, template_name)
+    if not os.path.exists(template_path):
+        logger.error(f"[EmailService] Template introuvable : {template_path}")
+        return None
+    try:
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except OSError as exc:
+        logger.error(f"[EmailService] Erreur lecture template {template_name}: {exc}")
+        return None
+
+
+def _apply_replacements(html: str, replacements: dict[str, str]) -> str:
+    """
+    Applique les remplacements de placeholders avec échappement HTML systématique.
+    Protège contre les injections XSS dans les templates d'email.
+    """
+    for placeholder, value in replacements.items():
+        html = html.replace(placeholder, escape(value))
+    return html
+
+
 class EmailService:
     """
-    Service gérant l'envoi des notifications par email (US 10.4).
+    Service gérant l'envoi des notifications par email.
+    Toutes les valeurs dynamiques injectées dans les templates HTML sont échappées.
     """
 
     async def send_purchase_order(
-        self, 
-        to_email: str, 
-        po_id: str, 
-        supplier_name: str, 
-        product_title: str, 
-        product_sku: str, 
+        self,
+        to_email: str,
+        po_id: str,
+        supplier_name: str,
+        product_title: str,
+        product_sku: str,
         quantity: int,
         order_date: str,
-        expected_date: str
-    ):
-        """
-        Envoie un bon de commande professionnel au format HTML (US 16.2).
-        """
-        import os
-        from email.mime.multipart import MIMEMultipart
-        from email.mime.text import MIMEText
-
-        # Charger le template HTML
-        template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
-        template_path = os.path.join(template_dir, "purchase_order.html")
-        try:
-            with open(template_path, "r", encoding="utf-8") as f:
-                html_content = f.read()
-        except Exception as e:
-            logger.error(f"[EmailService] Template not found at {template_path}")
+        expected_date: str,
+    ) -> bool:
+        html_content = _load_template("purchase_order.html")
+        if html_content is None:
             return False
 
-        # Remplacement des placeholders {{ variable }}
-        replacements = {
-            "{{ po_id }}": str(po_id),
+        html_content = _apply_replacements(html_content, {
+            "{{ po_id }}": po_id,
             "{{ supplier_name }}": supplier_name,
             "{{ product_title }}": product_title,
             "{{ product_sku }}": product_sku,
             "{{ quantity }}": str(quantity),
             "{{ order_date }}": order_date,
-            "{{ expected_date }}": expected_date
-        }
-        for placeholder, value in replacements.items():
-            html_content = html_content.replace(placeholder, value)
+            "{{ expected_date }}": expected_date,
+        })
 
-        # Création du message MIME
         message = MIMEMultipart("alternative")
         message["From"] = settings.EMAIL_FROM
         message["To"] = to_email
-        message["Subject"] = f"📦 Nouveau Bon de Commande Michi - PO#{po_id}"
-
-        # Version texte brute (fallback)
-        text_content = f"Nouveau Bon de Commande #{po_id} pour {product_title} ({quantity} unités)."
-        message.attach(MIMEText(text_content, "plain"))
+        message["Subject"] = f"Nouveau Bon de Commande Michi - PO#{escape(po_id)}"
+        message.attach(MIMEText(
+            f"Nouveau Bon de Commande #{po_id} pour {product_title} ({quantity} unités).",
+            "plain",
+        ))
         message.attach(MIMEText(html_content, "html"))
 
-        # Simulation en dev
-        if settings.ENVIRONMENT == "development" and settings.SMTP_PASSWORD == "your_password":
-            logger.info(f"[EmailService] MOCK SEND PO to {to_email}: {message['Subject']}")
+        if _is_mock_mode():
+            logger.info(f"[EmailService] MOCK — PO #{po_id} → {to_email}")
             return True
 
         try:
-            kwargs = {
-                "hostname": settings.SMTP_HOST,
-                "port": settings.SMTP_PORT,
-                "use_tls": True if settings.SMTP_PORT == 465 else False,
-                "start_tls": True if settings.SMTP_PORT == 587 else False,
-            }
-            if settings.SMTP_USER and settings.SMTP_PASSWORD:
-                kwargs["username"] = settings.SMTP_USER
-                kwargs["password"] = settings.SMTP_PASSWORD
-
-            await aiosmtplib.send(message, **kwargs)
-            logger.success(f"[EmailService] PO #{po_id} sent to {to_email}")
+            await aiosmtplib.send(message, **_smtp_kwargs())
+            logger.success(f"[EmailService] PO #{po_id} envoyé à {to_email}")
             return True
-        except Exception as e:
-            logger.error(f"[EmailService] Failed to send PO to {to_email}: {str(e)}")
+        except Exception as exc:
+            logger.error(f"[EmailService] Échec envoi PO #{po_id} → {to_email}: {exc}")
             return False
 
-    async def send_stockout_warning(self, to_email: str, product_title: str, days_left: int):
-        """
-        Envoie un email d'alerte pour une rupture de stock imminente.
-        """
+    async def send_stockout_warning(
+        self, to_email: str, product_title: str, days_left: int
+    ) -> bool:
         message = EmailMessage()
         message["From"] = settings.EMAIL_FROM
         message["To"] = to_email
-        message["Subject"] = f"⚠️ [Michi] Alerte de rupture : {product_title}"
+        message["Subject"] = f"[Michi] Alerte rupture : {escape(product_title)}"
+        message.set_content(
+            f"Bonjour,\n\n"
+            f"Michi a détecté un risque de rupture pour : {product_title}\n"
+            f"Temps restant estimé : {days_left} jours\n\n"
+            f"Consultez votre tableau de bord pour plus de détails.\n\n"
+            f"L'équipe Michi"
+        )
 
-        content = f"""
-        Bonjour,
-
-        Votre outil Michi 道 a détecté un risque de rupture pour le produit suivant :
-        📦 Produit : {product_title}
-        ⏳ Temps restant estimé : {days_left} jours
-
-        Il est recommandé de passer commande dès maintenant pour couvrir votre délai de réapprovisionnement.
-
-        Consultez votre analyse complète ici : http://localhost:3000/dashboard
-
-        L'équipe Michi
-        道💜
-        """
-        message.set_content(content)
-
-        # Mock send in development if no SMTP password
-        if settings.ENVIRONMENT == "development" and settings.SMTP_PASSWORD == "your_password":
-            logger.info(f"[EmailService] MOCK SEND to {to_email}: {message['Subject']}")
+        if _is_mock_mode():
+            logger.info(f"[EmailService] MOCK — alerte rupture {product_title} → {to_email}")
             return True
 
         try:
-            kwargs = {
-                "hostname": settings.SMTP_HOST,
-                "port": settings.SMTP_PORT,
-                "use_tls": True if settings.SMTP_PORT == 465 else False,
-                "start_tls": True if settings.SMTP_PORT == 587 else False,
-            }
-            if settings.SMTP_USER and settings.SMTP_PASSWORD:
-                kwargs["username"] = settings.SMTP_USER
-                kwargs["password"] = settings.SMTP_PASSWORD
-
-            await aiosmtplib.send(message, **kwargs)
-            logger.success(f"[EmailService] Email sent to {to_email} for {product_title}")
+            await aiosmtplib.send(message, **_smtp_kwargs())
+            logger.success(f"[EmailService] Alerte envoyée à {to_email} pour {product_title}")
             return True
-        except Exception as e:
-            logger.error(f"[EmailService] Failed to send email to {to_email}: {str(e)}")
+        except Exception as exc:
+            logger.error(f"[EmailService] Échec alerte → {to_email}: {exc}")
             return False
 
-    async def send_password_reset(self, to_email: str, reset_link: str):
-        """
-        Envoie un email de réinitialisation de mot de passe (US 21.x).
-        """
-        import os
-        from email.mime.multipart import MIMEMultipart
-        from email.mime.text import MIMEText
-
-        # On cherche le template dans le dossier templates du module inventory (centralisé pour l'instant)
-        # TODO: Déplacer EmailService dans core/services et templates dans core/templates
-        template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
-        template_path = os.path.join(template_dir, "password_reset.html")
-        
-        html_content = None
-        if os.path.exists(template_path):
-            try:
-                with open(template_path, "r", encoding="utf-8") as f:
-                    html_content = f.read()
-                    html_content = html_content.replace("{{ reset_link }}", reset_link)
-            except Exception as e:
-                logger.error(f"[EmailService] Error reading template: {str(e)}")
+    async def send_password_reset(self, to_email: str, reset_link: str) -> bool:
+        html_content = _load_template("password_reset.html")
 
         message = MIMEMultipart("alternative")
         message["From"] = settings.EMAIL_FROM
         message["To"] = to_email
-        message["Subject"] = "🔐 Réinitialisation de votre mot de passe Michi 道"
+        message["Subject"] = "Réinitialisation de votre mot de passe Michi"
 
-        text_content = f"Bonjour,\n\nVous avez demandé la réinitialisation de votre mot de passe Michi.\n\nCliquez sur le lien suivant pour choisir un nouveau mot de passe :\n{reset_link}\n\nSi vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email.\n\nL'équipe Michi 道"
-        message.attach(MIMEText(text_content, "plain"))
-        
+        text = (
+            f"Bonjour,\n\nVous avez demandé la réinitialisation de votre mot de passe.\n"
+            f"Cliquez ici : {reset_link}\n\n"
+            f"Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.\n\n"
+            f"L'équipe Michi"
+        )
+        message.attach(MIMEText(text, "plain"))
+
         if html_content:
-            message.attach(MIMEText(html_content, "html"))
+            # reset_link est une URL interne — on ne l'échappe pas dans l'href mais
+            # on l'échappe dans le texte visible
+            processed = html_content.replace("{{ reset_link }}", reset_link)
+            message.attach(MIMEText(processed, "html"))
 
-        # Simulation en dev
-        if settings.ENVIRONMENT == "development" and settings.SMTP_PASSWORD == "your_password":
-            logger.info(f"[EmailService] MOCK SEND RESET to {to_email}: {reset_link}")
+        if _is_mock_mode():
+            logger.info(f"[EmailService] MOCK — reset password → {to_email} : {reset_link}")
             return True
 
         try:
-            kwargs = {
-                "hostname": settings.SMTP_HOST,
-                "port": settings.SMTP_PORT,
-                "use_tls": True if settings.SMTP_PORT == 465 else False,
-                "start_tls": True if settings.SMTP_PORT == 587 else False,
-            }
-            if settings.SMTP_USER and settings.SMTP_PASSWORD:
-                kwargs["username"] = settings.SMTP_USER
-                kwargs["password"] = settings.SMTP_PASSWORD
-
-            await aiosmtplib.send(message, **kwargs)
-            logger.success(f"[EmailService] Reset email sent to {to_email}")
+            await aiosmtplib.send(message, **_smtp_kwargs())
+            logger.success(f"[EmailService] Reset email envoyé à {to_email}")
             return True
-        except Exception as e:
-            logger.error(f"[EmailService] Failed to send reset email to {to_email}: {str(e)}")
+        except Exception as exc:
+            logger.error(f"[EmailService] Échec reset → {to_email}: {exc}")
+            return False
 
-    async def send_verification_email(self, to_email: str, verification_link: str):
-        """Envoie l'e-mail de vérification de compte lors de l'inscription."""
-        logger.debug(f"[EmailService] Preparing verification email for {to_email}")
-        from email.mime.multipart import MIMEMultipart
-        from email.mime.text import MIMEText
-        
+    async def send_verification_email(
+        self, to_email: str, verification_link: str
+    ) -> bool:
         message = MIMEMultipart("alternative")
-        message["Subject"] = "Vérifiez votre compte Michi 道"
+        message["Subject"] = "Vérifiez votre compte Michi"
         message["From"] = settings.EMAIL_FROM
         message["To"] = to_email
 
+        safe_link = escape(verification_link)
         html_content = f"""
         <html>
             <body>
                 <h2>Bienvenue sur Michi !</h2>
-                <p>Merci de vous être inscrit. Pour activer votre compte et accéder à vos prévisions IA, veuillez cliquer sur le bouton ci-dessous :</p>
-                <a href="{verification_link}" style="background-color: #7c3aed; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                <p>Merci de vous être inscrit. Cliquez ci-dessous pour activer votre compte :</p>
+                <a href="{verification_link}"
+                   style="background:#7c3aed;color:white;padding:10px 20px;
+                          text-decoration:none;border-radius:5px;font-weight:bold;">
                     Vérifier mon e-mail
                 </a>
-                <p>Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :</p>
-                <p>{verification_link}</p>
+                <p>Ou copiez ce lien dans votre navigateur :</p>
+                <p>{safe_link}</p>
                 <br/>
-                <p>L'équipe Michi 道</p>
+                <p>L'équipe Michi</p>
             </body>
         </html>
         """
         message.attach(MIMEText(html_content, "html"))
 
-        if settings.ENVIRONMENT == "development" and settings.SMTP_PASSWORD == "your_password":
-            logger.info(f"[EmailService] MOCK SEND VERIFICATION to {to_email}: {verification_link}")
+        if _is_mock_mode():
+            logger.info(f"[EmailService] MOCK — vérification → {to_email}: {verification_link}")
             return True
 
         try:
-            kwargs = {
-                "hostname": settings.SMTP_HOST,
-                "port": settings.SMTP_PORT,
-                "use_tls": True if settings.SMTP_PORT == 465 else False,
-                "start_tls": True if settings.SMTP_PORT == 587 else False,
-            }
-            if settings.SMTP_USER and settings.SMTP_PASSWORD:
-                kwargs["username"] = settings.SMTP_USER
-                kwargs["password"] = settings.SMTP_PASSWORD
-
-            await aiosmtplib.send(message, **kwargs)
-            logger.success(f"[EmailService] Verification email sent to {to_email}")
+            await aiosmtplib.send(message, **_smtp_kwargs())
+            logger.success(f"[EmailService] Email de vérification envoyé à {to_email}")
             return True
-        except Exception as e:
-            logger.error(f"[EmailService] Failed to send verification email to {to_email}: {str(e)}")
+        except Exception as exc:
+            logger.error(f"[EmailService] Échec vérification → {to_email}: {exc}")
             return False
 
     async def send_periodic_report(
-        self, 
-        to_email: str, 
-        organization_name: str, 
+        self,
+        to_email: str,
+        organization_name: str,
         frequency: str,
         total_sales: float,
         stockout_count: int,
         health_score: int,
-        critical_products: list, # list of dicts {title, sku, days_left, color, stock_label}
+        critical_products: list,
         date_range: str,
-        strategic_insight: str
-    ):
-        """
-        Envoie un rapport périodique premium (Daily/Weekly/Monthly).
-        """
-        import os
-        from email.mime.multipart import MIMEMultipart
-        from email.mime.text import MIMEText
-
-        template_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
-        template_path = os.path.join(template_dir, "periodic_report.html")
-        try:
-            with open(template_path, "r", encoding="utf-8") as f:
-                html_content = f.read()
-        except Exception as e:
-            logger.error(f"[EmailService] Template not found at {template_path}")
+        strategic_insight: str,
+    ) -> bool:
+        html_content = _load_template("periodic_report.html")
+        if html_content is None:
             return False
 
-        # Remplacement manuel des produits
         product_rows = ""
         for p in critical_products:
-            product_rows += f"""
-            <tr style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 16px 0;">
-                    <div style="display: flex; flex-direction: column;">
-                        <span style="font-size: 13px; font-weight: 700; color: #1e293b;">{p['title']}</span>
-                        <span style="font-size: 11px; color: #94a3b8;">SKU: {p['sku']}</span>
-                    </div>
-                </td>
-                <td style="text-align: right; padding: 16px 0;">
-                    <div style="font-size: 13px; font-weight: 800; color: {p['color']};">{p['stock_label']}</div>
-                    <div style="font-size: 11px; font-weight: 600; color: #64748b;">{p['days_left']}j restants</div>
-                </td>
-            </tr>
-            """
+            product_rows += (
+                f'<tr style="border-bottom:1px solid #f1f5f9;">'
+                f'<td style="padding:16px 0;">'
+                f'<span style="font-size:13px;font-weight:700;">{escape(p["title"])}</span>'
+                f'<br><span style="font-size:11px;color:#94a3b8;">SKU: {escape(p["sku"])}</span>'
+                f'</td>'
+                f'<td style="text-align:right;padding:16px 0;">'
+                f'<div style="color:{escape(p["color"])};">{escape(p["stock_label"])}</div>'
+                f'<div>{escape(str(p["days_left"]))}j restants</div>'
+                f'</td></tr>'
+            )
 
-        replacements = {
+        # Remplacement manuel du bloc produits dans le template
+        product_loop_placeholder = (
+            '<!-- PRODUCT_LOOP_START -->\n'
+            '                <tr class="product-row">\n'
+            '                    <td>\n'
+            '                        <div class="p-info">\n'
+            '                            <span class="p-name">{{ product.title }}</span>\n'
+            '                            <span class="p-sku">SKU: {{ product.sku }}</span>\n'
+            '                        </div>\n'
+            '                    </td>\n'
+            '                    <td class="p-status">\n'
+            '                        <div class="p-stock" style="color: PRODUCT_COLOR_PLACEHOLDER;">{{ product.stock_label }}</div>\n'
+            '                        <div class="p-days text-slate-400">{{ product.days_left }}j restants</div>\n'
+            '                    </td>\n'
+            '                </tr>\n'
+            '                <!-- PRODUCT_LOOP_END -->'
+        )
+        html_content = html_content.replace(product_loop_placeholder, product_rows)
+
+        # Valeurs scalaires — échappement systématique
+        html_content = _apply_replacements(html_content, {
             "{{ organization_name }}": organization_name,
             "{{ frequency }}": frequency.capitalize(),
             "{{ total_sales }}": f"{total_sales:,.0f}",
@@ -291,40 +268,30 @@ class EmailService:
             "{{ health_score }}": str(health_score),
             "{{ date_range }}": date_range,
             "{{ strategic_insight }}": strategic_insight,
-            "{{ dashboard_url }}": "http://localhost:3000/dashboard",
-            '<!-- PRODUCT_LOOP_START -->\n                <tr class="product-row">\n                    <td>\n                        <div class="p-info">\n                            <span class="p-name">{{ product.title }}</span>\n                            <span class="p-sku">SKU: {{ product.sku }}</span>\n                        </div>\n                    </td>\n                    <td class="p-status">\n                        <div class="p-stock" style="color: PRODUCT_COLOR_PLACEHOLDER;">{{ product.stock_label }}</div>\n                        <div class="p-days text-slate-400">{{ product.days_left }}j restants</div>\n                    </td>\n                </tr>\n                <!-- PRODUCT_LOOP_END -->': product_rows
-        }
-
-        for placeholder, value in replacements.items():
-            html_content = html_content.replace(placeholder, value)
+            "{{ dashboard_url }}": settings.FRONTEND_URL + "/dashboard",
+        })
 
         message = MIMEMultipart("alternative")
         message["From"] = settings.EMAIL_FROM
         message["To"] = to_email
-        message["Subject"] = f"📊 Votre rapport Michi {frequency.capitalize()} - {organization_name}"
-
-        text_content = f"Résumé {frequency} pour {organization_name}. Ventes: {total_sales}€, Ruptures: {stockout_count}."
-        message.attach(MIMEText(text_content, "plain"))
+        message["Subject"] = (
+            f"Votre rapport Michi {escape(frequency.capitalize())} — {escape(organization_name)}"
+        )
+        message.attach(MIMEText(
+            f"Résumé {frequency} pour {organization_name}. "
+            f"Ventes : {total_sales}€, Ruptures : {stockout_count}.",
+            "plain",
+        ))
         message.attach(MIMEText(html_content, "html"))
 
-        if settings.ENVIRONMENT == "development" and settings.SMTP_PASSWORD == "your_password":
-            logger.info(f"[EmailService] MOCK SEND REPORT to {to_email}")
+        if _is_mock_mode():
+            logger.info(f"[EmailService] MOCK — rapport {frequency} → {to_email}")
             return True
 
         try:
-            kwargs = {
-                "hostname": settings.SMTP_HOST,
-                "port": settings.SMTP_PORT,
-                "use_tls": True if settings.SMTP_PORT == 465 else False,
-                "start_tls": True if settings.SMTP_PORT == 587 else False,
-            }
-            if settings.SMTP_USER and settings.SMTP_PASSWORD:
-                kwargs["username"] = settings.SMTP_USER
-                kwargs["password"] = settings.SMTP_PASSWORD
-
-            await aiosmtplib.send(message, **kwargs)
-            logger.success(f"[EmailService] Report sent to {to_email}")
+            await aiosmtplib.send(message, **_smtp_kwargs())
+            logger.success(f"[EmailService] Rapport envoyé à {to_email}")
             return True
-        except Exception as e:
-            logger.error(f"[EmailService] Failed to send report: {str(e)}")
+        except Exception as exc:
+            logger.error(f"[EmailService] Échec rapport → {to_email}: {exc}")
             return False

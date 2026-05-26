@@ -23,6 +23,7 @@ import { useTranslations } from 'next-intl';
 import { AddSourcePanel } from '@/components/dashboard/AddSourcePanel';
 import { Input } from '@/components/ui/Input';
 import { cn } from '@/lib/utils';
+import { setAuthToken } from '@/lib/auth';
 
 const GET_ONBOARDING_DATA = gql`
   query GetOnboardingData {
@@ -122,7 +123,7 @@ export default function OnboardingPage() {
         });
         
         if (createData?.createOrganization?.token) {
-          localStorage.setItem('michi_token', createData.createOrganization.token);
+          setAuthToken(createData.createOrganization.token);
           localStorage.setItem('michi_onboarding_finished', 'true'); // NEW: Early flag to prevent redirect
           // Force a full refetch to have context for subsequent steps
           await client.resetStore();

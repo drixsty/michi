@@ -12,6 +12,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { GOOGLE_LOGIN } from '@/graphql/mutations/googleLogin';
 import { useTranslations } from 'next-intl';
 import { PasswordInput } from '@/components/ui/PasswordInput';
+import { setAuthToken } from '@/lib/auth';
 
 export default function LoginPage() {
   const t = useTranslations('auth.login');
@@ -39,7 +40,7 @@ export default function LoginPage() {
       return;
     }
 
-    localStorage.setItem('michi_token', token);
+    setAuthToken(token);
 
     if (inviteCode) {
       try {

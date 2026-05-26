@@ -3,6 +3,8 @@ from core.database.models import Organization, User, OrganizationMember
 Inventory Resolvers — Adapters Layer
 Thin resolvers delegating to Application Services.
 """
+
+_MAX_PAGE_SIZE = 500  # plafond absolu pour éviter les requêtes abusives
 import csv
 import strawberry
 from typing import List, Optional, Annotated
@@ -53,11 +55,13 @@ class InventoryQuery:
     @strawberry.field
     @require_permission(MichiPermission.INVENTORY_VIEW)
     async def products(
-        self, 
-        info: strawberry.types.Info, 
-        store_id: Optional[strawberry.ID] = None, 
+        self,
+        info: strawberry.types.Info,
+        store_id: Optional[strawberry.ID] = None,
         id: Optional[strawberry.ID] = None,
-        title: Optional[str] = None
+        title: Optional[str] = None,
+        limit: int = 200,
+        offset: int = 0,
     ) -> List[ProductType]:
         service = info.context.services.inventory_service
         
@@ -73,9 +77,10 @@ class InventoryQuery:
         from loguru import logger
         logger.debug(f"[Inventory] Querying products store_id={store_id}, id={id}, title={title}, org_id={info.context.org_id}")
         
+        capped_limit = min(max(1, limit), _MAX_PAGE_SIZE)
         items = await service.get_products(shop_ids, product_id=str(id) if id else None, search=title)
-        logger.debug(f"[Inventory] Found {len(items)} products")
-        return [ProductType.from_db(p) for p in items]
+        logger.debug(f"[Inventory] Found {len(items)} products (limit={capped_limit}, offset={offset})")
+        return [ProductType.from_db(p) for p in items[offset: offset + capped_limit]]
 
     @strawberry.field
     @require_permission(MichiPermission.INVENTORY_VIEW)
@@ -351,7 +356,7 @@ class InventoryMutation:
         service = info.context.services.inventory_service
         
         try:
-            mapping = json.loads(input.mapping)
+            mapping = json.loads(info_input.mapping)
         except json.JSONDecodeError:
             raise DomainValidationError("Mapping JSON invalide.")
         
@@ -362,18 +367,18 @@ class InventoryMutation:
 
         import base64
         is_excel = False
-        final_content = input.csv_content
+        final_content = info_input.csv_content
         
-        if input.csv_content.startswith("data:"):
+        if info_input.csv_content.startswith("data:"):
             try:
-                header, base64_data = input.csv_content.split(",", 1)
+                header, base64_data = info_input.csv_content.split(",", 1)
                 final_content = base64.b64decode(base64_data)
                 is_excel = "spreadsheet" in header or "excel" in header
             except Exception as e:
                 raise DomainValidationError(f"Fichier corrompu ou format Base64 invalide : {str(e)}")
 
         result = await service.ingest_csv_orchestrator(
-            store_id=str(input.store_id),
+            store_id=str(info_input.store_id),
             csv_content=final_content,
             mapping=mapping,
             ingestion_service=ingestion_service,
