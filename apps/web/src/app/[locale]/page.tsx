@@ -1,5 +1,7 @@
-import { LandingPage } from '@/components/landing/LandingPage';
+import { redirect } from 'next/navigation';
 
-export default function LocaleHomePage() {
-  return <LandingPage />;
+export default async function LocaleHomePage({ params }: { params: Promise<{ locale: string }> | { locale: string } }) {
+  const resolvedParams = await params;
+  const locale = resolvedParams?.locale || 'fr';
+  redirect(`/${locale}/dashboard`);
 }
