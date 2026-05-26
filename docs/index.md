@@ -111,6 +111,27 @@ Bienvenue dans la documentation complète du projet Michi 道 !
 
 ---
 
+### 🧮 Supply Chain Intelligence
+
+#### [supply_chain_intelligence.md](supply_chain_intelligence.md) (~80 KB, 18 sections)
+**Contenu :**
+- Glossaire complet (termes métier, statistiques, Michi-spécifiques)
+- Chaque algorithme expliqué pas-à-pas : OOS Correction, Outlier Detection, Run Rate, Prédiction rupture, ROP Date, Safety Stock, MAPE, ABC, Health Score, Analyse Fournisseurs, KPIs Financiers
+- 5 scénarios terrain complets (De l'alerte à la commande fournisseur)
+- Positionnement marché & arguments marketing chiffrés
+- Calcul ROI pour pitch commercial
+- Cartes de référence rapide (toutes les formules, FAQ)
+- Références académiques (Silver-Pyke-Peterson, Nahmias, Tukey)
+
+**Quand lire :**
+- **Onboarding :** Premier document à lire pour tout nouveau membre de l'équipe Data/Produit
+- **Marketing :** Arguments commerciaux et différenciation concurrentielle
+- **Développement :** Avant d'implémenter ou modifier un algorithme
+
+**Public cible :** Développeurs, Data Scientists, Product Owners, Marketing, Support client
+
+---
+
 ### 🔌 Connecteurs Marketplace
 
 #### [connectors.md](connectors.md)
@@ -247,9 +268,10 @@ Bienvenue dans la documentation complète du projet Michi 道 !
 3. [prd.md](prd.md) → Wireframes (section 5)
 
 ### Si tu es **Data Scientist**
-1. [architecture.md](architecture.md) → Section 5 (Pipeline DS)
-2. [claude.md](claude.md) → Persona #2 (Data Scientist)
-3. [prd.md](prd.md) → Epic 2 (Algorithmes)
+1. [supply_chain_intelligence.md](supply_chain_intelligence.md) → Formules complètes + cas d'usage terrain
+2. [architecture.md](architecture.md) → Section 5 (Pipeline DS)
+3. [claude.md](claude.md) → Persona #2 (Data Scientist)
+4. [prd.md](prd.md) → Epic 2 (Algorithmes)
 
 ### Si tu es **DevOps / SRE**
 1. [architecture.md](architecture.md) → Section 8 (Déploiement)
@@ -279,7 +301,8 @@ Bienvenue dans la documentation complète du projet Michi 道 !
 - [tracker.md](tracker.md) → Sprint 23 (Security Hardening)
 - Code : `apps/api/src/modules/auth/`
 
-### Algorithmes Data Science
+### Algorithmes Data Science & Supply Chain
+- [supply_chain_intelligence.md](supply_chain_intelligence.md) → **Référence complète** (formules, cas d'usage, métier)
 - [architecture.md](architecture.md) → Section 5
 - [prd.md](prd.md) → Epic 2 (US 2.1, 2.2)
 - [tracker.md](tracker.md) → Sprint 3-4
@@ -314,6 +337,7 @@ Bienvenue dans la documentation complète du projet Michi 道 !
 | PROJECT_SUMMARY.md | 12 KB | 8 | Récapitulatif |
 | prd.md | 82 KB | 40+ | Product Requirements |
 | architecture.md | 95 KB | 50+ | Architecture technique |
+| **supply_chain_intelligence.md** | **~80 KB** | **18 sections** | **Supply Chain & Algorithmes** |
 | claude.md | 25 KB | 20+ | Guide agent IA |
 | tracker.md | 15 KB | 15+ | Suivi sprints |
 | git_setup.md | 8 KB | 6 | Setup Git/GitHub |
@@ -322,13 +346,16 @@ Bienvenue dans la documentation complète du projet Michi 道 !
 | registration_amazon.md | 10 KB | 10 | Guide inscription Amazon SP-API |
 | registration_ebay.md | 10 KB | 11 | Guide inscription eBay |
 | registration_etsy.md | 10 KB | 11 | Guide inscription Etsy |
-| **Total** | **305 KB** | **251+** | Documentation complète |
+| **Total** | **~385 KB** | **269+** | Documentation complète |
 
 ---
 
 ## 🆘 Besoin d'Aide ?
 
 ### Je cherche...
+
+- **"Comment fonctionne l'algorithme de prévision ?"**  
+  → [supply_chain_intelligence.md](supply_chain_intelligence.md)
 
 - **"Comment démarrer le projet ?"**  
   → [quickstart.md](quickstart.md)
