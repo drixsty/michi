@@ -4,10 +4,22 @@ Financial KPIs — Sprint 13 (extrait de decisions/service.py Sprint 21)
 Calcule les indicateurs financiers d'inventaire à partir de données produits+prédictions.
 
 Métriques :
-    inventory_value_cost  = sum(stock * cost_price)
-    inventory_value_sale  = sum(stock * sale_price)
-    revenue_at_risk       = sum(reorder_quantity * sale_price)  pour les produits à risque
+    inventory_value_cost  = sum(stock × cost_price)
+    inventory_value_sale  = sum(stock × sale_price)
+    revenue_at_risk       = sum(reorder_quantity × sale_price)  — voir définition ci-dessous
     stock_coverage_avg    = mean(stock / run_rate)  pour les produits avec run_rate > 0
+
+DÉFINITION EXACTE de revenue_at_risk :
+    C'est la VALEUR DES COMMANDES À PASSER pour éviter les ruptures à venir,
+    pas le chiffre d'affaires déjà perdu sur des ruptures actuelles.
+    Formule : Σ (reorder_quantity × sale_price) pour les SKUs nécessitant un réappro.
+
+    Interprétation métier : "Si vous ne passez pas ces commandes maintenant,
+    vous risquez de manquer X€ de ventes dans les prochaines semaines."
+
+    ⚠️  NE PAS confondre avec :
+    - Le CA perdu aujourd'hui sur des ruptures actuelles (c'est une perte déjà réalisée).
+    - Le chiffre d'affaires total à risque si aucune commande n'est jamais passée.
 
 Performance : O(n) vectorisé.
 """

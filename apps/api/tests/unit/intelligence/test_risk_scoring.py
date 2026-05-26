@@ -41,10 +41,10 @@ class TestScoreProducts:
         assert items[0].days_of_stock == 10.0
         assert avg_cov == 10.0
 
-    def test_zero_runrate_gives_999_days(self) -> None:
+    def test_zero_runrate_gives_none_days(self) -> None:
         agg = {"SKU001": _make_sku(stock=100, run_rate=0.0)}
         items, avg_cov = score_products(agg)
-        assert items[0].days_of_stock == 999.0
+        assert items[0].days_of_stock is None
         assert items[0].stockout_date is None
         assert avg_cov == 0.0
 

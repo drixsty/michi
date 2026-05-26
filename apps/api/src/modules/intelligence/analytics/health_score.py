@@ -64,7 +64,7 @@ def calculate_health_score(
             rot = avg_coverage_days / 7
         elif avg_coverage_days <= 45:
             rot = 1.0
-        elif avg_coverage_days <= 90:
+        elif avg_coverage_days < 90:
             rot = 1.0 - (avg_coverage_days - 45) / 45
         else:
             rot = max(0.0, 0.5 - (avg_coverage_days - 90) / 180)

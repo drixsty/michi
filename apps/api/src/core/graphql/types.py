@@ -474,6 +474,7 @@ class PredictionType:
     run_rate: float
     days_of_stock: Optional[float]
     predicted_stockout_date: Optional[date]
+    reorder_alert_date: Optional[date]
     reorder_quantity: int
     current_stock_snapshot: float
     lead_time_snapshot: int
@@ -493,6 +494,7 @@ class PredictionType:
             run_rate=r.run_rate,
             days_of_stock=r.days_of_stock,
             predicted_stockout_date=r.predicted_stockout_date,
+            reorder_alert_date=r.reorder_alert_date if hasattr(r, "reorder_alert_date") else None,
             reorder_quantity=r.reorder_quantity,
             current_stock_snapshot=r.current_stock_snapshot,
             lead_time_snapshot=r.lead_time_snapshot,

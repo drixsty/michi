@@ -3,9 +3,14 @@ Domain Entities for Forecasting Module
 Pure Python dataclasses (US 2.3 + US 2.8)
 """
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, UTC
 from typing import Optional
 from uuid import UUID
+
+
+def _utcnow() -> datetime:
+    return datetime.now(UTC).replace(tzinfo=None)
+
 
 @dataclass
 class CleanedDemandEntity:
@@ -18,7 +23,8 @@ class CleanedDemandEntity:
     is_stockout: bool = False
     is_outlier: bool = False
     correction_type: str = "none"  # "none" | "stockout" | "outlier" | "stockout+outlier"
-    computed_at: datetime = field(default_factory=datetime.utcnow)
+    computed_at: datetime = field(default_factory=_utcnow)
+
 
 @dataclass
 class PredictionEntity:
@@ -27,6 +33,7 @@ class PredictionEntity:
     run_rate: float
     days_of_stock: Optional[float] = None
     predicted_stockout_date: Optional[date] = None
+    reorder_alert_date: Optional[date] = None
     reorder_quantity: int = 0
     current_stock_snapshot: float = 0.0
     lead_time_snapshot: int = 14
@@ -35,4 +42,4 @@ class PredictionEntity:
     abc_rank: Optional[str] = None
     annual_gross_profit: Optional[float] = None
     demand_sigma: float = 0.0
-    computed_at: datetime = field(default_factory=datetime.utcnow)
+    computed_at: datetime = field(default_factory=_utcnow)

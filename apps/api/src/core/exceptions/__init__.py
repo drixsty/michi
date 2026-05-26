@@ -6,5 +6,5 @@ from .auth import (
     SubscriptionRequiredException, 
     NotFoundException
 )
-from .validation import ValidationException
+from .validation import ValidationException, DomainValidationError
 from .infrastructure import InfrastructureError

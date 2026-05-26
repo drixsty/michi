@@ -65,12 +65,35 @@ class InventoryService:
             else:
                 raise ValueError(f"shop_id '{shop_id}' is not a valid UUID and no organization_id provided for resolution.")
 
+        # Convert objects / Pydantic models to dicts for safe subscription
+        products_dicts = []
+        for p in products_data:
+            if hasattr(p, "model_dump"):
+                products_dicts.append(p.model_dump())
+            elif hasattr(p, "dict"):
+                products_dicts.append(p.dict())
+            elif not isinstance(p, dict):
+                products_dicts.append(getattr(p, "__dict__", p))
+            else:
+                products_dicts.append(p)
+
+        sales_dicts = []
+        for s in sales_data:
+            if hasattr(s, "model_dump"):
+                sales_dicts.append(s.model_dump())
+            elif hasattr(s, "dict"):
+                sales_dicts.append(s.dict())
+            elif not isinstance(s, dict):
+                sales_dicts.append(dict(getattr(s, "__dict__", s)))
+            else:
+                sales_dicts.append(dict(s))
+
         # 2. Charger les produits existants pour réconciliation
         existing_products = {p.sku: p for p in await self.product_repo.list_by_store([s_uuid])}
 
         # 2. Traiter les produits
         processed_entities = []
-        for p_data in products_data:
+        for p_data in products_dicts:
             sku = p_data["sku"]
             if sku in existing_products:
                 # UPDATE
@@ -106,7 +129,7 @@ class InventoryService:
         await self.sales_log_repo.delete_by_products(product_ids)
 
         new_sales_logs = []
-        for s_data in sales_data:
+        for s_data in sales_dicts:
             sku = s_data.pop("sku", None)
             if sku and sku in sku_to_id:
                 log_entity = SalesLogEntity(

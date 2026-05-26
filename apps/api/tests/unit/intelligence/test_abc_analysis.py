@@ -97,6 +97,38 @@ class TestCalculateAbcRanksBatch:
         result = calculate_abc_ranks_batch(df)
         assert "abc_rank" in result.columns
 
+    # --- Fix Sprint 27 : robustesse saisonnière via annual_units_sold ---
+
+    def test_annual_units_sold_overrides_run_rate_extrapolation(self) -> None:
+        """annual_units_sold réel remplace run_rate×365 — neutralise les pics saisonniers."""
+        # En pic de Noël, run_rate=50u/j → extrapolation = 18 250u/an = 182 500€ GP
+        # Mais les ventes réelles annuelles = 3 000u → GP réel = 30 000€
+        df = make_products([{
+            "product_id": "seasonal",
+            "run_rate": 50.0,
+            "sale_price": 20.0,
+            "cost_price": 10.0,
+            "annual_units_sold": 3000.0,
+        }])
+        result = calculate_abc_ranks_batch(df)
+        expected_gp = (20.0 - 10.0) * 3000.0   # = 30 000
+        actual_gp = result["annual_gross_profit"].iloc[0]
+        assert abs(actual_gp - expected_gp) < 0.01
+
+    def test_annual_units_sold_nan_fallback_to_run_rate(self) -> None:
+        """Si annual_units_sold est NaN (< 90j d'historique), repli sur run_rate × 365."""
+        df = make_products([{
+            "product_id": "p1",
+            "run_rate": 2.0,
+            "sale_price": 100.0,
+            "cost_price": 50.0,
+            "annual_units_sold": float("nan"),
+        }])
+        result = calculate_abc_ranks_batch(df)
+        expected_gp = (100.0 - 50.0) * 2.0 * 365
+        actual_gp = result["annual_gross_profit"].iloc[0]
+        assert abs(actual_gp - expected_gp) < 0.01
+
     def test_pareto_distribution(self):
         """
         Avec 10 produits de profits décroissants :

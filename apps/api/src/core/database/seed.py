@@ -138,7 +138,7 @@ async def seed_data():
                 ("AMZ-X1", "Huile Essentielle Lavande", 10, 25.0, amazon_store.id),
             ]
 
-            from datetime import datetime, timedelta
+            from datetime import datetime, timedelta, UTC
             for sku, title, stock, run_rate, s_id in products:
                 p = Product(
                     id=uuid.uuid4(),
@@ -155,10 +155,10 @@ async def seed_data():
                     id=uuid.uuid4(),
                     product_id=p.id,
                     run_rate=run_rate,
-                    days_of_stock=int(stock / run_rate) if run_rate > 0 else 999,
-                    predicted_stockout_date=datetime.utcnow() + timedelta(days=int(stock/run_rate)) if run_rate > 0 else None,
+                    days_of_stock=round(stock / run_rate) if run_rate > 0 else None,
+                    predicted_stockout_date=datetime.now(UTC).date() + timedelta(days=round(stock / run_rate)) if run_rate > 0 else None,
                     reorder_quantity=0,
-                    computed_at=datetime.utcnow(),
+                    computed_at=datetime.now(UTC).replace(tzinfo=None),
                     demand_sigma=0.0,
                     moq_snapshot=1,
                     abc_rank="A" if run_rate > 10 else "B",

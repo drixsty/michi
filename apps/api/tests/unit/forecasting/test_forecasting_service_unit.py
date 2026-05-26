@@ -120,6 +120,22 @@ class FakeSupplierRepository:
         self._store[supplier.id] = supplier
 
 
+class FakePurchaseOrderRepository:
+    """Faux repo PO — retourne toujours une liste vide (aucun PO en transit)."""
+
+    async def list_by_store(self, store_id: UUID) -> List[Any]:  # noqa: ARG002
+        return []
+
+    async def get_by_id(self, po_id: UUID) -> Optional[Any]:  # noqa: ARG002
+        return None
+
+    async def save(self, po: Any) -> Any:
+        return po
+
+    async def list_by_supplier(self, supplier_id: UUID, status: Optional[str] = None) -> List[Any]:  # noqa: ARG002
+        return []
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -127,7 +143,7 @@ class FakeSupplierRepository:
 def _make_forecasting_service(
     cleaned_demand_repo=None, prediction_repo=None,
     product_repo=None, sales_log_repo=None, store_repo=None,
-    supplier_repo=None
+    supplier_repo=None, po_repo=None,
 ):
     return ForecastingService(
         cleaned_demand_repo=cleaned_demand_repo or FakeCleanedDemandRepository(),
@@ -136,6 +152,7 @@ def _make_forecasting_service(
         sales_log_repo=sales_log_repo or FakeSalesLogRepository(),
         store_repo=store_repo or FakeStoreRepository(),
         supplier_repo=supplier_repo or FakeSupplierRepository(),
+        po_repo=po_repo or FakePurchaseOrderRepository(),
     )
 
 

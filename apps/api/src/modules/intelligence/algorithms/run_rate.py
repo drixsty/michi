@@ -1,39 +1,56 @@
-import pandas as pd
-import numpy as np
 """
-Run Rate Algorithm — US 2.5 (Sprint 4)
+Run Rate Algorithm — US 2.5 (Sprint 4, corrigé Sprint 26-27)
 
 Objectif :
     Calculer le taux de vente quotidien moyen (run rate) sur une fenêtre glissante
-    de 30 jours à partir des ventes nettoyées (corrected_units_sold post-OOS et post-IQR).
+    de 30 jours propres (non-stockout, non-outlier) à partir des ventes nettoyées.
 
-Formule :
-    run_rate[j] = median(corrected_units_sold[j-29..j] pour les jours non-rupture)
+Corrections Sprint 26 :
+    - Rolling sur valeurs propres uniquement (plus sur la série masquée NaN).
+    - Blend progressif momentum (remplace le hard switch à 1.2).
 
-    La médiane est préférée à la moyenne pour la robustesse aux outliers résiduels.
-    Si < 4 jours non-rupture dans la fenêtre : fallback médiane globale de la série.
+Correction Sprint 27 — normalisation calendaire (DOW) :
+    Problème : si les 30 derniers jours contiennent 5 lundis (gros jour) et 4 dimanches
+    (petit jour), la médiane glissante est systématiquement biaisée vers le haut.
+    Fix : avant le rolling, on divise chaque vente par l'indice du jour de la semaine
+    (calculate_weekly_indices de seasonality.py). La médiane glissante est ainsi calculée
+    sur une série « jour-moyen équivalent ». Résultat = run rate stable, sans biais
+    calendaire, même pour les catégories à forte variation Lun-Dim (mode, loisirs, etc.).
 
-Hypothèses :
-    - L'entrée contient ``corrected_units_sold`` (post-nettoyage complet)
-    - Un seul produit par appel à ``calculate_run_rate``
-    - La fenêtre de 30 jours est calibrée pour capturer la tendance récente
-      sans être trop sensible au bruit court-terme (7j) ni trop lente (90j)
+    Condition d'activation : >= 14 observations nettes (2 semaines complètes minimum).
+    En dessous, les facteurs DOW sont trop bruités → fallback non normalisé.
 
-Performance :
-    O(n) — vectorisation Pandas, pas de boucles for.
+Formule run rate finale :
+    clean_values  = corrected_units_sold filtré (non-stockout, non-outlier)
+    norm_clean    = clean_values / dow_factor[weekday]   (si >= 14 obs)
+    rr_30j[j]     = median(norm_clean[-30:])
+    rr_7j[j]      = median(norm_clean[-7:])
+    alpha         = clip((momentum - 1.0) / 0.5, 0, 1)
+    run_rate[j]   = (1 - alpha) × rr_30j + alpha × rr_7j
+    Fallback      : médiane globale de norm_clean si < 4 observations.
+
+Performance : O(n) — vectorisation Pandas, pas de boucles for.
 """
+import pandas as pd
+import numpy as np
+from .seasonality import calculate_weekly_indices
 
-RUN_RATE_WINDOW = 30     # jours pour la médiane glissante du run rate
-RUN_RATE_MIN_PERIODS = 4  # minimum de jours valides pour un run rate fiable
+RUN_RATE_WINDOW = 30
+RUN_RATE_MIN_PERIODS = 4
 
 
 def calculate_run_rate(df: pd.DataFrame, window: int = RUN_RATE_WINDOW) -> pd.DataFrame:
     """
-    Calcule le run rate journalier avec détection adaptative de tendance (Sprint 15).
-    
-    L'algorithme utilise une médiane glissante, mais réduit dynamiquement la fenêtre
-    si une accélération forte est détectée (momentum), permettant de capturer
-    la saisonnalité ou les tendances de croissance sans l'inertie du 30j.
+    Calcule le run rate journalier avec blend adaptatif de tendance.
+
+    Args:
+        df: DataFrame trié par date, une ligne par jour, un seul produit.
+            Colonnes requises : [date, corrected_units_sold].
+            Colonnes optionnelles : [is_stockout, is_outlier].
+        window: Fenêtre en jours propres pour la médiane longue (défaut : 30).
+
+    Returns:
+        DataFrame enrichi avec [run_rate, demand_sigma, is_trending].
     """
     required = {"date", "corrected_units_sold"}
     missing = required - set(df.columns)
@@ -42,60 +59,94 @@ def calculate_run_rate(df: pd.DataFrame, window: int = RUN_RATE_WINDOW) -> pd.Da
 
     df = df.sort_values("date").copy()
 
-    # 1. Masquer les jours non fiables
+    # 1. Masque des jours propres
     valid_mask = pd.Series(True, index=df.index)
     if "is_stockout" in df.columns:
         valid_mask &= ~df["is_stockout"]
     if "is_outlier" in df.columns:
         valid_mask &= ~df["is_outlier"]
 
-    clean_sales = df["corrected_units_sold"].where(valid_mask)
+    # 2. Sous-série propre pour les rolling (fix NaN-window)
+    # Rolling sur clean_values garantit que window=30 = 30 vraies observations,
+    # pas 30 positions calendaires dont 26 seraient NaN.
+    clean_values = df.loc[valid_mask, "corrected_units_sold"]
 
-    # 2. Calcul du Momentum (tendance court terme vs moyen terme)
-    # On compare la moyenne 7j à la moyenne 30j
-    short_term = clean_sales.rolling(window=7, min_periods=2).mean()
-    medium_term = clean_sales.rolling(window=30, min_periods=4).mean()
-    
-    # Facteur de tendance : > 1 si croissance, < 1 si déclin
+    # 2b. Normalisation calendaire (DOW) — Sprint 27
+    # Supprime le biais jour-de-semaine avant le rolling pour obtenir un run rate
+    # stable quel que soit le profil calendaire de la fenêtre d'observation.
+    # Activée seulement si >= 14 observations (2 semaines) : en dessous, les
+    # facteurs DOW sont trop bruités et introduiraient plus de variance qu'ils n'en enlèvent.
+    if len(clean_values) >= 14:
+        clean_dow = pd.to_datetime(df.loc[valid_mask, "date"]).dt.dayofweek
+        dow_factors = calculate_weekly_indices(clean_dow, clean_values)
+        dow_adj = clean_dow.map(dow_factors).replace(0.0, 1.0)
+        norm_clean = clean_values / dow_adj
+    else:
+        norm_clean = clean_values
+
+    if len(clean_values) >= RUN_RATE_MIN_PERIODS:
+        rr_30j = (
+            norm_clean.rolling(window=window, min_periods=RUN_RATE_MIN_PERIODS)
+            .median()
+            .reindex(df.index)
+            .ffill()
+        )
+        rr_7j = (
+            norm_clean.rolling(window=7, min_periods=2)
+            .median()
+            .reindex(df.index)
+            .ffill()
+        )
+        short_term = (
+            norm_clean.rolling(window=7, min_periods=2)
+            .mean()
+            .reindex(df.index)
+            .ffill()
+        )
+        medium_term = (
+            norm_clean.rolling(window=window, min_periods=RUN_RATE_MIN_PERIODS)
+            .mean()
+            .reindex(df.index)
+            .ffill()
+        )
+        sigma_30j = (
+            norm_clean.rolling(window=window, min_periods=RUN_RATE_MIN_PERIODS)
+            .std()
+            .reindex(df.index)
+            .ffill()
+        )
+    else:
+        nan_series = pd.Series(np.nan, index=df.index)
+        rr_30j = nan_series.copy()
+        rr_7j = nan_series.copy()
+        short_term = nan_series.copy()
+        medium_term = nan_series.copy()
+        sigma_30j = nan_series.copy()
+
+    # 3. Momentum et blend progressif
     momentum = (short_term / medium_term.replace(0, np.nan)).fillna(1.0)
-    
-    # 3. Fenêtre Adaptative
-    # Si momentum > 1.2 (croissance > 20%), on bascule sur une fenêtre de 7j pour être réactif
-    # Sinon on reste sur 30j pour la stabilité
+    # alpha ∈ [0, 1] : 0 = pur 30j, 1 = pur 7j (atteint à momentum >= 1.5)
+    alpha = ((momentum - 1.0) / 0.5).clip(0.0, 1.0)
     is_trending = momentum > 1.2
-    
-    run_rate_30j = clean_sales.rolling(window=30, min_periods=4).median()
-    run_rate_7j = clean_sales.rolling(window=7, min_periods=2).median()
-    
-    # Mixage : run_rate_7j si trending, sinon run_rate_30j
-    adaptive_run_rate = run_rate_30j.copy()
-    adaptive_run_rate[is_trending] = run_rate_7j[is_trending]
 
-    # 4. Fallback Global
-    # Cas nominal : médiane des jours non-rupture/non-outlier.
-    # Cas dégradé : si tous les jours sont exclus (clean_sales tout NaN),
-    # on utilise la médiane des corrected_units_sold > 0 pour éviter run_rate=0.
-    global_median = clean_sales.dropna().median()
+    adaptive_run_rate = (1.0 - alpha) * rr_30j + alpha * rr_7j
+
+    # 4. Fallback global (sur série normalisée pour cohérence)
+    global_median = norm_clean.median() if len(norm_clean) > 0 else 0.0
     if pd.isna(global_median) or global_median == 0.0:
         non_zero = df.loc[df["corrected_units_sold"] > 0, "corrected_units_sold"]
-        global_median = float(non_zero.median()) if not non_zero.empty else 0.0
+        global_median = non_zero.median() if not non_zero.empty else 0.0
     if pd.isna(global_median):
         global_median = 0.0
 
     df["run_rate"] = adaptive_run_rate.fillna(global_median).clip(lower=0.0)
-    
-    # 5. Calcul de la Volatilité (Sigma) — Sprint 22 (Data Science v2)
-    # L'écart-type est calculé sur la fenêtre de 30j pour capturer la variabilité réelle
-    sigma_30j = clean_sales.rolling(window=30, min_periods=4).std()
-    
-    # Fallback pour sigma : écart-type global ou 0.0
-    global_std = clean_sales.std()
+
+    # 5. Sigma (volatilité demande, sur série normalisée : cohérent avec le run rate)
+    global_std = norm_clean.std() if len(norm_clean) > 1 else 0.0
     if pd.isna(global_std):
         global_std = 0.0
-        
-    df["demand_sigma"] = sigma_30j.fillna(global_std).fillna(0.0).clip(lower=0.0)
 
-    # Ajout du diagnostic (invisible au frontend mais utile pour l'audit)
+    df["demand_sigma"] = sigma_30j.fillna(global_std).fillna(0.0).clip(lower=0.0)
     df["is_trending"] = is_trending
 
     return df
@@ -107,20 +158,19 @@ def calculate_run_rate_batch(df: pd.DataFrame, window: int = RUN_RATE_WINDOW) ->
 
     Args:
         df: DataFrame avec colonnes [product_id, date, corrected_units_sold].
-            Peut contenir ``is_stockout`` et ``is_outlier``.
-        window: Fenêtre en jours pour la médiane glissante (défaut: 30).
+            Peut contenir [is_stockout, is_outlier].
+        window: Fenêtre en jours propres (défaut : 30).
 
     Returns:
-        DataFrame enrichi avec ``run_rate``.
+        DataFrame enrichi avec [run_rate, demand_sigma, is_trending].
     """
     required = {"product_id", "date", "corrected_units_sold"}
     missing = required - set(df.columns)
     if missing:
         raise ValueError(f"Colonnes manquantes : {missing}")
 
-    result = (
+    return (
         df.groupby("product_id", group_keys=False)
         .apply(lambda g: calculate_run_rate(g, window=window))
         .reset_index(drop=True)
     )
-    return result

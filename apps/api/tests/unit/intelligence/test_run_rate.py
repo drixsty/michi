@@ -131,3 +131,65 @@ class TestCalculateRunRateBatch:
         df = pd.DataFrame({"date": [], "corrected_units_sold": []})
         with pytest.raises(ValueError, match="Colonnes manquantes"):
             calculate_run_rate_batch(df)
+
+
+# ---------------------------------------------------------------------------
+# Tests DOW seasonality (Sprint 27)
+# ---------------------------------------------------------------------------
+
+from modules.intelligence.algorithms.seasonality import calculate_weekly_indices
+
+
+class TestCalculateWeeklyIndices:
+
+    def test_uniform_sales_all_factors_one(self) -> None:
+        """Ventes uniformes → tous les facteurs = 1.0."""
+        dow = pd.Series(list(range(7)) * 4)   # 4 semaines complètes
+        values = pd.Series([10.0] * 28)
+        idx = calculate_weekly_indices(dow, values)
+        for d in range(7):
+            assert abs(idx[d] - 1.0) < 1e-9, f"DOW {d}: attendu 1.0, obtenu {idx[d]}"
+
+    def test_monday_double_sales(self) -> None:
+        """Lundi (DOW=0) avec 2× les ventes → facteur ≈ 1.75 (7 DOWs, 1 à 2× les autres)."""
+        # Lundi = 2.0, autres = 1.0 → grand_mean = (2 + 6*1) / 7 = 1.143
+        # facteur_lundi = 2.0 / 1.143 ≈ 1.75
+        daily = [2.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        dow = pd.Series(list(range(7)) * 4)
+        values = pd.Series(daily * 4)
+        idx = calculate_weekly_indices(dow, values)
+        assert idx[0] > 1.3, f"Lundi devrait être > 1.3, obtenu {idx[0]:.3f}"
+        assert idx[1] < 1.0, f"Mardi devrait être < 1.0, obtenu {idx[1]:.3f}"
+
+    def test_factors_normalize_to_mean_one(self) -> None:
+        """La moyenne des facteurs doit toujours être ≈ 1.0."""
+        daily = [3.0, 1.5, 2.0, 1.0, 2.5, 0.5, 1.0]
+        dow = pd.Series(list(range(7)) * 8)
+        values = pd.Series(daily * 8)
+        idx = calculate_weekly_indices(dow, values)
+        mean_factor = sum(idx.values()) / 7
+        assert abs(mean_factor - 1.0) < 1e-9, f"Moyenne facteurs: {mean_factor:.6f}"
+
+    def test_insufficient_data_returns_all_ones(self) -> None:
+        """< 14 observations → fallback {0..6: 1.0}."""
+        dow = pd.Series([0, 1, 2, 3, 4, 5, 6])
+        values = pd.Series([5.0, 8.0, 3.0, 6.0, 9.0, 2.0, 4.0])
+        idx = calculate_weekly_indices(dow, values)
+        assert all(v == 1.0 for v in idx.values()), f"Attendu all 1.0, obtenu {idx}"
+
+    def test_dow_normalization_removes_calendar_bias(self) -> None:
+        """Le run rate normalisé DOW est stable quel que soit le profil calendaire."""
+        # Produit avec forte saisonnalité Lundi : 50u, autres : 10u
+        # 35 jours démarrant un Lundi (01/01/2025 = Mercredi, prenons 06/01 = Lundi)
+        start = date(2025, 1, 6)  # Lundi
+        n = 35
+        dates = [start + timedelta(days=i) for i in range(n)]
+        sales = [50.0 if (start + timedelta(days=i)).weekday() == 0 else 10.0 for i in range(n)]
+        df = pd.DataFrame({"date": dates, "corrected_units_sold": sales})
+        result = make_df(sales, start=start)
+        result_rr = calculate_run_rate(result)
+        rr_final = float(result_rr["run_rate"].iloc[-1])
+        # La moyenne réelle = (50 + 10*6)/7 ≈ 15.71 u/j
+        expected = (50.0 + 10.0 * 6) / 7
+        # Avec normalisation DOW, le run rate doit être proche de la vraie moyenne
+        assert abs(rr_final - expected) < 3.0, f"run_rate={rr_final:.2f} loin de {expected:.2f}"

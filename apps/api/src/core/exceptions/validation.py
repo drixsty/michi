@@ -9,3 +9,8 @@ class ValidationException(MichiException):
             ErrorCode.VALIDATION_ERROR,
             {"errors": errors or {}}
         )
+
+class DomainValidationError(ValidationException):
+    """Erreur de validation de domaine"""
+    pass
+

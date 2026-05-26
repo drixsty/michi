@@ -61,10 +61,15 @@ class CSVConnector(BaseConnector):
         """
         import difflib
 
-        content = kwargs["content"]
+        content = kwargs.get("content")
         mapping: Optional[Dict[str, str]] = kwargs.get("mapping")
         existing_skus: Optional[List[str]] = kwargs.get("existing_skus")
         is_excel: bool = kwargs.get("is_excel", False)
+
+        if content is None:
+            content = shop_id
+        if mapping is None and isinstance(credentials, dict):
+            mapping = credentials
 
         _enforce_limits(content)
         df = _read_df(content, is_excel)
@@ -121,9 +126,16 @@ class CSVConnector(BaseConnector):
         Ingère l'historique avec agrégation, interpolation et détection d'anomalies.
         kwargs attendus : content, mapping, is_excel=False
         """
-        content = kwargs["content"]
+        content = kwargs.get("content")
         mapping: Optional[Dict[str, str]] = kwargs.get("mapping")
         is_excel: bool = kwargs.get("is_excel", False)
+
+        if content is None:
+            content = product_sku
+        if mapping is None and isinstance(shop_id, dict):
+            mapping = shop_id
+        if not is_excel and isinstance(days, bool):
+            is_excel = days
 
         _enforce_limits(content)
         df = _read_df(content, is_excel)

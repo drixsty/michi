@@ -1,12 +1,13 @@
 """
-Risk Scoring — Sprint 21 (extrait de decisions/service.py)
+Risk Scoring — Sprint 21 (corrigé Sprint 26)
 
-Calcule les scores de risque par SKU à partir de l'agrégation SKU et produit
-le top_risks trié par valeur de risque décroissante.
+Calcule les scores de risque par SKU et produit le top_risks trié par valeur de risque DESC.
 
-Entrée  : sku_aggregation dict produit par le premier pass de decisions/service.py
-          (après agrégation stocks + prédictions, avant calcul de métriques unifiées)
-Sortie  : list[RiskItem] triée par risk_value DESC
+Corrections Sprint 26 :
+    - int(coverage_days) → round(coverage_days) : la troncature (= floor) sous-estimait
+      systématiquement la date de stockout d'un jour (ex : 28.9j → 28j au lieu de 29j).
+    - coverage_days = None (au lieu de 999.0) quand run_rate == 0 : le magic number 999
+      pouvait propager des calculs incohérents si utilisé dans des agrégations downstream.
 
 Performance : O(n log n) — tri final seulement.
 """
@@ -25,13 +26,13 @@ class RiskItem:
     risk_value: float
     stockout_date: Optional[date]
     reorder_quantity: int
-    days_of_stock: float
+    days_of_stock: Optional[float]
     run_rate: float
     supplier_id: Optional[str]
     source_platform: str
     cost_price: float
     sale_price: float
-    coverage_days: float
+    coverage_days: Optional[float]
 
 
 def score_products(
@@ -40,31 +41,21 @@ def score_products(
     """
     Calcule les scores de risque SKU et retourne les items triés.
 
-    Effectue le second pass sur l'agrégation SKU :
-    - Calcule coverage_days = stock / run_rate (ou 999 si run_rate == 0)
-    - Calcule stockout_date = today + coverage_days
-    - Construit la liste RiskItem triée par risk_value DESC
-
     Args:
         sku_aggregation: Dict {sku: {stock, run_rate, risk_value, reorder_quantity,
                                      product_id, title, supplier_id, platforms,
                                      cost, sale, ...}}
-                         tel que produit par le premier pass de decisions/service.py.
 
     Returns:
-        Tuple (risk_items, avg_coverage_days) où :
-        - risk_items: liste triée par risk_value DESC
-        - avg_coverage_days: couverture moyenne en jours (sur SKUs avec run_rate > 0)
+        Tuple (risk_items, avg_coverage_days) :
+        - risk_items : liste triée par risk_value DESC
+        - avg_coverage_days : moyenne en jours (SKUs avec run_rate > 0 uniquement)
 
     Example:
-        >>> agg = {
-        ...     "SKU001": {
-        ...         "product_id": "abc", "stock": 50, "run_rate": 5.0,
-        ...         "risk_value": 200.0, "reorder_quantity": 10,
-        ...         "title": "Produit A", "supplier_id": None,
-        ...         "platforms": {"SHOPIFY"}, "cost": 10.0, "sale": 20.0,
-        ...     }
-        ... }
+        >>> agg = {"SKU001": {"product_id": "abc", "stock": 50, "run_rate": 5.0,
+        ...                   "risk_value": 200.0, "reorder_quantity": 10,
+        ...                   "title": "Produit A", "supplier_id": None,
+        ...                   "platforms": {"SHOPIFY"}, "cost": 10.0, "sale": 20.0}}
         >>> items, avg_cov = score_products(agg)
         >>> items[0].days_of_stock
         10.0
@@ -80,17 +71,16 @@ def score_products(
         stock = agg.get("stock", 0)
         run_rate = agg.get("run_rate", 0.0)
 
-        # Calcul couverture
         if run_rate > 0:
             coverage_days = stock / run_rate
-            stockout_date = today + timedelta(days=max(0, int(coverage_days)))
+            # round() au lieu de int()/floor() : évite la sous-estimation systématique d'un jour
+            stockout_date = today + timedelta(days=max(0, round(coverage_days)))
             total_coverage_days += coverage_days
             products_with_runrate += 1
         else:
-            coverage_days = 999.0
+            coverage_days = None
             stockout_date = None
 
-        # Mettre à jour l'agrégation pour usage downstream si nécessaire
         agg["coverage_days"] = coverage_days
         agg["stockout_date"] = stockout_date
 
@@ -109,7 +99,7 @@ def score_products(
                 risk_value=round(agg.get("risk_value", 0.0), 2),
                 stockout_date=stockout_date,
                 reorder_quantity=agg.get("reorder_quantity", 0),
-                days_of_stock=round(coverage_days, 1),
+                days_of_stock=round(coverage_days, 1) if coverage_days is not None else None,
                 run_rate=round(run_rate, 4),
                 supplier_id=agg.get("supplier_id"),
                 source_platform=source_platform,
@@ -119,7 +109,6 @@ def score_products(
             )
         )
 
-    # Tri par risk_value décroissant
     risk_items.sort(key=lambda x: x.risk_value, reverse=True)
 
     avg_coverage_days = (

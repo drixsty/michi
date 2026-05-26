@@ -68,32 +68,37 @@ class TwoFactorService:
                 return new_codes
         return None
 
-    async def setup_2fa(self, user_id: str) -> dict:
+    async def setup_2fa(self, user_id: str, session=None) -> dict:
         """
         Initialise le processus 2FA pour un utilisateur.
         Retourne le secret et l'URI pour le QR Code.
         """
+        if session is not None:
+            return await self._setup_2fa_impl(user_id, session)
         async with AsyncSessionLocal() as session:
-            # Conversion en UUID si nécessaire
-            uid = uuid.UUID(str(user_id))
-            
-            stmt = select(User).where(User.id == uid)
-            result = await session.execute(stmt)
-            user = result.scalar()
-            
-            if not user:
-                raise ValueError("Utilisateur non trouvé")
-            
-            # On génère un secret temporaire (ne pas activer 'enabled' tout de suite)
-            secret = self.generate_secret()
-            uri = self.get_provisioning_uri(user.email, secret)
-            
-            return {
-                "secret": secret,
-                "provisioning_uri": uri
-            }
+            return await self._setup_2fa_impl(user_id, session)
 
-    async def confirm_2fa(self, user_id: str, secret: str, code: str) -> Optional[List[str]]:
+    async def _setup_2fa_impl(self, user_id: str, session) -> dict:
+        # Conversion en UUID si nécessaire
+        uid = uuid.UUID(str(user_id))
+        
+        stmt = select(User).where(User.id == uid)
+        result = await session.execute(stmt)
+        user = result.scalar()
+        
+        if not user:
+            raise ValueError("Utilisateur non trouvé")
+        
+        # On génère un secret temporaire (ne pas activer 'enabled' tout de suite)
+        secret = self.generate_secret()
+        uri = self.get_provisioning_uri(user.email, secret)
+        
+        return {
+            "secret": secret,
+            "provisioning_uri": uri
+        }
+
+    async def confirm_2fa(self, user_id: str, secret: str, code: str, session=None) -> Optional[List[str]]:
         """
         Valide le premier code et active définitivement le 2FA.
         Retourne la liste des codes de secours (en clair) si succès, sinon None.
@@ -101,38 +106,50 @@ class TwoFactorService:
         if not self.verify_code(secret, code):
             return None
 
+        if session is not None:
+            return await self._confirm_2fa_impl(user_id, secret, code, session)
         async with AsyncSessionLocal() as session:
-            uid = uuid.UUID(str(user_id))
-            stmt = select(User).where(User.id == uid)
-            result = await session.execute(stmt)
-            user = result.scalar()
-            
-            if not user:
-                return None
-            
-            # Génération des codes de secours
-            plain_recovery_codes = self.generate_recovery_codes()
-            user.recovery_codes = self.hash_codes(plain_recovery_codes)
-            
-            user.two_factor_secret = secret
-            user.two_factor_enabled = True
+            res = await self._confirm_2fa_impl(user_id, secret, code, session)
             await session.commit()
-            return plain_recovery_codes
+            return res
 
-    async def disable_2fa(self, user_id: str) -> bool:
+    async def _confirm_2fa_impl(self, user_id: str, secret: str, code: str, session) -> Optional[List[str]]:
+        uid = uuid.UUID(str(user_id))
+        stmt = select(User).where(User.id == uid)
+        result = await session.execute(stmt)
+        user = result.scalar()
+        
+        if not user:
+            return None
+        
+        # Génération des codes de secours
+        plain_recovery_codes = self.generate_recovery_codes()
+        user.recovery_codes = self.hash_codes(plain_recovery_codes)
+        
+        user.two_factor_secret = secret
+        user.two_factor_enabled = True
+        return plain_recovery_codes
+
+    async def disable_2fa(self, user_id: str, session=None) -> bool:
         """
         Désactive le 2FA.
         """
+        if session is not None:
+            return await self._disable_2fa_impl(user_id, session)
         async with AsyncSessionLocal() as session:
-            uid = uuid.UUID(str(user_id))
-            stmt = select(User).where(User.id == uid)
-            result = await session.execute(stmt)
-            user = result.scalar()
-            
-            if not user:
-                return False
-            
-            user.two_factor_secret = None
-            user.two_factor_enabled = False
+            res = await self._disable_2fa_impl(user_id, session)
             await session.commit()
-            return True
+            return res
+
+    async def _disable_2fa_impl(self, user_id: str, session) -> bool:
+        uid = uuid.UUID(str(user_id))
+        stmt = select(User).where(User.id == uid)
+        result = await session.execute(stmt)
+        user = result.scalar()
+        
+        if not user:
+            return False
+        
+        user.two_factor_secret = None
+        user.two_factor_enabled = False
+        return True

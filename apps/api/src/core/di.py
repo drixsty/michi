@@ -157,13 +157,16 @@ def build_services(db: AsyncSession) -> ServiceContainer:
         email_service=email_service
     )
     
+    po_repo = SQLAlchemyPurchaseOrderRepository(db)
+
     forecasting_service = ForecastingService(
         cleaned_demand_repo=cleaned_demand_repo,
         prediction_repo=prediction_repo,
         product_repo=product_repo,
         sales_log_repo=sales_log_repo,
         store_repo=store_repo,
-        supplier_repo=supplier_repo
+        supplier_repo=supplier_repo,
+        po_repo=po_repo,
     )
 
     decisions_service = ApplicationDecisionsService(

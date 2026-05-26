@@ -19,7 +19,7 @@ class SQLAlchemyStoreRepository(IStoreRepository):
             id=model.id,
             organization_id=model.organization_id,
             name=model.name,
-            platform=PlatformSource(model.platform.value),
+            platform=PlatformSource(model.platform.value if hasattr(model.platform, "value") else model.platform),
             connected=model.connected,
             last_sync_at=model.last_sync_at,
             health_status=model.health_status,

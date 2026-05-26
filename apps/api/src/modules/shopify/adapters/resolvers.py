@@ -131,13 +131,15 @@ class ShopifyMutation:
         total_sales = 0
         
         # Initialiser le service de prévision (shared for better perf)
+        from modules.inventory.infrastructure.repositories.purchase_order_repository import SQLAlchemyPurchaseOrderRepository
         forecasting = ForecastingService(
             SQLAlchemyCleanedDemandRepository(db),
             SQLAlchemyPredictionRepository(db),
             SQLAlchemyProductRepository(db),
             SQLAlchemySalesLogRepository(db),
             store_repo,
-            SQLAlchemySupplierRepository(db)
+            SQLAlchemySupplierRepository(db),
+            po_repo=SQLAlchemyPurchaseOrderRepository(db),
         )
 
         # Initialiser le service d'alertes (shared)
@@ -201,12 +203,14 @@ class ShopifyMutation:
         from modules.inventory.infrastructure.repositories.store_repository import SQLAlchemyStoreRepository
 
         db = info.context.db
+        from modules.inventory.infrastructure.repositories.purchase_order_repository import SQLAlchemyPurchaseOrderRepository
         forecasting_service = ForecastingService(
             SQLAlchemyCleanedDemandRepository(db),
             SQLAlchemyPredictionRepository(db),
             SQLAlchemyProductRepository(db),
             SQLAlchemySalesLogRepository(db),
-            SQLAlchemyStoreRepository(db)
+            SQLAlchemyStoreRepository(db),
+            po_repo=SQLAlchemyPurchaseOrderRepository(db),
         )
         # Recalculate logic... (Need update in service too)
         # For now, let's assume we implement it or skip if not in scope

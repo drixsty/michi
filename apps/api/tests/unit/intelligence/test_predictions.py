@@ -20,6 +20,31 @@ from modules.intelligence.algorithms.predictions import (
 
 class TestPredictStockoutDate:
 
+    # --- Fix Sprint 27 : stock_in_transit ---
+
+    def test_stock_in_transit_extends_stockout_date(self) -> None:
+        """PO de 20u en transit sur stock de 10u → (10+20)/2 = 15j, pas 5j."""
+        ref = date(2025, 1, 1)
+        without = predict_stockout_date(10.0, 2.0, ref)
+        with_transit = predict_stockout_date(10.0, 2.0, ref, stock_in_transit=20.0)
+        assert without == date(2025, 1, 6)        # 10/2 = 5j
+        assert with_transit == date(2025, 1, 16)  # (10+20)/2 = 15j
+
+    def test_zero_stock_but_transit_gives_coverage(self) -> None:
+        """Stock épuisé (0) + PO de 10u → 10/2 = 5j avant rupture."""
+        ref = date(2025, 1, 1)
+        result = predict_stockout_date(0.0, 2.0, ref, stock_in_transit=10.0)
+        assert result == date(2025, 1, 6)
+
+    def test_negative_transit_is_ignored(self) -> None:
+        """stock_in_transit < 0 n'est pas déduit du stock (max(0,.) appliqué)."""
+        ref = date(2025, 1, 1)
+        normal = predict_stockout_date(10.0, 2.0, ref)
+        with_neg = predict_stockout_date(10.0, 2.0, ref, stock_in_transit=-5.0)
+        assert normal == with_neg
+
+    # --- Tests existants ---
+
     def test_nominal_case(self):
         """60 unités / 2 unités/jour = 30 jours → stockout J+30."""
         ref = date(2025, 6, 1)

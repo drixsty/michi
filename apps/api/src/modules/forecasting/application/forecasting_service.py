@@ -1,18 +1,23 @@
-from core.database.models import Organization, User, OrganizationMember
-import pandas as pd
 """
 ForecastingService — Application Layer
 Pipeline de nettoyage + prédictions opérationnelles (Agnostique Michi).
 """
+import pandas as pd
+import numpy as np
 from datetime import date, datetime, UTC
-from typing import Optional, List, Dict
+from typing import Optional, List
 import uuid
 from loguru import logger
 
 from modules.forecasting.domain.entities import CleanedDemandEntity, PredictionEntity
 from modules.forecasting.domain.ports import ICleanedDemandRepository, IPredictionRepository
-from modules.inventory.domain.ports import IProductRepository, ISalesLogRepository, IStoreRepository, ISupplierRepository
-
+from modules.inventory.domain.ports import (
+    IProductRepository,
+    ISalesLogRepository,
+    IStoreRepository,
+    ISupplierRepository,
+    IPurchaseOrderRepository,
+)
 from modules.forecasting.domain.schemas import PipelineResultSchema, PredictionRunResultSchema, DashboardKPISchema
 from modules.intelligence.algorithms import (
     correct_out_of_stock_batch,
@@ -20,20 +25,21 @@ from modules.intelligence.algorithms import (
     calculate_run_rate_batch,
     predict_stockout_date,
     calculate_reorder_quantity,
+    calculate_reorder_alert_date,
     calculate_abc_ranks_batch,
-    detect_seasonality_factor,
     calculate_mape_score,
 )
 
 class ForecastingService:
     def __init__(
-        self, 
+        self,
         cleaned_demand_repo: ICleanedDemandRepository,
         prediction_repo: IPredictionRepository,
         product_repo: IProductRepository,
         sales_log_repo: ISalesLogRepository,
         store_repo: IStoreRepository,
-        supplier_repo: ISupplierRepository
+        supplier_repo: ISupplierRepository,
+        po_repo: Optional[IPurchaseOrderRepository] = None,
     ):
         self.cleaned_demand_repo = cleaned_demand_repo
         self.prediction_repo = prediction_repo
@@ -41,6 +47,7 @@ class ForecastingService:
         self.sales_log_repo = sales_log_repo
         self.store_repo = store_repo
         self.supplier_repo = supplier_repo
+        self.po_repo = po_repo
 
     async def run_cleaning_pipeline(self, store_id: str) -> PipelineResultSchema:
         """
@@ -169,18 +176,43 @@ class ForecastingService:
 
         df = calculate_run_rate_batch(df)
         latest = df.sort_values("date").groupby("product_id").last().reset_index()
-        
+
         def _get_price(pid, attr):
             p = product_map.get(pid)
             return getattr(p, attr) if p else 0.0
 
         latest['sale_price'] = latest['product_id'].map(lambda pid: _get_price(pid, 'sale_price'))
         latest['cost_price'] = latest['product_id'].map(lambda pid: _get_price(pid, 'cost_price'))
+
+        # Annualisation robuste pour ABC : utiliser les ventes réelles observées
+        # (évite les biais saisonniers du run_rate snapshot)
+        hist_stats = df.groupby("product_id")["corrected_units_sold"].agg(["sum", "count"])
+        hist_stats["annual_units_sold"] = np.where(
+            hist_stats["count"] >= 90,
+            hist_stats["sum"] / hist_stats["count"] * 365,
+            np.nan,
+        )
+        latest = latest.merge(
+            hist_stats[["annual_units_sold"]].reset_index(),
+            on="product_id",
+            how="left",
+        )
+
         latest = calculate_abc_ranks_batch(latest)
 
-        # 5. Save predictions
+        # 5. Charger les POs en transit pour ce store (évite les fausses alertes)
+        po_by_product: dict[str, float] = {}
+        if self.po_repo:
+            pos = await self.po_repo.list_by_store(s_uuid)
+            today_po = date.today()
+            for po in pos:
+                if po.status not in ("DELIVERED", "CANCELLED") and po.expected_arrival_date >= today_po:
+                    pid_key = str(po.product_id)
+                    po_by_product[pid_key] = po_by_product.get(pid_key, 0.0) + float(po.quantity)
+
+        # 6. Save predictions
         await self.prediction_repo.delete_by_products(product_ids)
-        
+
         today = date.today()
         prediction_entities = []
         for _, row in latest.iterrows():
@@ -190,18 +222,33 @@ class ForecastingService:
 
             run_rate = row["run_rate"] * (p.boost_factor if p.boost_factor else 1.0)
             sigma = float(row["demand_sigma"]) if "demand_sigma" in row else 0.0
-            
-            # Récupérer les données de performance du fournisseur associé
+
+            # Performance fournisseur
             supplier_data = supplier_map.get(p.supplier_id) if p.supplier_id else None
             avg_delay = supplier_data.average_delay_days if supplier_data else 0.0
             lt_sigma = supplier_data.lead_time_sigma if supplier_data else 0.0
 
+            # Stock effectif = stock physique + POs actifs attendus (évite fausses alertes)
+            stock_in_transit = po_by_product.get(pid_str, 0.0)
+
             stockout_date = predict_stockout_date(
                 current_stock=float(p.current_stock),
                 run_rate=run_rate,
-                reference_date=today
+                reference_date=today,
+                stock_in_transit=stock_in_transit,
             )
-            
+
+            # ROP date : date limite pour passer la commande avant la rupture
+            reorder_alert = (
+                calculate_reorder_alert_date(
+                    stockout_date=stockout_date,
+                    lead_time=p.lead_time,
+                    average_delay=avg_delay,
+                )
+                if stockout_date is not None
+                else None
+            )
+
             reorder_qty = calculate_reorder_quantity(
                 run_rate=run_rate,
                 lead_time=p.lead_time,
@@ -213,19 +260,21 @@ class ForecastingService:
                 lead_time_sigma=lt_sigma
             )
 
-            # 5. MAPE Calculation (Sprint 10)
+            # Précision de prévision (vraie MAPE par période, non bornée)
             product_demand = df[df["product_id"] == pid_str]
             mape = calculate_mape_score(
                 run_rate=run_rate,
                 recent_sales=product_demand["corrected_units_sold"]
             )
 
+            effective_stock = float(p.current_stock) + stock_in_transit
             prediction_entities.append(PredictionEntity(
                 id=uuid.uuid4(),
                 product_id=p.id,
                 run_rate=run_rate,
-                days_of_stock=p.current_stock / run_rate if run_rate > 0 else None,
+                days_of_stock=effective_stock / run_rate if run_rate > 0 else None,
                 predicted_stockout_date=stockout_date,
+                reorder_alert_date=reorder_alert,
                 reorder_quantity=reorder_qty,
                 current_stock_snapshot=p.current_stock,
                 lead_time_snapshot=p.lead_time,
@@ -264,9 +313,9 @@ class ForecastingService:
             predictions = []
 
         total = len(predictions)
-        stockouts = sum(1 for p in predictions if getattr(p, "days_of_stock", 999) == 0)
-        urgent = sum(1 for p in predictions if 0 < getattr(p, "days_of_stock", 999) <= 7)
-        predicted_30d = sum(1 for p in predictions if 0 < getattr(p, "days_of_stock", 999) <= 30)
+        stockouts = sum(1 for p in predictions if (p.days_of_stock or 999) == 0)
+        urgent = sum(1 for p in predictions if p.days_of_stock is not None and 0 < p.days_of_stock <= 7)
+        predicted_30d = sum(1 for p in predictions if p.days_of_stock is not None and 0 < p.days_of_stock <= 30)
 
         return DashboardKPISchema(
             total_products=total,

@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 import uuid
 
 from core.database import Base, GUID
-from modules.inventory.infrastructure.persistence.models import Product  # Import requis pour les relations
+from modules.inventory.infrastructure.persistence.models import Product  # noqa: F401 — requis pour SQLAlchemy relationship resolution
 
 
 class CleanedDemand(Base):
@@ -71,6 +71,9 @@ class Prediction(Base):
 
     # Date prévisionnelle de rupture (None si run_rate == 0)
     predicted_stockout_date = Column(Date, nullable=True)
+
+    # Date limite pour passer la commande = stockout_date - effective_lead_time (ROP date)
+    reorder_alert_date = Column(Date, nullable=True)
 
     # Quantité de commande recommandée (US 2.7), multiple du MOQ
     reorder_quantity = Column(Integer, nullable=False, default=0)

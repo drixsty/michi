@@ -59,7 +59,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Content-Security-Policy"] = csp
 
         # Supprime le header serveur pour réduire la surface d'empreinte
-        response.headers.pop("server", None)
-        response.headers.pop("Server", None)
+        if "server" in response.headers:
+            del response.headers["server"]
+        if "Server" in response.headers:
+            del response.headers["Server"]
 
         return response
