@@ -1,11 +1,16 @@
 {
   "Index": {
-    "title": "Master your <spanInner>omnichannel</spanInner> <br /> supply chain",
+    "title": "Master your <spanInner>omnichannel</spanInner><br></br>supply chain",
     "description": "Michi provides AI-driven forecasting for Shopify, Amazon, and WooCommerce sellers. Reduce stockouts, optimize cash flow, and scale with confidence.",
     "getStarted": "Get started",
     "bookDemo": "Book a demo",
     "exploreFeatures": "Explore features",
     "heroBadge": "Smarter inventory intelligence",
+    "trustSignals": {
+      "noCard": "No credit card required",
+      "freeTrial": "14-day free trial",
+      "cancel": "Cancel anytime"
+    },
     "stats": {
       "accuracy": "98%",
       "accuracyLabel": "Forecast accuracy",
@@ -13,8 +18,9 @@
       "growthLabel": "Revenue growth",
       "reduction": "85%",
       "reductionLabel": "Stockout reduction",
-      "integrations": "50+",
-      "integrationsLabel": "API integrations"
+      "integrations": "3+",
+      "integrationsLabel": "Platforms integrated",
+      "disclaimer": "*Based on analysis of 500+ connected stores"
     },
     "trustedBy": "Trusted by fast-growing brands worldwide",
     "login": "Login",
@@ -54,7 +60,30 @@
     "integrations": {
       "title": "Connect your entire <spanInner>ecosystem</spanInner>",
       "description": "Michi integrates directly with the platforms you already use. No manual CSV uploads, no messy spreadsheets. Just clean, automated data intelligence.",
-      "viewAll": "View all 50+ integrations"
+      "viewAll": "View all integrations",
+      "connectedLabel": "Connected channels"
+    },
+    "dropshipping": {
+      "title": "Built for dropshipping & multi-supplier brands",
+      "subtitle": "Whether you dropship or own your stock, Michi speaks your language — MOQ, lead times, safety stock, and supplier variance.",
+      "items": {
+        "leadTime": {
+          "title": "Dynamic Lead Times",
+          "desc": "Accounts for variable supplier delays and global logistics volatility to trigger reorders at exactly the right moment."
+        },
+        "safetyStock": {
+          "title": "Safety Stock Calculation",
+          "desc": "Uses service-level formulas to calculate the exact buffer stock needed to cover 99% of demand spikes without over-investing."
+        },
+        "moq": {
+          "title": "MOQ-Aware Ordering",
+          "desc": "Automatically respects your suppliers' minimum order quantities when generating purchase order recommendations."
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Trusted by fast-growing brands",
+      "subtitle": "Real results from real sellers using Michi to automate their supply chain."
     },
     "workflowSection": {
       "title": "3 steps to inventory intelligence",
@@ -175,6 +204,9 @@
       "features": "Features",
       "integrations": "Integrations",
       "pricing": "Pricing",
+      "forecasting": "AI Forecasting",
+      "replenishment": "Replenishment",
+      "unifiedInventory": "Unified Inventory",
       "shopify": "Shopify Integration",
       "amazon": "Amazon FBA",
       "woo": "WooCommerce",
@@ -460,8 +492,8 @@
     "summaryContent": "This article explores how to transform your supply chain using AI and data-driven decisions."
   },
   "Metadata": {
-    "title": "Michi 道 | Omnichannel Forecasting Solutions",
-    "description": "Scale your business with AI-powered omnichannel forecasting. Integrate Shopify, Amazon, and WooCommerce seamlessly."
+    "title": "Michi 道 | AI Inventory Forecasting for Shopify, Amazon & WooCommerce",
+    "description": "Reduce stockouts by 85% and automate replenishment with Michi's AI-powered inventory forecasting. Built for Shopify, Amazon FBA, and WooCommerce sellers. Start your 14-day free trial."
   },
   "NotFound": {
     "title": "Page Not Found",

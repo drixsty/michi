@@ -1,11 +1,16 @@
 {
   "Index": {
-    "title": "Maîtrisez votre <spanInner>supply chain</spanInner> <br /> omnicanale",
+    "title": "Maîtrisez votre <spanInner>supply chain</spanInner><br></br>omnicanale",
     "description": "Michi offre des prévisions basées sur l'IA pour les vendeurs Shopify, Amazon et WooCommerce. Réduisez les ruptures de stock, optimisez votre trésorerie et développez votre activité en toute confiance.",
     "getStarted": "Commencer",
     "bookDemo": "Réserver une démo",
     "exploreFeatures": "Découvrir les fonctionnalités",
     "heroBadge": "Intelligence logistique optimisée",
+    "trustSignals": {
+      "noCard": "Aucune carte bancaire requise",
+      "freeTrial": "Essai gratuit 14 jours",
+      "cancel": "Résiliable à tout moment"
+    },
     "stats": {
       "accuracy": "98%",
       "accuracyLabel": "Précision des prévisions",
@@ -13,8 +18,9 @@
       "growthLabel": "Croissance du revenu",
       "reduction": "85%",
       "reductionLabel": "Réduction des ruptures",
-      "integrations": "50+",
-      "integrationsLabel": "Intégrations API"
+      "integrations": "3+",
+      "integrationsLabel": "Plateformes intégrées",
+      "disclaimer": "*Basé sur l'analyse de 500+ boutiques connectées"
     },
     "trustedBy": "Approuvé par des marques en forte croissance dans le monde entier",
     "login": "Connexion",
@@ -54,7 +60,30 @@
     "integrations": {
       "title": "Connectez tout votre <spanInner>écosystème</spanInner>",
       "description": "Michi s'intègre directement aux plateformes que vous utilisez déjà. Pas d'exports CSV manuels, pas de tableurs désordonnés. Juste une intelligence de données propre et automatisée.",
-      "viewAll": "Voir les 50+ intégrations"
+      "viewAll": "Voir toutes les intégrations",
+      "connectedLabel": "Canaux connectés"
+    },
+    "dropshipping": {
+      "title": "Conçu pour le dropshipping et les marques multi-fournisseurs",
+      "subtitle": "Que vous fassiez du dropshipping ou gériez votre propre stock, Michi parle votre langue — MOQ, délais fournisseurs, stock de sécurité et variance.",
+      "items": {
+        "leadTime": {
+          "title": "Délais de Livraison Dynamiques",
+          "desc": "Prend en compte les retards fournisseurs variables et la volatilité logistique pour déclencher les réapprovisionnements au bon moment."
+        },
+        "safetyStock": {
+          "title": "Calcul du Stock de Sécurité",
+          "desc": "Utilise des formules de niveau de service pour calculer le stock tampon exact nécessaire pour couvrir 99% des pics de demande."
+        },
+        "moq": {
+          "title": "Commandes Respectant le MOQ",
+          "desc": "Respecte automatiquement les quantités minimales de commande de vos fournisseurs lors de la génération de bons de commande."
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Approuvé par des marques en forte croissance",
+      "subtitle": "Des résultats concrets de vrais vendeurs utilisant Michi pour automatiser leur supply chain."
     },
     "workflowSection": {
       "title": "3 étapes vers l'intelligence des stocks",
@@ -175,6 +204,9 @@
       "features": "Fonctionnalités",
       "integrations": "Intégrations",
       "pricing": "Tarifs",
+      "forecasting": "Prévision IA",
+      "replenishment": "Réapprovisionnement",
+      "unifiedInventory": "Stock Unifié",
       "shopify": "Intégration Shopify",
       "amazon": "Amazon FBA",
       "woo": "WooCommerce",
@@ -460,8 +492,8 @@
     "summaryContent": "Cet article explore comment transformer votre supply chain grâce à l'IA et aux décisions basées sur la donnée."
   },
   "Metadata": {
-    "title": "Michi 道 | Solutions de Prévisions Omnicanales",
-    "description": "Développez votre entreprise avec des prévisions omnicanales propulsées par l'IA. Intégrez Shopify, Amazon et WooCommerce en toute simplicité."
+    "title": "Michi 道 | Logiciel de Prévision IA pour Shopify, Amazon & WooCommerce",
+    "description": "Réduisez les ruptures de stock de 85% et automatisez votre réapprovisionnement avec Michi. Solution IA pour vendeurs Shopify, Amazon FBA et WooCommerce. Essai gratuit 14 jours."
   },
   "NotFound": {
     "title": "Page Introuvable",

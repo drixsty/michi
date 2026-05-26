@@ -1,11 +1,12 @@
 import {getRequestConfig} from 'next-intl/server';
 
 export default getRequestConfig(async ({locale}) => {
-  // Defensive check for locale
-  const targetLocale = ['en', 'fr'].includes(locale) ? locale : 'en';
+  // next-intl guarantees locale is defined via middleware / generateStaticParams
+  const safeLocale: string = locale ?? 'en';
+  const targetLocale = ['en', 'fr'].includes(safeLocale) ? safeLocale : 'en';
 
   return {
     locale: targetLocale,
-    messages: (await import(`../messages/${targetLocale}.json`)).default
+    messages: (await import(`../../messages/${targetLocale}.json`)).default
   };
 });

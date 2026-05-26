@@ -14,9 +14,16 @@ export async function generateMetadata({ params: { locale } }: { params: { local
   const t = await getTranslations({ locale, namespace: 'Metadata' });
 
   return {
+    metadataBase: new URL('https://michi.app'),
     title: t('title'),
     description: t('description'),
-    keywords: ["Forecasting", "Omnichannel", "Shopify", "Amazon", "WooCommerce", "AI", "Michi"],
+    keywords: [
+      'inventory forecasting software', 'demand planning', 'omnichannel inventory management',
+      'Shopify inventory forecasting', 'Amazon FBA restock', 'WooCommerce stock management',
+      'AI supply chain', 'stockout prevention', 'dropshipping inventory', 'automated replenishment',
+      'réapprovisionnement automatique', 'gestion de stock IA', 'logiciel prévision demande e-commerce',
+      'Michi', 'supply chain automation', 'FBA inventory', 'safety stock calculation',
+    ],
     alternates: {
       canonical: `https://michi.app/${locale}`,
       languages: {
@@ -24,9 +31,29 @@ export async function generateMetadata({ params: { locale } }: { params: { local
         'fr': 'https://michi.app/fr',
       },
     },
-    other: {
-      "google-site-verification": "verification_token_here",
-    }
+    openGraph: {
+      title: t('title'),
+      description: t('description'),
+      url: `https://michi.app/${locale}`,
+      siteName: 'Michi 道',
+      images: [
+        {
+          url: 'https://michi.app/dashboard.png',
+          width: 1200,
+          height: 630,
+          alt: 'Michi — AI-powered omnichannel inventory forecasting dashboard',
+        },
+      ],
+      locale: locale === 'fr' ? 'fr_FR' : 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: t('title'),
+      description: t('description'),
+      images: ['https://michi.app/dashboard.png'],
+      creator: '@michiapp',
+    },
   };
 }
 
@@ -35,7 +62,7 @@ export function generateViewport() {
     width: 'device-width',
     initialScale: 1,
     maximumScale: 5,
-    themeColor: '#000000',
+    themeColor: '#6c5ce7',
   };
 }
 
@@ -43,6 +70,33 @@ import { NextIntlClientProvider } from 'next-intl';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { CookieConsent } from '@/components/CookieConsent';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Michi 道',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description: 'AI-powered omnichannel inventory forecasting and supply chain automation for Shopify, Amazon, and WooCommerce sellers.',
+  offers: {
+    '@type': 'AggregateOffer',
+    priceCurrency: 'USD',
+    lowPrice: '99',
+    highPrice: '249',
+    offerCount: '3',
+  },
+  url: 'https://michi.app',
+  provider: {
+    '@type': 'Organization',
+    name: 'Michi AI Solutions',
+    url: 'https://michi.app',
+  },
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.9',
+    reviewCount: '200',
+  },
+};
 
 export default async function LocaleLayout({
   children,
@@ -57,6 +111,12 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} className={`scroll-smooth overflow-x-hidden ${GeistSans.variable} ${GeistMono.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body className="font-sans flex flex-col min-h-screen">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <div className="fixed inset-0 -z-10 bg-background grid-subtle opacity-10" />

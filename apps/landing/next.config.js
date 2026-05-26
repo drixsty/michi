@@ -6,6 +6,14 @@ const withNextIntl = require('next-intl/plugin')(
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@michi/ui"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'michi.app',
+      },
+    ],
+  },
 };
 
 module.exports = withNextIntl(nextConfig);
