@@ -111,6 +111,48 @@ Bienvenue dans la documentation complète du projet Michi 道 !
 
 ---
 
+### 🔌 Connecteurs Marketplace
+
+#### [connectors.md](connectors.md)
+**Contenu :**
+- Architecture hexagonale du module Ingestion
+- Contrat BaseConnector (interface + schemas normalisés)
+- Plateformes supportées (Shopify, WooCommerce, CSV, Amazon, eBay, Etsy)
+- Mode Mock vs Production
+- Flux d'ingestion complet (séquence détaillée)
+- Stockage sécurisé des credentials (StoreCredential)
+- Rate limits & stratégie retry
+- Guide pour ajouter un nouveau connecteur
+- Tests (mock + VCR)
+
+**Quand lire :** Avant d'intégrer une marketplace ou d'ajouter un connecteur
+
+---
+
+#### [registration_shopify.md](registration_shopify.md)
+**Contenu :** Guide pas-à-pas inscription Shopify Partners → Access Token  
+**Durée :** 20–30 minutes
+
+---
+
+#### [registration_amazon.md](registration_amazon.md)
+**Contenu :** Guide pas-à-pas Amazon SP-API → LWA OAuth, rôles, validation  
+**Durée :** 2–5 jours (validation Amazon requise)
+
+---
+
+#### [registration_ebay.md](registration_ebay.md)
+**Contenu :** Guide pas-à-pas eBay Developer → OAuth, RuName, expiration 18 mois  
+**Durée :** 1–2 jours
+
+---
+
+#### [registration_etsy.md](registration_etsy.md)
+**Contenu :** Guide pas-à-pas Etsy API v3 → PKCE OAuth, variantes, expiration 90 jours  
+**Durée :** 30 minutes
+
+---
+
 ### 🏗️ Technique & Architecture
 
 #### [architecture.md](architecture.md) (95 KB, 50+ pages)
@@ -223,6 +265,14 @@ Bienvenue dans la documentation complète du projet Michi 道 !
 
 ## 🔍 Recherche par Sujet
 
+### Connecteurs Marketplace
+- [connectors.md](connectors.md) → Architecture + référence technique
+- [registration_shopify.md](registration_shopify.md) → Inscription Shopify
+- [registration_amazon.md](registration_amazon.md) → Inscription Amazon SP-API
+- [registration_ebay.md](registration_ebay.md) → Inscription eBay
+- [registration_etsy.md](registration_etsy.md) → Inscription Etsy
+- Code : `apps/api/src/modules/ingestion/connectors/`
+
 ### Authentification & Sécurité (RBAC)
 - [architecture.md](architecture.md) → Section 7 (Auth & RBAC)
 - [prd.md](prd.md) → Epic 0 (US 0.1, 0.2)
@@ -267,7 +317,12 @@ Bienvenue dans la documentation complète du projet Michi 道 !
 | claude.md | 25 KB | 20+ | Guide agent IA |
 | tracker.md | 15 KB | 15+ | Suivi sprints |
 | git_setup.md | 8 KB | 6 | Setup Git/GitHub |
-| **Total** | **249 KB** | **200+** | Documentation complète |
+| connectors.md | 18 KB | 10 | Architecture connecteurs |
+| registration_shopify.md | 8 KB | 9 | Guide inscription Shopify |
+| registration_amazon.md | 10 KB | 10 | Guide inscription Amazon SP-API |
+| registration_ebay.md | 10 KB | 11 | Guide inscription eBay |
+| registration_etsy.md | 10 KB | 11 | Guide inscription Etsy |
+| **Total** | **305 KB** | **251+** | Documentation complète |
 
 ---
 

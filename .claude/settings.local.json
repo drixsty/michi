@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import ast, sys, os; errors=[]; [errors.append\\(f\\) for f in ['apps/api/src/modules/ingestion/connectors/amazon.py','apps/api/src/modules/ingestion/connectors/ebay.py','apps/api/src/modules/ingestion/connectors/etsy.py','apps/api/src/modules/ingestion/connectors/shopify.py','apps/api/src/modules/ingestion/domain/base.py','apps/api/src/modules/ingestion/application/factory.py','apps/api/src/modules/ingestion/application/service.py'] if not ast.parse\\(open\\(f\\).read\\(\\)\\) or False]; print\\('Syntax OK' if not errors else errors\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(ls docs/connector* docs/registration*)",
+      "Bash(set PYTHONPATH=src)",
+      "Bash(python -m alembic current)",
+      "Bash(PYTHONPATH=src python -m alembic current)",
+      "Bash(PYTHONPATH=src python -m alembic revision --autogenerate -m \"check_drift\")",
+      "Bash(PYTHONPATH=src python scripts/seed_v2.py)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
