@@ -149,6 +149,47 @@ def require_permission(permission: PermissionCode):
             user_id = uuid.UUID(str(info.context.user_id))
             org_id = uuid.UUID(str(info.context.org_id))
 
+            # --- SUPPORT IMPERSONATION CHECK ---
+            from core.database.constants import UserRole
+            from core.database.models import OrganizationMember
+            
+            support_stmt = select(OrganizationMember.user_id).where(
+                OrganizationMember.user_id == user_id,
+                OrganizationMember.role == UserRole.SUPPORT
+            )
+            support_result = await db.execute(support_stmt)
+            is_support = support_result.scalar() is not None
+
+            if is_support:
+                from core.database.models import SupportAuditLog
+                from core.database.session import session_flow_id
+                
+                # Enregistrer l'action d'impersonation dans les logs d'audit
+                audit_log = SupportAuditLog(
+                    support_user_id=user_id,
+                    impersonated_org_id=org_id,
+                    action=f"graphql:{f.__name__}",
+                    flow_id=session_flow_id.get()
+                )
+                db.add(audit_log)
+                await db.flush() # Enregistrer dans la transaction active
+                
+                from modules.auth.domain.permissions import ROLE_PERMISSIONS
+                
+                # Récupérer les permissions du rôle SUPPORT
+                effective_perms = AccessPolicy.calculate_effective_permissions("support", {})
+                target_perm = permission.value if hasattr(permission, 'value') else str(permission)
+                
+                if AccessPolicy.has_permission(effective_perms, target_perm):
+                    return await f(self, info, *args, **kwargs)
+                
+                raise MichiException(
+                    message=f"Cette action nécessite la permission support : {permission}",
+                    code=ErrorCode.FORBIDDEN,
+                    logging_level="WARNING"
+                )
+            # ------------------------------------
+
             stmt = select(
                 OrganizationMember.role,
                 OrganizationMember.permissions,

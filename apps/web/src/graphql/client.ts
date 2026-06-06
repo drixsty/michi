@@ -39,6 +39,11 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
   if (graphQLErrors) {
     graphQLErrors.forEach(({ message, extensions }) => {
       const code = extensions?.code;
+      const flowId = extensions?.flowId;
+
+      if (flowId && typeof window !== 'undefined') {
+        sessionStorage.setItem('michi_last_error_flow_id', String(flowId));
+      }
       
       // Si UNAUTHENTICATED ou FORBIDDEN, rediriger vers login
       if ((code === 'UNAUTHENTICATED' || code === 'FORBIDDEN') && typeof window !== 'undefined') {
@@ -53,11 +58,33 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
           window.location.href = '/';
         }
       }
+
+      // Si erreur système, afficher un Toast interactif avec le flowId
+      if (code === 'INTERNAL_ERROR' && typeof window !== 'undefined') {
+        import('sonner').then(({ toast }) => {
+          toast.error(message || 'Une erreur interne est survenue', {
+            description: flowId ? `ID: ${flowId}` : undefined,
+            duration: 8000,
+            action: flowId ? {
+              label: 'Copier',
+              onClick: () => {
+                navigator.clipboard.writeText(String(flowId));
+                toast.success('ID copié !');
+              }
+            } : undefined
+          });
+        });
+      }
     });
   }
   
   if (networkError) {
     console.error(`[Network error]: ${networkError}`);
+    if (typeof window !== 'undefined') {
+      import('sonner').then(({ toast }) => {
+        toast.error('Erreur réseau : connexion impossible avec le serveur');
+      });
+    }
   }
 });
 

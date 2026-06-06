@@ -62,6 +62,16 @@ class AuthMutation:
         access_token = result.token.value if result.token and result.token.value else None
         refresh = create_refresh_token(str(result.user_model.id)) if result.user_model and not result.mfa_required else None
 
+        if refresh and info.context.response:
+            info.context.response.set_cookie(
+                key="michi_refresh_token",
+                value=refresh,
+                httponly=True,
+                secure=settings.ENVIRONMENT == "production",
+                samesite="strict",
+                max_age=30 * 24 * 3600  # 30 jours
+            )
+
         return AuthPayload(
             token=access_token,
             refresh_token=refresh,
@@ -379,7 +389,7 @@ class AuthMutation:
 
     @strawberry.mutation
     @rate_limit(max_calls=10, window_seconds=60)
-    async def refresh_token(self, info: strawberry.types.Info, token: str) -> AuthPayload:
+    async def refresh_token(self, info: strawberry.types.Info, token: Optional[str] = None) -> AuthPayload:
         """
         Échange un refresh token valide contre un nouvel access token + refresh token (rotation).
         Le refresh token est à usage unique — le précédent est invalidé par sa courte durée de vie.
@@ -389,8 +399,19 @@ class AuthMutation:
         from sqlalchemy import select
         from core.database.models import User, OrganizationMember
 
+        cookie_token = None
+        if info.context.request:
+            cookie_token = info.context.request.cookies.get("michi_refresh_token")
+            
+        effective_token = token or cookie_token
+        if not effective_token:
+            raise MichiException(
+                message="Refresh token manquant",
+                code=ErrorCode.UNAUTHENTICATED,
+            )
+
         try:
-            user_id_str = decode_refresh_token(token)
+            user_id_str = decode_refresh_token(effective_token)
         except JWTError:
             raise MichiException(
                 message="Refresh token invalide ou expiré",
@@ -417,6 +438,16 @@ class AuthMutation:
             "email": str(user.email),
         })
         new_refresh = create_refresh_token(str(uid))
+
+        if info.context.response:
+            info.context.response.set_cookie(
+                key="michi_refresh_token",
+                value=new_refresh,
+                httponly=True,
+                secure=settings.ENVIRONMENT == "production",
+                samesite="strict",
+                max_age=30 * 24 * 3600  # 30 jours
+            )
 
         return AuthPayload(
             token=new_access,

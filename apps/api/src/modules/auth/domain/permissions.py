@@ -121,4 +121,17 @@ ROLE_PERMISSIONS: dict[str, List[str]] = {
         PermissionCode.STORES_VIEW.value,
         PermissionCode.SETTINGS_VIEW.value,
     ],
+
+    # SUPPORT : lecture seule sur tout + consultation audit
+    "SUPPORT": [
+        PermissionCode.ORG_VIEW.value,
+        PermissionCode.MEMBERS_VIEW.value,
+        PermissionCode.INVENTORY_VIEW.value,
+        PermissionCode.SUPPLIER_VIEW.value,
+        PermissionCode.FORECAST_VIEW.value,
+        PermissionCode.STORES_VIEW.value,
+        PermissionCode.SETTINGS_VIEW.value,
+        PermissionCode.AUDIT_VIEW.value,
+        PermissionCode.ORG_AUDIT.value,
+    ],
 }

@@ -54,6 +54,7 @@ class Mutation(
 from strawberry.extensions import SchemaExtension
 from core.exceptions import MichiException
 from core.graphql.extensions import MichiExceptionExtension
+from core.graphql.depth_limit import DepthLimitExtension
 import logging
 
 class MaskTracebackExtension(SchemaExtension):
@@ -81,6 +82,8 @@ schema = strawberry.Schema(
     mutation=Mutation,
     extensions=[
         MichiExceptionExtension,
-        MaskTracebackExtension
+        MaskTracebackExtension,
+        DepthLimitExtension(max_depth=5)
     ]
 )
+

@@ -370,8 +370,29 @@ class ProductType:
     @strawberry.field
     async def supplier(self, info: strawberry.types.Info) -> Optional[SupplierType]:
         if not self.supplier_id: return None
+        loader = getattr(info.context, "supplier_loader", None)
+        if loader:
+            supplier_db = await loader.load(uuid.UUID(str(self.supplier_id)))
+            return SupplierType.from_db(supplier_db)
+        
+        # Fallback if loader is not available
         from modules.inventory.adapters.resolvers import resolve_product_supplier
         return await resolve_product_supplier(info, str(self.supplier_id))
+
+    @strawberry.field
+    async def store(self, info: strawberry.types.Info) -> Optional[StoreType]:
+        loader = getattr(info.context, "store_loader", None)
+        if loader:
+            store_db = await loader.load(uuid.UUID(str(self.store_id)))
+            return StoreType.from_db(store_db)
+            
+        # Fallback if loader is not available
+        try:
+            service = info.context.services.inventory_service
+            store_db = await service.store_repo.get_by_id(uuid.UUID(str(self.store_id)))
+            return StoreType.from_db(store_db)
+        except Exception:
+            return None
 
     @strawberry.field
     async def warning_threshold(self, info: strawberry.types.Info) -> float:
@@ -667,3 +688,29 @@ class SmartImportInput:
 @strawberry.type
 class UserDataExportType:
     data_json: str
+
+@strawberry.type
+class SupportAuditLogType:
+    """Type GraphQL pour les journaux d'audit du support"""
+    id: strawberry.ID
+    support_user_id: strawberry.ID
+    support_user_email: Optional[str] = None
+    impersonated_org_id: strawberry.ID
+    impersonated_org_name: Optional[str] = None
+    action: str
+    flow_id: Optional[str] = None
+    created_at: datetime
+
+    @classmethod
+    def from_db(cls, log, support_email: Optional[str] = None, org_name: Optional[str] = None):
+        if not log: return None
+        return cls(
+            id=strawberry.ID(str(log.id)),
+            support_user_id=strawberry.ID(str(log.support_user_id)),
+            support_user_email=support_email or getattr(log, "support_user_email", None),
+            impersonated_org_id=strawberry.ID(str(log.impersonated_org_id)),
+            impersonated_org_name=org_name or getattr(log, "impersonated_org_name", None),
+            action=log.action,
+            flow_id=log.flow_id,
+            created_at=log.created_at
+        )

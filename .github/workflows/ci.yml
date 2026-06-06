@@ -1,4 +1,4 @@
-name: Michi Omnichannel CI
+name: Michi Omnichannel CI/CD
 
 on:
   push:
@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      # Backend Environment Variables for Tests
       DATABASE_URL: "sqlite+aiosqlite:///:memory:"
       SECRET_KEY: "ci-test-key"
       ENVIRONMENT: "test"
@@ -35,7 +34,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Important for Turbo's git integration
+          fetch-depth: 0
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
@@ -55,6 +54,7 @@ jobs:
         run: |
           pip install -r apps/api/requirements.txt
           pip install -r apps/assistant/requirements.txt
+          pip install mypy black ruff
 
       - name: Turbo Cache
         uses: actions/cache@v4
@@ -64,15 +64,102 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
+      - name: Lint Python Code (Ruff)
+        run: ruff check apps/api/src || true
+
+      - name: Type Check Python Code (Mypy)
+        run: mypy --ignore-missing-imports apps/api/src || true
+
       - name: Run Build, Lint & Test (Turbo)
         run: npx turbo run build lint test --cache-dir=".turbo"
 
-      - name: Upload Build Artifacts
-        if: success()
-        uses: actions/upload-artifact@v4
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
         with:
-          name: production-artifacts
-          path: |
-            apps/web/.next
-            apps/landing/.next
-            dist
+          node-version: '20'
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Audit NPM Dependencies
+        run: npm audit --audit-level=high || true
+
+      - name: Audit Python Dependencies
+        run: |
+          pip install pip-audit
+          pip-audit -r apps/api/requirements.txt || true
+
+  docker-build:
+    name: Docker Build & Push (Release)
+    needs: [build-and-test, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Note: In actual production, configure AWS credentials / AWS ECR login here:
+      # - name: Configure AWS Credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: us-east-1
+      #
+      # - name: Login to Amazon ECR
+      #   id: login-ecr
+      #   uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Load API Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/api
+          file: ./apps/api/Dockerfile
+          tags: michi-api:latest
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Load Web Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/web/Dockerfile
+          tags: michi-web:latest
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Load Support Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/support/Dockerfile
+          tags: michi-support:latest
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Production Deployment & DB Migration
+    needs: docker-build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy Step placeholder
+        run: |
+          echo "Executing pre-deployment database migrations..."
+          echo "Running 'alembic upgrade head' as a Kubernetes Job / ECS Task..."
+          echo "Deploying application containers with rolling update strategies..."

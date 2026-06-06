@@ -5,6 +5,7 @@ class UserRole(enum.Enum):
     ADMIN = "admin"
     MANAGER = "manager"
     VIEWER = "viewer"
+    SUPPORT = "support"
 
 class InvitationStatus(enum.Enum):
     PENDING = "pending"

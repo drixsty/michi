@@ -9,7 +9,7 @@ import uuid
 from core.exceptions import UnauthenticatedException, MichiException, ErrorCode
 from core.graphql.types import (
     OrganizationType, OrganizationMemberType, UpdateOrganizationInput,
-    AuthPayload, UserType
+    AuthPayload, UserType, SupportAuditLogType
 )
 
 from modules.auth.adapters.decorators import require_permission, rate_limit
@@ -43,6 +43,60 @@ class OrgQuery:
         service = info.context.services.org_service
         members = await service.get_members_with_users(uuid.UUID(str(info.context.org_id)))
         return [OrganizationMemberType.from_db(m, include_user=True) for m in members]
+
+    @strawberry.field
+    @require_permission(PermissionCode.ORG_AUDIT)
+    async def support_organizations(
+        self,
+        info: strawberry.types.Info,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[OrganizationType]:
+        """Récupère la liste de toutes les organisations (Réservé au Support)."""
+        db = info.context.db
+        from core.database.models import Organization
+        from sqlalchemy import select
+        
+        capped_limit = min(max(1, limit), 100)
+        stmt = select(Organization).order_by(Organization.created_at.desc()).limit(capped_limit).offset(offset)
+        result = await db.execute(stmt)
+        orgs = result.scalars().all()
+        return [OrganizationType.from_db(org) for org in orgs]
+
+    @strawberry.field
+    @require_permission(PermissionCode.ORG_AUDIT)
+    async def support_audit_logs(
+        self,
+        info: strawberry.types.Info,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[SupportAuditLogType]:
+        """Récupère l'historique complet des actions de support (Réservé au Support)."""
+        db = info.context.db
+        from core.database.models import SupportAuditLog, User, Organization
+        from sqlalchemy import select
+        
+        capped_limit = min(max(1, limit), 100)
+        stmt = select(
+            SupportAuditLog,
+            User.email.label("support_user_email"),
+            Organization.name.label("impersonated_org_name")
+        ).outerjoin(
+            User, SupportAuditLog.support_user_id == User.id
+        ).outerjoin(
+            Organization, SupportAuditLog.impersonated_org_id == Organization.id
+        ).order_by(SupportAuditLog.created_at.desc()).limit(capped_limit).offset(offset)
+        
+        result = await db.execute(stmt)
+        rows = result.all()
+        
+        logs = []
+        for row in rows:
+            log_model = row[0]
+            support_email = row.support_user_email
+            org_name = row.impersonated_org_name
+            logs.append(SupportAuditLogType.from_db(log_model, support_email=support_email, org_name=org_name))
+        return logs
 
 @strawberry.type
 class OrgMutation:

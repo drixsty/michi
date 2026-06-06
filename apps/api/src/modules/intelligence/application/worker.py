@@ -78,18 +78,24 @@ class IntelligenceWorker:
                     logger.warning(f"[IntelligenceWorker] Store {sid} en quarantaine ({self._store_quarantine[sid]} cycles restants).")
                     continue
 
-                try:
-                    await self._process_store(store.id)
-                    self._store_failures[sid] = 0  # reset sur succès
-                except Exception as e:
-                    failures = self._store_failures.get(sid, 0) + 1
-                    self._store_failures[sid] = failures
-                    logger.error(f"[IntelligenceWorker] Store {sid} échoué ({failures}/{_MAX_CONSECUTIVE_FAILURES}) : {e}")
+                from core.security.locks import distributed_lock
+                async with distributed_lock(sid) as acquired:
+                    if not acquired:
+                        logger.warning(f"[IntelligenceWorker] Store {sid} est déjà en cours de traitement par un autre worker. Ignoré.")
+                        continue
 
-                    if failures >= _MAX_CONSECUTIVE_FAILURES:
-                        self._store_quarantine[sid] = _QUARANTINE_CYCLES
-                        logger.error(f"[IntelligenceWorker] Store {sid} mis en quarantaine pour {_QUARANTINE_CYCLES} cycles.")
-                        self._store_failures[sid] = 0
+                    try:
+                        await self._process_store(store.id)
+                        self._store_failures[sid] = 0  # reset sur succès
+                    except Exception as e:
+                        failures = self._store_failures.get(sid, 0) + 1
+                        self._store_failures[sid] = failures
+                        logger.error(f"[IntelligenceWorker] Store {sid} échoué ({failures}/{_MAX_CONSECUTIVE_FAILURES}) : {e}")
+
+                        if failures >= _MAX_CONSECUTIVE_FAILURES:
+                            self._store_quarantine[sid] = _QUARANTINE_CYCLES
+                            logger.error(f"[IntelligenceWorker] Store {sid} mis en quarantaine pour {_QUARANTINE_CYCLES} cycles.")
+                            self._store_failures[sid] = 0
 
         duration = (datetime.now(UTC) - start_time).total_seconds()
         logger.info(f"[IntelligenceWorker] Cycle terminé en {duration:.1f}s.")

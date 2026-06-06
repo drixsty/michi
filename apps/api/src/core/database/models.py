@@ -85,7 +85,7 @@ class OrganizationMember(Base):
     __tablename__ = "organization_members"
 
     organization_id = Column(GUID, ForeignKey("organizations.id", ondelete="CASCADE"), primary_key=True)
-    user_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    user_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True, index=True)
     
     role = Column(Enum(UserRole), default=UserRole.VIEWER, nullable=False)
     permissions = Column(JSON, default={}, nullable=False)
@@ -95,6 +95,27 @@ class OrganizationMember(Base):
     # Relationships
     organization = relationship("Organization", back_populates="members")
     user = relationship("User", back_populates="organizations")
+
+
+class SupportAuditLog(Base):
+    """
+    SupportAuditLog: Audit trail to log all support agent impersonation activities.
+    """
+    __tablename__ = "support_audit_logs"
+
+    id = Column(GUID, primary_key=True, default=uuid.uuid4)
+    support_user_id = Column(GUID, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    impersonated_org_id = Column(GUID, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True)
+    action = Column(String(255), nullable=False)
+    flow_id = Column(String(100), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None), nullable=False)
+
+    # Relationships
+    support_user = relationship("User", foreign_keys=[support_user_id])
+    impersonated_org = relationship("Organization", foreign_keys=[impersonated_org_id])
+
+    def __repr__(self):
+        return f"<SupportAuditLog {self.support_user_id} -> {self.impersonated_org_id}: {self.action}>"
 
 
 # Importer tous les autres modèles pour enregistrer les relations SQLAlchemy

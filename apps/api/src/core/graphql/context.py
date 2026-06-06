@@ -12,6 +12,7 @@ from typing import Optional
 
 
 from strawberry.fastapi import BaseContext
+from strawberry.dataloader import DataLoader
 from core.di import ServiceContainer
 
 @dataclass
@@ -25,6 +26,8 @@ class GraphQLContext(BaseContext):
     - org_id: ID de l'organisation active (contexte de session)
     - services: Conteneur de tous les services applicatifs (DI Sprint 21)
     - billing: BillingService (accès direct pour le module billing)
+    - store_loader: DataLoader pour charger les Stores par ID
+    - supplier_loader: DataLoader pour charger les Suppliers par ID
     """
     db: Optional[AsyncSession] = None 
     user_id: Optional[str] = None
@@ -34,6 +37,10 @@ class GraphQLContext(BaseContext):
     # Services (Sprint 17 & 21)
     billing: Optional[object] = None  # BillingService
     services: Optional[ServiceContainer] = None
+    
+    # DataLoaders (Sprint 6/Production)
+    store_loader: Optional[DataLoader] = None
+    supplier_loader: Optional[DataLoader] = None
 
     # ---------- Helpers directs (US 21.12) ----------
 

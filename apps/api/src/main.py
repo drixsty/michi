@@ -13,6 +13,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
 
 from core.config import settings
+
+# Initialize Sentry APM if DSN is configured
+if settings.SENTRY_DSN:
+    import sentry_sdk
+    sentry_sdk.init(
+        dsn=settings.SENTRY_DSN,
+        environment=settings.ENVIRONMENT,
+        traces_sample_rate=1.0 if settings.ENVIRONMENT == "development" else 0.1,
+    )
+    from loguru import logger
+    logger.info("Sentry APM integration initialized successfully.")
+
 from core.graphql.schema import schema
 from core.graphql.context import GraphQLContext
 from core.di import build_services
@@ -22,6 +34,7 @@ from core.database import get_db
 from core.database import SerializedAsyncSession, ReentrantAsyncLock
 from core.middleware.auth import get_current_user_from_token
 from core.middleware.security_headers import SecurityHeadersMiddleware
+from core.monitoring.prometheus import PrometheusMiddleware, prometheus_metrics
 from modules.shopify.adapters.auth_routes import router as shopify_auth_router
 from modules.billing.adapters.router import router as billing_router
 from core.exceptions import UnauthenticatedException, MichiException
@@ -61,7 +74,13 @@ def log_filter(record):
 
 
 logger.remove()
-logger.add(sys.stderr, filter=log_filter, level="INFO")
+# Utilisation de la sérialisation JSON en production pour l'agrégation de logs (Loki, Datadog)
+logger.add(
+    sys.stderr, 
+    filter=log_filter, 
+    level=settings.LOG_LEVEL,
+    serialize=(settings.ENVIRONMENT == "production")
+)
 
 logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
 logging.getLogger("uvicorn.access").handlers = [InterceptHandler()]
@@ -74,9 +93,13 @@ async def lifespan(_app: FastAPI):
     logger.info(f"Michi API starting — env={settings.ENVIRONMENT}")
     logger.info(f"CORS origins: {settings.cors_origins_list}")
 
-    from modules.inventory.application.cron_worker import worker as cron_worker
-    asyncio.create_task(intelligence_worker.start())
-    asyncio.create_task(cron_worker.start())
+    if settings.RUN_BACKGROUND_WORKERS_IN_API:
+        logger.info("[Lifespan] Starting background workers inline...")
+        from modules.inventory.application.cron_worker import worker as cron_worker
+        asyncio.create_task(intelligence_worker.start())
+        asyncio.create_task(cron_worker.start())
+    else:
+        logger.info("[Lifespan] Standalone background workers enabled. Bypassing inline workers.")
 
     yield
 
@@ -117,6 +140,8 @@ app.add_middleware(
     ],
 )
 
+app.add_middleware(PrometheusMiddleware)
+
 
 async def _resolve_org_id_from_header(
     user_id: str, header_org_id: str, db: AsyncSession
@@ -127,11 +152,22 @@ async def _resolve_org_id_from_header(
     Retourne l'org_id validé ou None si non autorisé.
     """
     from core.database.models import OrganizationMember
+    from core.database.constants import UserRole
     try:
         uid = uuid.UUID(user_id)
         oid = uuid.UUID(header_org_id)
     except ValueError:
         return None
+
+    # Autorisation spéciale : Si l'utilisateur est un agent de support (possède le rôle SUPPORT dans une org)
+    support_stmt = select(OrganizationMember.user_id).where(
+        OrganizationMember.user_id == uid,
+        OrganizationMember.role == UserRole.SUPPORT
+    )
+    support_result = await db.execute(support_stmt)
+    if support_result.scalar():
+        logger.info(f"[Support] Impersonation authorized: support_user={user_id} → target_org={header_org_id}")
+        return header_org_id
 
     stmt = select(OrganizationMember.user_id).where(
         OrganizationMember.user_id == uid,
@@ -144,6 +180,14 @@ async def _resolve_org_id_from_header(
     logger.warning(
         f"[Security] IDOR attempt blocked: user={user_id} → org={header_org_id} (not a member)"
     )
+    import asyncio
+    from core.security.alerts import send_slack_alert
+    asyncio.create_task(send_slack_alert(
+        f"🚨 *[Security Alert]* IDOR attempt blocked!\n"
+        f"• *User ID:* `{user_id}`\n"
+        f"• *Target Org ID:* `{header_org_id}`\n"
+        f"• *Action:* Impersonation/Switch Blocked"
+    ))
     return None
 
 
@@ -160,9 +204,9 @@ async def get_context(
     except UnauthenticatedException:
         user_id, org_id, email = None, None, None
 
-    # Fallback header uniquement si le token ne contient pas d'org_id (onboarding initial).
-    # Le membership est vérifié côté serveur pour éviter tout IDOR.
-    if user_id and not org_id:
+    # Si le header est fourni, on tente de le résoudre (impersonation support ou switch).
+    # Sinon, on conserve l'org_id du token.
+    if user_id:
         header_org_id = (
             request.headers.get("michi-org-id")
             or request.headers.get("Michi-Org-Id")
@@ -178,6 +222,10 @@ async def get_context(
     serialized_db = SerializedAsyncSession(db, lock)
 
     services_container = build_services(serialized_db)
+    
+    from core.graphql.dataloaders import create_store_loader, create_supplier_loader
+    store_loader = create_store_loader(serialized_db)
+    supplier_loader = create_supplier_loader(serialized_db)
 
     return GraphQLContext(
         db=serialized_db,
@@ -185,7 +233,9 @@ async def get_context(
         org_id=org_id,
         email=email,
         billing=services_container.billing_service,
-        services=services_container
+        services=services_container,
+        store_loader=store_loader,
+        supplier_loader=supplier_loader
     )
 
 
@@ -197,6 +247,9 @@ def custom_process_errors(self, errors: list[GraphQLError], execution_context=No
     Gestionnaire d'erreurs centralisé (Standard DDD/Hexagonal).
     Intercepte les MichiException pour un logging propre sans stacktrace.
     """
+    from core.database.session import session_flow_id
+    flow_id = session_flow_id.get()
+
     actual_errors = errors
     if execution_context and hasattr(execution_context, "result") and execution_context.result:
         actual_errors = execution_context.result.errors or errors
@@ -204,6 +257,12 @@ def custom_process_errors(self, errors: list[GraphQLError], execution_context=No
     processed_errors = []
     for error in actual_errors:
         orig = error.original_error
+
+        if error.extensions is None:
+            error.extensions = {}
+            
+        if flow_id:
+            error.extensions["flowId"] = str(flow_id)
 
         if isinstance(orig, MichiException):
             log_msg = f"[Business Error] {orig.code}: {orig.message}"
@@ -216,8 +275,6 @@ def custom_process_errors(self, errors: list[GraphQLError], execution_context=No
             else:
                 logger.warning(log_msg)
 
-            if error.extensions is None:
-                error.extensions = {}
             error.extensions.update({
                 "code": orig.code,
                 "details": orig.details
@@ -226,9 +283,15 @@ def custom_process_errors(self, errors: list[GraphQLError], execution_context=No
         elif orig:
             logger.critical(f"[System Error] {str(orig)}", exception=orig)
             error.message = "Internal Server Error"
-            if error.extensions is None:
-                error.extensions = {}
             error.extensions.update({"code": "INTERNAL_ERROR"})
+            
+            import asyncio
+            from core.security.alerts import send_slack_alert
+            asyncio.create_task(send_slack_alert(
+                f"🔥 *[System Error]* Critical exception occurred!\n"
+                f"• *Error:* `{str(orig)}`\n"
+                f"• *Flow ID:* `{flow_id}`"
+            ))
 
         else:
             logger.debug(f"[GraphQL Syntax/Validation] {error.message}")
@@ -290,6 +353,11 @@ async def health(db: AsyncSession = Depends(get_db)):
     )
 
 
+@app.get("/metrics")
+def metrics():
+    return prometheus_metrics()
+
+
 @app.get("/")
 async def root():
     return {
@@ -297,6 +365,7 @@ async def root():
         "docs": "/docs" if settings.ENVIRONMENT == "development" else None,
         "graphql": "/graphql",
         "health": "/health",
+        "metrics": "/metrics",
     }
 
 

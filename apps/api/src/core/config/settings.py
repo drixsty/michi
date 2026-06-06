@@ -15,7 +15,10 @@ class Settings(BaseSettings):
     # JWT
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_HOURS: int = 24
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    JWT_PRIVATE_KEY: str = ""
+    JWT_PUBLIC_KEY: str = ""
+    JWT_OLD_PUBLIC_KEYS: str = ""
     
     # Environment
     ENVIRONMENT: str = "development"
@@ -39,6 +42,12 @@ class Settings(BaseSettings):
     
     # Logging
     LOG_LEVEL: str = "INFO"
+    
+    # Sentry APM
+    SENTRY_DSN: str = ""
+    
+    # Slack Alerting
+    SLACK_WEBHOOK_URL: str = ""
     
     # SMTP
     SMTP_HOST: str
@@ -66,6 +75,7 @@ class Settings(BaseSettings):
     # Intelligence Worker (Sprint 24)
     INTELLIGENCE_WORKER_INTERVAL_HOURS: int = 6
     INTELLIGENCE_FORCE_ON_START: bool = True
+    RUN_BACKGROUND_WORKERS_IN_API: bool = True
 
     # Cron / Task Scheduler (Sprint 21)
     CRON_REPORTING_ENABLED: bool = True
