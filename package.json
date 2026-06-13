@@ -16,6 +16,7 @@
     "api:dev": "turbo run dev --filter=@michi/api",
     "web:dev": "turbo run dev --filter=@michi/web",
     "landing:dev": "turbo run dev --filter=@michi/landing",
+    "mcp:dev": "turbo run dev --filter=@michi/mcp-server",
     "test:all": "make test"
   },
   "author": "Michi Team",

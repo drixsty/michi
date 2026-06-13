@@ -12,6 +12,8 @@ install: ## Installe toutes les dépendances (backend + frontend)
 	cd apps/api && pip install -r requirements.txt
 	@echo "📦 Installation assistant (Python)..."
 	cd apps/assistant && pip install -r requirements.txt
+	@echo "📦 Installation mcp-server (Python)..."
+	cd apps/mcp-server && pip install -r requirements.txt
 	@echo ""
 	@echo "✅ Installation terminée !"
 
@@ -53,6 +55,7 @@ api: dev-backend ## Alias pour dev-backend
 web: dev-frontend ## Alias pour dev-frontend
 mobile: dev-mobile ## Alias pour dev-mobile
 assistant: dev-assistant ## Alias pour dev-assistant
+mcp: dev-mcp ## Alias pour dev-mcp
 
 dev-backend: ## Lance le backend (port 8000)
 	@echo "🚀 Démarrage backend..."
@@ -70,9 +73,19 @@ dev-assistant: ## Lance l'assistant IA (port 8001)
 	@echo "🚀 Démarrage assistant..."
 	cd apps/assistant && uvicorn --app-dir src main:app --reload --host 0.0.0.0 --port 8001
 
+dev-mcp: ## Lance le serveur MCP (port 8002)
+	@echo "🚀 Démarrage serveur MCP..."
+	cd apps/mcp-server && uvicorn --app-dir src main:app --reload --host 0.0.0.0 --port 8002
+
 test: ## Lance tous les tests (backend + frontend + ui)
 	@echo "🧪 Tests backend..."
 	cd apps/api && pytest
+	@echo ""
+	@echo "🧪 Tests assistant..."
+	cd apps/assistant && pytest
+	@echo ""
+	@echo "🧪 Tests mcp-server..."
+	cd apps/mcp-server && pytest
 	@echo ""
 	@echo "🧪 Tests frontend..."
 	cd apps/web && npm run test -- --run

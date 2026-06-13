@@ -28,7 +28,7 @@ async def test_process_user_message_flow():
     
     # Assertions
     assert response == "Réponse IA"
-    repository.save_session.assert_called_once()
+    assert repository.save_session.call_count == 2
     llm_provider.generate_response.assert_called_once()
     
     # Vérifier que le message a été ajouté à la session sauvegardée
@@ -41,7 +41,19 @@ async def test_process_user_message_flow():
 async def test_inventory_intent_calls_michi_api():
     llm_provider = AsyncMock()
     llm_provider.classify_intent.return_value = "QUERY_INVENTORY"
-    llm_provider.generate_response.return_value = "Voici votre stock"
+    
+    # Mock dynamic tool calling loop: first call returns a tool call, second returns string
+    llm_provider.generate_response.side_effect = [
+        [
+            {
+                "function": {
+                    "name": "get_inventory",
+                    "arguments": '{"status": "IN_STOCK"}'
+                }
+            }
+        ],
+        "Voici votre stock"
+    ]
     
     michi_api = AsyncMock()
     michi_api.get_inventory_status.return_value = {"stock": 10}
@@ -53,5 +65,5 @@ async def test_inventory_intent_calls_michi_api():
     
     await use_case.execute("s1", "u1", "o1", "Mon stock ?", "token")
     
-    # Michi API doit avoir été appelée
-    michi_api.get_inventory_status.assert_called_once_with("o1", "token")
+    # Michi API doit avoir été appelée par le fallback direct
+    michi_api.get_inventory_status.assert_called_once_with("o1", "token", filters={"status": "IN_STOCK"})

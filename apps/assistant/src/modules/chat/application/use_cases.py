@@ -42,38 +42,97 @@ class ProcessUserMessageUseCase:
             summary_msg = ChatMessage(role=MessageRole.SYSTEM, content=f"Résumé des échanges précédents : {session.metadata['summary']}")
             messages_with_context.insert(0, summary_msg)
 
-        # 4. Boucle de raisonnement (Reasoning Loop)
+        # 4. Boucle de raisonnement (Reasoning Loop) avec Client MCP et repli legacy
         # On permet jusqu'à 3 tours d'outils pour éviter les boucles infinies
-        for _ in range(3):
-            response = await self.llm_provider.generate_response(messages_with_context)
+        from mcp.client.sse import sse_client
+        from mcp import ClientSession
+        import os
+        import json
+        
+        mcp_url = os.getenv("MCP_SERVER_URL", "http://localhost:8002/mcp/sse")
+        headers = {
+            "Authorization": f"Bearer {jwt}",
+            "michi-org-id": org_id
+        }
+        
+        try:
+            logger.info(f"[Assistant] Connecting to MCP server at {mcp_url}...")
+            async with sse_client(url=mcp_url, headers=headers) as (read, write):
+                async with ClientSession(read, write) as mcp_session:
+                    await mcp_session.initialize()
+                    
+                    # Récupérer les outils dynamiques du serveur MCP
+                    tools_list = await mcp_session.list_tools()
+                    mcp_tools = tools_list.tools
+                    logger.debug(f"[Assistant] Registered {len(mcp_tools)} tools from MCP server.")
+                    
+                    for _ in range(3):
+                        response = await self.llm_provider.generate_response(
+                            messages_with_context,
+                            tools=mcp_tools
+                        )
+                        
+                        # Si c'est du texte simple, on a fini
+                        if isinstance(response, str):
+                            session.add_message(MessageRole.ASSISTANT, response)
+                            await self.repository.save_session(session)
+                            return response
+                        
+                        # Sinon, c'est un appel d'outil (Tool Call)
+                        for tool_call in response:
+                            func_name = tool_call["function"]["name"]
+                            args_str = tool_call["function"]["arguments"]
+                            args = json.loads(args_str) if args_str else {}
+                            
+                            logger.info(f"[Assistant MCP Client] Executing MCP tool: {func_name} with args: {args}")
+                            
+                            # Appeler l'outil sur le serveur MCP
+                            mcp_result = await mcp_session.call_tool(func_name, args)
+                            
+                            # Extraire la réponse texte de l'outil
+                            text_contents = []
+                            for content in mcp_result.content:
+                                if hasattr(content, "text"):
+                                    text_contents.append(content.text)
+                                elif isinstance(content, dict) and "text" in content:
+                                    text_contents.append(content["text"])
+                                    
+                            result_data = "\n".join(text_contents)
+                            logger.debug(f"[Assistant MCP Client] Tool result: {result_data[:200]}...")
+                            
+                            # Ajouter le résultat au contexte
+                            session.add_message(MessageRole.SYSTEM, f"RÉSULTAT DE {func_name}: {result_data}")
+        except Exception as mcp_err:
+            logger.warning(f"[Assistant MCP Client] MCP connection failed: {mcp_err}. Falling back to legacy hardcoded tools.")
             
-            # Si c'est du texte simple, on a fini
-            if isinstance(response, str):
-                session.add_message(MessageRole.ASSISTANT, response)
-                await self.repository.save_session(session)
-                return response
-            
-            # Sinon, c'est un appel d'outil (Tool Call)
-            for tool_call in response:
-                func_name = tool_call["function"]["name"]
-                args_str = tool_call["function"]["arguments"]
-                import json
-                args = json.loads(args_str) if args_str else {}
+            # Repli sur l'ancienne boucle d'exécution en direct (legacy)
+            for _ in range(3):
+                response = await self.llm_provider.generate_response(messages_with_context)
                 
-                logger.info(f"[Assistant] Executing tool: {func_name} with args: {args}")
+                # Si c'est du texte simple, on a fini
+                if isinstance(response, str):
+                    session.add_message(MessageRole.ASSISTANT, response)
+                    await self.repository.save_session(session)
+                    return response
                 
-                # Exécution réelle de l'outil
-                result_data = "{}"
-                if func_name == "get_inventory":
-                    data = await self.michi_api.get_inventory_status(org_id, jwt, filters=args)
-                    result_data = str(data)
-                elif func_name == "get_alerts":
-                    data = await self.michi_api.get_forecasting_alerts(org_id, jwt, filters=args)
-                    result_data = str(data)
-                
-                # On ajoute le résultat au contexte (via un message système pour le moment)
-                # Note: OpenAI préfère un rôle 'tool', mais on simplifie pour le domaine Michi
-                session.add_message(MessageRole.SYSTEM, f"RÉSULTAT DE {func_name}: {result_data}")
+                # Sinon, c't un appel d'outil (Tool Call)
+                for tool_call in response:
+                    func_name = tool_call["function"]["name"]
+                    args_str = tool_call["function"]["arguments"]
+                    args = json.loads(args_str) if args_str else {}
+                    
+                    logger.info(f"[Assistant Legacy Fallback] Executing legacy tool: {func_name} with args: {args}")
+                    
+                    # Exécution réelle en direct (legacy)
+                    result_data = "{}"
+                    if func_name == "get_inventory":
+                        data = await self.michi_api.get_inventory_status(org_id, jwt, filters=args)
+                        result_data = str(data)
+                    elif func_name == "get_alerts":
+                        data = await self.michi_api.get_forecasting_alerts(org_id, jwt, filters=args)
+                        result_data = str(data)
+                    
+                    session.add_message(MessageRole.SYSTEM, f"RÉSULTAT DE {func_name}: {result_data}")
 
         # Fallback si trop de tours
         await self.repository.save_session(session)

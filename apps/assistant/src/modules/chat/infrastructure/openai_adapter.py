@@ -41,36 +41,51 @@ class OpenAIProvider(ILLMProvider):
         for msg in messages:
             openai_messages.append({"role": msg.role.value, "content": msg.content})
 
-        # Définition par défaut des outils Michi si non fournis
-        michi_tools = tools or [
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_inventory",
-                    "description": "Récupère l'état global des stocks et les risques. Permet de filtrer par catégorie ou statut.",
-                    "parameters": {
-                        "type": "object", 
-                        "properties": {
-                            "category": {"type": "string", "description": "Filtrer par catégorie (ex: 'Vêtements')"},
-                            "status": {"type": "string", "enum": ["IN_STOCK", "OUT_OF_STOCK", "AT_RISK"], "description": "Filtrer par statut de stock"}
+        # Convertir les outils MCP dynamiques si fournis, sinon fallback sur la liste codée en dur
+        michi_tools = []
+        if tools:
+            for t in tools:
+                if hasattr(t, "name") and hasattr(t, "inputSchema"):
+                    michi_tools.append({
+                        "type": "function",
+                        "function": {
+                            "name": t.name,
+                            "description": t.description,
+                            "parameters": t.inputSchema
+                        }
+                    })
+                elif isinstance(t, dict):
+                    michi_tools.append(t)
+        else:
+            michi_tools = [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_inventory",
+                        "description": "Récupère l'état global des stocks et les risques. Permet de filtrer par catégorie ou statut.",
+                        "parameters": {
+                            "type": "object", 
+                            "properties": {
+                                "category": {"type": "string", "description": "Filtrer par catégorie (ex: 'Vêtements')"},
+                                "status": {"type": "string", "enum": ["IN_STOCK", "OUT_OF_STOCK", "AT_RISK"], "description": "Filtrer par statut de stock"}
+                            }
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_alerts",
+                        "description": "Récupère les alertes de prévision et de rupture.",
+                        "parameters": {
+                            "type": "object", 
+                            "properties": {
+                                "severity": {"type": "string", "enum": ["HIGH", "MEDIUM", "LOW"], "description": "Filtrer par sévérité"}
+                            }
                         }
                     }
                 }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_alerts",
-                    "description": "Récupère les alertes de prévision et de rupture.",
-                    "parameters": {
-                        "type": "object", 
-                        "properties": {
-                            "severity": {"type": "string", "enum": ["HIGH", "MEDIUM", "LOW"], "description": "Filtrer par sévérité"}
-                        }
-                    }
-                }
-            }
-        ]
+            ]
 
         try:
             response = await self.client.chat.completions.create(

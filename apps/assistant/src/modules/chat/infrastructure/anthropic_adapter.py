@@ -42,29 +42,50 @@ class AnthropicProvider(ILLMProvider):
         # Pour l'instant on simplifie l'appel outils comme OpenAI
         # Note: Anthropic a une syntaxe légèrement différente pour les outils
         
-        claude_tools = [
-            {
-                "name": "get_inventory",
-                "description": "Récupère l'état global des stocks et les risques. Permet de filtrer par catégorie ou statut.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "category": {"type": "string", "description": "Filtrer par catégorie (ex: 'Vêtements')"},
-                        "status": {"type": "string", "enum": ["IN_STOCK", "OUT_OF_STOCK", "AT_RISK"], "description": "Filtrer par statut de stock"}
+        # Convertir les outils MCP dynamiques si fournis, sinon fallback sur la liste codée en dur
+        claude_tools = []
+        if tools:
+            for t in tools:
+                if hasattr(t, "name") and hasattr(t, "inputSchema"):
+                    claude_tools.append({
+                        "name": t.name,
+                        "description": t.description,
+                        "input_schema": t.inputSchema
+                    })
+                elif isinstance(t, dict):
+                    # Format OpenAI vers Anthropic
+                    if "function" in t:
+                        claude_tools.append({
+                            "name": t["function"]["name"],
+                            "description": t["function"]["description"],
+                            "input_schema": t["function"]["parameters"]
+                        })
+                    else:
+                        claude_tools.append(t)
+        else:
+            claude_tools = [
+                {
+                    "name": "get_inventory",
+                    "description": "Récupère l'état global des stocks et les risques. Permet de filtrer par catégorie ou statut.",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {
+                            "category": {"type": "string", "description": "Filtrer par catégorie (ex: 'Vêtements')"},
+                            "status": {"type": "string", "enum": ["IN_STOCK", "OUT_OF_STOCK", "AT_RISK"], "description": "Filtrer par statut de stock"}
+                        }
+                    }
+                },
+                {
+                    "name": "get_alerts",
+                    "description": "Récupère les alertes de prévision et de rupture.",
+                    "input_schema": {
+                        "type": "object",
+                        "properties": {
+                            "severity": {"type": "string", "enum": ["HIGH", "MEDIUM", "LOW"], "description": "Filtrer par sévérité"}
+                        }
                     }
                 }
-            },
-            {
-                "name": "get_alerts",
-                "description": "Récupère les alertes de prévision et de rupture.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "severity": {"type": "string", "enum": ["HIGH", "MEDIUM", "LOW"], "description": "Filtrer par sévérité"}
-                    }
-                }
-            }
-        ]
+            ]
 
         try:
             response = await self.client.messages.create(
